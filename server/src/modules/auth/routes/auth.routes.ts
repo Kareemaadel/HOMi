@@ -288,4 +288,81 @@ router.post(
     authController.googleLogin.bind(authController)
 );
 
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     description: |
+ *       Fetch the authenticated user's profile information.
+ *       
+ *       **Authentication Required**: This endpoint requires a valid JWT access token in the Authorization header.
+ *       
+ *       **Use Case**: This endpoint is used when a user clicks on their avatar or name to view their profile details.
+ *       It returns the user's information regardless of verification status.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: JWT access token in Bearer format
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserProfileResponse'
+ *             example:
+ *               user:
+ *                 id: "123e4567-e89b-12d3-a456-426614174000"
+ *                 email: "user@example.com"
+ *                 role: "TENANT"
+ *                 isVerified: true
+ *                 createdAt: "2024-01-15T10:30:00.000Z"
+ *               profile:
+ *                 id: "123e4567-e89b-12d3-a456-426614174001"
+ *                 userId: "123e4567-e89b-12d3-a456-426614174000"
+ *                 firstName: "John"
+ *                 lastName: "Doe"
+ *                 phoneNumber: "+201234567890"
+ *                 bio: "Software developer"
+ *                 avatarUrl: "https://example.com/avatar.jpg"
+ *                 gender: "MALE"
+ *                 birthdate: "1999-01-01"
+ *                 gamificationPoints: 100
+ *                 preferredBudgetMin: 5000
+ *                 preferredBudgetMax: 10000
+ *                 isVerificationComplete: true
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Access denied. No token provided."
+ *               code: "NO_TOKEN"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "User not found"
+ *               code: "USER_NOT_FOUND"
+ */
+router.get(
+    '/me',
+    protect,
+    authController.getCurrentUser.bind(authController)
+);
+
 export default router;

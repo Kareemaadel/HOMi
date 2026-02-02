@@ -112,6 +112,27 @@ export class AuthController {
             next(error);
         }
     }
+
+    /**
+     * GET /auth/me
+     * Get current user profile
+     * Requires authentication
+     */
+    async getCurrentUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            // User ID comes from the JWT middleware (protect)
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+
+            const result = await authService.getCurrentUser(userId);
+
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 // Export singleton instance

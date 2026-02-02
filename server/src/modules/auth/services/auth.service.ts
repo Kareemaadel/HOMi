@@ -14,6 +14,7 @@ import type {
     AuthSuccessResponse,
     ProfileResponse,
     UserResponse,
+    UserProfileResponse,
 } from '../interfaces/auth.interfaces.js';
 
 /**
@@ -213,7 +214,7 @@ export class AuthService {
             bio: profile.bio ?? null,
             avatarUrl: profile.avatar_url ?? null,
             gender: profile.gender ?? null,
-            birthdate: profile.birthdate ? profile.birthdate.toISOString().split('T')[0] ?? null : null,
+            birthdate: profile.birthdate ? String(profile.birthdate) : null,
             gamificationPoints: profile.gamification_points,
             preferredBudgetMin: profile.preferred_budget_min ?? null,
             preferredBudgetMax: profile.preferred_budget_max ?? null,
@@ -407,7 +408,7 @@ export class AuthService {
             bio: profile.bio ?? null,
             avatarUrl: profile.avatar_url ?? null,
             gender: profile.gender ?? null,
-            birthdate: profile.birthdate ? profile.birthdate.toISOString().split('T')[0] ?? null : null,
+            birthdate: profile.birthdate ? String(profile.birthdate) : null,
             gamificationPoints: profile.gamification_points,
             preferredBudgetMin: profile.preferred_budget_min ?? null,
             preferredBudgetMax: profile.preferred_budget_max ?? null,
@@ -417,6 +418,56 @@ export class AuthService {
         return {
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
+            user: userResponse,
+            profile: profileResponse,
+        };
+    }
+
+    /**
+     * Get current user profile
+     * Fetches user and profile data for authenticated user
+     */
+    async getCurrentUser(userId: string): Promise<UserProfileResponse> {
+        // Find user with profile
+        const user = await User.findByPk(userId, {
+            include: [{ model: Profile, as: 'profile' }],
+        });
+
+        if (!user) {
+            throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+        }
+
+        const profile = user.profile;
+        if (!profile) {
+            throw new AuthError('User profile not found', 500, 'PROFILE_NOT_FOUND');
+        }
+
+        // Build sanitized response
+        const userResponse: UserResponse = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.is_verified,
+            createdAt: user.created_at,
+        };
+
+        const profileResponse: ProfileResponse = {
+            id: profile.id,
+            userId: profile.user_id,
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            phoneNumber: profile.phone_number,
+            bio: profile.bio ?? null,
+            avatarUrl: profile.avatar_url ?? null,
+            gender: profile.gender ?? null,
+            birthdate: profile.birthdate ? String(profile.birthdate) : null,
+            gamificationPoints: profile.gamification_points,
+            preferredBudgetMin: profile.preferred_budget_min ?? null,
+            preferredBudgetMax: profile.preferred_budget_max ?? null,
+            isVerificationComplete: profile.isVerificationComplete(),
+        };
+
+        return {
             user: userResponse,
             profile: profileResponse,
         };

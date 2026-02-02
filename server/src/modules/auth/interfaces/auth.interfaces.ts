@@ -136,3 +136,12 @@ export interface AuthenticatedUser {
     email: string;
     role: UserRoleType;
 }
+
+/**
+ * User Profile Response (for GET /auth/me)
+ * Returns combined user and profile data
+ */
+export interface UserProfileResponse {
+    user: UserResponse;
+    profile: ProfileResponse;
+}
