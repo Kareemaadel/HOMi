@@ -14,7 +14,7 @@ const options: Options = {
         },
         servers: [
             {
-                url: 'http://localhost:3000',
+                url: 'http://localhost:3000/api',
                 description: 'Development server',
             },
         ],
@@ -197,6 +197,14 @@ const options: Options = {
                     properties: {
                         accessToken: { type: 'string', description: 'JWT access token (15m expiry)' },
                         refreshToken: { type: 'string', description: 'JWT refresh token (7d expiry)' },
+                        user: { $ref: '#/components/schemas/User' },
+                        profile: { $ref: '#/components/schemas/Profile' },
+                    },
+                },
+                UserProfileResponse: {
+                    type: 'object',
+                    description: 'Response for GET /auth/me endpoint containing user and profile data',
+                    properties: {
                         user: { $ref: '#/components/schemas/User' },
                         profile: { $ref: '#/components/schemas/Profile' },
                     },
