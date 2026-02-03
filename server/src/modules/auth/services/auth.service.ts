@@ -2,6 +2,7 @@ import axios from 'axios';
 import { User, Profile, sequelize } from '../../../shared/infrastructure/models/index.js';
 import { generateTokenPair, type TokenPair } from '../../../shared/utils/jwt.util.js';
 import { generateSecureToken, hashToken } from '../../../shared/utils/encryption.util.js';
+import { emailService } from '../../../shared/services/email.service.js';
 import type {
     RegisterRequest,
     LoginRequest,
@@ -15,6 +16,8 @@ import type {
     ProfileResponse,
     UserResponse,
     UserProfileResponse,
+    UpdateProfileRequest,
+    EmailVerificationResponse,
 } from '../interfaces/auth.interfaces.js';
 
 /**
@@ -105,6 +108,7 @@ export class AuthService {
 
     /**
      * Complete user verification by filling required profile fields
+     * Requires email to be verified first
      * Sets is_verified = true after successful completion
      */
     async completeVerification(
@@ -126,6 +130,15 @@ export class AuthService {
 
             if (user.is_verified) {
                 throw new AuthError('Account is already verified', 400, 'ALREADY_VERIFIED');
+            }
+
+            // Check if email is verified first
+            if (!user.email_verified) {
+                throw new AuthError(
+                    'Please verify your email address first before completing profile verification',
+                    400,
+                    'EMAIL_NOT_VERIFIED'
+                );
             }
 
             const profile = user.profile;
@@ -150,6 +163,9 @@ export class AuthService {
             );
 
             await transaction.commit();
+
+            // Send welcome email
+            await emailService.sendWelcomeEmail(user.email, profile.first_name);
 
             return {
                 success: true,
@@ -197,6 +213,7 @@ export class AuthService {
             email: user.email,
             role: user.role,
             isVerified: user.is_verified,
+            emailVerified: user.email_verified,
             createdAt: user.created_at,
         };
 
@@ -231,20 +248,20 @@ export class AuthService {
 
     /**
      * Initiate forgot password flow
-     * Generates reset token and mocks email sending
+     * Generates reset token and sends password reset email
      */
     async forgotPassword(input: ForgotPasswordRequest): Promise<AuthSuccessResponse> {
         const user = await User.findOne({
             where: { email: input.email.toLowerCase() },
         });
 
-        // Always return success to prevent email enumeration
+        // Check if user exists - return error if not found
         if (!user) {
-            console.log('📧 [MOCK EMAIL] Forgot password requested for non-existent email:', input.email);
-            return {
-                success: true,
-                message: 'If an account exists with this email, a password reset link has been sent.',
-            };
+            throw new AuthError(
+                'No account found with this email address',
+                404,
+                'EMAIL_NOT_FOUND'
+            );
         }
 
         // Generate reset token
@@ -259,14 +276,16 @@ export class AuthService {
             reset_token_expires: tokenExpires,
         });
 
-        // Mock email sending - log to console
-        console.log('📧 [MOCK EMAIL] Password reset email sent to:', input.email);
-        console.log('📧 [MOCK EMAIL] Reset token:', token);
-        console.log('📧 [MOCK EMAIL] Token expires at:', tokenExpires.toISOString());
+        // Send password reset email using email service
+        const emailSent = await emailService.sendPasswordResetEmail(user.email, token);
+
+        if (!emailSent) {
+            console.warn('Failed to send password reset email, but token was generated');
+        }
 
         return {
             success: true,
-            message: 'If an account exists with this email, a password reset link has been sent.',
+            message: 'Password reset email sent. Please check your inbox.',
         };
     }
 
@@ -342,12 +361,15 @@ export class AuthService {
 
             try {
                 // Create user with Google OAuth placeholder password
+                // email_verified = true because Google verified their email
+                // is_verified = false until they complete profile verification (national ID, etc.)
                 user = await User.create(
                     {
                         email: email.toLowerCase(),
                         password_hash: 'GOOGLE_OAUTH_USER', // Placeholder - they won't use password login
                         role: 'TENANT', // Default role for Google OAuth users
-                        is_verified: true, // Google verified their email
+                        is_verified: false, // Still needs to complete profile verification
+                        email_verified: true, // Google verified their email
                     },
                     { transaction }
                 );
@@ -391,6 +413,7 @@ export class AuthService {
             email: user.email,
             role: user.role,
             isVerified: user.is_verified,
+            emailVerified: user.email_verified,
             createdAt: user.created_at,
         };
 
@@ -448,6 +471,7 @@ export class AuthService {
             email: user.email,
             role: user.role,
             isVerified: user.is_verified,
+            emailVerified: user.email_verified,
             createdAt: user.created_at,
         };
 
@@ -470,6 +494,183 @@ export class AuthService {
         return {
             user: userResponse,
             profile: profileResponse,
+        };
+    }
+
+    /**
+     * Update user profile
+     * Allows users to update their personal details
+     */
+    async updateProfile(
+        userId: string,
+        input: UpdateProfileRequest
+    ): Promise<UserProfileResponse> {
+        const transaction = await sequelize.transaction();
+
+        try {
+            // Find user and profile
+            const user = await User.findByPk(userId, {
+                include: [{ model: Profile, as: 'profile' }],
+                transaction,
+            });
+
+            if (!user) {
+                throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+            }
+
+            const profile = user.profile;
+            if (!profile) {
+                throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
+            }
+
+            // Build update object with only provided fields
+            const updateData: Partial<{
+                first_name: string;
+                last_name: string;
+                phone_number: string;
+                bio: string | null;
+                avatar_url: string | null;
+                preferred_budget_min: number | null;
+                preferred_budget_max: number | null;
+            }> = {};
+
+            if (input.firstName !== undefined) updateData.first_name = input.firstName;
+            if (input.lastName !== undefined) updateData.last_name = input.lastName;
+            if (input.phone !== undefined) updateData.phone_number = input.phone;
+            if (input.bio !== undefined) updateData.bio = input.bio;
+            if (input.avatarUrl !== undefined) updateData.avatar_url = input.avatarUrl;
+            if (input.preferredBudgetMin !== undefined) updateData.preferred_budget_min = input.preferredBudgetMin;
+            if (input.preferredBudgetMax !== undefined) updateData.preferred_budget_max = input.preferredBudgetMax;
+
+            // Update profile
+            await profile.update(updateData, { transaction });
+
+            await transaction.commit();
+
+            // Return updated user and profile
+            const userResponse: UserResponse = {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                isVerified: user.is_verified,
+                emailVerified: user.email_verified,
+                createdAt: user.created_at,
+            };
+
+            const profileResponse: ProfileResponse = {
+                id: profile.id,
+                userId: profile.user_id,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                phoneNumber: profile.phone_number,
+                bio: profile.bio ?? null,
+                avatarUrl: profile.avatar_url ?? null,
+                gender: profile.gender ?? null,
+                birthdate: profile.birthdate ? String(profile.birthdate) : null,
+                gamificationPoints: profile.gamification_points,
+                preferredBudgetMin: profile.preferred_budget_min ?? null,
+                preferredBudgetMax: profile.preferred_budget_max ?? null,
+                isVerificationComplete: profile.isVerificationComplete(),
+            };
+
+            return {
+                user: userResponse,
+                profile: profileResponse,
+            };
+        } catch (error) {
+            await transaction.rollback();
+
+            if (error instanceof AuthError) {
+                throw error;
+            }
+
+            console.error('Profile update error:', error);
+            throw new AuthError('Failed to update profile. Please try again.', 500, 'PROFILE_UPDATE_FAILED');
+        }
+    }
+
+    /**
+     * Send verification email to user
+     * Generates a token and sends branded email
+     */
+    async sendVerificationEmail(userId: string): Promise<EmailVerificationResponse> {
+        // Find user
+        const user = await User.findByPk(userId);
+
+        if (!user) {
+            throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+        }
+
+        if (user.email_verified) {
+            return {
+                success: true,
+                message: 'Email is already verified.',
+                emailVerified: true,
+            };
+        }
+
+        // Generate verification token
+        const { token, hashedToken } = generateSecureToken();
+
+        // Set token expiration (24 hours from now)
+        const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        // Store hashed token in database
+        await user.update({
+            email_verification_token_hash: hashedToken,
+            email_verification_token_expires: tokenExpires,
+        });
+
+        // Send verification email
+        const emailSent = await emailService.sendVerificationEmail(user.email, token);
+
+        if (!emailSent) {
+            console.warn('Failed to send verification email, but token was generated');
+        }
+
+        return {
+            success: true,
+            message: 'Verification email sent. Please check your inbox.',
+            emailVerified: false,
+        };
+    }
+
+    /**
+     * Verify user email using token
+     * Called when user clicks the verification link
+     */
+    async verifyEmail(token: string): Promise<EmailVerificationResponse> {
+        // Hash the provided token to compare with stored hash
+        const hashedToken = hashToken(token);
+
+        // Find user with matching token
+        const user = await User.findOne({
+            where: { email_verification_token_hash: hashedToken },
+            include: [{ model: Profile, as: 'profile' }],
+        });
+
+        if (!user) {
+            throw new AuthError('Invalid or expired verification token', 400, 'INVALID_VERIFICATION_TOKEN');
+        }
+
+        // Check token expiration
+        if (!user.email_verification_token_expires || user.email_verification_token_expires < new Date()) {
+            throw new AuthError('Verification token has expired. Please request a new one.', 400, 'VERIFICATION_TOKEN_EXPIRED');
+        }
+
+        // Mark email as verified and clear token
+        await user.update({
+            email_verified: true,
+            email_verification_token_hash: null,
+            email_verification_token_expires: null,
+        });
+
+        console.log('✅ Email verified for user:', user.email);
+
+        return {
+            success: true,
+            message: 'Email verified successfully! You can now complete your profile verification.',
+            emailVerified: true,
         };
     }
 }

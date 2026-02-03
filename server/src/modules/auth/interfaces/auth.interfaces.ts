@@ -96,6 +96,7 @@ export interface UserResponse {
     email: string;
     role: UserRoleType;
     isVerified: boolean;
+    emailVerified: boolean;
     createdAt: Date;
 }
 
@@ -144,4 +145,34 @@ export interface AuthenticatedUser {
 export interface UserProfileResponse {
     user: UserResponse;
     profile: ProfileResponse;
+}
+
+/**
+ * Update Profile Request DTO
+ * All fields are optional - only provided fields will be updated
+ */
+export interface UpdateProfileRequest {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    bio?: string;
+    avatarUrl?: string;
+    preferredBudgetMin?: number;
+    preferredBudgetMax?: number;
+}
+
+/**
+ * Verify Email Request DTO
+ */
+export interface VerifyEmailRequest {
+    token: string;
+}
+
+/**
+ * Email Verification Response DTO
+ */
+export interface EmailVerificationResponse {
+    success: boolean;
+    message: string;
+    emailVerified?: boolean;
 }
