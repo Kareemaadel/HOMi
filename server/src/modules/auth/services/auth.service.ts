@@ -59,6 +59,16 @@ export class AuthService {
                 throw new AuthError('Email already registered', 409, 'EMAIL_EXISTS');
             }
 
+            // Check if phone number already exists
+            const existingProfile = await Profile.findOne({
+                where: { phone_number: input.phone },
+                transaction,
+            });
+
+            if (existingProfile) {
+                throw new AuthError('Phone number already registered', 409, 'PHONE_EXISTS');
+            }
+
             // Create user with hashed password (hook handles hashing)
             // is_verified = false until user completes verification form
             const user = await User.create(
@@ -234,23 +244,17 @@ export class AuthService {
                     },
                 });
             } else if (phoneInput.startsWith('0')) {
-                // Local format provided (e.g., 01234567890)
-                // Search for both:
-                // 1. Exact match: 01234567890
-                // 2. International format: +{any country code}1234567890 (using LIKE pattern)
 
-                const digitsAfterZero = phoneInput.slice(1); // Remove leading 0
-
+                const digitsAfterZero = phoneInput.slice(1);
                 profile = await Profile.findOne({
                     where: {
                         [Op.or]: [
-                            { phone_number: phoneInput }, // Exact local match
-                            { phone_number: { [Op.like]: `+%${digitsAfterZero}` } } // International with any country code
+                            { phone_number: phoneInput },
+                            { phone_number: { [Op.like]: `+%${digitsAfterZero}` } }
                         ]
                     },
                 });
             } else {
-                // No recognized prefix, search as-is
                 profile = await Profile.findOne({
                     where: { phone_number: phoneInput },
                 });
