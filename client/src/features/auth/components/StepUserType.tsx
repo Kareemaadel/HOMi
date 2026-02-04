@@ -1,5 +1,5 @@
 import { User, Building } from "lucide-react";
-import type { UserType } from "../../pages/CompleteProfile";
+import type { UserType } from "../../../features/auth/pages/CompleteProfile";
 
 export default function StepUserType({ setUserType, onNext }:{
   setUserType:(t:UserType)=>void; onNext:()=>void;

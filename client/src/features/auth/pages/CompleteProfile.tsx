@@ -1,11 +1,11 @@
 import { useState } from "react";
-import StepGuidelines from "../components/onboarding/StepGuidelines";
-import StepUserType from "../components/onboarding/StepUserType";
-import TenantCredentials from "../components/onboarding/TenantCredentials";
-import TenantLifestyle from "../components/onboarding/TenantLifestyle";
-import LandlordCredentials from "../components/onboarding/LandlordCredentials";
-import LandlordProperties from "../components/onboarding/LandlordProperties";
-import StepAvatarFinish from "../components/onboarding/StepAvatarFinish";
+import StepGuidelines from "../../../features/auth/components/StepGuidelines";
+import StepUserType from "../../../features/auth/components/StepUserType";
+import TenantCredentials from "../../../features/auth/components/TenantCredentials";
+import TenantLifestyle from "../../../features/auth/components/TenantLifestyle";
+import LandlordCredentials from "../../../features/auth/components/LandlordCredentials";
+import LandlordProperties from "../../../features/auth/components/LandlordProperties";
+import StepAvatarFinish from "../../../features/auth/components/StepAvatarFinish";
 import "./CompleteProfile.css";
 import "../components/onboarding/Onboarding.css";
 

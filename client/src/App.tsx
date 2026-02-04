@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AuthPage from "./pages/authPage";
-import CompleteProfile from "./pages/CompleteProfile";
+import AuthPage from "./features/auth/pages/authPage";
+import CompleteProfile from "./features/auth/pages/CompleteProfile";
 
 function App() {
   return (

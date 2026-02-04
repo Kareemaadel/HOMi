@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import SignIn from '../components/auth/signin.tsx';
-import SignUp from '../components/auth/signup.tsx';
+import SignIn from '../../../features/auth/components/signin.tsx';
+import SignUp from '../../../features/auth/components/signup.tsx';
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import './authPage.css';
