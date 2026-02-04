@@ -7,7 +7,7 @@ import LandlordCredentials from "../../../features/auth/components/LandlordCrede
 import LandlordProperties from "../../../features/auth/components/LandlordProperties";
 import StepAvatarFinish from "../../../features/auth/components/StepAvatarFinish";
 import "./CompleteProfile.css";
-import "../components/onboarding/Onboarding.css";
+import "../components/Onboarding.css";
 
 export type UserType = "tenant" | "landlord" | null;
 

@@ -1,0 +1,67 @@
+/* QuickActions.css */
+
+.actions-grid {
+  display: grid;
+  /* Force 4 columns on desktop, 2 on tablet, 1 on mobile */
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.action-card {
+  background: white;
+  border: 1px solid #f1f5f9;
+  padding: 1.25rem;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center-aligned for a tighter look */
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center; /* Center text for vertical symmetry */
+  min-height: 120px; /* Ensures all cards are same height */
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: 0.3s;
+}
+
+.action-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.main-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.sub-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
