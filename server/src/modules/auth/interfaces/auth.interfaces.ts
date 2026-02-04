@@ -1,5 +1,5 @@
-import type { UserRoleType } from '../../../shared/infrastructure/models/User.js';
-import type { GenderType } from '../../../shared/infrastructure/models/Profile.js';
+import type { UserRoleType } from '../models/User.js';
+import type { GenderType } from '../models/Profile.js';
 
 /**
  * Registration Request DTO
@@ -176,4 +176,12 @@ export interface EmailVerificationResponse {
     success: boolean;
     message: string;
     emailVerified?: boolean;
+}
+
+/**
+ * Change Password Request DTO
+ */
+export interface ChangePasswordRequest {
+    currentPassword: string;
+    newPassword: string;
 }
