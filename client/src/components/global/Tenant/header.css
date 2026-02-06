@@ -3,7 +3,7 @@
   position: fixed; /* Or sticky */
   top: 0;
   left: 260px; /* Adjust this to match your sidebar width exactly */
-  width: 460px;
+  width: 60px;
   height: 70px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -14,6 +14,7 @@
   padding: 0 30px;
   box-sizing: border-box; /* Ensures padding doesn't push it off screen */
   z-index: 999;
+  margin-top: -140px;
 }
 
 /* SEARCH AREA */
@@ -27,7 +28,6 @@
   align-items: center;
   background: #f4f7fa;
   padding: 8px 14px;
-  border-color: #3b82f6;
   border-radius: 10px;
   width: 320px;
   border: 1px solid transparent;

@@ -9,16 +9,13 @@
 
 .sidebar {
   position: fixed;
-  top: 0;
   left: 0;
+  top: 0;
+  width: 260px;
   height: 100vh;
-  width: var(--sidebar-width); /* Always open */
-  background: #ffffff;
-  border-right: 1px solid #eef2f6;
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
+  z-index: 9999; /* Ensure this is the highest number */
+  background: white; /* Ensure it's not transparent */
+  box-shadow: 4px 0 10px rgba(0,0,0,0.05);
 }
 
 /* BRAND SECTION */

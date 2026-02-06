@@ -1,7 +1,7 @@
 import React from 'react';
 import './TenantHome.css';
 import Header from '../../../components/global/Tenant/header';
-import Sidebar from '../../../components/global/Landlord/sidebar';
+import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/Tenant/footer';
 
 // Sub-components
@@ -26,8 +26,8 @@ const TenantHome: React.FC = () => {
         <main className="content-area">
           <header className="welcome-section">
             <div className="welcome-text">
-              <h1>{greeting}, <span className="highlight">Mohy!</span></h1>
-              <p>Welcome back! You have 2 payments due this week.</p>
+              <h1>Welcome Back, <span className="highlight">Mohy!</span></h1>
+              <p>You have 2 payments due this week.</p>
             </div>
           </header>
 
