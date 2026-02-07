@@ -1,0 +1,55 @@
+.rental-requests-page {
+    padding: 40px;
+    background: #fbfcfd;
+    min-height: 100vh;
+}
+
+.page-intro {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+}
+
+.page-intro h1 {
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -1px;
+}
+
+.page-intro p {
+    color: #64748b;
+    font-size: 1.1rem;
+}
+
+/* STATS OVERVIEW */
+.stats-overview {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-box {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    text-align: right;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+}
+
+.stat-box label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #94a3b8;
+    margin-bottom: 5px;
+}
+
+.stat-box h2 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0;
+}

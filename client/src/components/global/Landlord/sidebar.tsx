@@ -26,7 +26,7 @@ const Sidebar = () => {
         <ul>
           <li><a href="/" className={location.pathname === "/" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
           <li><a href="/my-properties" className={location.pathname === "/my-properties" ? "active" : ""}><FaBuilding /> <span>My Properties</span></a></li>
-          <li><a href="/browse-properties" className={location.pathname === "/browse-properties" ? "active" : ""}><FaInbox /> <span>Rental Requests</span></a></li>
+          <li><a href="/rental-requests" className={location.pathname === "/rental-requests" ? "active" : ""}><FaInbox /> <span>Rental Requests</span></a></li>
           
           <div className="nav-divider">Management</div>
           
