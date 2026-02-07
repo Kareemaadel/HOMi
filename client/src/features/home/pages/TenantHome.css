@@ -6,6 +6,7 @@
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   font-family: 'Inter', sans-serif;
   width: 100%;
+  margin-top: 0px;
 }
 
 .tenant-home-content {
@@ -27,6 +28,7 @@
   max-width: 1600px;
   position: relative;
   z-index: 20;
+  margin-top: 0px;
 }
 
 .tenant-home-main::-webkit-scrollbar {
@@ -47,9 +49,11 @@
 }
 
 .dashboard-container {
-  display: flex;
+  display:grid;
   background-color: var(--bg-subtle);
   min-height: 100vh;
+  margin-top: -60px;
+  margin-left: -20px;
 }
 
 .main-wrapper {

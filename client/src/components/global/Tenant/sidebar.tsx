@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   FaHome, FaBuilding, FaSearch, FaUserFriends, 
   FaTools, FaCreditCard, FaEnvelope, FaStar, 
@@ -8,6 +9,7 @@ import {
 import './sidebar.css';
 
 const Sidebar = () => {
+  const location = useLocation();
   return (
     <aside className="sidebar">
       {/* 1. Brand Section */}
@@ -18,18 +20,18 @@ const Sidebar = () => {
       {/* 2. Navigation */}
       <nav className="sidebar-nav">
         <ul>
-          <li><a href="/" className="active"><FaHome /> <span>Home</span></a></li>
-          <li><a href="/active-properties"><FaBuilding /> <span>Active Properties</span></a></li>
-          <li><a href="/browse-properties"><FaSearch /> <span>Browse Properties</span></a></li>
-          <li><a href="/roommate-matching"><FaUserFriends /> <span>Matching</span></a></li>
+          <li><a href="/" className={location.pathname === "/" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
+          <li><a href="/active-properties" className={location.pathname === "/active-properties" ? "active" : ""}><FaBuilding /> <span>Active Properties</span></a></li>
+          <li><a href="/browse-properties" className={location.pathname === "/browse-properties" ? "active" : ""}><FaSearch /> <span>Browse Properties</span></a></li>
+          <li><a href="/roommate-matching" className={location.pathname === "/roommate-matching" ? "active" : ""}><FaUserFriends /> <span>Matching</span></a></li>
           
           <div className="nav-divider">Management</div>
           
-          <li><a href="/maintenance-requests"><FaTools /> <span>Maintenance</span></a></li>
-          <li><a href="/payments"><FaCreditCard /> <span>Payments</span></a></li>
-          <li><a href="/messages"><FaEnvelope /> <span className="badge-wrap">Messages <em className="notif-dot"></em></span></a></li>
-          <li><a href="/rewards"><FaStar /> <span>Rewards</span></a></li>
-          <li><a href="/settings"><FaCog /> <span>Settings</span></a></li>
+          <li><a href="/maintenance-requests" className={location.pathname === "/maintenance-requests" ? "active" : ""}><FaTools /> <span>Maintenance</span></a></li>
+          <li><a href="/payments" className={location.pathname === "/payments" ? "active" : ""}><FaCreditCard /> <span>Payments</span></a></li>
+          <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages <em className="notif-dot"></em></span></a></li>
+          <li><a href="/rewards" className={location.pathname === "/rewards" ? "active" : ""}><FaStar /> <span>Rewards</span></a></li>
+          <li><a href="/settings" className={location.pathname === "/settings" ? "active" : ""}><FaCog /> <span>Settings</span></a></li>
         </ul>
       </nav>
 

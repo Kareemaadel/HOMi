@@ -1,0 +1,409 @@
+.search-hero {
+    height: 400px;
+    width: 100%;
+    border-radius: 40px;
+    background: url('https://images.unsplash.com/photo-1600585154340-be6191da95b8?auto=format&fit=crop&w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 40px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    margin-top: 180px;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-content {
+    text-align: center;
+    width: 90%;
+    max-width: 1000px;
+}
+
+.hero-content h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 10px;
+    letter-spacing: -2px;
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #3b82f6, #2dd4bf);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-content p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+}
+
+/* THE GLASS SEARCH BAR */
+.glass-search-container {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.search-input-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 20px;
+    text-align: left;
+}
+
+.input-icon {
+    color: #3b82f6;
+    font-size: 1.4rem;
+}
+
+.input-stack {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-stack label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 2px;
+}
+
+.input-stack input, .input-stack select {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    outline: none;
+    width: 100%;
+}
+
+.input-stack input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.divider-line {
+    width: 1px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.hero-search-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 18px 35px;
+    border-radius: 18px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+.hero-search-btn:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+}
+
+/* POPULAR TAGS */
+.hero-tags {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+.hero-tags span {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.hero-tags button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.hero-tags button:hover {
+    background: white;
+    color: #0f172a;
+}
+
+.search-hero {
+    height: 550px;
+    width: 100%;
+    border-radius: 50px;
+    /* Animated Mesh Background */
+    background: linear-gradient(45deg, #0f172a, #1e293b, #0f172a);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 60px;
+    margin-top: 100px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Add a pseudo-element for the image with a mask */
+.search-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1600585154340-be6191da95b8?auto=format&fit=crop&w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.5; /* Blends with the animated gradient */
+    mix-blend-mode: overlay;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.hero-overlay {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, transparent 0%, rgba(15, 23, 42, 0.4) 100%);
+}
+
+.hero-content h1 {
+    font-size: 4.5rem; /* Larger, more aggressive typography */
+    font-weight: 900;
+    color: white;
+    margin-bottom: 15px;
+    letter-spacing: -3px;
+    line-height: 1;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #60a5fa, #4ade80, #60a5fa);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+}
+
+@keyframes shine {
+    to { background-position: 200% center; }
+}
+
+/* THE MIND-BLOWING GLASS BAR */
+.glass-search-container {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 15px;
+    border-radius: 35px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 
+        0 20px 50px rgba(0,0,0,0.3),
+        inset 0 0 20px rgba(255,255,255,0.05);
+    transform: translateY(0);
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.glass-search-container:focus-within {
+    transform: translateY(-10px) scale(1.02);
+    border-color: rgba(96, 165, 250, 0.5);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+}
+
+.search-input-group {
+    position: relative;
+    transition: all 0.3s;
+    border-radius: 20px;
+}
+
+.search-input-group:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.input-icon {
+    color: #60a5fa;
+    filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.5));
+}
+
+.input-stack label {
+    color: #94a3b8;
+    letter-spacing: 1px;
+}
+
+.input-stack select option {
+    background: #1e293b; /* Fixes visibility for dropdown items */
+    color: white;
+}
+
+.hero-search-btn {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    padding: 20px 40px;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.hero-search-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255,255,255,0.1);
+    transform: rotate(45deg);
+    transition: 0.5s;
+}
+
+.hero-search-btn:hover::after {
+    left: 100%;
+}
+
+/* FLOATING TAGS */
+.hero-tags button {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 20px;
+    transition: all 0.4s;
+}
+
+.hero-tags button:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+.search-hero {
+    height: 420px;
+    width: calc(100% + 80px);
+    margin-left: -40px;
+    margin-right: -40px;
+    margin-top: 0;
+    margin-bottom: 40px;
+    border-radius: 0;
+    background: linear-gradient(45deg, #0f172a, #1e293b, #0f172a);
+    background-size: 400% 400%;
+    animation: gradientShift 12s ease infinite;
+    position: relative;
+    overflow: hidden;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1600585154340-be6191da95b8?auto=format&fit=crop&w=1600&q=80');
+    background-size: cover;
+    background-position: center 30%; /* Focus on the top part of the house */
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+}
+
+.hero-content h1 {
+    font-size: 3.2rem; /* Adjusted for the shorter height */
+    font-weight: 900;
+    color: white;
+    margin-bottom: 8px;
+    letter-spacing: -2px;
+}
+
+.hero-content p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+/* THE GLASS SEARCH BAR - Optimized for width */
+.glass-search-container {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 95%; /* Ensures it doesn't hit edges on smaller screens */
+    margin: 0 auto;
+}
+
+.search-input-group {
+    padding: 8px 15px;
+}
+
+.input-stack label {
+    font-size: 0.65rem;
+    color: #94a3b8;
+}
+
+.input-stack input, .input-stack select {
+    font-size: 0.95rem;
+}
+
+.hero-search-btn {
+    padding: 15px 30px;
+    border-radius: 15px;
+    font-size: 1rem;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+/* Animations remain the same as previous version */
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #60a5fa, #4ade80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}

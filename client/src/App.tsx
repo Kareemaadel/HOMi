@@ -5,15 +5,17 @@ import LandlordHome from "./features/home/pages/LandlordHome";
 import CompleteProfile from "./features/auth/pages/CompleteProfile";
 import MyProperties from "./features/MyProperties/pages/MyProperties";
 import RentalRequests from "./features/RentalRequests/pages/RentalRequests";
+import BrowseProperties from "./features/BrowseProperties/pages/BrowseProperties";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* <Route path="/" element={<TenantHome />} /> */}
-        <Route path="/" element={<LandlordHome />} />
-        <Route path="/my-properties" element={<MyProperties />} />
-        <Route path="/rental-requests" element={<RentalRequests />} />
+        <Route path="/" element={<TenantHome />} />
+        <Route path="/browse-properties" element={<BrowseProperties />} />
+        {/* <Route path="/" element={<LandlordHome />} /> */}
+        {/* <Route path="/my-properties" element={<MyProperties />} /> */}
+        {/* <Route path="/rental-requests" element={<RentalRequests />} /> */}
         {/* <Route path="/complete-profile" element={<CompleteProfile />} /> */}
       </Routes>
     </BrowserRouter>
