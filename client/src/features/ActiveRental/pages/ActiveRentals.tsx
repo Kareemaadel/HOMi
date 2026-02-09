@@ -26,15 +26,7 @@ const ActiveRentals: React.FC = () => {
             <div className="main-content">
                 <Header />
                 <div className="active-rentals-container">
-                    <header className="page-header">
-                        <div className="header-text">
-                            <h1>My Active Rental</h1>
-                            <p>Overview of your current residence and financial standing.</p>
-                        </div>
-                        <div className="header-badge">
-                            <span className="pulse-icon"></span> Primary Residence
-                        </div>
-                    </header>
+                
 
                     <QuickActions />
 
