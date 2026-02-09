@@ -1,0 +1,18 @@
+/* client/src/features/Messages/components/ChatInput.css */
+.chat-input-container { padding: 20px 30px; border-top: 1px solid #f1f5f9; }
+.input-wrapper { 
+  background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
+  display: flex; align-items: center; padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.input-wrapper input { 
+  flex: 1; border: none; outline: none; padding: 10px; font-size: 0.95rem; color: #1e293b;
+}
+.input-actions { display: flex; align-items: center; gap: 15px; }
+.action-icon { color: #94a3b8; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+.action-icon:hover { color: #2084e1; }
+.send-btn { 
+  background: #2084e1; color: white; border: none; padding: 10px 24px; 
+  border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s;
+}
+.send-btn:hover { background: #1a6cb9; transform: translateY(-1px); }
