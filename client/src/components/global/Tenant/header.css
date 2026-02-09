@@ -3,11 +3,13 @@
   position: fixed; /* Or sticky */
   top: 0;
   left: 260px; /* Adjust this to match your sidebar width exactly */
-  width: 60px;
+  width: 90px;
   height: 70px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid #edf2f7;
+  border-radius: 3px solid #cdd6df;
+  border: 1px solid #ffffff;
+  box-shadow: 0 7px 12px rgba(0,0,0,0.05);
   display: flex;
   align-items: center;
   justify-content: space-between; /* Keeps Left and Right groups apart */

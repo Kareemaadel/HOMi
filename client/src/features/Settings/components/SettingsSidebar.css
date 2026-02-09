@@ -1,0 +1,71 @@
+.internal-settings-sidebar {
+    width: 280px;
+    padding: 2rem 1.5rem;
+    border-right: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #2084e1;
+}
+
+.settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.nav-item:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.nav-item.active {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.nav-icon {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+}
+
+.nav-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 1.5rem 0;
+}
+
+/* Danger Zone Nav Item */
+.delete-nav {
+    color: #ff2a2a; /* Muted at first */
+    margin-top: auto;
+}
+
+.delete-nav:hover {
+    background: #fff1f2;
+    color: #e11d48;
+}
+
+.delete-nav.active {
+    background: #fff1f2;
+    color: #e11d48;
+}
