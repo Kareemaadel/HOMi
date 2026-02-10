@@ -1,0 +1,278 @@
+/* client\src\features\BrowseProperties\components\PropertyDetailModal.css */
+
+/* High-end Overlay with heavy blur */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(2, 6, 23, 0.85); /* Darker Slate */
+    backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+}
+
+.modal-container {
+    background: #ffffff;
+    width: 100%; 
+    max-width: 1500px;
+    height: 99vh;
+    border-radius: 0px;
+    margin-left: 240px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalReveal 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+@keyframes modalReveal {
+    from { transform: scale(0.9) translateY(30px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Close Button - Floating & Minimal */
+.close-modal {
+    position: absolute; top: 24px; right: 24px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e2e8f0;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    cursor: pointer; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+    color: #1e293b;
+}
+
+.close-modal:hover {
+    background: #f1f5f9;
+    transform: rotate(90deg);
+}
+
+.modal-content {
+    display: grid; 
+    grid-template-columns: 1.1fr 0.9fr; /* Better balance */
+    height: 100%;
+}
+
+/* --- ADVANCED GALLERY APPEARANCE --- */
+.modal-gallery {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 200px); /* Fixed heights for organized masonry look */
+    gap: 12px;
+    overflow-y: auto;
+    background: #f8fafc;
+}
+
+.main-img {
+    grid-column: 1 / span 2;
+    grid-row: 1 / span 2;
+}
+
+.main-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.thumb-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+    transition: transform 0.4s ease, filter 0.3s ease;
+    cursor: zoom-in;
+}
+
+.thumb-img:hover {
+    transform: scale(0.98);
+    filter: brightness(0.9);
+}
+
+/* --- INFORMATION SECTION --- */
+.modal-details {
+    padding: 48px;
+    overflow-y: auto;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+}
+
+.modal-details::-webkit-scrollbar { width: 4px; }
+.modal-details::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+.detail-header { margin-bottom: 32px; }
+
+.type-tag {
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.detail-title {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -1px;
+    margin: 12px 0;
+    line-height: 1.1;
+}
+
+.price-container {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.detail-price {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.detail-price span {
+    font-size: 1.1rem;
+    color: #64748b;
+    font-weight: 400;
+}
+
+/* Premium Specs Grid */
+.detail-specs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.spec-item {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+}
+
+.spec-item:hover { background: #f1f5f9; }
+
+.spec-item svg { font-size: 1.4rem; color: #2563eb; }
+.spec-item span { font-size: 0.85rem; font-weight: 700; color: #1e293b; }
+
+/* Sections Styling */
+.detail-section h3 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 16px;
+}
+
+.description-text {
+    color: #475569;
+    line-height: 1.8;
+    font-size: 0.95rem;
+}
+
+.amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.amenity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: #334155;
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.amenity svg { color: #10b981; }
+
+/* Premium Agent Card */
+.agent-card {
+    margin-top: 40px;
+    background: #0f172a; /* Dark Elegant Background */
+    padding: 24px;
+    border-radius: 24px;
+    color: white;
+}
+
+.agent-info { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.agent-info img { width: 56px; height: 56px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); }
+
+.agent-name { font-weight: 700; font-size: 1.1rem; margin: 0; }
+.agent-label { font-size: 0.8rem; opacity: 0.7; margin: 0; }
+
+.agent-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.btn-whatsapp {
+    background: #0e656b;
+    color: white; border: none; padding: 12px;
+    border-radius: 12px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+.btn-contact-alt {
+    background: rgba(255,255,255,0.1);
+    color: white; border: none; padding: 12px;
+    border-radius: 12px; font-weight: 700;
+    cursor: pointer;
+}
+
+/* Bottom Action Bar */
+.modal-footer-actions {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding-top: 24px;
+    display: flex;
+    gap: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.footer-btn {
+    padding: 16px 24px;
+    border-radius: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+
+.footer-btn.primary {
+    background: #2563eb;
+    color: white;
+    flex: 2;
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+
+.footer-btn.primary:hover { background: #1d4ed8; transform: translateY(-2px); }
+
+.footer-btn.secondary {
+    background: #c1cbd5;
+    color: #1e293b;
+    flex: 1;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 900px) {
+    .modal-content { grid-template-columns: 1fr; }
+    .modal-gallery { height: 350px; grid-template-rows: repeat(2, 150px); }
+    .modal-container { height: 100vh; border-radius: 0; }
+    .modal-details { padding: 24px; }
+}
