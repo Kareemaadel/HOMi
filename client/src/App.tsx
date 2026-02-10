@@ -9,6 +9,7 @@ import BrowseProperties from "./features/BrowseProperties/pages/BrowseProperties
 import ActiveRentals from "./features/ActiveRental/pages/ActiveRentals";
 import Settings from "./features/Settings/pages/Settings";
 import Messages from "./features/Messages/pages/Messages";
+import Balance from "./features/Balance/pages/Balance";
 
 function App() {
   return (
@@ -23,8 +24,9 @@ function App() {
         <Route path="/" element={<LandlordHome />} />
         <Route path="/my-properties" element={<MyProperties />} />
         <Route path="/rental-requests" element={<RentalRequests />} />
+        <Route path="/balance" element={<Balance />} />
 
-        
+
         {/* <Route path="/complete-profile" element={<CompleteProfile />} /> */}
       </Routes>
     </BrowserRouter>

@@ -3,8 +3,10 @@
   position: fixed;
   top: 0;
   left: 260px;
-  width: calc(100% - 260px);
+  width: 100%;
+  max-width: 2000px;
   height: 80px;
+  margin-left: 50px;
   z-index: 999; /* Lower than sidebar */
   background: white;
   box-sizing: border-box;
