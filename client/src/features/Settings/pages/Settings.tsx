@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import './Settings.css';
-import Header from '../../../components/global/Tenant/header';
-import Sidebar from '../../../components/global/Tenant/sidebar';
-import Footer from '../../../components/global/Tenant/footer';
+import Header from '../../../components/global/Landlord/header';
+import Sidebar from '../../../components/global/Landlord/sidebar';
+import Footer from '../../../components/global/Landlord/footer';
 import SettingsSidebar from '../components/SettingsSidebar';
 
 // New Component Imports
