@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Header from '../../../components/global/Landlord/header';
+import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
-import Footer from '../../../components/global/Landlord/footer';
+import Footer from '../../../components/global/footer';
 import RequestCard from '../components/RequestCard';
 import StatsOverview from '../components/StatsOverview';
 import FilterTabs from '../components/FilterTabs';

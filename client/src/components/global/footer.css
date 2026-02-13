@@ -1,0 +1,144 @@
+/* client\src\components\global\Landlord\footer.css */
+
+.dashboard-footer {
+    /* 1. POSITIONING: Align perfectly with your Sidebar and Header */
+    margin-left: 0px; /* Match your sidebar width */
+    width: calc(100% - 0px); /* Fill the remaining screen exactly */
+    
+    /* 2. BOX STYLING */
+    background: #ffffff;
+    border-top: 1px solid #edf2f7;
+    padding: 24px 0; /* Vertical breathing room */
+    box-sizing: border-box; 
+    
+    /* Ensure no horizontal overflow */
+    overflow: hidden;
+}
+
+.footer-inner {
+    /* 3. CONTENT ALIGNMENT */
+    width: 100%;
+    max-width: 2200px; /* Keeps content from being too far apart on ultrawide screens */
+    margin: 0 auto;
+    padding: 0 40px;
+    
+    display: flex;
+    justify-content: space-between; /* Space between Left, Center, and Right sections */
+    align-items: center;
+}
+
+/* --- SECTION BOXES --- */
+.footer-section {
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- LEFT SECTION: BRANDING & LEGAL --- */
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.brand-text {
+    font-weight: 900;
+    font-size: 1.3rem;
+    color: #004cff;
+    letter-spacing: -1px;
+}
+
+.brand-text .dot {
+    color: #2563eb;
+}
+
+.status-indicator-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    color: #16a34a;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border: 1px solid #dcfce7;
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.copyright {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* --- CENTER SECTION: NAVIGATION --- */
+.footer-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #2563eb;
+}
+
+/* --- RIGHT SECTION: SOCIALS --- */
+.social-grid {
+    display: flex;
+    gap: 10px;
+}
+
+.social-icon-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    color: #64748b;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 1px solid #f1f5f9;
+}
+
+.social-icon-btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* --- RESPONSIVE FIX --- */
+@media (max-width: 1024px) {
+    .dashboard-footer {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .footer-inner {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+}

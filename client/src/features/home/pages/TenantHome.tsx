@@ -1,10 +1,10 @@
 import React from 'react';
 import './TenantHome.css';
-import Header from '../../../components/global/Tenant/header';
+import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
-import Footer from '../../../components/global/Tenant/footer';
+import Footer from '../../../components/global/footer';  
 
-// Sub-components
+// Sub-component
 import ActiveRentalsCard from '../components/TenantHomeComponents/ActiveRentalsCard';
 import UpcomingPayments from '../components/TenantHomeComponents/UpcomingPayments';
 import MaintenanceRequests from '../components/TenantHomeComponents/MaintenanceRequests';

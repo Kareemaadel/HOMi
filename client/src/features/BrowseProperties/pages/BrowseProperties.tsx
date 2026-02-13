@@ -1,9 +1,9 @@
 //client\src\features\BrowseProperties\pages\BrowseProperties.tsx
 import React, { useState } from 'react';
 import './BrowseProperties.css';
-import Header from '../../../components/global/Tenant/header';
+import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
-import Footer from '../../../components/global/Tenant/footer';
+import Footer from '../../../components/global/footer';
 import PropertyCard from '../components/PropertyCard';
 import SearchHero from '../components/SearchHero';
 import PropertyDetailModal from '../components/PropertyDetailedModal';

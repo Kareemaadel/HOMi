@@ -1,8 +1,8 @@
 import React from 'react';
 import './ActiveRentals.css';
-import Header from '../../../components/global/Tenant/header';
+import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
-import Footer from '../../../components/global/Tenant/footer';
+import Footer from '../../../components/global/footer';
 import DetailedRentCard from '../components/DetailedRentCard';
 import UpcomingPayment from '../components/UpcomingPayment';
 import QuickActions from '../components/QuickActions';

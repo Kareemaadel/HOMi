@@ -1,8 +1,8 @@
 // client/src/features/Messages/pages/Messages.tsx
 import React from 'react';
-import Header from '../../../components/global/Landlord/header';
+import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
-import Footer from '../../../components/global/Landlord/footer';
+import Footer from '../../../components/global/footer';
 import ChatSidebar from '../components/ChatSidebar';
 import ChatWindow from '../components/ChatWindow';
 import './Messages.css';
