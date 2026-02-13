@@ -1,39 +1,29 @@
-/* client\src\components\global\Landlord\footer.css */
-
+/* 
 .dashboard-footer {
-    /* 1. POSITIONING: Align perfectly with your Sidebar and Header */
-    margin-left: 0px; /* Match your sidebar width */
-    width: calc(100% - 0px); /* Fill the remaining screen exactly */
-    
-    /* 2. BOX STYLING */
+    margin-left: 0px;
+    width: calc(100% - 0px);
     background: #ffffff;
     border-top: 1px solid #edf2f7;
-    padding: 24px 0; /* Vertical breathing room */
-    box-sizing: border-box; 
-    
-    /* Ensure no horizontal overflow */
+    padding: 24px 0;
+    box-sizing: border-box;
     overflow: hidden;
 }
 
 .footer-inner {
-    /* 3. CONTENT ALIGNMENT */
     width: 100%;
-    max-width: 2200px; /* Keeps content from being too far apart on ultrawide screens */
+    max-width: 2200px;
     margin: 0 auto;
     padding: 0 40px;
-    
     display: flex;
-    justify-content: space-between; /* Space between Left, Center, and Right sections */
+    justify-content: space-between;
     align-items: center;
 }
 
-/* --- SECTION BOXES --- */
 .footer-section {
     display: flex;
     flex-direction: column;
 }
 
-/* --- LEFT SECTION: BRANDING & LEGAL --- */
 .footer-brand {
     display: flex;
     align-items: center;
@@ -86,7 +76,6 @@
     color: #94a3b8;
 }
 
-/* --- CENTER SECTION: NAVIGATION --- */
 .footer-nav {
     display: flex;
     gap: 24px;
@@ -104,7 +93,6 @@
     color: #2563eb;
 }
 
-/* --- RIGHT SECTION: SOCIALS --- */
 .social-grid {
     display: flex;
     gap: 10px;
@@ -129,16 +117,216 @@
     transform: translateY(-2px);
 }
 
-/* --- RESPONSIVE FIX --- */
 @media (max-width: 1024px) {
     .dashboard-footer {
         margin-left: 0;
         width: 100%;
     }
-    
+
     .footer-inner {
         flex-direction: column;
         gap: 20px;
         text-align: center;
+    }
+}
+*/
+ 
+/* new edits: */
+
+
+/* Footer Styles - Professional, Trustworthy Layout */
+
+.site-footer {
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    padding: 48px 0 24px;
+    margin-top: auto;
+    width: 100%;
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 40px;
+}
+
+/* Footer Sections */
+.footer-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 16px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+/* About Section */
+.footer-about {
+    max-width: 320px;
+}
+
+.footer-description {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Navigation Links */
+.footer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.footer-link {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    width: fit-content;
+}
+
+.footer-link:hover {
+    color: #2563eb;
+}
+
+.footer-link:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Social Media Links */
+.social-links {
+    display: flex;
+    gap: 12px;
+}
+
+.social-link {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    color: #64748b;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.social-link:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+}
+
+.social-link:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+/* Footer Bottom */
+.footer-bottom {
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.copyright {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .footer-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+    }
+    
+    .footer-about {
+        max-width: 100%;
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .site-footer {
+        padding: 40px 0 20px;
+    }
+    
+    .footer-container {
+        padding: 0 16px;
+    }
+    
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+    
+    .footer-about {
+        grid-column: span 1;
+    }
+    
+    .footer-section-title {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+    
+    .footer-description {
+        font-size: 0.85rem;
+    }
+    
+    .footer-link {
+        font-size: 0.85rem;
+    }
+    
+    .social-links {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-footer {
+        padding: 32px 0 16px;
+    }
+    
+    .footer-content {
+        gap: 24px;
+    }
+    
+    .copyright {
+        font-size: 0.8rem;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .footer-link,
+    .social-link {
+        transition: none;
+    }
+    
+    .social-link:hover {
+        transform: none;
     }
 }
