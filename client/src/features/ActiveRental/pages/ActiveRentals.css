@@ -5,6 +5,7 @@
     margin: 120px auto 0 auto; /* Fixed overlapping with header */
     background-color: #f8fafc;
     min-height: 100vh;
+    margin-top: -40px;
 }
 
 /* Page Header */
