@@ -10,6 +10,7 @@
   width: calc(100% - 260px);
   position: relative;
   z-index: 1; 
+  margin-top: -40px;
 }
 
 .dashboard-container {

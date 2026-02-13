@@ -15,13 +15,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<TenantHome />} />
+        {/* <Route path="/" element={<TenantHome />} />
         <Route path="/browse-properties" element={<BrowseProperties />} />
-        <Route path="/active-properties" element={<ActiveRentals />} />
+        <Route path="/active-properties" element={<ActiveRentals />} /> */}
  
-        {/* <Route path="/" element={<LandlordHome />} />
+        <Route path="/" element={<LandlordHome />} />
         <Route path="/my-properties" element={<MyProperties />} />
-        <Route path="/rental-requests" element={<RentalRequests />} /> */}
+        <Route path="/rental-requests" element={<RentalRequests />} />
 
         <Route path="/balance" element={<Balance />} />
         <Route path="/settings" element={<Settings />} />
