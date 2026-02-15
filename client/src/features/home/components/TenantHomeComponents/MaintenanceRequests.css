@@ -1,0 +1,114 @@
+/* MaintenanceRequests.css */
+
+.maintenance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.title-group { display: flex; align-items: center; gap: 10px; }
+.title-group h3 { margin: 0; font-size: 1.1rem; color: var(--text-main); }
+.request-id { font-size: 0.7rem; color: var(--text-muted); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+
+.view-all-link { 
+  background: none; border: none; color: var(--primary); 
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; 
+}
+
+.request-card-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #eef2f6;
+  padding: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.request-main-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.category-icon {
+  width: 45px;
+  height: 45px;
+  background: #f0f7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.2rem;
+}
+
+.subject {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.tech-assigned {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tech-assigned img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.tech-assigned span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* --- Compact Status Section --- */
+.status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding-left: 20px;
+  border-left: 1px solid #f1f5f9;
+}
+
+.status-pill-highlight {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mini-steps {
+  display: flex;
+  gap: 4px;
+}
+
+.m-step {
+  width: 20px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+.m-step.done { background: var(--success); }
+.m-step.active { 
+  background: var(--primary); 
+  animation: shimmer 1.5s infinite; 
+}
+
+@keyframes shimmer {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}

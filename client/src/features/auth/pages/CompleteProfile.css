@@ -1,0 +1,47 @@
+.onboard-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, rgb(245, 246, 247), #a2c2e5 60%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+.onboard-card {
+  width: 100%;
+  max-width: 720px;
+  background: rgba(255, 255, 255, 0.792);
+  backdrop-filter: blur(25px);
+  border-radius: 0px;
+  padding: 40px;
+  color: #000000;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  position: relative;
+  height: 110vh;
+  margin-top: -33px;
+}
+
+.progress-bar {
+  height: 6px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+.progress-bar div {
+  height: 100%;
+  background: linear-gradient(90deg,#31a7f5,#2563eb);
+  transition: width 0.3s ease;
+}
+
+.skip-btn {
+  margin-top: -20px;
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}

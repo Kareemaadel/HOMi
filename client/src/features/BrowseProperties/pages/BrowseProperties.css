@@ -1,0 +1,113 @@
+.browse-properties-page {
+    padding: 30px 40px;
+    background: #f8fafc;
+    min-height: 100vh;
+    
+}
+
+/* Layout Structure */
+.marketplace-container {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* Sidebar is 300px, results take rest */
+    gap: 40px;
+    margin-top: 40px;
+    align-items: start;
+}
+
+.filters-section {
+    position: sticky;
+    top: 20px; /* Keeps filters visible while scrolling through properties */
+}
+
+.results-section {
+    flex: 1;
+}
+
+/* Header within results */
+.browse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 20px;
+    border: 1px solid #eef2f6;
+}
+
+.result-count {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.result-count strong {
+    color: #0f172a;
+}
+
+.sort-dropdown {
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-weight: 700;
+    color: #1e293b;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.sort-dropdown:hover {
+    border-color: #3b82f6;
+}
+
+/* Grid adjustments */
+.properties-grid {
+    display: flex;
+    gap: 30px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px 0;
+    scroll-behavior: smooth;
+}
+
+.properties-grid > * {
+    flex: 0 0 calc(33.333% - 20px);
+    min-width: calc(33.333% - 20px);
+}
+
+/* Custom scrollbar */
+.properties-grid::-webkit-scrollbar {
+    height: 8px;
+}
+
+.properties-grid::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.properties-grid::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.properties-grid::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Responsive Tweak */
+@media (max-width: 1100px) {
+    .marketplace-container {
+        grid-template-columns: 1fr; /* Stack filters on top for small screens */
+    }
+    
+    .filters-section {
+        position: static;
+    }
+}
+
+.browse-properties-page {
+    padding: 30px 40px;
+    background: #f8fafc;
+    min-height: 100vh;
+    margin-top: 50px;
+}

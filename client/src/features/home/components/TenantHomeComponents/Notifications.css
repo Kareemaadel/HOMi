@@ -1,0 +1,137 @@
+.notifications-premium {
+  display: flex;
+  flex-direction: column;
+  max-height: 450px; /* Keeps it organized and scrollable if list grows */
+}
+
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.notif-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.unread-badge {
+  background: var(--primary);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+
+.mark-read {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.mark-read:hover { color: var(--primary); }
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.notif-item {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.notif-item:hover {
+  background: #f8fafc;
+  transform: translateX(4px);
+  border-color: var(--primary-light);
+}
+
+.notif-item.unread {
+  background: linear-gradient(90deg, #f0f7ff 0%, #ffffff 100%);
+  border-left: 3px solid var(--primary);
+}
+
+.notif-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.notif-icon-box.payment { background: #ecfdf5; }
+.notif-icon-box.maintenance { background: #fff7ed; }
+.notif-icon-box.system { background: #f5f3ff; }
+
+.notif-content { flex: 1; }
+
+.notif-top-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.notif-subject {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.notif-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.notif-desc {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.unread-glow {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.view-history-btn {
+  margin-top: auto;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.view-history-btn:hover { background: #f1f5f9; }

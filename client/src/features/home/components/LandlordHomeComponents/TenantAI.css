@@ -1,0 +1,158 @@
+.ai-container {
+  background: linear-gradient(145deg, #ffffff, #f8faff);
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.05);
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  width: 320px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 40;
+}
+
+.ai-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ai-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-icon {
+  color: #3b82f6;
+  font-size: 1.4rem;
+}
+
+.ai-badge {
+  background: #eff6ff;
+  color: #3b82f6;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.ai-description {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.tenant-item {
+  background: white;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: 0.3s;
+}
+
+.tenant-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.tenant-top {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 12px;
+}
+
+/* MATCH SCORE CIRCLE */
+.match-circle {
+  position: relative;
+  width: 50px;
+  height: 50px;
+}
+
+.match-circle svg {
+  transform: rotate(-90deg);
+}
+
+.circle-bg {
+  fill: none;
+  stroke: #f1f5f9;
+  stroke-width: 3.8;
+}
+
+.circle {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.3s ease;
+}
+
+.match-circle span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.tenant-info h4 {
+  font-size: 0.95rem;
+  color: #1e293b;
+  margin: 0;
+}
+
+.tenant-info p {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.ai-reason {
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ai-reason span {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.check-icon {
+  color: #10b981;
+}
+
+.approve-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: #1e293b;
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.approve-btn:hover {
+  background: #3b82f6;
+}
+
+.ai-footer-note {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 15px;
+}

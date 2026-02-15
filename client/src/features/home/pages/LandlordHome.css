@@ -1,0 +1,103 @@
+/* LAYOUT WRAPPER */
+.landlord-layout {
+  display: flex;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.main-content {
+  margin-left: 260px; /* Adjust this to match your sidebar width */
+  width: calc(100% - 260px);
+  position: relative;
+  z-index: 1; 
+  margin-top: -40px;
+}
+
+.dashboard-container {
+  padding-top: 100px; /* Space for fixed header */
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-bottom: 40px;
+}
+
+/* THE HORIZONTAL SPLIT FIX */
+.dashboard-split {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.left-column {
+  flex: 2; /* Takes up most space for cards */
+  min-width: 0;
+}
+
+.right-column {
+  flex: 1; /* Sidebar for AI component */
+  max-width: 380px;
+  position: sticky;
+  top: 100px; /* Sticks AI component while scrolling cards */
+}
+
+.page-title {
+  margin-bottom: 32px;
+}
+
+.page-title h1 {
+  font-size: 1.8rem;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.page-title p {
+  color: #64748b;
+}
+
+/* Welcome Section */
+.welcome-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+  margin-top: 120px;
+  margin-left: 20px;
+}
+
+.welcome-text h1 {
+  font-size: 2.25rem;
+  color: #1e293b;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-text .highlight {
+  color: #3b82f6;
+}
+
+.welcome-text p {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* ADD PROPERTY SECTION */
+.add-property-section {
+  margin-bottom: 24px;
+}
+
+/* PROPERTIES DIVIDER */
+.properties-divider {
+  height: 1px;
+  background: linear-gradient(to right, #e2e8f0, #cbd5e1, #e2e8f0);
+  margin: 32px 0;
+}
+
+/* GRID SYSTEM */
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+  width: 100%;
+}
+

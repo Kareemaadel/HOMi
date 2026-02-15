@@ -1,0 +1,36 @@
+.maintenance-status-card {
+    background: white;
+    border-radius: 30px;
+    padding: 30px;
+    margin-top: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+    border: 1px solid #f1f5f9;
+}
+
+.m-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.m-steps {
+    display: flex;
+    gap: 8px;
+    margin: 20px 0;
+}
+
+.step {
+    height: 6px;
+    flex: 1;
+    border-radius: 10px;
+    background: #e2e8f0;
+}
+
+.step.completed { background: #10b981; }
+.step.active { background: #3b82f6; animation: shimmer 2s infinite; }
+
+@keyframes shimmer {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}

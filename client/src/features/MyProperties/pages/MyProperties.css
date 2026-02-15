@@ -1,0 +1,28 @@
+.my-properties-container {
+  padding: 100px 40px 40px;
+  max-width: 1800px;
+  margin: 0 auto;
+  margin-top: 26px;
+  margin-left: -10px;
+  height: 100%;
+}
+
+.page-header-simple {
+  margin-bottom: 40px;
+  margin-top: 60px;
+}
+
+.page-header-simple h1 {
+  font-size: 2.9rem;
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.detailed-list-wrapper {
+  display: flex;
+  flex-direction: column; /* This keeps cards in a vertical list, but card content is horizontal */
+}
+
+.my-properties-container{
+  background-color:#ffffff
+}

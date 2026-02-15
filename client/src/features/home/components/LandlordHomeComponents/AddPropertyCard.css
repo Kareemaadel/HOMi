@@ -1,0 +1,49 @@
+/* ADD PROPERTY CARD STYLES */
+.add-property-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 12px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.add-property-card:hover .dotted-border {
+  border-color: #1b5fcc;
+  background: #f0f7ff;
+}
+
+.dotted-border {
+  border: 2px dashed #2562b2;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 280px;
+  transition: 0.3s ease;
+}
+
+.add-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.plus-icon {
+  font-size: 2.5rem;
+  color: #3b82f6;
+}
+
+.add-property-card h3 {
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin: 0;
+  font-weight: 600;
+}
+
+.add-property-card p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}

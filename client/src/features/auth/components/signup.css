@@ -1,0 +1,86 @@
+.form { display: flex; flex-direction: column; gap: 18px; border-color: #000000;}
+
+.row { display: flex; gap: 12px; }
+
+.floating-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(200, 200, 200, 0.35);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.floating-group input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #000000;
+  width: 100%;
+}
+
+.floating-group label {
+  position: absolute;
+  left: 42px;
+  top: 14px;
+  color: #000000;
+  transition: 0.2s;
+  pointer-events: none;
+}
+
+.floating-group input:focus + label,
+.floating-group input:not(:placeholder-shown) + label {
+  top: -8px;
+  left: 36px;
+  font-size: 12px;
+  color: #31a7f5;
+  background: #0f172a;
+  padding: 0 4px;
+}
+
+.primary-btn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg,#31a7f5,#2563eb);
+  padding: 14px;
+  border-radius: 14px;
+  color: #000000;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.primary-btn.ripple::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.primary-btn:active::after {
+  width: 200px;
+  height: 200px;
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.strength-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.strength {
+  height: 100%;
+  transition: 0.3s;
+}
+
+.strength-1 { width: 25%; background: red; }
+.strength-2 { width: 50%; background: orange; }
+.strength-3 { width: 75%; background: yellow; }
+.strength-4 { width: 100%; background: #22c55e; }

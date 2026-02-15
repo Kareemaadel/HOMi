@@ -1,0 +1,202 @@
+.auth-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, rgb(255, 255, 255), #ffffff 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  margin-top: -30px;
+}
+
+.auth-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.auth-background .blob {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.5;
+  animation: float 12s ease-in-out infinite alternate;
+}
+
+.blob1 { background: #3b82f6; top: 10%; left: 10%; }
+.blob2 { background: #06b6d4; top: 20%; right: 10%; }
+.blob3 { background: #6366f1; bottom: 5%; left: 30%; }
+
+@keyframes float {
+  from { transform: translateY(0px) scale(1); }
+  to { transform: translateY(-40px) scale(1.2); }
+}
+
+/* 🔥 MAIN LAYOUT FIX */
+.auth-container {
+  display: flex;
+  width: 110%;
+  margin-right:-50px;
+  margin-left: -20px;
+  margin-bottom: -50px;
+  height: 110vh; /* FULL PAGE HEIGHT */
+  position: relative;
+  z-index: 2;
+}
+
+
+/* Make both sides equal */
+.auth-hero,
+.auth-card {
+  flex: 1;
+}
+
+/* HERO IMAGE CLEANUP */
+.auth-hero {
+  flex: 6; /* 70% */
+  height: 100vh;
+  margin-bottom: -30px;
+}
+
+.auth-hero img {
+  width: 120%;
+  height: 120vh;
+  margin-left: -40px;
+  margin-bottom: -30px;
+  object-fit:fill; /* fills area nicely */
+}
+
+
+/* AUTH CARD */
+.auth-card {
+  flex: 3; /* 30% */
+  height: 100%;
+  background: rgba(248, 248, 248, 0.96);
+  backdrop-filter: blur(30px);
+  padding: 50px 40px;
+  color: #000000;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  box-shadow: -10px 0 40px rgba(0,0,0,0.4);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* centers form vertically */
+}
+
+
+.logo-box {
+  text-align: center;
+  margin-bottom: -80px;
+  margin-top: -130px;
+}
+
+.logo-box img {
+  width: 350px;
+  border-radius: 18px;
+}
+
+/* SOCIAL BUTTONS */
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.social-btn.google {
+  background: white;
+  color: #111;
+}
+
+.social-btn.facebook {
+  background: linear-gradient(135deg,#1877f2,#0a58ca);
+  color: white;
+}
+
+.social-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
+
+.divider {
+  text-align: center;
+  margin: 20px 0;
+  color: #000000;
+  font-size: 14px;
+}
+
+/* TABS */
+.tabs {
+  position: relative;
+  display: flex;
+  background: rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 22px;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  color: #000000;
+  font-weight: 600;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.tab-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: linear-gradient(135deg,#31a7f5,#2563eb);
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.tab-slider.right {
+  transform: translateX(100%);
+}
+
+/* 📱 Responsive */
+@media (max-width: 900px) {
+  .auth-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .auth-hero {
+    height: 40vh;
+    flex: none;
+  }
+
+  .auth-card {
+    flex: none;
+    height: auto;
+    border-left: none;
+    box-shadow: none;
+  }
+}
+
