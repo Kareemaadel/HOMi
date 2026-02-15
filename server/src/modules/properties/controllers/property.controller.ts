@@ -40,7 +40,8 @@ class PropertyController {
      */
     async getAllProperties(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const filters: PropertyQuery = req.query as any;
+            // Get validated query from middleware (fallback to req.query for safety)
+            const filters: PropertyQuery = (req as any).validatedQuery || req.query;
 
             const result = await propertyService.getAllProperties(filters);
 
