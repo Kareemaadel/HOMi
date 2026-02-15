@@ -17,7 +17,9 @@ const Messages: React.FC = () => {
           <ChatSidebar />
           <ChatWindow />
         </div>
-        <Footer />
+        <div className="messages-footer-wrapper">
+          <Footer />
+        </div>
       </div>
     </div>
   );

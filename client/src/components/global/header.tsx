@@ -97,13 +97,14 @@
 // new edits :
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaBars, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSearch, FaBell, FaArchive, FaCog, FaFilter, FaPaperPlane, FaInbox } from 'react-icons/fa';
 import './header.css';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const isMessagesPage = location.pathname === '/messages';
 
   // Add a nice shadow effect on scroll
   useEffect(() => {
@@ -131,6 +132,73 @@ const Header = () => {
     }
   }, [isMobileMenuOpen]);
 
+  // Messages page header - simplified with messaging icons
+  if (isMessagesPage) {
+    return (
+      <header className={`site-header messages-header ${scrolled ? 'scrolled' : ''}`}>
+        <div className="header-container">
+          {/* Left: Messages title */}
+          <div className="header-brand messages-brand">
+            <FaInbox className="messages-icon" />
+            <h2 className="messages-title">Messages</h2>
+          </div>
+
+          {/* Right: Messaging actions */}
+          <div className="messages-header-actions">
+            <button className="messages-action-btn" title="Filter conversations">
+              <FaFilter />
+            </button>
+            <button className="messages-action-btn" title="Archive">
+              <FaArchive />
+            </button>
+            <button className="messages-action-btn" title="Notifications">
+              <FaBell />
+              <span className="notification-badge">3</span>
+            </button>
+            <button className="messages-action-btn" title="Settings">
+              <FaCog />
+            </button>
+            <button className="messages-action-btn primary" title="New message">
+              <FaPaperPlane />
+            </button>
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="mobile-menu-toggle"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
+
+        {/* Mobile Navigation Menu for Messages */}
+        {isMobileMenuOpen && (
+          <nav className="header-nav mobile-nav messages-mobile-nav" aria-label="Mobile navigation">
+            <button className="mobile-action-btn">
+              <FaFilter /> Filter
+            </button>
+            <button className="mobile-action-btn">
+              <FaArchive /> Archive
+            </button>
+            <button className="mobile-action-btn">
+              <FaBell /> Notifications
+            </button>
+            <button className="mobile-action-btn">
+              <FaCog /> Settings
+            </button>
+            <button className="mobile-action-btn primary">
+              <FaPaperPlane /> New Message
+            </button>
+          </nav>
+        )}
+      </header>
+    );
+  }
+
+  // Regular header for other pages
   return (
     <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
