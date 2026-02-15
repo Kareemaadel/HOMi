@@ -9,7 +9,7 @@
     overflow: hidden;
     margin-bottom: 40px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-    margin-top: 140px;
+    margin-top: 180px;
 }
 
 .hero-overlay {
@@ -318,11 +318,11 @@
 }
 
 .search-hero {
-    height: 420px;
+    height: 400px;
     width: calc(100% + 80px);
     margin-left: -40px;
     margin-right: -40px;
-    margin-top: 0;
+    margin-top: 48px;
     margin-bottom: 40px;
     border-radius: 0;
     background: linear-gradient(45deg, #0f172a, #1e293b, #0f172a);

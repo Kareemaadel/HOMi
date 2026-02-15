@@ -136,9 +136,7 @@ const Header = () => {
       <div className="header-container">
         {/* Logo/Brand */}
         <div className="header-brand">
-          <Link to="/" className="brand-link">
-            <span className="brand-text">HOMi<span className="brand-dot">.</span></span>
-          </Link>
+
         </div>
 
         {/* Search Bar - Desktop */}
@@ -160,20 +158,17 @@ const Header = () => {
           <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
             Home
           </Link>
-          <Link to="/features" className={`nav-link ${location.pathname === '/features' ? 'active' : ''}`}>
-            Features
-          </Link>
           <Link to="/for-landlords" className={`nav-link ${location.pathname === '/for-landlords' ? 'active' : ''}`}>
-            For Landlords
+            How It Works
           </Link>
           <Link to="/for-tenants" className={`nav-link ${location.pathname === '/for-tenants' ? 'active' : ''}`}>
-            For Tenants
+            Saved Properties
           </Link>
           <Link to="/maintenance-providers" className={`nav-link ${location.pathname === '/maintenance-providers' ? 'active' : ''}`}>
-            Maintenance Providers
+            Get Help
           </Link>
           <Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}>
-            About
+            About Us
           </Link>
         </nav>
 
