@@ -564,3 +564,164 @@
     outline-offset: 2px;
     border-radius: 8px;
 }
+
+/* Messages Page Header Styles */
+.messages-header {
+    background: rgba(255, 255, 255, 0.98);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.messages-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.messages-icon {
+    color: #2563eb;
+    font-size: 1.5rem;
+}
+
+.messages-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.messages-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.messages-action-btn {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+}
+
+.messages-action-btn:hover {
+    background: #f1f5f9;
+    color: #2563eb;
+    border-color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.messages-action-btn.primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.messages-action-btn.primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.2;
+    border: 2px solid #ffffff;
+}
+
+/* Mobile Messages Header */
+.messages-mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 24px;
+}
+
+.mobile-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.mobile-action-btn:hover {
+    background: #f1f5f9;
+    color: #2563eb;
+    border-color: #e2e8f0;
+}
+
+.mobile-action-btn.primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.mobile-action-btn.primary:hover {
+    background: #1d4ed8;
+}
+
+/* Responsive adjustments for messages header */
+@media (max-width: 768px) {
+    .messages-title {
+        font-size: 1.2rem;
+    }
+    
+    .messages-icon {
+        font-size: 1.3rem;
+    }
+    
+    .messages-header-actions {
+        gap: 6px;
+    }
+    
+    .messages-action-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .messages-title {
+        font-size: 1.1rem;
+    }
+    
+    .messages-action-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 0.95rem;
+    }
+    
+    .notification-badge {
+        font-size: 0.6rem;
+        padding: 1px 4px;
+        min-width: 14px;
+    }
+}
