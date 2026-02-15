@@ -308,6 +308,166 @@ const options: Options = {
                         },
                     },
                 },
+
+                // Properties
+                PropertyStatus: {
+                    type: 'string',
+                    enum: ['AVAILABLE', 'RENTED', 'UNAVAILABLE'],
+                    description: 'Property listing status',
+                },
+                PropertyImage: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        propertyId: { type: 'string', format: 'uuid' },
+                        imageUrl: { type: 'string', format: 'uri' },
+                        isMain: { type: 'boolean', description: 'Whether this is the main property image' },
+                    },
+                },
+                PropertyImageInput: {
+                    type: 'object',
+                    required: ['image_url'],
+                    properties: {
+                        image_url: {
+                            type: 'string',
+                            format: 'uri',
+                            maxLength: 500,
+                            description: 'URL to the property image',
+                            example: 'https://example.com/property-image.jpg',
+                        },
+                        is_main: {
+                            type: 'boolean',
+                            default: false,
+                            description: 'Mark as main image (only one per property)',
+                            example: true,
+                        },
+                    },
+                },
+                PropertyResponse: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        landlordId: { type: 'string', format: 'uuid' },
+                        title: { type: 'string' },
+                        description: { type: 'string' },
+                        price: { type: 'number', format: 'double' },
+                        address: { type: 'string' },
+                        locationLat: { type: 'number', format: 'float' },
+                        locationLong: { type: 'number', format: 'float' },
+                        status: { $ref: '#/components/schemas/PropertyStatus' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        images: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/PropertyImage' },
+                        },
+                    },
+                },
+                CreatePropertyRequest: {
+                    type: 'object',
+                    required: ['title', 'description', 'price', 'address', 'location_lat', 'location_long', 'images'],
+                    properties: {
+                        title: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 255,
+                            description: 'Property title',
+                            example: 'Beautiful 2BR Apartment',
+                        },
+                        description: {
+                            type: 'string',
+                            minLength: 1,
+                            description: 'Detailed property description',
+                            example: 'Spacious apartment with modern amenities in downtown',
+                        },
+                        price: {
+                            type: 'number',
+                            format: 'double',
+                            minimum: 0.01,
+                            description: 'Monthly rent price',
+                            example: 1500.00,
+                        },
+                        address: {
+                            type: 'string',
+                            minLength: 1,
+                            description: 'Full property address',
+                            example: '123 Main Street, Cairo, Egypt',
+                        },
+                        location_lat: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -90,
+                            maximum: 90,
+                            description: 'Latitude coordinate',
+                            example: 30.0444,
+                        },
+                        location_long: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -180,
+                            maximum: 180,
+                            description: 'Longitude coordinate',
+                            example: 31.2357,
+                        },
+                        images: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/PropertyImageInput' },
+                            minItems: 1,
+                            description: 'Property images (at least one required)',
+                        },
+                    },
+                },
+                UpdatePropertyRequest: {
+                    type: 'object',
+                    description: 'All fields are optional - only provided fields will be updated',
+                    properties: {
+                        title: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 255,
+                            example: 'Updated Beautiful 2BR Apartment',
+                        },
+                        description: {
+                            type: 'string',
+                            minLength: 1,
+                            example: 'Updated description with new amenities',
+                        },
+                        price: {
+                            type: 'number',
+                            format: 'double',
+                            minimum: 0.01,
+                            example: 1600.00,
+                        },
+                        address: {
+                            type: 'string',
+                            minLength: 1,
+                            example: '123 Main Street, Cairo, Egypt',
+                        },
+                        location_lat: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -90,
+                            maximum: 90,
+                            example: 30.0444,
+                        },
+                        location_long: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -180,
+                            maximum: 180,
+                            example: 31.2357,
+                        },
+                        status: {
+                            $ref: '#/components/schemas/PropertyStatus',
+                        },
+                        images: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/PropertyImageInput' },
+                            minItems: 1,
+                            description: 'Replace all property images',
+                        },
+                    },
+                },
+
             },
         },
         tags: [
@@ -318,6 +478,10 @@ const options: Options = {
             {
                 name: 'Authentication',
                 description: 'User authentication and registration endpoints',
+            },
+            {
+                name: 'Properties',
+                description: 'Property listing management endpoints',
             },
         ],
     },
