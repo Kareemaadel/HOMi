@@ -27,3 +27,42 @@
   overflow: hidden; /* Clips children to the border radius */
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
 }
+
+/* Footer wrapper for messages page - makes footer smaller */
+.messages-footer-wrapper .site-footer {
+  padding: 16px 0 12px;
+}
+
+.messages-footer-wrapper .footer-content {
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.messages-footer-wrapper .footer-section-title {
+  font-size: 0.8rem;
+  margin-bottom: 10px;
+}
+
+.messages-footer-wrapper .footer-description {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.messages-footer-wrapper .footer-link {
+  font-size: 0.8rem;
+  padding: 4px 0;
+}
+
+.messages-footer-wrapper .footer-bottom {
+  padding-top: 12px;
+}
+
+.messages-footer-wrapper .copyright {
+  font-size: 0.75rem;
+}
+
+.messages-footer-wrapper .social-link {
+  width: 32px;
+  height: 32px;
+  font-size: 0.85rem;
+}
