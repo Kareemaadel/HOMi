@@ -66,8 +66,13 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
         next: NextFunction
     ): void => {
         try {
+            // Validate query params (don't reassign as req.query is read-only)
+            // The validation ensures the data is correct, and transformations are applied
             const validatedData = schema.parse(req.query);
-            req.query = validatedData as unknown as typeof req.query;
+
+            // Store validated/transformed data - controller can use this
+            (req as any).validatedQuery = validatedData;
+
             next();
         } catch (error) {
             if (error instanceof ZodError) {

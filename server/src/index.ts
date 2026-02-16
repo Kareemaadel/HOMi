@@ -6,12 +6,15 @@ import { env } from './config/env.js';
 import { testConnection, syncDatabase } from './config/database.js';
 import swaggerSpec from './config/swagger.js';
 import { AuthError } from './modules/auth/services/auth.service.js';
+import { PropertyError } from './modules/properties/services/property.service.js';
 
 // Import routes
 import authRoutes from './modules/auth/routes/auth.routes.js';
+import propertyRoutes from './modules/properties/routes/property.routes.js';
 
 // Import models to register them
 import './modules/auth/models/index.js';
+import './modules/properties/models/index.js';
 
 // Create Express app
 const app = express();
@@ -99,6 +102,7 @@ app.get('/health', (_req: Request, res: Response) => {
 // API Routes
 // ======================
 app.use('/api/auth', authRoutes);
+app.use('/api/properties', propertyRoutes);
 
 // ======================
 // 404 Handler
@@ -131,6 +135,16 @@ app.use((
 
     // Handle AuthError
     if (err instanceof AuthError) {
+        res.status(err.statusCode).json({
+            success: false,
+            message: err.message,
+            code: err.code,
+        });
+        return;
+    }
+
+    // Handle PropertyError
+    if (err instanceof PropertyError) {
         res.status(err.statusCode).json({
             success: false,
             message: err.message,
