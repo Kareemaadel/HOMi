@@ -322,7 +322,7 @@
     width: calc(100% + 80px);
     margin-left: -40px;
     margin-right: -40px;
-    margin-top: 0;
+    margin-top: 50px;
     margin-bottom: 40px;
     border-radius: 0;
     background: linear-gradient(45deg, #0f172a, #1e293b, #0f172a);
