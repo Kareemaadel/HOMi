@@ -18,8 +18,8 @@ const Messages: React.FC = () => {
           <ChatWindow />
         </div>
         <div className="messages-footer-wrapper">
-          <Footer />
         </div>
+            <Footer />
       </div>
     </div>
   );
