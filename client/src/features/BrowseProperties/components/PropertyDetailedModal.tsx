@@ -1,16 +1,41 @@
 // client\src\features\BrowseProperties\components\PropertyDetailModal.tsx
 import React, { useState } from 'react';
-import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, FaLayerGroup, FaArrowRight, FaComment } from 'react-icons/fa';
-import ApplicationModal from './ApplicationModal'; // Import the new modal
+import { 
+    FaBed, 
+    FaBath, 
+    FaRulerCombined, 
+    FaMapMarkerAlt, 
+    FaTimes, 
+    FaHeart, 
+    FaShareAlt, 
+    FaCheckCircle, 
+    FaCalendarAlt, 
+    FaLayerGroup, 
+    FaArrowRight, 
+    FaComment 
+} from 'react-icons/fa';
+import ApplicationModal from './ApplicationModal';
 import './PropertyDetailedModal.css';
 
 const PropertyDetailModal = ({ property, onClose }: any) => {
     const [showApplication, setShowApplication] = useState(false);
+    
+    // Fallback images array
     const images = [property.image, property.image, property.image, property.image, property.image];
 
-    // If "Apply Now" was clicked, render the Application View instead
+    /**
+     * If showApplication is true, we switch the view.
+     * We pass onBack to allow the ApplicationModal to return here.
+     * We pass onClose to allow the ApplicationModal to close the entire modal stack.
+     */
     if (showApplication) {
-        return <ApplicationModal property={property} onClose={onClose} />;
+        return (
+            <ApplicationModal 
+                property={property} 
+                onClose={onClose} 
+                onBack={() => setShowApplication(false)} 
+            />
+        );
     }
 
     return (
@@ -21,6 +46,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                 </button>
                 
                 <div className="modal-content">
+                    {/* GALLERY SECTION */}
                     <div className="modal-gallery">
                         <div className="main-img">
                             <img src={images[0]} alt="Property Interior" />
@@ -30,6 +56,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                         ))}
                     </div>
 
+                    {/* DETAILS SECTION */}
                     <div className="modal-details">
                         <div className="detail-header">
                             <span className="type-tag">Apartment • For Rent</span>
@@ -43,6 +70,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </div>
                         </div>
 
+                        {/* QUICK SPECS */}
                         <div className="detail-specs">
                             <div className="spec-item">
                                 <FaBed />
@@ -62,6 +90,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </div>
                         </div>
 
+                        {/* DESCRIPTION */}
                         <div className="detail-section">
                             <h3>About this home</h3>
                             <p className="description-text">
@@ -70,6 +99,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </p>
                         </div>
 
+                        {/* AMENITIES */}
                         <div className="detail-section">
                             <h3>Premium Amenities</h3>
                             <div className="amenities-grid">
@@ -80,6 +110,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </div>
                         </div>
 
+                        {/* LANDLORD / AGENT CARD */}
                         <div className="agent-card">
                             <div className="agent-info">
                                 <img src="https://i.pravatar.cc/150?u=agent1" alt="Sarah Jenkins" />
@@ -94,8 +125,8 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </div>
                         </div>
 
+                        {/* FOOTER ACTIONS */}
                         <div className="modal-footer-actions">
-                            {/* THE CLICK HANDLER TO GO TO APPLICATION */}
                             <button 
                                 className="footer-btn primary" 
                                 onClick={() => setShowApplication(true)}
