@@ -1,11 +1,17 @@
 // client\src\features\BrowseProperties\components\PropertyDetailModal.tsx
-import React from 'react';
-import { FaBed ,FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, FaLayerGroup, FaArrowRight,FaComment } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, FaLayerGroup, FaArrowRight, FaComment } from 'react-icons/fa';
+import ApplicationModal from './ApplicationModal'; // Import the new modal
 import './PropertyDetailedModal.css';
 
 const PropertyDetailModal = ({ property, onClose }: any) => {
-    // Simulated gallery
+    const [showApplication, setShowApplication] = useState(false);
     const images = [property.image, property.image, property.image, property.image, property.image];
+
+    // If "Apply Now" was clicked, render the Application View instead
+    if (showApplication) {
+        return <ApplicationModal property={property} onClose={onClose} />;
+    }
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -15,7 +21,6 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                 </button>
                 
                 <div className="modal-content">
-                    {/* LEFT: MASONRY GALLERY */}
                     <div className="modal-gallery">
                         <div className="main-img">
                             <img src={images[0]} alt="Property Interior" />
@@ -25,7 +30,6 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                         ))}
                     </div>
 
-                    {/* RIGHT: PROPERTY INFO SECTION */}
                     <div className="modal-details">
                         <div className="detail-header">
                             <span className="type-tag">Apartment • For Rent</span>
@@ -39,7 +43,6 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </div>
                         </div>
 
-                        {/* HIGH-LEVEL SPECS */}
                         <div className="detail-specs">
                             <div className="spec-item">
                                 <FaBed />
@@ -63,24 +66,20 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             <h3>About this home</h3>
                             <p className="description-text">
                                 This stunning {property.title} offers an unparalleled living experience. 
-                                Featuring floor-to-ceiling windows, a gourmet designer kitchen with top-tier 
-                                appliances, and a private balcony overlooking the skyline.
+                                Featuring floor-to-ceiling windows and a gourmet designer kitchen.
                             </p>
                         </div>
 
                         <div className="detail-section">
                             <h3>Premium Amenities</h3>
                             <div className="amenities-grid">
-                                <div className="amenity"><FaCheckCircle /> Private Parking</div>
                                 <div className="amenity"><FaCheckCircle /> Smart Home System</div>
                                 <div className="amenity"><FaCheckCircle /> 24/7 Concierge</div>
                                 <div className="amenity"><FaCheckCircle /> Fitness Center</div>
-                                <div className="amenity"><FaCheckCircle /> High-Speed Wi-Fi</div>
                                 <div className="amenity"><FaCheckCircle /> Pet Friendly</div>
                             </div>
                         </div>
 
-                        {/* AGENT CARD */}
                         <div className="agent-card">
                             <div className="agent-info">
                                 <img src="https://i.pravatar.cc/150?u=agent1" alt="Sarah Jenkins" />
@@ -95,9 +94,14 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </div>
                         </div>
 
-                        {/* STICKY FOOTER ACTIONS */}
                         <div className="modal-footer-actions">
-                            <button className="footer-btn primary">< FaArrowRight/> Apply Now</button>
+                            {/* THE CLICK HANDLER TO GO TO APPLICATION */}
+                            <button 
+                                className="footer-btn primary" 
+                                onClick={() => setShowApplication(true)}
+                            >
+                                <FaArrowRight/> Apply Now
+                            </button>
                             <button className="footer-btn secondary"><FaHeart /> Save</button>
                             <button className="footer-btn secondary"><FaShareAlt /></button>
                             <button className="footer-btn secondary"><FaCalendarAlt /></button>
