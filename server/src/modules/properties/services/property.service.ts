@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Property, PropertyImage, sequelize } from '../models/index.js';
+import { Property, PropertyImage, Amenity, sequelize } from '../models/index.js';
 import { User } from '../../auth/models/User.js';
 import type {
     CreatePropertyRequest,
@@ -9,6 +9,7 @@ import type {
     PropertyListResponse,
     PropertySuccessResponse,
     PropertyImageResponse,
+    AmenityResponse,
 } from '../interfaces/property.interfaces.js';
 
 /**
@@ -31,13 +32,34 @@ export class PropertyError extends Error {
  */
 class PropertyService {
     /**
-     * Create a new property with images
+     * Resolve amenity names → verified Amenity records.
+     * Throws if any name does not exist in the database.
+     */
+    private async resolveAmenityNames(names: string[]): Promise<Amenity[]> {
+        if (names.length === 0) return [];
+
+        const found = await Amenity.findAll({ where: { name: names } });
+
+        if (found.length !== names.length) {
+            const foundNames = found.map((a) => a.name);
+            const invalid = names.filter((n) => !foundNames.includes(n));
+            throw new PropertyError(
+                `Invalid amenity name(s): ${invalid.join(', ')}. Please select from the available list.`,
+                400,
+                'INVALID_AMENITY_NAMES'
+            );
+        }
+
+        return found;
+    }
+
+    /**
+     * Create a new property with images and optional amenities
      */
     async createProperty(
         landlordId: string,
         input: CreatePropertyRequest
     ): Promise<PropertyResponse> {
-        // Use transaction to ensure atomic creation
         const transaction = await sequelize.transaction();
 
         try {
@@ -54,6 +76,10 @@ class PropertyService {
                     'FORBIDDEN'
                 );
             }
+
+            // Resolve amenity names outside transaction so errors surface early
+            const amenityNames = input.amenity_names ?? [];
+            const amenities = await this.resolveAmenityNames(amenityNames);
 
             // Create property
             const property = await Property.create(
@@ -80,10 +106,17 @@ class PropertyService {
                 { transaction }
             );
 
+            // Associate amenities (by their resolved IDs)
+            if (amenities.length > 0) {
+                await (property as any).setAmenities(
+                    amenities.map((a) => a.id),
+                    { transaction }
+                );
+            }
+
             await transaction.commit();
 
-            // Return formatted response
-            return this.formatPropertyResponse(property, images);
+            return this.formatPropertyResponse(property, images, amenities);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -91,7 +124,7 @@ class PropertyService {
     }
 
     /**
-     * Get all properties with optional filters and pagination
+     * Get all properties with optional filters, pagination, and amenities
      */
     async getAllProperties(filters: PropertyQuery): Promise<PropertyListResponse> {
         const {
@@ -103,31 +136,20 @@ class PropertyService {
             limit = 10,
         } = filters;
 
-        // Build where clause
         const where: any = {};
 
-        if (status) {
-            where.status = status;
-        }
+        if (status) where.status = status;
 
         if (minPrice !== undefined || maxPrice !== undefined) {
             where.price = {};
-            if (minPrice !== undefined) {
-                where.price[Op.gte] = minPrice;
-            }
-            if (maxPrice !== undefined) {
-                where.price[Op.lte] = maxPrice;
-            }
+            if (minPrice !== undefined) where.price[Op.gte] = minPrice;
+            if (maxPrice !== undefined) where.price[Op.lte] = maxPrice;
         }
 
-        if (landlordId) {
-            where.landlord_id = landlordId;
-        }
+        if (landlordId) where.landlord_id = landlordId;
 
-        // Calculate offset
         const offset = (page - 1) * limit;
 
-        // Fetch properties with images
         const { count, rows: properties } = await Property.findAndCountAll({
             where,
             include: [
@@ -136,15 +158,25 @@ class PropertyService {
                     as: 'images',
                     attributes: ['id', 'property_id', 'image_url', 'is_main'],
                 },
+                {
+                    model: Amenity,
+                    as: 'amenities',
+                    attributes: ['id', 'name'],
+                    through: { attributes: [] },
+                },
             ],
             limit,
             offset,
             order: [['created_at', 'DESC']],
+            distinct: true,
         });
 
-        // Format responses
         const formattedProperties = properties.map((property) =>
-            this.formatPropertyResponse(property, property.images || [])
+            this.formatPropertyResponse(
+                property,
+                property.images || [],
+                (property as any).amenities || []
+            )
         );
 
         return {
@@ -159,7 +191,7 @@ class PropertyService {
     }
 
     /**
-     * Get a single property by ID
+     * Get a single property by ID (includes amenities)
      */
     async getPropertyById(id: string): Promise<PropertyResponse> {
         const property = await Property.findByPk(id, {
@@ -169,6 +201,12 @@ class PropertyService {
                     as: 'images',
                     attributes: ['id', 'property_id', 'image_url', 'is_main'],
                 },
+                {
+                    model: Amenity,
+                    as: 'amenities',
+                    attributes: ['id', 'name'],
+                    through: { attributes: [] },
+                },
             ],
         });
 
@@ -176,11 +214,15 @@ class PropertyService {
             throw new PropertyError('Property not found', 404, 'PROPERTY_NOT_FOUND');
         }
 
-        return this.formatPropertyResponse(property, property.images || []);
+        return this.formatPropertyResponse(
+            property,
+            property.images || [],
+            (property as any).amenities || []
+        );
     }
 
     /**
-     * Update a property
+     * Update a property (including optional amenity update using names)
      * Verifies ownership before updating
      */
     async updateProperty(
@@ -191,14 +233,12 @@ class PropertyService {
         const transaction = await sequelize.transaction();
 
         try {
-            // Find property
             const property = await Property.findByPk(id, { transaction });
 
             if (!property) {
                 throw new PropertyError('Property not found', 404, 'PROPERTY_NOT_FOUND');
             }
 
-            // Verify ownership
             if (property.landlord_id !== landlordId) {
                 throw new PropertyError(
                     'You do not have permission to update this property',
@@ -222,13 +262,7 @@ class PropertyService {
             // Update images if provided
             let images = property.images || [];
             if (input.images !== undefined) {
-                // Delete existing images
-                await PropertyImage.destroy({
-                    where: { property_id: id },
-                    transaction,
-                });
-
-                // Create new images
+                await PropertyImage.destroy({ where: { property_id: id }, transaction });
                 images = await PropertyImage.bulkCreate(
                     input.images.map((img) => ({
                         property_id: id,
@@ -238,16 +272,26 @@ class PropertyService {
                     { transaction }
                 );
             } else {
-                // Fetch existing images if not updating
-                images = await PropertyImage.findAll({
-                    where: { property_id: id },
-                    transaction,
-                });
+                images = await PropertyImage.findAll({ where: { property_id: id }, transaction });
+            }
+
+            // Update amenities if provided (by name — replace strategy)
+            let amenities: Amenity[] = [];
+            if (input.amenity_names !== undefined) {
+                // Validates names exist; throws on invalid
+                amenities = await this.resolveAmenityNames(input.amenity_names);
+                await (property as any).setAmenities(
+                    amenities.map((a) => a.id),
+                    { transaction }
+                );
+            } else {
+                // Keep existing amenities
+                amenities = await (property as any).getAmenities({ transaction });
             }
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images);
+            return this.formatPropertyResponse(property, images, amenities);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -256,20 +300,17 @@ class PropertyService {
 
     /**
      * Delete a property (soft delete)
-     * Verifies ownership before deleting
      */
     async deleteProperty(
         id: string,
         landlordId: string
     ): Promise<PropertySuccessResponse> {
-        // Find property
         const property = await Property.findByPk(id);
 
         if (!property) {
             throw new PropertyError('Property not found', 404, 'PROPERTY_NOT_FOUND');
         }
 
-        // Verify ownership
         if (property.landlord_id !== landlordId) {
             throw new PropertyError(
                 'You do not have permission to delete this property',
@@ -278,13 +319,9 @@ class PropertyService {
             );
         }
 
-        // Soft delete (paranoid mode)
         await property.destroy();
 
-        return {
-            success: true,
-            message: 'Property deleted successfully',
-        };
+        return { success: true, message: 'Property deleted successfully' };
     }
 
     /**
@@ -292,13 +329,19 @@ class PropertyService {
      */
     private formatPropertyResponse(
         property: Property,
-        images: PropertyImage[]
+        images: PropertyImage[],
+        amenities: Amenity[] = []
     ): PropertyResponse {
         const formattedImages: PropertyImageResponse[] = images.map((img) => ({
             id: img.id,
             propertyId: img.property_id,
             imageUrl: img.image_url,
             isMain: img.is_main,
+        }));
+
+        const formattedAmenities: AmenityResponse[] = amenities.map((a) => ({
+            id: a.id,
+            name: a.name,
         }));
 
         return {
@@ -313,6 +356,7 @@ class PropertyService {
             status: property.status,
             createdAt: property.created_at,
             images: formattedImages,
+            amenities: formattedAmenities,
         };
     }
 }

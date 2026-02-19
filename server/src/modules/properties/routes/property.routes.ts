@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { propertyController } from '../controllers/property.controller.js';
 import { validate, validateQuery } from '../../../shared/middleware/validate.middleware.js';
-import { protect } from '../../../shared/middleware/auth.middleware.js';
+import { protect, requireVerified } from '../../../shared/middleware/auth.middleware.js';
 import {
     CreatePropertySchema,
     UpdatePropertySchema,
@@ -15,7 +15,26 @@ const router = Router();
  * /properties:
  *   post:
  *     summary: Create a new property
- *     description: Create a new property listing. Only landlords can create properties.
+*     description: Create a new property listing. Only landlords can create properties.  <br>
+*       **Available amenity names for `amenity_names`:**  
+*       - **Private Parking**  
+*       - **Smart Home System**  
+*       - **24/7 Concierge**  
+*       - **Fitness Center**  
+*       - **High-Speed Wi-Fi**  
+*       - **Pet Friendly**  
+*       - **EV Charging Station**  
+*       - **Keyless / Biometric Entry**  
+*       - **Rooftop Lounge**  
+*       - **Spa and Sauna**  
+*       - **Private Cinema / Theater Room**  
+*       - **Valet Parking**  
+*       - **Co-working Space / Business Center**  
+*       - **24/7 Security System**  
+*       - **Air Conditioning (AC)**  
+*       - **Kids Play Area**  
+*       - **Intercom System**  
+*       - **24/7 Compound Security**
  *     tags: [Properties]
  *     security:
  *       - bearerAuth: []
@@ -37,6 +56,9 @@ const router = Router();
  *                 is_main: true
  *               - image_url: "https://example.com/image2.jpg"
  *                 is_main: false
+ *             amenity_names:
+ *               - "Fitness Center"
+ *               - "High-Speed Wi-Fi"
  *     responses:
  *       201:
  *         description: Property created successfully
@@ -66,15 +88,29 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
- *         description: Only landlords can create properties
+ *         description: Forbidden — only verified landlords can create properties
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               notLandlord:
+ *                 summary: User is not a landlord
+ *                 value:
+ *                   success: false
+ *                   message: "Only landlords can create properties"
+ *                   code: "FORBIDDEN"
+ *               notVerified:
+ *                 summary: Account not verified
+ *                 value:
+ *                   success: false
+ *                   message: "Your account is not fully verified. Please complete verification at /complete-verification."
+ *                   code: "ACCOUNT_NOT_VERIFIED"
  */
 router.post(
     '/',
     protect,
+    requireVerified,
     validate(CreatePropertySchema),
     propertyController.createProperty.bind(propertyController)
 );
@@ -236,6 +272,8 @@ router.get(
  *             title: "Updated Beautiful 2BR Apartment"
  *             price: 1600.00
  *             status: "RENTED"
+ *             amenity_names:
+ *               - "Rooftop Lounge"
  *     responses:
  *       200:
  *         description: Property updated successfully

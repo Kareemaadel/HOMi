@@ -2,6 +2,8 @@ import sequelize from '../../../config/database.js';
 import { User } from '../../auth/models/User.js';
 import { Property, PropertyStatus, type PropertyStatusType } from './Property.js';
 import { PropertyImage } from './PropertyImage.js';
+import { Amenity } from './Amenity.js';
+import { PropertyAmenity } from './PropertyAmenity.js';
 
 // Define associations
 
@@ -31,12 +33,29 @@ PropertyImage.belongsTo(Property, {
     as: 'property',
 });
 
+// Property <-> Amenity many-to-many through PropertyAmenity
+Property.belongsToMany(Amenity, {
+    through: PropertyAmenity,
+    foreignKey: 'property_id',
+    otherKey: 'amenity_id',
+    as: 'amenities',
+});
+
+Amenity.belongsToMany(Property, {
+    through: PropertyAmenity,
+    foreignKey: 'amenity_id',
+    otherKey: 'property_id',
+    as: 'properties',
+});
+
 // Export all models and types
 export {
     sequelize,
     Property,
     PropertyStatus,
     PropertyImage,
+    Amenity,
+    PropertyAmenity,
 };
 
 export type { PropertyStatusType };
@@ -46,4 +65,6 @@ export default {
     sequelize,
     Property,
     PropertyImage,
+    Amenity,
+    PropertyAmenity,
 };

@@ -16,6 +16,9 @@ import propertyRoutes from './modules/properties/routes/property.routes.js';
 import './modules/auth/models/index.js';
 import './modules/properties/models/index.js';
 
+// Import seed
+import { seedAmenities } from './seeds/amenities.seed.js';
+
 // Create Express app
 const app = express();
 
@@ -185,6 +188,9 @@ async function startServer(): Promise<void> {
         // Sync database (creates tables if they don't exist)
         // Note: In production, use migrations instead
         await syncDatabase(false);
+
+        // Seed amenities (idempotent — safe to run every startup)
+        await seedAmenities();
 
         // Start listening
         app.listen(env.PORT, () => {

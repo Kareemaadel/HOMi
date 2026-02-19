@@ -6,12 +6,12 @@ const getDatabaseConfig = (): Options => {
     if (env.DATABASE_URL) {
         const config: Options = {
             dialect: 'postgres',
-            logging: env.NODE_ENV === 'development' ? console.log : false,
+            logging: false,
             pool: {
                 max: 10,
-                min: 0,
+                min: 2,
                 acquire: 30000,
-                idle: 10000,
+                idle: 30000,
             },
             define: {
                 timestamps: true,
@@ -31,7 +31,7 @@ const getDatabaseConfig = (): Options => {
     // Use individual credentials for development
     const config: Options = {
         dialect: 'postgres',
-        logging: env.NODE_ENV === 'development' ? console.log : false,
+        logging: false,
         host: env.DB_HOST,
         port: env.DB_PORT,
         database: env.DB_NAME,
@@ -39,9 +39,9 @@ const getDatabaseConfig = (): Options => {
         password: env.DB_PASSWORD,
         pool: {
             max: 10,
-            min: 0,
+            min: 2,
             acquire: 30000,
-            idle: 10000,
+            idle: 30000,
         },
         define: {
             timestamps: true,

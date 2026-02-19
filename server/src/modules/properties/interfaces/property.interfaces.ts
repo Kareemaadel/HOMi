@@ -9,6 +9,14 @@ export interface PropertyImageInput {
 }
 
 /**
+ * Amenity Response DTO
+ */
+export interface AmenityResponse {
+    id: string;
+    name: string;
+}
+
+/**
  * Create Property Request DTO
  */
 export interface CreatePropertyRequest {
@@ -19,6 +27,7 @@ export interface CreatePropertyRequest {
     location_lat: number;
     location_long: number;
     images: PropertyImageInput[];
+    amenity_names?: string[];
 }
 
 /**
@@ -34,6 +43,7 @@ export interface UpdatePropertyRequest {
     location_long?: number;
     status?: PropertyStatusType;
     images?: PropertyImageInput[];
+    amenity_names?: string[];
 }
 
 /**
@@ -73,6 +83,7 @@ export interface PropertyResponse {
     status: PropertyStatusType;
     createdAt: Date;
     images: PropertyImageResponse[];
+    amenities: AmenityResponse[];
 }
 
 /**

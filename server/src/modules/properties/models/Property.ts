@@ -22,6 +22,7 @@ export type PropertyStatusType = (typeof PropertyStatus)[keyof typeof PropertySt
 // Forward declaration for imports
 import type { User } from '../../auth/models/User.js';
 import type { PropertyImage } from './PropertyImage.js';
+import type { Amenity } from './Amenity.js';
 
 export class Property extends Model<
     InferAttributes<Property>,
@@ -50,9 +51,11 @@ export class Property extends Model<
     // Associations
     declare landlord?: NonAttribute<User>;
     declare images?: NonAttribute<PropertyImage[]>;
+    declare amenities?: NonAttribute<Amenity[]>;
     declare static associations: {
         landlord: Association<Property, User>;
         images: Association<Property, PropertyImage>;
+        amenities: Association<Property, Amenity>;
     };
 }
 

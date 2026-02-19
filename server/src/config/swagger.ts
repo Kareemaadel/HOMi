@@ -315,6 +315,30 @@ const options: Options = {
                     enum: ['AVAILABLE', 'RENTED', 'UNAVAILABLE'],
                     description: 'Property listing status',
                 },
+                AmenityName: {
+                    type: 'string',
+                    description: 'Available amenity name',
+                    enum: [
+                        'Private Parking',
+                        'Smart Home System',
+                        '24/7 Concierge',
+                        'Fitness Center',
+                        'High-Speed Wi-Fi',
+                        'Pet Friendly',
+                        'EV Charging Station',
+                        'Keyless / Biometric Entry',
+                        'Rooftop Lounge',
+                        'Spa & Sauna',
+                        'Private Cinema / Theater Room',
+                        'Valet Parking',
+                        'Co-working Space / Business Center',
+                        '24/7 Security System',
+                        'Air Conditioning (A/C)',
+                        'Kids Play Area',
+                        'Intercom System',
+                        '24/7 Compound Security',
+                    ],
+                },
                 PropertyImage: {
                     type: 'object',
                     properties: {
@@ -359,6 +383,17 @@ const options: Options = {
                         images: {
                             type: 'array',
                             items: { $ref: '#/components/schemas/PropertyImage' },
+                        },
+                        amenities: {
+                            type: 'array',
+                            description: 'List of amenities associated with this property',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string', format: 'uuid' },
+                                    name: { $ref: '#/components/schemas/AmenityName' },
+                                },
+                            },
                         },
                     },
                 },
@@ -414,6 +449,12 @@ const options: Options = {
                             minItems: 1,
                             description: 'Property images (at least one required)',
                         },
+                        amenity_names: {
+                            type: 'array',
+                            description: 'List of amenities to attach. Each value must exactly match one of the available amenity names.',
+                            items: { $ref: '#/components/schemas/AmenityName' },
+                            example: ['Fitness Center', 'High-Speed Wi-Fi'],
+                        },
                     },
                 },
                 UpdatePropertyRequest: {
@@ -464,6 +505,12 @@ const options: Options = {
                             items: { $ref: '#/components/schemas/PropertyImageInput' },
                             minItems: 1,
                             description: 'Replace all property images',
+                        },
+                        amenity_names: {
+                            type: 'array',
+                            description: 'Replace all amenities. Omit to keep existing. Pass [] to remove all.',
+                            items: { $ref: '#/components/schemas/AmenityName' },
+                            example: ['Rooftop Lounge'],
                         },
                     },
                 },

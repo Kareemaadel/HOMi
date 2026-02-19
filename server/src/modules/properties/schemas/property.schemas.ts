@@ -59,6 +59,10 @@ export const CreatePropertySchema = z.object({
                 message: 'Only one image can be marked as main',
             }
         ),
+    amenity_names: z
+        .array(z.string().min(1, 'Amenity name cannot be empty'))
+        .optional()
+        .default([]),
 });
 
 export type CreatePropertyInput = z.infer<typeof CreatePropertySchema>;
@@ -118,6 +122,9 @@ export const UpdatePropertySchema = z.object({
                 message: 'Only one image can be marked as main',
             }
         )
+        .optional(),
+    amenity_names: z
+        .array(z.string().min(1, 'Amenity name cannot be empty'))
         .optional(),
 });
 
