@@ -1,0 +1,205 @@
+/* client\src\features\PrePayment\pages\PrePayment.css */
+
+/* client\src\features\PrePayment\pages\PrePayment.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', monospace;
+}
+
+.prepayment-wrapper {
+    font-family: var(--font-main);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.prepayment-wrapper {
+    background: radial-gradient(circle at top right, #fdfbff, #f1f5f9);
+    min-height: 100vh;
+    padding-bottom: 50px;
+}
+
+.prepayment-container {
+    display: flex;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 30px;
+    gap: 40px;
+    margin-top: 75px;
+}
+
+.prepayment-main {
+    flex: 1;
+}
+
+.prepayment-header-section {
+    margin-bottom: 40px;
+}
+
+.prepayment-header-section h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -2px;
+}
+
+/* Outstanding Grid Balance */
+.prepayment-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 40px;
+}
+
+/* Sticky Summary Card - The "Black Diamond" */
+.sticky-summary-card {
+    position: sticky;
+    top: 100px;
+    background: #0f172a;
+    border-radius: 40px;
+    padding: 50px;
+    color: white;
+    box-shadow: 0 40px 100px -20px rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    margin-top: 50px;
+}
+
+.sticky-summary-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+}
+
+.proceed-btn {
+    width: 100%;
+    padding: 24px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.proceed-btn:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(37, 99, 235, 0.6);
+}
+
+/* client\src\features\PrePayment\pages\PrePayment.css */
+
+.sticky-summary-card {
+    position: sticky;
+    top: 40px;
+    background: #0f172a; /* Deep Obsidian */
+    border-radius: 40px;
+    padding: 0; /* Managed by sub-containers */
+    color: white;
+    box-shadow: 0 40px 80px -15px rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+/* Header Section */
+.summary-glass-head {
+    background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent);
+    padding: 40px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.summary-status-pill {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.summary-glass-head h3 {
+    font-family: var(--font-main);
+    font-weight: 800;
+    font-size: 1.6rem;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+}
+
+.btn-text {
+    font-family: var(--font-main);
+    font-weight: 800;
+    text-transform: none; /* Modern buttons don't need all-caps */
+    letter-spacing: -0.01em;
+    font-size: 1.15rem;
+}
+
+/* Body Content */
+.summary-content-body {
+    padding: 0 40px;
+}
+
+.summary-divider {
+    position: relative;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 30px 0;
+}
+
+.divider-glow {
+    position: absolute;
+    top: 0; left: 50%;
+    width: 60%;
+    height: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+    box-shadow: 0 0 15px #3b82f6;
+}
+
+/* Action Area */
+.summary-action-area {
+    padding: 0 40px 40px 40px;
+}
+
+.secure-footer {
+    margin-top: 25px;
+    text-align: center;
+}
+
+.secure-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #10b981;
+    animation: pulse 2s infinite;
+}
+
+.secure-footer p {
+    color: #475569;
+    font-size: 0.75rem;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    70% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}

@@ -1,0 +1,40 @@
+/* client\src\features\PrePayment\components\ContractPreview.css */
+.contract-card {
+    background: white;
+    border-radius: 35px;
+    padding: 40px;
+    border: 1px solid #e2e8f0;
+    margin-top: 30px;
+}
+
+.contract-preview-box {
+    border-left: 4px solid #3b82f6;
+    background: #f8fafc;
+    padding: 30px;
+    border-radius: 0 20px 20px 0;
+}
+
+.doc-line {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.view-full-btn {
+    width: 100%;
+    margin-top: 30px;
+    background: #f1f5f9;
+    border: none;
+    padding: 20px;
+    border-radius: 20px;
+    color: #0f172a;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.view-full-btn:hover {
+    background: #0f172a;
+    color: white;
+}

@@ -1,16 +1,25 @@
 // client\src\features\home\components\TenantHomeComponents\Notifications.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './Notifications.css';
 import NotificationsBar from './NotificationsBar';
 
 const Notifications = () => {
   const [isBarOpen, setIsBarOpen] = useState(false);
+  const navigate = useNavigate(); // Initialize navigate
 
   const alerts = [
-    { id: 1, type: 'payment', title: 'Payment Confirmed', desc: 'Rent for March was processed.', time: '2h ago', unread: true },
+    { id: 1, type: 'payment', title: 'Request Approved', desc: 'Rent for March was processed.', time: '2h ago', unread: true },
     { id: 2, type: 'maintenance', title: 'Technician En Route', desc: 'Mike Ross will arrive in 15 mins.', time: 'Just now', unread: true },
     { id: 3, type: 'system', title: 'New Reward!', desc: 'You earned 500 points for early payment.', time: '1d ago', unread: false },
   ];
+
+  const handleNotificationClick = (alert: any) => {
+    // Check if the title is "Request Approved" or type is payment
+    if (alert.title === 'Request Approved' || alert.type === 'payment') {
+      navigate('/prepayment-page');
+    }
+  };
 
   return (
     <>
@@ -25,7 +34,11 @@ const Notifications = () => {
 
         <div className="notif-list">
           {alerts.map((alert) => (
-            <div key={alert.id} className={`notif-item ${alert.unread ? 'unread' : ''}`}>
+            <div 
+              key={alert.id} 
+              className={`notif-item ${alert.unread ? 'unread' : ''} ${alert.type === 'payment' ? 'clickable' : ''}`}
+              onClick={() => handleNotificationClick(alert)} // Attach the click handler
+            >
               <div className={`notif-icon-box ${alert.type}`}>
                 {alert.type === 'payment' && '💳'}
                 {alert.type === 'maintenance' && '🔧'}
@@ -43,13 +56,11 @@ const Notifications = () => {
           ))}
         </div>
 
-        {/* CLICK HANDLER ADDED HERE */}
         <button className="view-history-btn" onClick={() => setIsBarOpen(true)}>
           See Full History
         </button>
       </div>
 
-      {/* RENDER THE SIDEBAR */}
       <NotificationsBar isOpen={isBarOpen} onClose={() => setIsBarOpen(false)} />
     </>
   );
