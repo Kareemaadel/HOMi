@@ -13,8 +13,8 @@ const LoadingPage: React.FC = () => {
     const expandTimer = setTimeout(() => setStage('expand'), 1000);
     
     // Stage 3: Fade out and navigate (2.7s - 3s)
-    const exitTimer = setTimeout(() => setStage('exit'), 2700);
-    const navTimer = setTimeout(() => navigate('/tenant-home'), 2800);
+    const exitTimer = setTimeout(() => setStage('exit'), 400);
+    const navTimer = setTimeout(() => navigate('/tenant-home'), 3000);
 
     return () => {
       clearTimeout(expandTimer);

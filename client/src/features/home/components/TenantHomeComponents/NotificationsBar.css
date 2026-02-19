@@ -1,0 +1,244 @@
+/* client\src\features\home\components\TenantHomeComponents\NotificationsBar.css */
+
+.notif-bar-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.4s ease;
+}
+
+.notif-bar-overlay.open {
+    visibility: visible;
+    opacity: 1;
+}
+
+.notif-sidebar-container {
+    position: absolute;
+    right: -450px; /* Hidden by default */
+    top: 0;
+    width: 450px;
+    height: 100%;
+    background: #ffffff;
+    box-shadow: -10px 0 50px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notif-bar-overlay.open .notif-sidebar-container {
+    transform: translateX(-450px);
+}
+
+/* Header Section */
+.notif-bar-header {
+    padding: 40px 30px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.bar-title { display: flex; gap: 15px; align-items: center; }
+
+.bell-ring {
+    width: 45px; height: 45px;
+    background: #2563eb; color: white;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+}
+
+.bar-title h2 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0; }
+.bar-title p { font-size: 0.85rem; color: #64748b; margin: 4px 0 0 0; }
+
+.close-bar-btn {
+    background: white; border: 1px solid #e2e8f0;
+    width: 32px; height: 32px; border-radius: 50%;
+    cursor: pointer; color: #64748b; transition: all 0.2s;
+}
+
+.close-bar-btn:hover { background: #f1f5f9; color: #0f172a; transform: rotate(90deg); }
+
+/* Quick Actions */
+.notif-bar-actions {
+    padding: 15px 30px;
+    display: flex; gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.bar-action-btn {
+    background: transparent; border: 1px solid #e2e8f0;
+    padding: 8px 14px; border-radius: 100px;
+    font-size: 0.75rem; font-weight: 700; color: #475569;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all 0.2s;
+}
+
+.bar-action-btn:hover { background: #f8fafc; border-color: #2563eb; color: #2563eb; }
+
+/* Timeline Content */
+.notif-bar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+.history-timeline { display: flex; flex-direction: column; }
+
+.history-item {
+    display: flex; gap: 20px;
+    opacity: 0;
+    transform: translateX(20px);
+    animation: slideInNotif 0.4s ease forwards;
+}
+
+@keyframes slideInNotif {
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.history-dot-line {
+    display: flex; flex-direction: column; align-items: center;
+}
+
+.history-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 3px solid #fff; box-shadow: 0 0 0 1px #cbd5e1;
+}
+
+.history-dot.completed { background: #10b981; box-shadow: 0 0 0 1px #10b981; }
+.history-dot.pending { background: #f59e0b; box-shadow: 0 0 0 1px #f59e0b; }
+.history-dot.success { background: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+
+.history-line {
+    flex: 1; width: 2px; background: #e2e8f0; margin: 4px 0;
+}
+
+.history-card {
+    flex: 1; padding-bottom: 30px;
+}
+
+.history-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px;
+}
+
+.history-date { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+.history-tag {
+    font-size: 10px; text-transform: uppercase; font-weight: 800;
+    padding: 2px 8px; border-radius: 4px;
+}
+
+.history-tag.maintenance { background: #ecfdf5; color: #10b981; }
+.history-tag.payment { background: #eff6ff; color: #2563eb; }
+.history-tag.system { background: #f8fafc; color: #64748b; }
+
+.history-card h4 { font-size: 1rem; color: #1e293b; margin: 0 0 6px 0; }
+.history-card p { font-size: 0.85rem; color: #64748b; line-height: 1.5; margin: 0; }
+
+/* Footer */
+.notif-bar-footer {
+    padding: 30px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+}
+
+.clear-history-btn {
+    width: 100%; padding: 14px;
+    background: transparent; color: #94a3b8;
+    border: 1px solid #e2e8f0; border-radius: 12px;
+    font-weight: 700; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s;
+}
+
+.clear-history-btn:hover { background: #fff1f2; color: #e11d48; border-color: #fecdd3; }
+
+/* client\src\features\home\components\TenantHomeComponents\NotificationsBar.css */
+
+.bell-ring {
+    position: relative; /* Essential for absolute positioning of the dot */
+    width: 45px; height: 45px;
+    background: #2563eb; color: white;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+}
+
+/* THE LIVE PULSE DOT */
+.status-pulse {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    background: #10b981; /* Emerald Green for "Live" */
+    border: 2.5px solid #ffffff; /* Contrast ring */
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-pulse::after {
+    content: '';
+    position: absolute;
+    top: -2.5px;
+    left: -2.5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #10b981;
+    opacity: 0.8;
+    animation: pulse-ring 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+    z-index: -1;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+    }
+    80%, 100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* Optional: Slight jiggle for the bell icon on load */
+.bell-ring svg {
+    animation: bell-swing 2s ease-in-out infinite;
+    transform-origin: top center;
+}
+
+@keyframes bell-swing {
+    0%, 100% { transform: rotate(0); }
+    10%, 30% { transform: rotate(10deg); }
+    20% { transform: rotate(-10deg); }
+    40% { transform: rotate(0); }
+}
+
+/* Add this to client\src\features\home\components\TenantHomeComponents\NotificationsBar.css */
+
+/* Animate the pulse out when it's removed from DOM */
+.status-pulse {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Make the "Mark all read" button react when clicked */
+.bar-action-btn:active {
+    transform: scale(0.95);
+    background: #eff6ff;
+}
+
+/* Change the header description color when all are read */
+.bar-title p {
+    transition: color 0.3s ease;
+}
+
+.notif-bar-header.all-read .bar-title p {
+    color: #10b981; /* Turns green when caught up */
+}

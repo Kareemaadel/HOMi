@@ -25,6 +25,7 @@
   padding: 1rem;
   border-radius: 16px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  height: 12vh;
 }
 
 .request-main-info {

@@ -135,3 +135,16 @@
 }
 
 .view-history-btn:hover { background: #f1f5f9; }
+
+.notif-item.clickable {
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.notif-item.clickable:hover {
+    background: #f8fafc; /* Light gray-blue on hover */
+}
+
+.notif-item.clickable:active {
+    transform: scale(0.98); /* Slight shrink effect when clicked */
+}
