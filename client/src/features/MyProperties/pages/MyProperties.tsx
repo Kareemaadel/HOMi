@@ -3,6 +3,7 @@ import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import DetailedPropertyCard from '../components/DetailedPropertyCard';
+import AddPropertyCard from '../../home/components/LandlordHomeComponents/AddPropertyCard';
 import './MyProperties.css';
 
 const MyProperties = () => {
@@ -28,6 +29,9 @@ const MyProperties = () => {
             {myProperties.map(prop => (
               <DetailedPropertyCard key={prop.id} property={prop} />
             ))}
+            <AddPropertyCard onClick={function (): void {
+              throw new Error('Function not implemented.');
+            } } />
           </div>
         </main>
         <Footer />

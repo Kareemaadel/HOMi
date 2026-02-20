@@ -27,9 +27,9 @@ function App() {
         <Route path="/prepayment-page" element={<PrePayment />} />
 
         {/* Landlord Routes */}
-        {/* <Route path="/landlord-home" element={<LandlordHome />} />
+        <Route path="/landlord-home" element={<LandlordHome />} />
         <Route path="/my-properties" element={<MyProperties />} />
-        <Route path="/rental-requests" element={<RentalRequests />} /> */}
+        <Route path="/rental-requests" element={<RentalRequests />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />

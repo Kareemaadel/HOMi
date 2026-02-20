@@ -19,7 +19,7 @@
 /* Sidebar Styling */
 .app-sidebar {
     width: 320px;
-    background: #f8fafc;
+    background: #618fc0;
     border-right: 1px solid #f1f5f9;
     padding: 40px 30px;
     display: flex;
@@ -232,7 +232,7 @@
 /* Ensure the sidebar has a consistent gap */
 .app-sidebar {
     width: 320px;
-    background: #f8fafc;
+    background: #d8d3ff;
     border-right: 1px solid #f1f5f9;
     padding: 30px; /* Reduced top padding slightly for the back button */
     display: flex;
@@ -248,4 +248,133 @@
     border: 1px solid #e2e8f0;
     margin-top: -10px; 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* Multi-step Indicators */
+.app-steps-indicator {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.step-dot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.step-dot span {
+    width: 24px;
+    height: 24px;
+    background: #e2e8f0;
+    color: #64748b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+}
+
+.step-dot.active { color: #2563eb; }
+.step-dot.active span { background: #2563eb; color: white; }
+
+.step-line {
+    flex: 1;
+    height: 2px;
+    background: #e2e8f0;
+}
+.step-line.active { background: #2563eb; }
+
+/* Habits Selection Styling */
+.habits-selection-view {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.habits-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 30px;
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Custom Scrollbar for Habits Grid */
+.habits-grid::-webkit-scrollbar { width: 6px; }
+.habits-grid::-webkit-scrollbar-track { background: #f1f5f9; }
+.habits-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.habit-chip {
+    padding: 10px 18px;
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 100px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1.5px solid transparent;
+    user-select: none;
+}
+
+.habit-chip:hover {
+    background: #e2e8f0;
+    transform: translateY(-2px);
+}
+
+.habit-chip.selected {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+/* Custom Habit Input */
+.custom-habit-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 16px;
+    border: 1.5px dashed #cbd5e1;
+}
+
+.custom-habit-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.custom-habit-input button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.custom-habit-input button:hover {
+    background: #1d4ed8;
+    transform: rotate(90deg);
 }
