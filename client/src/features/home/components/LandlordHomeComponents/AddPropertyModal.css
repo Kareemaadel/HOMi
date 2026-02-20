@@ -230,3 +230,147 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-radius: 16px;
     border: 2px solid transparent;
 }
+
+/* --- NEW STEP 3 LOCATION STYLES --- */
+
+.map-picker-container {
+    width: 100%;
+    height: 180px;
+    background: #f1f5f9;
+    border-radius: 24px;
+    margin-bottom: 30px;
+    border: 2px dashed #cbd5e1;
+    overflow: hidden;
+    position: relative;
+}
+
+.map-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    gap: 12px;
+}
+
+.map-placeholder p {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.map-trigger-btn {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.map-trigger-btn:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+}
+
+.address-grid-structured {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 20px;
+}
+
+/* For bldg, floor, apt row */
+.form-row-triple {
+    grid-column: 1 / span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+}
+
+.address-grid-structured .field-group {
+    margin-bottom: 0; /* Tighter grid spacing */
+}
+
+/* Ensure the step transition is smooth */
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Small adjustments to existing specs to fit the new layout */
+.specs-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+/* --- Interactive Map Styles --- */
+
+.map-picker-container.active-map {
+    border: 2px solid #2563eb;
+    background: #fff;
+    height: 300px; /* Make it larger when active */
+    transition: height 0.3s ease;
+}
+
+.coord-badge {
+    background: #dcfce7;
+    color: #166534;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    border: 1px solid #bbf7d0;
+}
+
+.confirm-map-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 800;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4);
+    cursor: pointer;
+}
+
+.confirm-map-btn:hover {
+    background: #1d4ed8;
+    transform: translateX(-50%) translateY(-2px);
+}
+
+/* Ensure Leaflet controls don't peek through the modal header */
+.leaflet-container {
+    z-index: 1;
+}
+/* Position search bar nicely inside the map */
+.leaflet-control-geocoder {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    border: none !important;
+    margin-top: 15px !important;
+    margin-left: 15px !important;
+    width: 250px !important;
+}
+
+.leaflet-control-geocoder-form input {
+    padding: 10px !important;
+    border-radius: 8px !important;
+    font-family: inherit;
+}
+
+.leaflet-control-geocoder-icon {
+    border-radius: 8px !important;
+}
