@@ -1,18 +1,10 @@
 // client\src\features\BrowseProperties\components\PropertyDetailModal.tsx
 import React, { useState } from 'react';
 import { 
-    FaBed, 
-    FaBath, 
-    FaRulerCombined, 
-    FaMapMarkerAlt, 
-    FaTimes, 
-    FaHeart, 
-    FaShareAlt, 
-    FaCheckCircle, 
-    FaCalendarAlt, 
-    FaLayerGroup, 
-    FaArrowRight, 
-    FaComment 
+    FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, 
+    FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, 
+    FaLayerGroup, FaArrowRight, FaComment, FaSmokingBan, 
+    FaPaw, FaVolumeMute, FaUsersSlash, FaInfoCircle
 } from 'react-icons/fa';
 import ApplicationModal from './ApplicationModal';
 import './PropertyDetailedModal.css';
@@ -23,11 +15,14 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
     // Fallback images array
     const images = [property.image, property.image, property.image, property.image, property.image];
 
-    /**
-     * If showApplication is true, we switch the view.
-     * We pass onBack to allow the ApplicationModal to return here.
-     * We pass onClose to allow the ApplicationModal to close the entire modal stack.
-     */
+    // Mock Rules (In production, these would come from property.rules)
+    const houseRules = [
+        { icon: <FaSmokingBan />, text: "No Smoking", active: true },
+        { icon: <FaPaw />, text: "Pet Friendly", active: property.petsAllowed ?? false },
+        { icon: <FaVolumeMute />, text: "Quiet Hours (10PM - 8AM)", active: true },
+        { icon: <FaUsersSlash />, text: "No Large Parties", active: true },
+    ];
+
     if (showApplication) {
         return (
             <ApplicationModal 
@@ -59,7 +54,10 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                     {/* DETAILS SECTION */}
                     <div className="modal-details">
                         <div className="detail-header">
-                            <span className="type-tag">Apartment • For Rent</span>
+                            <div className="header-top-row">
+                                <span className="type-tag">Apartment • For Rent</span>
+                                <span className="verified-badge"><FaCheckCircle /> Verified Listing</span>
+                            </div>
                             <h1 className="detail-title">{property.title}</h1>
                             <div className="detail-location">
                                 <FaMapMarkerAlt /> <span>{property.address}</span>
@@ -84,19 +82,32 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                                 <FaRulerCombined />
                                 <span>{property.sqft} sqft</span>
                             </div>
-                            <div className="spec-item">
-                                <FaLayerGroup />
-                                <span>3rd Floor</span>
-                            </div>
                         </div>
 
                         {/* DESCRIPTION */}
                         <div className="detail-section">
-                            <h3>About this home</h3>
+                            <div className="section-title-wrap">
+                                <FaInfoCircle /> <h3>About this home</h3>
+                            </div>
                             <p className="description-text">
                                 This stunning {property.title} offers an unparalleled living experience. 
-                                Featuring floor-to-ceiling windows and a gourmet designer kitchen.
+                                Featuring floor-to-ceiling windows, a gourmet designer kitchen, 
+                                and premium finishes throughout. Located in a prime district with easy 
+                                access to all city essentials.
                             </p>
+                        </div>
+
+                        {/* HOUSE RULES SECTION (New Addition) */}
+                        <div className="detail-section rules-section">
+                            <h3>House Rules</h3>
+                            <div className="rules-grid">
+                                {houseRules.map((rule, idx) => (
+                                    <div key={idx} className={`rule-item ${!rule.active ? 'disabled' : ''}`}>
+                                        <span className="rule-icon">{rule.icon}</span>
+                                        <span className="rule-text">{rule.text}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
                         {/* AMENITIES */}
@@ -106,22 +117,22 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                                 <div className="amenity"><FaCheckCircle /> Smart Home System</div>
                                 <div className="amenity"><FaCheckCircle /> 24/7 Concierge</div>
                                 <div className="amenity"><FaCheckCircle /> Fitness Center</div>
-                                <div className="amenity"><FaCheckCircle /> Pet Friendly</div>
+                                <div className="amenity"><FaCheckCircle /> Secure Parking</div>
                             </div>
                         </div>
 
-                        {/* LANDLORD / AGENT CARD */}
+                        {/* LANDLORD CARD */}
                         <div className="agent-card">
                             <div className="agent-info">
-                                <img src="https://i.pravatar.cc/150?u=agent1" alt="Sarah Jenkins" />
+                                <img src="https://i.pravatar.cc/150?u=agent1" alt="Landlord" />
                                 <div>
                                     <p className="agent-name">Sarah Jenkins</p>
-                                    <p className="agent-label">Luxury Property Specialist</p>
+                                    <p className="agent-label">Property Owner • Active 2h ago</p>
                                 </div>
                             </div>
                             <div className="agent-actions">
                                 <button className="btn-whatsapp"><FaComment /> Message Owner</button>
-                                <button className="btn-contact-alt">Email Agent</button>
+                                <button className="btn-contact-alt">View Profile</button>
                             </div>
                         </div>
 
@@ -133,9 +144,9 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             >
                                 <FaArrowRight/> Apply Now
                             </button>
-                            <button className="footer-btn secondary"><FaHeart /> Save</button>
-                            <button className="footer-btn secondary"><FaShareAlt /></button>
-                            <button className="footer-btn secondary"><FaCalendarAlt /></button>
+                            <button className="footer-btn icon-only"><FaHeart /></button>
+                            <button className="footer-btn icon-only"><FaShareAlt /></button>
+                            <button className="footer-btn icon-only"><FaCalendarAlt /></button>
                         </div>
                     </div>
                 </div>
