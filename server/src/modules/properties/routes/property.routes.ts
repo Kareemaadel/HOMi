@@ -47,10 +47,13 @@ const router = Router();
  *           example:
  *             title: "Beautiful 2BR Apartment"
  *             description: "Spacious apartment with modern amenities in downtown"
- *             price: 1500.00
+ *             monthly_price: 1500.00
+ *             security_deposit: 3000.00
  *             address: "123 Main Street, Cairo, Egypt"
  *             location_lat: 30.0444
  *             location_long: 31.2357
+ *             furnishing: "Fully"
+ *             availability_date: "2026-03-01"
  *             images:
  *               - image_url: "https://example.com/image1.jpg"
  *                 is_main: true
@@ -59,6 +62,13 @@ const router = Router();
  *             amenity_names:
  *               - "Fitness Center"
  *               - "High-Speed Wi-Fi"
+ *             specifications:
+ *               bedrooms: 2
+ *               bathrooms: 2
+ *               floor: 5
+ *               parking_spaces: 1
+ *               area_sqft: 1200
+ *               detailed_location: "Building 3, Floor 5, Apartment 12, Downtown Cairo"
  *     responses:
  *       201:
  *         description: Property created successfully
@@ -127,24 +137,37 @@ router.post(
  *         name: status
  *         schema:
  *           type: string
- *           enum: [AVAILABLE, RENTED, UNAVAILABLE]
+ *           enum: [Draft, Published, Rented]
  *         description: Filter by property status
+ *       - in: query
+ *         name: furnishing
+ *         schema:
+ *           type: string
+ *           enum: [Fully, Semi, Unfurnished]
+ *         description: Filter by furnishing status
  *       - in: query
  *         name: minPrice
  *         schema:
  *           type: number
- *         description: Minimum price filter
+ *         description: Minimum monthly price filter
  *       - in: query
  *         name: maxPrice
  *         schema:
  *           type: number
- *         description: Maximum price filter
+ *         description: Maximum monthly price filter
  *       - in: query
  *         name: landlordId
  *         schema:
  *           type: string
  *           format: uuid
  *         description: Filter by landlord ID
+ *       - in: query
+ *         name: availabilityDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2026-03-01"
+ *         description: Filter by availability date (YYYY-MM-DD)
  *       - in: query
  *         name: page
  *         schema:
@@ -270,8 +293,11 @@ router.get(
  *             $ref: '#/components/schemas/UpdatePropertyRequest'
  *           example:
  *             title: "Updated Beautiful 2BR Apartment"
- *             price: 1600.00
- *             status: "RENTED"
+ *             monthly_price: 1600.00
+ *             security_deposit: 3200.00
+ *             furnishing: "Semi"
+ *             status: "Published"
+ *             availability_date: "2026-04-01"
  *             amenity_names:
  *               - "Rooftop Lounge"
  *     responses:

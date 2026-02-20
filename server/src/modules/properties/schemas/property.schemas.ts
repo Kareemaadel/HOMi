@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PropertyStatus } from '../models/Property.js';
+import { PropertyStatus, FurnishingStatus } from '../models/Property.js';
 
 /**
  * Property Image Schema
@@ -17,6 +17,37 @@ export const PropertyImageSchema = z.object({
 export type PropertyImageInput = z.infer<typeof PropertyImageSchema>;
 
 /**
+ * Property Specifications Schema
+ */
+export const PropertySpecificationsSchema = z.object({
+    bedrooms: z
+        .number({ error: 'Bedrooms is required' })
+        .int('Bedrooms must be an integer')
+        .min(0, 'Bedrooms cannot be negative'),
+    bathrooms: z
+        .number({ error: 'Bathrooms is required' })
+        .int('Bathrooms must be an integer')
+        .min(0, 'Bathrooms cannot be negative'),
+    floor: z
+        .number({ error: 'Floor is required' })
+        .int('Floor must be an integer'),
+    parking_spaces: z
+        .number()
+        .int('Parking spaces must be an integer')
+        .min(0, 'Parking spaces cannot be negative')
+        .default(0),
+    area_sqft: z
+        .number({ error: 'Area is required' })
+        .positive('Area must be a positive number'),
+    detailed_location: z
+        .string({ error: 'Detailed location is required' })
+        .min(1, 'Detailed location is required')
+        .trim(),
+});
+
+export type PropertySpecificationsInput = z.infer<typeof PropertySpecificationsSchema>;
+
+/**
  * Create Property Schema
  * Validates property creation request
  */
@@ -30,10 +61,14 @@ export const CreatePropertySchema = z.object({
         .string()
         .min(1, 'Description is required')
         .trim(),
-    price: z
-        .number()
-        .positive('Price must be a positive number')
-        .max(999999999.99, 'Price is too large'),
+    monthly_price: z
+        .number({ error: 'Monthly price is required' })
+        .positive('Monthly price must be a positive number')
+        .max(999999999.99, 'Monthly price is too large'),
+    security_deposit: z
+        .number({ error: 'Security deposit is required' })
+        .min(0, 'Security deposit cannot be negative')
+        .max(999999999.99, 'Security deposit is too large'),
     address: z
         .string()
         .min(1, 'Address is required')
@@ -46,6 +81,13 @@ export const CreatePropertySchema = z.object({
         .number()
         .min(-180, 'Longitude must be between -180 and 180')
         .max(180, 'Longitude must be between -180 and 180'),
+    furnishing: z.enum(
+        [FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED],
+        { message: 'Furnishing must be Fully, Semi, or Unfurnished' }
+    ),
+    availability_date: z
+        .string({ error: 'Availability date is required' })
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format'),
     images: z
         .array(PropertyImageSchema)
         .min(1, 'At least one image is required')
@@ -63,6 +105,7 @@ export const CreatePropertySchema = z.object({
         .array(z.string().min(1, 'Amenity name cannot be empty'))
         .optional()
         .default([]),
+    specifications: PropertySpecificationsSchema,
 });
 
 export type CreatePropertyInput = z.infer<typeof CreatePropertySchema>;
@@ -83,10 +126,15 @@ export const UpdatePropertySchema = z.object({
         .min(1, 'Description cannot be empty')
         .trim()
         .optional(),
-    price: z
+    monthly_price: z
         .number()
-        .positive('Price must be a positive number')
-        .max(999999999.99, 'Price is too large')
+        .positive('Monthly price must be a positive number')
+        .max(999999999.99, 'Monthly price is too large')
+        .optional(),
+    security_deposit: z
+        .number()
+        .min(0, 'Security deposit cannot be negative')
+        .max(999999999.99, 'Security deposit is too large')
         .optional(),
     address: z
         .string()
@@ -103,13 +151,18 @@ export const UpdatePropertySchema = z.object({
         .min(-180, 'Longitude must be between -180 and 180')
         .max(180, 'Longitude must be between -180 and 180')
         .optional(),
-    status: z.enum([
-        PropertyStatus.AVAILABLE,
-        PropertyStatus.RENTED,
-        PropertyStatus.UNAVAILABLE
-    ], {
-        message: 'Status must be AVAILABLE, RENTED, or UNAVAILABLE',
-    }).optional(),
+    furnishing: z.enum(
+        [FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED],
+        { message: 'Furnishing must be Fully, Semi, or Unfurnished' }
+    ).optional(),
+    status: z.enum(
+        [PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED],
+        { message: 'Status must be Draft, Published, or Rented' }
+    ).optional(),
+    availability_date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format')
+        .optional(),
     images: z
         .array(PropertyImageSchema)
         .min(1, 'At least one image is required if updating images')
@@ -126,6 +179,7 @@ export const UpdatePropertySchema = z.object({
     amenity_names: z
         .array(z.string().min(1, 'Amenity name cannot be empty'))
         .optional(),
+    specifications: PropertySpecificationsSchema.partial().optional(),
 });
 
 export type UpdatePropertyInput = z.infer<typeof UpdatePropertySchema>;
@@ -137,11 +191,10 @@ export type UpdatePropertyInput = z.infer<typeof UpdatePropertySchema>;
  */
 export const PropertyQuerySchema = z.object({
     status: z
-        .enum([
-            PropertyStatus.AVAILABLE,
-            PropertyStatus.RENTED,
-            PropertyStatus.UNAVAILABLE
-        ])
+        .enum([PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED])
+        .optional(),
+    furnishing: z
+        .enum([FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED])
         .optional(),
     minPrice: z
         .string()
@@ -156,6 +209,10 @@ export const PropertyQuerySchema = z.object({
     landlordId: z
         .string()
         .uuid('Invalid landlord ID format')
+        .optional(),
+    availabilityDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format')
         .optional(),
     page: z
         .string()
@@ -190,4 +247,5 @@ export default {
     UpdatePropertySchema,
     PropertyQuerySchema,
     PropertyImageSchema,
+    PropertySpecificationsSchema,
 };

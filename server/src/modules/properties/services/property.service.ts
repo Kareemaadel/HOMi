@@ -1,5 +1,11 @@
 import { Op } from 'sequelize';
-import { Property, PropertyImage, Amenity, sequelize } from '../models/index.js';
+import {
+    Property,
+    PropertyImage,
+    Amenity,
+    PropertySpecifications,
+    sequelize,
+} from '../models/index.js';
 import { User } from '../../auth/models/User.js';
 import type {
     CreatePropertyRequest,
@@ -10,6 +16,7 @@ import type {
     PropertySuccessResponse,
     PropertyImageResponse,
     AmenityResponse,
+    PropertySpecificationsResponse,
 } from '../interfaces/property.interfaces.js';
 
 /**
@@ -54,7 +61,7 @@ class PropertyService {
     }
 
     /**
-     * Create a new property with images and optional amenities
+     * Create a new property with images, specifications, and optional amenities
      */
     async createProperty(
         landlordId: string,
@@ -87,11 +94,28 @@ class PropertyService {
                     landlord_id: landlordId,
                     title: input.title,
                     description: input.description,
-                    price: input.price,
+                    monthly_price: input.monthly_price,
+                    security_deposit: input.security_deposit,
                     address: input.address,
                     location_lat: input.location_lat,
                     location_long: input.location_long,
-                    status: 'AVAILABLE',
+                    furnishing: input.furnishing,
+                    availability_date: new Date(input.availability_date),
+                    status: 'Draft',
+                },
+                { transaction }
+            );
+
+            // Create specifications
+            const specifications = await PropertySpecifications.create(
+                {
+                    property_id: property.id,
+                    bedrooms: input.specifications.bedrooms,
+                    bathrooms: input.specifications.bathrooms,
+                    floor: input.specifications.floor,
+                    parking_spaces: input.specifications.parking_spaces,
+                    area_sqft: input.specifications.area_sqft,
+                    detailed_location: input.specifications.detailed_location,
                 },
                 { transaction }
             );
@@ -116,7 +140,7 @@ class PropertyService {
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities);
+            return this.formatPropertyResponse(property, images, amenities, specifications);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -129,9 +153,11 @@ class PropertyService {
     async getAllProperties(filters: PropertyQuery): Promise<PropertyListResponse> {
         const {
             status,
+            furnishing,
             minPrice,
             maxPrice,
             landlordId,
+            availabilityDate,
             page = 1,
             limit = 10,
         } = filters;
@@ -139,14 +165,15 @@ class PropertyService {
         const where: any = {};
 
         if (status) where.status = status;
+        if (furnishing) where.furnishing = furnishing;
+        if (landlordId) where.landlord_id = landlordId;
+        if (availabilityDate) where.availability_date = availabilityDate;
 
         if (minPrice !== undefined || maxPrice !== undefined) {
-            where.price = {};
-            if (minPrice !== undefined) where.price[Op.gte] = minPrice;
-            if (maxPrice !== undefined) where.price[Op.lte] = maxPrice;
+            where.monthly_price = {};
+            if (minPrice !== undefined) where.monthly_price[Op.gte] = minPrice;
+            if (maxPrice !== undefined) where.monthly_price[Op.lte] = maxPrice;
         }
-
-        if (landlordId) where.landlord_id = landlordId;
 
         const offset = (page - 1) * limit;
 
@@ -164,6 +191,10 @@ class PropertyService {
                     attributes: ['id', 'name'],
                     through: { attributes: [] },
                 },
+                {
+                    model: PropertySpecifications,
+                    as: 'specifications',
+                },
             ],
             limit,
             offset,
@@ -175,7 +206,8 @@ class PropertyService {
             this.formatPropertyResponse(
                 property,
                 property.images || [],
-                (property as any).amenities || []
+                (property as any).amenities || [],
+                (property as any).specifications ?? null
             )
         );
 
@@ -191,7 +223,7 @@ class PropertyService {
     }
 
     /**
-     * Get a single property by ID (includes amenities)
+     * Get a single property by ID (includes amenities and specifications)
      */
     async getPropertyById(id: string): Promise<PropertyResponse> {
         const property = await Property.findByPk(id, {
@@ -207,6 +239,10 @@ class PropertyService {
                     attributes: ['id', 'name'],
                     through: { attributes: [] },
                 },
+                {
+                    model: PropertySpecifications,
+                    as: 'specifications',
+                },
             ],
         });
 
@@ -217,12 +253,13 @@ class PropertyService {
         return this.formatPropertyResponse(
             property,
             property.images || [],
-            (property as any).amenities || []
+            (property as any).amenities || [],
+            (property as any).specifications ?? null
         );
     }
 
     /**
-     * Update a property (including optional amenity update using names)
+     * Update a property (including optional amenity/specifications update)
      * Verifies ownership before updating
      */
     async updateProperty(
@@ -251,13 +288,42 @@ class PropertyService {
             const updateData: any = {};
             if (input.title !== undefined) updateData.title = input.title;
             if (input.description !== undefined) updateData.description = input.description;
-            if (input.price !== undefined) updateData.price = input.price;
+            if (input.monthly_price !== undefined) updateData.monthly_price = input.monthly_price;
+            if (input.security_deposit !== undefined) updateData.security_deposit = input.security_deposit;
             if (input.address !== undefined) updateData.address = input.address;
             if (input.location_lat !== undefined) updateData.location_lat = input.location_lat;
             if (input.location_long !== undefined) updateData.location_long = input.location_long;
+            if (input.furnishing !== undefined) updateData.furnishing = input.furnishing;
             if (input.status !== undefined) updateData.status = input.status;
+            if (input.availability_date !== undefined)
+                updateData.availability_date = new Date(input.availability_date);
 
             await property.update(updateData, { transaction });
+
+            // Update specifications if provided (partial upsert)
+            let specifications: PropertySpecifications | null = null;
+            if (input.specifications !== undefined) {
+                const [spec] = await PropertySpecifications.findOrCreate({
+                    where: { property_id: id },
+                    defaults: {
+                        property_id: id,
+                        bedrooms: 0,
+                        bathrooms: 0,
+                        floor: 0,
+                        parking_spaces: 0,
+                        area_sqft: 0,
+                        detailed_location: '',
+                    },
+                    transaction,
+                });
+                await spec.update(input.specifications, { transaction });
+                specifications = spec;
+            } else {
+                specifications = await PropertySpecifications.findOne({
+                    where: { property_id: id },
+                    transaction,
+                });
+            }
 
             // Update images if provided
             let images = property.images || [];
@@ -278,20 +344,18 @@ class PropertyService {
             // Update amenities if provided (by name — replace strategy)
             let amenities: Amenity[] = [];
             if (input.amenity_names !== undefined) {
-                // Validates names exist; throws on invalid
                 amenities = await this.resolveAmenityNames(input.amenity_names);
                 await (property as any).setAmenities(
                     amenities.map((a) => a.id),
                     { transaction }
                 );
             } else {
-                // Keep existing amenities
                 amenities = await (property as any).getAmenities({ transaction });
             }
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities);
+            return this.formatPropertyResponse(property, images, amenities, specifications);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -330,7 +394,8 @@ class PropertyService {
     private formatPropertyResponse(
         property: Property,
         images: PropertyImage[],
-        amenities: Amenity[] = []
+        amenities: Amenity[] = [],
+        spec: PropertySpecifications | null = null
     ): PropertyResponse {
         const formattedImages: PropertyImageResponse[] = images.map((img) => ({
             id: img.id,
@@ -344,19 +409,35 @@ class PropertyService {
             name: a.name,
         }));
 
+        const formattedSpec: PropertySpecificationsResponse | null = spec
+            ? {
+                id: spec.id,
+                bedrooms: spec.bedrooms,
+                bathrooms: spec.bathrooms,
+                floor: spec.floor,
+                parkingSpaces: spec.parking_spaces,
+                areaSqft: Number(spec.area_sqft),
+                detailedLocation: spec.detailed_location,
+            }
+            : null;
+
         return {
             id: property.id,
             landlordId: property.landlord_id,
             title: property.title,
             description: property.description,
-            price: Number(property.price),
+            monthlyPrice: Number(property.monthly_price),
+            securityDeposit: Number(property.security_deposit),
             address: property.address,
             locationLat: property.location_lat,
             locationLong: property.location_long,
+            furnishing: property.furnishing,
             status: property.status,
+            availabilityDate: property.availability_date,
             createdAt: property.created_at,
             images: formattedImages,
             amenities: formattedAmenities,
+            specifications: formattedSpec,
         };
     }
 }

@@ -1,4 +1,4 @@
-import type { PropertyStatusType } from '../models/Property.js';
+import type { PropertyStatusType, FurnishingStatusType } from '../models/Property.js';
 
 /**
  * Property Image Input DTO
@@ -17,17 +17,46 @@ export interface AmenityResponse {
 }
 
 /**
+ * Property Specifications Input DTO
+ */
+export interface PropertySpecificationsInput {
+    bedrooms: number;
+    bathrooms: number;
+    floor: number;
+    parking_spaces: number;
+    area_sqft: number;
+    detailed_location: string;
+}
+
+/**
+ * Property Specifications Response DTO
+ */
+export interface PropertySpecificationsResponse {
+    id: string;
+    bedrooms: number;
+    bathrooms: number;
+    floor: number;
+    parkingSpaces: number;
+    areaSqft: number;
+    detailedLocation: string;
+}
+
+/**
  * Create Property Request DTO
  */
 export interface CreatePropertyRequest {
     title: string;
     description: string;
-    price: number;
+    monthly_price: number;
+    security_deposit: number;
     address: string;
     location_lat: number;
     location_long: number;
+    furnishing: FurnishingStatusType;
+    availability_date: string; // ISO date string (YYYY-MM-DD)
     images: PropertyImageInput[];
     amenity_names?: string[];
+    specifications: PropertySpecificationsInput;
 }
 
 /**
@@ -37,13 +66,17 @@ export interface CreatePropertyRequest {
 export interface UpdatePropertyRequest {
     title?: string;
     description?: string;
-    price?: number;
+    monthly_price?: number;
+    security_deposit?: number;
     address?: string;
     location_lat?: number;
     location_long?: number;
+    furnishing?: FurnishingStatusType;
     status?: PropertyStatusType;
+    availability_date?: string;
     images?: PropertyImageInput[];
     amenity_names?: string[];
+    specifications?: Partial<PropertySpecificationsInput>;
 }
 
 /**
@@ -51,9 +84,11 @@ export interface UpdatePropertyRequest {
  */
 export interface PropertyQuery {
     status?: PropertyStatusType;
+    furnishing?: FurnishingStatusType;
     minPrice?: number;
     maxPrice?: number;
     landlordId?: string;
+    availabilityDate?: string;
     page?: number;
     limit?: number;
 }
@@ -76,14 +111,18 @@ export interface PropertyResponse {
     landlordId: string;
     title: string;
     description: string;
-    price: number;
+    monthlyPrice: number;
+    securityDeposit: number;
     address: string;
     locationLat: number;
     locationLong: number;
+    furnishing: FurnishingStatusType;
     status: PropertyStatusType;
+    availabilityDate: Date | string;
     createdAt: Date;
     images: PropertyImageResponse[];
     amenities: AmenityResponse[];
+    specifications: PropertySpecificationsResponse | null;
 }
 
 /**

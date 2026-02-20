@@ -1,11 +1,18 @@
 import sequelize from '../../../config/database.js';
 import { User } from '../../auth/models/User.js';
-import { Property, PropertyStatus, type PropertyStatusType } from './Property.js';
+import {
+    Property,
+    PropertyStatus,
+    FurnishingStatus,
+    type PropertyStatusType,
+    type FurnishingStatusType,
+} from './Property.js';
 import { PropertyImage } from './PropertyImage.js';
 import { Amenity } from './Amenity.js';
 import { PropertyAmenity } from './PropertyAmenity.js';
+import { PropertySpecifications } from './PropertySpecifications.js';
 
-// Define associations
+// ─── Associations ─────────────────────────────────────────────────────────────
 
 // Property belongs to User (landlord)
 Property.belongsTo(User, {
@@ -33,6 +40,20 @@ PropertyImage.belongsTo(Property, {
     as: 'property',
 });
 
+// Property has one PropertySpecifications (one-to-one)
+Property.hasOne(PropertySpecifications, {
+    foreignKey: 'property_id',
+    as: 'specifications',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// PropertySpecifications belongs to Property
+PropertySpecifications.belongsTo(Property, {
+    foreignKey: 'property_id',
+    as: 'property',
+});
+
 // Property <-> Amenity many-to-many through PropertyAmenity
 Property.belongsToMany(Amenity, {
     through: PropertyAmenity,
@@ -48,23 +69,26 @@ Amenity.belongsToMany(Property, {
     as: 'properties',
 });
 
-// Export all models and types
+// ─── Exports ──────────────────────────────────────────────────────────────────
+
 export {
     sequelize,
     Property,
     PropertyStatus,
+    FurnishingStatus,
     PropertyImage,
     Amenity,
     PropertyAmenity,
+    PropertySpecifications,
 };
 
-export type { PropertyStatusType };
+export type { PropertyStatusType, FurnishingStatusType };
 
-// Export default as object with all models for convenience
 export default {
     sequelize,
     Property,
     PropertyImage,
     Amenity,
     PropertyAmenity,
+    PropertySpecifications,
 };

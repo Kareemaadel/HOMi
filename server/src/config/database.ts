@@ -73,6 +73,17 @@ export const testConnection = async (): Promise<void> => {
 // Sync database (use with caution in production)
 export const syncDatabase = async (force: boolean = false): Promise<void> => {
     try {
+        // ─── Dev pre-sync migration ────────────────────────────────────────
+        // Drop legacy columns that were renamed so ALTER TABLE doesn't conflict.
+        // These queries are idempotent (IF EXISTS) and only run in development.
+        if (env.NODE_ENV === 'development' && !force) {
+            await sequelize.query(`
+                ALTER TABLE IF EXISTS "properties"
+                    DROP COLUMN IF EXISTS "price";
+            `);
+        }
+        // ──────────────────────────────────────────────────────────────────
+
         await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });
         console.log('✅ Database synchronized successfully.');
     } catch (error) {

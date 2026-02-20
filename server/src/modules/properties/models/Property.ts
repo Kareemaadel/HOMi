@@ -10,19 +10,29 @@ import {
 } from 'sequelize';
 import sequelize from '../../../config/database.js';
 
-// Enums
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
 export const PropertyStatus = {
-    AVAILABLE: 'AVAILABLE',
-    RENTED: 'RENTED',
-    UNAVAILABLE: 'UNAVAILABLE',
+    DRAFT: 'Draft',
+    PUBLISHED: 'Published',
+    RENTED: 'Rented',
 } as const;
 
 export type PropertyStatusType = (typeof PropertyStatus)[keyof typeof PropertyStatus];
 
-// Forward declaration for imports
+export const FurnishingStatus = {
+    FULLY: 'Fully',
+    SEMI: 'Semi',
+    UNFURNISHED: 'Unfurnished',
+} as const;
+
+export type FurnishingStatusType = (typeof FurnishingStatus)[keyof typeof FurnishingStatus];
+
+// ─── Forward declarations ──────────────────────────────────────────────────
 import type { User } from '../../auth/models/User.js';
 import type { PropertyImage } from './PropertyImage.js';
 import type { Amenity } from './Amenity.js';
+import type { PropertySpecifications } from './PropertySpecifications.js';
 
 export class Property extends Model<
     InferAttributes<Property>,
@@ -37,11 +47,14 @@ export class Property extends Model<
     // Property details
     declare title: string;
     declare description: string;
-    declare price: number;
+    declare monthly_price: number | null;
+    declare security_deposit: number | null;
     declare address: string;
     declare location_lat: number;
     declare location_long: number;
-    declare status: PropertyStatusType;
+    declare furnishing: FurnishingStatusType | null;
+    declare status: CreationOptional<PropertyStatusType>;
+    declare availability_date: Date | null;
 
     // Timestamps
     declare created_at: CreationOptional<Date>;
@@ -52,10 +65,12 @@ export class Property extends Model<
     declare landlord?: NonAttribute<User>;
     declare images?: NonAttribute<PropertyImage[]>;
     declare amenities?: NonAttribute<Amenity[]>;
+    declare specifications?: NonAttribute<PropertySpecifications>;
     declare static associations: {
         landlord: Association<Property, User>;
         images: Association<Property, PropertyImage>;
         amenities: Association<Property, Amenity>;
+        specifications: Association<Property, PropertySpecifications>;
     };
 }
 
@@ -82,9 +97,18 @@ Property.init(
             type: DataTypes.TEXT,
             allowNull: false,
         },
-        price: {
+        monthly_price: {
             type: DataTypes.DECIMAL(10, 2),
-            allowNull: false,
+            allowNull: true,
+            defaultValue: null,
+            validate: {
+                min: 0,
+            },
+        },
+        security_deposit: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: null,
             validate: {
                 min: 0,
             },
@@ -109,10 +133,20 @@ Property.init(
                 max: 180,
             },
         },
+        furnishing: {
+            type: DataTypes.ENUM(...Object.values(FurnishingStatus)),
+            allowNull: true,
+            defaultValue: null,
+        },
         status: {
             type: DataTypes.ENUM(...Object.values(PropertyStatus)),
             allowNull: false,
-            defaultValue: PropertyStatus.AVAILABLE,
+            defaultValue: PropertyStatus.DRAFT,
+        },
+        availability_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
+            defaultValue: null,
         },
         created_at: {
             type: DataTypes.DATE,
@@ -145,7 +179,10 @@ Property.init(
                 fields: ['status'],
             },
             {
-                fields: ['price'],
+                fields: ['monthly_price'],
+            },
+            {
+                fields: ['availability_date'],
             },
         ],
     }
