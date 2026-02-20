@@ -407,3 +407,122 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
+
+/* ... Keep your existing .search-hero and .hero-content styles ... */
+
+.glass-search-container {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 10px 15px; /* Added horizontal padding */
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center; /* Crucial: aligns icon and text vertically */
+    gap: 12px;
+    padding: 10px 15px;
+    flex: 1;
+    min-width: 0; /* Prevents overflow issues */
+    border-radius: 16px;
+    transition: background 0.3s ease;
+}
+
+.search-input-group:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Icon Container to prevent compression */
+.icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px; 
+}
+
+.input-icon {
+    color: #60a5fa;
+    font-size: 1.2rem;
+    filter: drop-shadow(0 0 5px rgba(96, 165, 250, 0.3));
+}
+
+.input-stack {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    flex: 1;
+}
+
+.input-stack label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.input-stack input, 
+.input-stack select {
+    background: transparent !important;
+    border: none !important;
+    color: white !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    outline: none !important;
+    width: 100%;
+    padding: 0;
+    cursor: pointer;
+}
+
+/* Fix for Select Dropdown appearance */
+.input-stack select {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Highlight icon on focus */
+.search-input-group:focus-within .input-icon {
+    color: #4ade80;
+    filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.6));
+}
+
+.divider-line {
+    width: 1px;
+    height: 35px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 5px;
+}
+
+.hero-search-btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-left: 10px;
+}
+
+.hero-search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Ensure popular tags stay below and centered */
+.hero-tags {
+    margin-top: 20px;
+}

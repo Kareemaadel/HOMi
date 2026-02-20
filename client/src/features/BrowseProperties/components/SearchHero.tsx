@@ -11,8 +11,11 @@ const SearchHero: React.FC = () => {
                     <p>Discover over 5,000+ premium properties curated just for you.</p>
                     
                     <div className="glass-search-container">
+                        {/* Location Group */}
                         <div className="search-input-group">
-                            <FaMapMarkerAlt className="input-icon" />
+                            <div className="icon-box">
+                                <FaMapMarkerAlt className="input-icon" />
+                            </div>
                             <div className="input-stack">
                                 <label>Location</label>
                                 <input type="text" placeholder="Where are you going?" />
@@ -21,8 +24,11 @@ const SearchHero: React.FC = () => {
 
                         <div className="divider-line" />
 
+                        {/* Property Type Group */}
                         <div className="search-input-group">
-                            <FaHome className="input-icon" />
+                            <div className="icon-box">
+                                <FaHome className="input-icon" />
+                            </div>
                             <div className="input-stack">
                                 <label>Property Type</label>
                                 <select>
@@ -35,8 +41,11 @@ const SearchHero: React.FC = () => {
 
                         <div className="divider-line" />
 
+                        {/* Budget Group */}
                         <div className="search-input-group">
-                            <FaDollarSign className="input-icon" />
+                            <div className="icon-box">
+                                <FaDollarSign className="input-icon" />
+                            </div>
                             <div className="input-stack">
                                 <label>Budget</label>
                                 <select>
@@ -54,10 +63,10 @@ const SearchHero: React.FC = () => {
 
                     <div className="hero-tags">
                         <span>Popular:</span>
-                        <button>New York</button>
-                        <button>Miami</button>
-                        <button>Los Angeles</button>
-                        <button>Chicago</button>
+                        <button>Cairo</button>
+                        <button>Alexandria</button>
+                        <button>Giza</button>
+                        <button>Sahel</button>
                     </div>
                 </div>
             </div>
