@@ -1,15 +1,16 @@
-import React from 'react';
+// client\src\features\home\pages\LandlordHome.tsx
+import React, { useState } from 'react'; // Added useState
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import PropertyCard from '../components/LandlordHomeComponents/PropertyCard';
 import AddPropertyCard from '../components/LandlordHomeComponents/AddPropertyCard';
 import TenantAI from '../components/LandlordHomeComponents/TenantAI';
+import AddPropertyModal from '../components/LandlordHomeComponents/AddPropertyModal'; // Import the Modal
 import './landlordHome.css';
 
 const LandlordHome = () => {
-  const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
 
   const properties = [
     { id: 1, name: "Skyline Apartments", address: "Downtown, Unit 402", status: "rented", price: "$2,400" },
@@ -24,21 +25,19 @@ const LandlordHome = () => {
         <Header />
         
         <main className="dashboard-container">
-          {/* THE FIX: This container forces the horizontal split */}
           <div className="dashboard-split">
             
-            {/* Left Section: Properties */}
             <div className="left-column">
-              
               <header className="welcome-section">
                 <div className="welcome-text">
-                  <h1>Welocome Back, <span className="highlight">Mohy!</span></h1>
+                  <h1>Welcome Back, <span className="highlight">Mohy!</span></h1>
                   <p>Manage your properties and track occupancy.</p>
                 </div>
               </header>
 
               <section className="add-property-section">
-                <AddPropertyCard />
+                {/* Pass the setter to the card so it can open the modal */}
+                <AddPropertyCard onClick={() => setIsModalOpen(true)} />
               </section>
 
               <div className="properties-divider"></div>
@@ -50,16 +49,19 @@ const LandlordHome = () => {
               </section>
             </div>
 
-            {/* Right Section: AI Insights */}
             <aside className="right-column">
               <TenantAI />
             </aside>
-            
           </div>
         </main>
 
         <Footer />
       </div>
+
+      {/* Render the Modal conditionally */}
+      {isModalOpen && (
+        <AddPropertyModal onClose={() => setIsModalOpen(false)} />
+      )}
     </div>
   );
 };

@@ -21,15 +21,15 @@ function App() {
         <Route path="/" element={<LoadingPage />} />
 
         {/* Tenant Routes */}
-        <Route path="/tenant-home" element={<TenantHome />} />
+        {/* <Route path="/tenant-home" element={<TenantHome />} />
         <Route path="/browse-properties" element={<BrowseProperties />} />
         <Route path="/active-properties" element={<ActiveRentals />} />
-        <Route path="/prepayment-page" element={<PrePayment />} />
+        <Route path="/prepayment-page" element={<PrePayment />} /> */}
 
         {/* Landlord Routes */}
-        {/* <Route path="/landlord-home" element={<LandlordHome />} />
+        <Route path="/landlord-home" element={<LandlordHome />} />
         <Route path="/my-properties" element={<MyProperties />} />
-        <Route path="/rental-requests" element={<RentalRequests />} /> */}
+        <Route path="/rental-requests" element={<RentalRequests />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
