@@ -235,13 +235,14 @@
 
 /* Bottom Action Bar */
 .modal-footer-actions {
-    position: sticky;
+    position:relative;
     bottom: 0;
     background: white;
     padding-top: 24px;
     display: flex;
     gap: 16px;
     border-top: 1px solid #f1f5f9;
+    margin-top: 30px;
 }
 
 .footer-btn {

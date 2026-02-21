@@ -1,6 +1,14 @@
 // client\src\features\BrowseProperties\components\PropertyCard.tsx
 import React from 'react';
-import { FaBed, FaBath, FaRulerCombined, FaHeart, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
+import { 
+    FaBed, 
+    FaBath, 
+    FaRulerCombined, 
+    FaHeart, 
+    FaMapMarkerAlt, 
+    FaStar, 
+    FaChevronRight 
+} from 'react-icons/fa';
 import './PropertyCard.css';
 
 interface PropertyCardProps {
@@ -22,9 +30,13 @@ interface PropertyCardProps {
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) => {
     return (
         <div className="tenant-card-premium" onClick={onOpenDetails}>
+            {/* Top Media Section */}
             <div className="card-media">
                 <img src={property.image} alt={property.title} loading="lazy" />
                 
+                {/* Visual Overlays */}
+                <div className="card-overlay-gradient" />
+
                 <div className="card-badges">
                     {property.tags.map((tag, index) => (
                         <span key={index} className="badge-luxury">{tag}</span>
@@ -33,8 +45,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
 
                 <button 
                     className="wishlist-btn" 
+                    aria-label="Add to favorites"
                     onClick={(e) => {
-                        e.stopPropagation(); // Prevents opening modal when liking
+                        e.stopPropagation();
                         console.log("Added to favorites");
                     }}
                 >
@@ -42,56 +55,75 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
                 </button>
 
                 <div className="floating-price">
-                    <span className="currency">$</span>
-                    <span className="amount">{property.price.toLocaleString()}</span>
-                    <span className="term">/mo</span>
+                    <div className="price-container">
+                        <span className="currency">$</span>
+                        <span className="amount">{property.price.toLocaleString()}</span>
+                        <span className="term">/mo</span>
+                    </div>
                 </div>
 
                 <div className="rating-tag">
-                    <FaStar /> {property.rating}
+                    <FaStar className="star-icon" /> 
+                    <span>{property.rating}</span>
                 </div>
             </div>
 
+            {/* Bottom Content Section */}
             <div className="card-body">
                 <div className="location-row">
-                    <FaMapMarkerAlt /> {property.address}
+                    <div className="loc-icon-bg">
+                        <FaMapMarkerAlt />
+                    </div>
+                    <span>{property.address}</span>
                 </div>
                 
                 <h3 className="card-title">{property.title}</h3>
                 
                 <div className="specs-grid">
                     <div className="spec-pill">
-                        <FaBed /> 
-                        <span>{property.beds} {property.beds === 1 ? 'Bed' : 'Beds'}</span>
+                        <div className="pill-icon"><FaBed /></div>
+                        <div className="pill-info">
+                            <strong>{property.beds}</strong>
+                            <span>{property.beds === 1 ? 'Bed' : 'Beds'}</span>
+                        </div>
                     </div>
+                    
                     <div className="spec-pill">
-                        <FaBath /> 
-                        <span>{property.baths} {property.baths === 1 ? 'Bath' : 'Baths'}</span>
+                        <div className="pill-icon"><FaBath /></div>
+                        <div className="pill-info">
+                            <strong>{property.baths}</strong>
+                            <span>{property.baths === 1 ? 'Bath' : 'Baths'}</span>
+                        </div>
                     </div>
+                    
                     <div className="spec-pill">
-                        <FaRulerCombined /> 
-                        <span>{property.sqft} sqft</span>
+                        <div className="pill-icon"><FaRulerCombined /></div>
+                        <div className="pill-info">
+                            <strong>{property.sqft.toLocaleString()}</strong>
+                            <span>sqft</span>
+                        </div>
                     </div>
                 </div>
 
                 <div className="card-actions">
                     <button 
-                        className="btn-secondary" 
+                        className="btn-details-minimal"
                         onClick={(e) => {
-                            e.stopPropagation(); 
+                            e.stopPropagation();
                             onOpenDetails();
                         }}
                     >
-                        Details
+                        View Details
                     </button>
+                    
                     <button 
-                        className="btn-primary" 
+                        className="btn-apply-glow" 
                         onClick={(e) => {
                             e.stopPropagation();
                             console.log("Applying for:", property.title);
                         }}
                     >
-                        Apply Now
+                        Apply Now <FaChevronRight className="arrow-icon" />
                     </button>
                 </div>
             </div>

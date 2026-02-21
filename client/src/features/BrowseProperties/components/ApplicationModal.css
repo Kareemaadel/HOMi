@@ -232,7 +232,7 @@
 /* Ensure the sidebar has a consistent gap */
 .app-sidebar {
     width: 320px;
-    background: #d8d3ff;
+    background: #e4e0ff;
     border-right: 1px solid #f1f5f9;
     padding: 30px; /* Reduced top padding slightly for the back button */
     display: flex;
