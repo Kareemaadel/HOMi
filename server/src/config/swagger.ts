@@ -28,7 +28,7 @@ const options: Options = {
                 },
             },
             schemas: {
-                // User & Profile
+                // ─── Shared / Auth ────────────────────────────────────────────────────────
                 UserRole: {
                     type: 'string',
                     enum: ['LANDLORD', 'TENANT', 'MAINTENANCE_PROVIDER', 'ADMIN'],
@@ -309,161 +309,546 @@ const options: Options = {
                     },
                 },
 
-                // Properties
+                // ─── Property Enums ───────────────────────────────────────────────────────
                 PropertyStatus: {
                     type: 'string',
-                    enum: ['AVAILABLE', 'RENTED', 'UNAVAILABLE'],
-                    description: 'Property listing status',
+                    enum: ['Draft', 'Published', 'Rented'],
+                    description: 'Property listing status. Newly created properties start as **Draft**. Landlords publish them (**Published**) to make them visible to tenants. Once a tenant is found, status changes to **Rented**.',
+                    example: 'Draft',
                 },
+                PropertyType: {
+                    type: 'string',
+                    enum: ['APARTMENT', 'VILLA', 'STUDIO', 'CHALET'],
+                    description: 'Type of the property unit',
+                    example: 'APARTMENT',
+                },
+                FurnishingStatus: {
+                    type: 'string',
+                    enum: ['Fully', 'Semi', 'Unfurnished'],
+                    description: 'Furnishing level of the property. **Fully** = all furniture and appliances included. **Semi** = kitchen appliances + basic fixtures. **Unfurnished** = bare unit.',
+                    example: 'Fully',
+                },
+                TargetTenant: {
+                    type: 'string',
+                    enum: ['ANY', 'STUDENTS', 'FAMILIES', 'TOURISTS'],
+                    description: 'Preferred tenant type the landlord is targeting. Defaults to **ANY**.',
+                    example: 'ANY',
+                },
+
+                // ─── Amenities ────────────────────────────────────────────────────────────
+                AmenityName: {
+                    type: 'string',
+                    description: 'Available amenity name — must exactly match one of the seeded values',
+                    enum: [
+                        'Private Parking',
+                        'Smart Home System',
+                        '24/7 Concierge',
+                        'Fitness Center',
+                        'High-Speed Wi-Fi',
+                        'Pet Friendly',
+                        'EV Charging Station',
+                        'Keyless / Biometric Entry',
+                        'Rooftop Lounge',
+                        'Spa & Sauna',
+                        'Private Cinema / Theater Room',
+                        'Valet Parking',
+                        'Co-working Space / Business Center',
+                        '24/7 Security System',
+                        'Air Conditioning (A/C)',
+                        'Kids Play Area',
+                        'Intercom System',
+                        '24/7 Compound Security',
+                    ],
+                    example: 'Fitness Center',
+                },
+                AmenityResponse: {
+                    type: 'object',
+                    description: 'An amenity record attached to a property',
+                    properties: {
+                        id: { type: 'string', format: 'uuid', description: 'Amenity ID', example: 'a1b2c3d4-...' },
+                        name: { $ref: '#/components/schemas/AmenityName' },
+                    },
+                },
+
+                // ─── House Rules ──────────────────────────────────────────────────────────
+                HouseRuleName: {
+                    type: 'string',
+                    description: 'Available house rule name — must exactly match one of the seeded values',
+                    enum: [
+                        'No Smoking',
+                        'Pets Allowed',
+                        'No Parties or Events',
+                        'Quiet Hours (10 PM - 8 AM)',
+                        'No Additional Guests',
+                        'No Shoes Inside',
+                        'Respect Neighbours',
+                        'Children Welcome',
+                        'No Cooking of Strong-Smelling Food',
+                        'Recycling Required',
+                        'No Open Flames / Candles',
+                        'CCTV on Premises',
+                    ],
+                    example: 'No Smoking',
+                },
+                HouseRuleResponse: {
+                    type: 'object',
+                    description: 'A house rule record attached to a property',
+                    properties: {
+                        id: { type: 'string', format: 'uuid', description: 'House rule ID', example: 'h1i2j3k4-...' },
+                        name: { $ref: '#/components/schemas/HouseRuleName' },
+                    },
+                },
+
+                // ─── Property Images ──────────────────────────────────────────────────────
                 PropertyImage: {
                     type: 'object',
+                    description: 'A property image record returned in responses',
                     properties: {
                         id: { type: 'string', format: 'uuid' },
                         propertyId: { type: 'string', format: 'uuid' },
-                        imageUrl: { type: 'string', format: 'uri' },
-                        isMain: { type: 'boolean', description: 'Whether this is the main property image' },
+                        imageUrl: { type: 'string', format: 'uri', example: 'https://example.com/image1.jpg' },
+                        isMain: { type: 'boolean', description: 'Whether this is the primary/cover image of the property', example: true },
                     },
                 },
                 PropertyImageInput: {
                     type: 'object',
                     required: ['image_url'],
+                    description: 'Image object used in create/update requests',
                     properties: {
                         image_url: {
                             type: 'string',
                             format: 'uri',
                             maxLength: 500,
-                            description: 'URL to the property image',
+                            description: 'Public URL to the property image',
                             example: 'https://example.com/property-image.jpg',
                         },
                         is_main: {
                             type: 'boolean',
                             default: false,
-                            description: 'Mark as main image (only one per property)',
+                            description: 'Mark this image as the main cover photo. Only one image per property can be main.',
                             example: true,
                         },
                     },
                 },
-                PropertyResponse: {
+
+                // ─── Property Specifications ──────────────────────────────────────────────
+                PropertySpecificationsInput: {
                     type: 'object',
+                    required: ['bedrooms', 'bathrooms', 'area_sqft'],
+                    description: 'Physical specifications of the property unit',
+                    properties: {
+                        bedrooms: {
+                            type: 'integer',
+                            minimum: 0,
+                            description: 'Number of bedrooms. Use 0 for studios.',
+                            example: 2,
+                        },
+                        bathrooms: {
+                            type: 'integer',
+                            minimum: 0,
+                            description: 'Number of bathrooms',
+                            example: 2,
+                        },
+                        area_sqft: {
+                            type: 'number',
+                            format: 'double',
+                            minimum: 0.01,
+                            description: 'Total area of the property in square feet',
+                            example: 1200,
+                        },
+                    },
+                },
+                PropertySpecificationsResponse: {
+                    type: 'object',
+                    description: 'Physical specifications as returned in the API response',
                     properties: {
                         id: { type: 'string', format: 'uuid' },
-                        landlordId: { type: 'string', format: 'uuid' },
-                        title: { type: 'string' },
-                        description: { type: 'string' },
-                        price: { type: 'number', format: 'double' },
-                        address: { type: 'string' },
-                        locationLat: { type: 'number', format: 'float' },
-                        locationLong: { type: 'number', format: 'float' },
-                        status: { $ref: '#/components/schemas/PropertyStatus' },
-                        createdAt: { type: 'string', format: 'date-time' },
-                        images: {
-                            type: 'array',
-                            items: { $ref: '#/components/schemas/PropertyImage' },
-                        },
+                        bedrooms: { type: 'integer', example: 2 },
+                        bathrooms: { type: 'integer', example: 2 },
+                        areaSqft: { type: 'number', format: 'double', example: 1200 },
                     },
                 },
-                CreatePropertyRequest: {
+                PropertyDetailedLocationInput: {
                     type: 'object',
-                    required: ['title', 'description', 'price', 'address', 'location_lat', 'location_long', 'images'],
+                    required: ['floor', 'city', 'area', 'street_name', 'building_number', 'unit_apt', 'location_lat', 'location_long'],
+                    description: 'Detailed address breakdown and GPS coordinates',
                     properties: {
-                        title: {
+                        floor: {
+                            type: 'integer',
+                            description: 'Floor number',
+                            example: 5,
+                        },
+                        city: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 100,
+                            example: 'Cairo',
+                        },
+                        area: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 100,
+                            example: 'Downtown',
+                        },
+                        street_name: {
                             type: 'string',
                             minLength: 1,
                             maxLength: 255,
-                            description: 'Property title',
-                            example: 'Beautiful 2BR Apartment',
+                            example: 'Tahrir Street',
+                        },
+                        building_number: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 50,
+                            example: '3',
+                        },
+                        unit_apt: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 50,
+                            example: 'Apt 12',
+                        },
+                        location_lat: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -90,
+                            maximum: 90,
+                            example: 30.0444,
+                        },
+                        location_long: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -180,
+                            maximum: 180,
+                            example: 31.2357,
+                        },
+                    },
+                },
+                PropertyDetailedLocationResponse: {
+                    type: 'object',
+                    description: 'Detailed location as returned in the API response',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        floor: { type: 'integer', example: 5 },
+                        city: { type: 'string', example: 'Cairo' },
+                        area: { type: 'string', example: 'Downtown' },
+                        streetName: { type: 'string', example: 'Tahrir Street' },
+                        buildingNumber: { type: 'string', example: '3' },
+                        unitApt: { type: 'string', example: 'Apt 12' },
+                        locationLat: { type: 'number', format: 'float', example: 30.0444 },
+                        locationLong: { type: 'number', format: 'float', example: 31.2357 },
+                    },
+                },
+
+                // ─── Property Response ────────────────────────────────────────────────────
+                PropertyResponse: {
+                    type: 'object',
+                    description: 'Full property object returned by the API',
+                    properties: {
+                        id: {
+                            type: 'string',
+                            format: 'uuid',
+                            description: 'Unique property ID',
+                            example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+                        },
+                        landlordId: {
+                            type: 'string',
+                            format: 'uuid',
+                            description: 'ID of the landlord that owns this property',
+                        },
+                        title: {
+                            type: 'string',
+                            description: 'Property listing title',
+                            example: 'Beautiful 2BR Apartment in Downtown Cairo',
                         },
                         description: {
                             type: 'string',
-                            minLength: 1,
-                            description: 'Detailed property description',
+                            description: 'Full description of the property',
                             example: 'Spacious apartment with modern amenities in downtown',
                         },
-                        price: {
+                        monthlyPrice: {
                             type: 'number',
                             format: 'double',
-                            minimum: 0.01,
-                            description: 'Monthly rent price',
+                            description: 'Monthly rent price in EGP',
                             example: 1500.00,
                         },
-                        address: {
-                            type: 'string',
-                            minLength: 1,
-                            description: 'Full property address',
-                            example: '123 Main Street, Cairo, Egypt',
-                        },
-                        location_lat: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -90,
-                            maximum: 90,
-                            description: 'Latitude coordinate',
-                            example: 30.0444,
-                        },
-                        location_long: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -180,
-                            maximum: 180,
-                            description: 'Longitude coordinate',
-                            example: 31.2357,
-                        },
-                        images: {
-                            type: 'array',
-                            items: { $ref: '#/components/schemas/PropertyImageInput' },
-                            minItems: 1,
-                            description: 'Property images (at least one required)',
-                        },
-                    },
-                },
-                UpdatePropertyRequest: {
-                    type: 'object',
-                    description: 'All fields are optional - only provided fields will be updated',
-                    properties: {
-                        title: {
-                            type: 'string',
-                            minLength: 1,
-                            maxLength: 255,
-                            example: 'Updated Beautiful 2BR Apartment',
-                        },
-                        description: {
-                            type: 'string',
-                            minLength: 1,
-                            example: 'Updated description with new amenities',
-                        },
-                        price: {
+                        securityDeposit: {
                             type: 'number',
                             format: 'double',
-                            minimum: 0.01,
-                            example: 1600.00,
+                            description: 'Refundable security deposit amount in EGP',
+                            example: 3000.00,
                         },
                         address: {
                             type: 'string',
-                            minLength: 1,
-                            example: '123 Main Street, Cairo, Egypt',
+                            description: 'Human-readable address string',
+                            example: 'Tahrir Street, Downtown, Cairo, Egypt',
                         },
-                        location_lat: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -90,
-                            maximum: 90,
-                            example: 30.0444,
+                        type: {
+                            allOf: [{ $ref: '#/components/schemas/PropertyType' }],
+                            nullable: true,
+                            description: 'Type of property unit. null if not specified.',
                         },
-                        location_long: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -180,
-                            maximum: 180,
-                            example: 31.2357,
+                        furnishing: {
+                            allOf: [{ $ref: '#/components/schemas/FurnishingStatus' }],
+                            nullable: true,
+                            description: 'Furnishing level of the property. null if not specified.',
                         },
                         status: {
                             $ref: '#/components/schemas/PropertyStatus',
                         },
+                        targetTenant: {
+                            $ref: '#/components/schemas/TargetTenant',
+                        },
+                        availabilityDate: {
+                            type: 'string',
+                            format: 'date',
+                            nullable: true,
+                            description: 'Date from which the property is available for rent (YYYY-MM-DD)',
+                            example: '2026-03-01',
+                        },
+                        createdAt: {
+                            type: 'string',
+                            format: 'date-time',
+                            description: 'Timestamp when the property was created',
+                        },
+                        images: {
+                            type: 'array',
+                            description: 'List of all images for this property',
+                            items: { $ref: '#/components/schemas/PropertyImage' },
+                        },
+                        amenities: {
+                            type: 'array',
+                            description: 'List of amenities attached to this property',
+                            items: { $ref: '#/components/schemas/AmenityResponse' },
+                        },
+                        houseRules: {
+                            type: 'array',
+                            description: 'List of house rules that apply to this property',
+                            items: { $ref: '#/components/schemas/HouseRuleResponse' },
+                        },
+                        specifications: {
+                            allOf: [{ $ref: '#/components/schemas/PropertySpecificationsResponse' }],
+                            nullable: true,
+                            description: 'Physical specifications of the property. null if not yet provided.',
+                        },
+                        detailedLocation: {
+                            allOf: [{ $ref: '#/components/schemas/PropertyDetailedLocationResponse' }],
+                            nullable: true,
+                            description: 'Detailed location breakdown and GPS coordinates.',
+                        },
+                    },
+                },
+
+                // ─── Create Property Request ──────────────────────────────────────────────
+                CreatePropertyRequest: {
+                    type: 'object',
+                    required: [
+                        'title',
+                        'description',
+                        'monthly_price',
+                        'security_deposit',
+                        'address',
+                        'furnishing',
+                        'availability_date',
+                        'images',
+                        'specifications',
+                        'detailed_location',
+                    ],
+                    description: 'Payload to create a new property listing. Requires landlord JWT token.',
+                    properties: {
+                        title: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 255,
+                            description: 'Short descriptive title for the listing',
+                            example: 'Beautiful 2BR Apartment in Downtown Cairo',
+                        },
+                        description: {
+                            type: 'string',
+                            minLength: 1,
+                            description: 'Detailed description of the property, neighbourhood, and features',
+                            example: 'Spacious apartment with modern amenities in downtown. Close to metro and shopping malls.',
+                        },
+                        monthly_price: {
+                            type: 'number',
+                            format: 'double',
+                            minimum: 0.01,
+                            maximum: 999999999.99,
+                            description: 'Monthly rent price in EGP',
+                            example: 1500.00,
+                        },
+                        security_deposit: {
+                            type: 'number',
+                            format: 'double',
+                            minimum: 0,
+                            maximum: 999999999.99,
+                            description: 'Refundable security deposit in EGP (can be 0)',
+                            example: 3000.00,
+                        },
+                        address: {
+                            type: 'string',
+                            minLength: 1,
+                            description: 'Human-readable address string',
+                            example: 'Tahrir Street, Downtown, Cairo, Egypt',
+                        },
+                        type: {
+                            $ref: '#/components/schemas/PropertyType',
+                            description: 'Type of property unit (optional)',
+                        },
+                        furnishing: {
+                            $ref: '#/components/schemas/FurnishingStatus',
+                        },
+                        target_tenant: {
+                            $ref: '#/components/schemas/TargetTenant',
+                            description: 'Preferred tenant type (optional, defaults to ANY)',
+                        },
+                        availability_date: {
+                            type: 'string',
+                            format: 'date',
+                            pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+                            description: 'Date the property becomes available for rent (YYYY-MM-DD format)',
+                            example: '2026-03-01',
+                        },
                         images: {
                             type: 'array',
                             items: { $ref: '#/components/schemas/PropertyImageInput' },
                             minItems: 1,
-                            description: 'Replace all property images',
+                            description: 'At least one image is required. Only one image can have `is_main: true`.',
+                        },
+                        amenity_names: {
+                            type: 'array',
+                            description: 'List of amenity names to attach. Each value must exactly match a seeded amenity name. Omit or pass [] for no amenities.',
+                            items: { $ref: '#/components/schemas/AmenityName' },
+                            example: ['Fitness Center', 'High-Speed Wi-Fi'],
+                            default: [],
+                        },
+                        house_rule_names: {
+                            type: 'array',
+                            description: 'List of house rule names to attach. Each value must exactly match a seeded house rule name. Omit or pass [] for no house rules.',
+                            items: { $ref: '#/components/schemas/HouseRuleName' },
+                            example: ['No Smoking', 'Pets Allowed'],
+                            default: [],
+                        },
+                        specifications: {
+                            $ref: '#/components/schemas/PropertySpecificationsInput',
+                        },
+                        detailed_location: {
+                            $ref: '#/components/schemas/PropertyDetailedLocationInput',
+                        },
+                    },
+                },
+
+                // ─── Update Property Request ──────────────────────────────────────────────
+                UpdatePropertyRequest: {
+                    type: 'object',
+                    description: 'All fields are optional — only provided fields will be updated. Requires landlord JWT token and ownership of the property.',
+                    properties: {
+                        title: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 255,
+                            description: 'New listing title',
+                            example: 'Updated 2BR Apartment – Now Pet Friendly',
+                        },
+                        description: {
+                            type: 'string',
+                            minLength: 1,
+                            description: 'New listing description',
+                            example: 'Updated description with newly added amenities and renovated kitchen.',
+                        },
+                        monthly_price: {
+                            type: 'number',
+                            format: 'double',
+                            minimum: 0.01,
+                            maximum: 999999999.99,
+                            description: 'New monthly price in EGP',
+                            example: 1600.00,
+                        },
+                        security_deposit: {
+                            type: 'number',
+                            format: 'double',
+                            minimum: 0,
+                            maximum: 999999999.99,
+                            description: 'New security deposit amount in EGP',
+                            example: 3200.00,
+                        },
+                        address: {
+                            type: 'string',
+                            minLength: 1,
+                            description: 'Updated human-readable address',
+                            example: '456 Nile Street, Giza, Egypt',
+                        },
+                        type: {
+                            $ref: '#/components/schemas/PropertyType',
+                            description: 'Updated property type',
+                        },
+                        furnishing: {
+                            $ref: '#/components/schemas/FurnishingStatus',
+                            description: 'Updated furnishing status',
+                        },
+                        status: {
+                            $ref: '#/components/schemas/PropertyStatus',
+                            description: 'Updated listing status (e.g. publish the property by setting to **Published**)',
+                        },
+                        target_tenant: {
+                            $ref: '#/components/schemas/TargetTenant',
+                            description: 'Updated preferred tenant type',
+                        },
+                        availability_date: {
+                            type: 'string',
+                            format: 'date',
+                            pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+                            description: 'Updated availability date (YYYY-MM-DD)',
+                            example: '2026-04-01',
+                        },
+                        images: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/PropertyImageInput' },
+                            minItems: 1,
+                            description: '**Replace all** existing images with this new set. Omit to leave images unchanged.',
+                        },
+                        amenity_names: {
+                            type: 'array',
+                            description: '**Replace all** amenities with this new list. Pass `[]` to remove all amenities. Omit to leave amenities unchanged.',
+                            items: { $ref: '#/components/schemas/AmenityName' },
+                            example: ['Rooftop Lounge', 'Pet Friendly'],
+                        },
+                        house_rule_names: {
+                            type: 'array',
+                            description: '**Replace all** house rules with this new list. Pass `[]` to remove all house rules. Omit to leave house rules unchanged.',
+                            items: { $ref: '#/components/schemas/HouseRuleName' },
+                            example: ['No Smoking', 'No Parties or Events'],
+                        },
+                        specifications: {
+                            allOf: [
+                                {
+                                    type: 'object',
+                                    description: 'Partial update of property specifications.',
+                                    properties: {
+                                        bedrooms: { type: 'integer', minimum: 0, example: 3 },
+                                        bathrooms: { type: 'integer', minimum: 0, example: 2 },
+                                        area_sqft: { type: 'number', format: 'double', minimum: 0.01, example: 1350 },
+                                    },
+                                },
+                            ],
+                        },
+                        detailed_location: {
+                            allOf: [
+                                {
+                                    type: 'object',
+                                    description: 'Partial update of detailed location.',
+                                    properties: {
+                                        floor: { type: 'integer', example: 6 },
+                                        city: { type: 'string', minLength: 1, maxLength: 100, example: 'Giza' },
+                                        area: { type: 'string', minLength: 1, maxLength: 100, example: 'Dokki' },
+                                        street_name: { type: 'string', minLength: 1, maxLength: 255, example: 'Nile Street' },
+                                        building_number: { type: 'string', minLength: 1, maxLength: 50, example: '7' },
+                                        unit_apt: { type: 'string', minLength: 1, maxLength: 50, example: 'Apt 601' },
+                                        location_lat: { type: 'number', format: 'float', example: 30.0131 },
+                                        location_long: { type: 'number', format: 'float', example: 31.2089 },
+                                    },
+                                },
+                            ],
                         },
                     },
                 },
@@ -481,7 +866,7 @@ const options: Options = {
             },
             {
                 name: 'Properties',
-                description: 'Property listing management endpoints',
+                description: 'Property listing management endpoints — create, read, update, delete.',
             },
         ],
     },
