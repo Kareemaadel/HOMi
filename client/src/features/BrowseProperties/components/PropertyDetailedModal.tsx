@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { 
     FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, 
     FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, 
-    FaLayerGroup, FaArrowRight, FaComment, FaSmokingBan, 
-    FaPaw, FaVolumeMute, FaUsersSlash, FaInfoCircle
+    FaArrowRight, FaComment, FaSmokingBan, 
+    FaPaw, FaVolumeMute, FaUsersSlash, FaInfoCircle,
+    FaShieldAlt, FaChair, FaUsers
 } from 'react-icons/fa';
 import ApplicationModal from './ApplicationModal';
 import './PropertyDetailedModal.css';
@@ -15,12 +16,14 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
     // Fallback images array
     const images = [property.image, property.image, property.image, property.image, property.image];
 
-    // Mock Rules (In production, these would come from property.rules)
+    // House Rules & Context
     const houseRules = [
         { icon: <FaSmokingBan />, text: "No Smoking", active: true },
         { icon: <FaPaw />, text: "Pet Friendly", active: property.petsAllowed ?? false },
         { icon: <FaVolumeMute />, text: "Quiet Hours (10PM - 8AM)", active: true },
         { icon: <FaUsersSlash />, text: "No Large Parties", active: true },
+        // NEW: Target Tenant
+        { icon: <FaUsers />, text: `Preferred: ${property.targetTenant || 'Any'}`, active: true },
     ];
 
     if (showApplication) {
@@ -68,7 +71,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </div>
                         </div>
 
-                        {/* QUICK SPECS */}
+                        {/* NEW QUICK SPECS (Updated with Deposit and Furnishing) */}
                         <div className="detail-specs">
                             <div className="spec-item">
                                 <FaBed />
@@ -81,6 +84,16 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             <div className="spec-item">
                                 <FaRulerCombined />
                                 <span>{property.sqft} sqft</span>
+                            </div>
+                            {/* Security Deposit */}
+                            <div className="spec-item highlight">
+                                <FaShieldAlt />
+                                <span>${property.securityDeposit?.toLocaleString() || 'N/A'} Deposit</span>
+                            </div>
+                            {/* Furnishing */}
+                            <div className="spec-item highlight">
+                                <FaChair />
+                                <span>{property.furnishing || 'Unfurnished'}</span>
                             </div>
                         </div>
 
@@ -97,9 +110,9 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             </p>
                         </div>
 
-                        {/* HOUSE RULES SECTION (New Addition) */}
+                        {/* HOUSE RULES SECTION */}
                         <div className="detail-section rules-section">
-                            <h3>House Rules</h3>
+                            <h3>House Rules & Preferences</h3>
                             <div className="rules-grid">
                                 {houseRules.map((rule, idx) => (
                                     <div key={idx} className={`rule-item ${!rule.active ? 'disabled' : ''}`}>
