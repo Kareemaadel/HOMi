@@ -381,3 +381,26 @@
     margin: 0 auto;
     width: 100%;
 }
+
+/* Specific Highlight for new Specs */
+.spec-item.highlight {
+    background: #f0f9ff; /* Light blue background */
+    border: 1px solid #bae6fd;
+}
+
+.spec-item.highlight svg {
+    color: #0284c7; /* Darker blue icons */
+}
+
+/* Ensure the specs grid can wrap if items get too many */
+.detail-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+/* Specific Target Tenant Rule style */
+.rule-item svg {
+    font-size: 1.1rem;
+}

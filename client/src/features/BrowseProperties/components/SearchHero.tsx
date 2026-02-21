@@ -66,7 +66,7 @@ const SearchHero: React.FC = () => {
                         <button>Cairo</button>
                         <button>Alexandria</button>
                         <button>Giza</button>
-                        <button>Sahel</button>
+                        <button>North Coast</button>
                     </div>
                 </div>
             </div>
