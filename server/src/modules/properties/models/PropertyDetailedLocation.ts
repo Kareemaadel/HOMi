@@ -13,9 +13,9 @@ import sequelize from '../../../config/database.js';
 // Forward declaration
 import type { Property } from './Property.js';
 
-export class PropertySpecifications extends Model<
-    InferAttributes<PropertySpecifications>,
-    InferCreationAttributes<PropertySpecifications>
+export class PropertyDetailedLocation extends Model<
+    InferAttributes<PropertyDetailedLocation>,
+    InferCreationAttributes<PropertyDetailedLocation>
 > {
     // Primary key
     declare id: CreationOptional<string>;
@@ -23,10 +23,17 @@ export class PropertySpecifications extends Model<
     // Foreign key
     declare property_id: ForeignKey<string>;
 
-    // Specification fields
-    declare bedrooms: number;
-    declare bathrooms: number;
-    declare area_sqft: number;
+    // Location fields
+    declare floor: number;
+    declare city: string;
+    declare area: string;
+    declare street_name: string;
+    declare building_number: string;
+    declare unit_apt: string;
+
+    // GPS coordinates 
+    declare location_lat: number;
+    declare location_long: number;
 
     // Timestamps
     declare created_at: CreationOptional<Date>;
@@ -35,11 +42,11 @@ export class PropertySpecifications extends Model<
     // Associations
     declare property?: NonAttribute<Property>;
     declare static associations: {
-        property: Association<PropertySpecifications, Property>;
+        property: Association<PropertyDetailedLocation, Property>;
     };
 }
 
-PropertySpecifications.init(
+PropertyDetailedLocation.init(
     {
         id: {
             type: DataTypes.UUID,
@@ -55,25 +62,44 @@ PropertySpecifications.init(
                 key: 'id',
             },
         },
-        bedrooms: {
+        floor: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            validate: {
-                min: 0,
-            },
         },
-        bathrooms: {
-            type: DataTypes.INTEGER,
+        city: {
+            type: DataTypes.STRING(100),
+            allowNull: false,
+        },
+        area: {
+            type: DataTypes.STRING(100),
+            allowNull: false,
+        },
+        street_name: {
+            type: DataTypes.STRING(255),
+            allowNull: false,
+        },
+        building_number: {
+            type: DataTypes.STRING(50),
+            allowNull: false,
+        },
+        unit_apt: {
+            type: DataTypes.STRING(50),
+            allowNull: false,
+        },
+        location_lat: {
+            type: DataTypes.FLOAT,
             allowNull: false,
             validate: {
-                min: 0,
+                min: -90,
+                max: 90,
             },
         },
-        area_sqft: {
-            type: DataTypes.DECIMAL(10, 2),
+        location_long: {
+            type: DataTypes.FLOAT,
             allowNull: false,
             validate: {
-                min: 0,
+                min: -180,
+                max: 180,
             },
         },
         created_at: {
@@ -87,8 +113,8 @@ PropertySpecifications.init(
     },
     {
         sequelize,
-        tableName: 'property_specifications',
-        modelName: 'PropertySpecifications',
+        tableName: 'property_detailed_location',
+        modelName: 'PropertyDetailedLocation',
         timestamps: true,
         underscored: true,
         createdAt: 'created_at',
@@ -102,4 +128,4 @@ PropertySpecifications.init(
     }
 );
 
-export default PropertySpecifications;
+export default PropertyDetailedLocation;

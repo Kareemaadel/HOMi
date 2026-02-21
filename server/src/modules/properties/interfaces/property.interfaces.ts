@@ -30,10 +30,7 @@ export interface HouseRuleResponse {
 export interface PropertySpecificationsInput {
     bedrooms: number;
     bathrooms: number;
-    floor: number;
-    parking_spaces: number;
     area_sqft: number;
-    detailed_location: string;
 }
 
 /**
@@ -43,10 +40,36 @@ export interface PropertySpecificationsResponse {
     id: string;
     bedrooms: number;
     bathrooms: number;
-    floor: number;
-    parkingSpaces: number;
     areaSqft: number;
-    detailedLocation: string;
+}
+
+/**
+ * Property Detailed Location Input DTO
+ */
+export interface PropertyDetailedLocationInput {
+    floor: number;
+    city: string;
+    area: string;
+    street_name: string;
+    building_number: string;
+    unit_apt: string;
+    location_lat: number;
+    location_long: number;
+}
+
+/**
+ * Property Detailed Location Response DTO
+ */
+export interface PropertyDetailedLocationResponse {
+    id: string;
+    floor: number;
+    city: string;
+    area: string;
+    streetName: string;
+    buildingNumber: string;
+    unitApt: string;
+    locationLat: number;
+    locationLong: number;
 }
 
 /**
@@ -58,8 +81,6 @@ export interface CreatePropertyRequest {
     monthly_price: number;
     security_deposit: number;
     address: string;
-    location_lat: number;
-    location_long: number;
     type?: PropertyTypeType;
     furnishing: FurnishingStatusType;
     target_tenant?: TargetTenantType;
@@ -68,6 +89,7 @@ export interface CreatePropertyRequest {
     amenity_names?: string[];
     house_rule_names?: string[];
     specifications: PropertySpecificationsInput;
+    detailed_location: PropertyDetailedLocationInput;
 }
 
 /**
@@ -80,8 +102,6 @@ export interface UpdatePropertyRequest {
     monthly_price?: number;
     security_deposit?: number;
     address?: string;
-    location_lat?: number;
-    location_long?: number;
     type?: PropertyTypeType;
     furnishing?: FurnishingStatusType;
     status?: PropertyStatusType;
@@ -91,6 +111,7 @@ export interface UpdatePropertyRequest {
     amenity_names?: string[];
     house_rule_names?: string[];
     specifications?: Partial<PropertySpecificationsInput>;
+    detailed_location?: Partial<PropertyDetailedLocationInput>;
 }
 
 /**
@@ -130,8 +151,6 @@ export interface PropertyResponse {
     monthlyPrice: number;
     securityDeposit: number;
     address: string;
-    locationLat: number;
-    locationLong: number;
     type: PropertyTypeType | null;
     furnishing: FurnishingStatusType | null;
     status: PropertyStatusType;
@@ -142,6 +161,7 @@ export interface PropertyResponse {
     amenities: AmenityResponse[];
     houseRules: HouseRuleResponse[];
     specifications: PropertySpecificationsResponse | null;
+    detailedLocation: PropertyDetailedLocationResponse | null;
 }
 
 /**

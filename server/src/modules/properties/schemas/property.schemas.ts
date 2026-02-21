@@ -28,24 +28,56 @@ export const PropertySpecificationsSchema = z.object({
         .number({ error: 'Bathrooms is required' })
         .int('Bathrooms must be an integer')
         .min(0, 'Bathrooms cannot be negative'),
-    floor: z
-        .number({ error: 'Floor is required' })
-        .int('Floor must be an integer'),
-    parking_spaces: z
-        .number()
-        .int('Parking spaces must be an integer')
-        .min(0, 'Parking spaces cannot be negative')
-        .default(0),
     area_sqft: z
         .number({ error: 'Area is required' })
         .positive('Area must be a positive number'),
-    detailed_location: z
-        .string({ error: 'Detailed location is required' })
-        .min(1, 'Detailed location is required')
-        .trim(),
 });
 
 export type PropertySpecificationsInput = z.infer<typeof PropertySpecificationsSchema>;
+
+/**
+ * Property Detailed Location Schema
+ */
+export const PropertyDetailedLocationSchema = z.object({
+    floor: z
+        .number({ error: 'Floor is required' })
+        .int('Floor must be an integer'),
+    city: z
+        .string({ error: 'City is required' })
+        .min(1, 'City is required')
+        .max(100, 'City must be at most 100 characters')
+        .trim(),
+    area: z
+        .string({ error: 'Area is required' })
+        .min(1, 'Area is required')
+        .max(100, 'Area must be at most 100 characters')
+        .trim(),
+    street_name: z
+        .string({ error: 'Street name is required' })
+        .min(1, 'Street name is required')
+        .max(255, 'Street name must be at most 255 characters')
+        .trim(),
+    building_number: z
+        .string({ error: 'Building number is required' })
+        .min(1, 'Building number is required')
+        .max(50, 'Building number must be at most 50 characters')
+        .trim(),
+    unit_apt: z
+        .string({ error: 'Unit/Apt is required' })
+        .min(1, 'Unit/Apt is required')
+        .max(50, 'Unit/Apt must be at most 50 characters')
+        .trim(),
+    location_lat: z
+        .number()
+        .min(-90, 'Latitude must be between -90 and 90')
+        .max(90, 'Latitude must be between -90 and 90'),
+    location_long: z
+        .number()
+        .min(-180, 'Longitude must be between -180 and 180')
+        .max(180, 'Longitude must be between -180 and 180'),
+});
+
+export type PropertyDetailedLocationInput = z.infer<typeof PropertyDetailedLocationSchema>;
 
 /**
  * Create Property Schema
@@ -73,14 +105,6 @@ export const CreatePropertySchema = z.object({
         .string()
         .min(1, 'Address is required')
         .trim(),
-    location_lat: z
-        .number()
-        .min(-90, 'Latitude must be between -90 and 90')
-        .max(90, 'Latitude must be between -90 and 90'),
-    location_long: z
-        .number()
-        .min(-180, 'Longitude must be between -180 and 180')
-        .max(180, 'Longitude must be between -180 and 180'),
     type: z.enum(
         [PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET],
         { message: 'Type must be APARTMENT, VILLA, STUDIO, or CHALET' }
@@ -118,6 +142,7 @@ export const CreatePropertySchema = z.object({
         .optional()
         .default([]),
     specifications: PropertySpecificationsSchema,
+    detailed_location: PropertyDetailedLocationSchema,
 });
 
 export type CreatePropertyInput = z.infer<typeof CreatePropertySchema>;
@@ -152,16 +177,6 @@ export const UpdatePropertySchema = z.object({
         .string()
         .min(1, 'Address cannot be empty')
         .trim()
-        .optional(),
-    location_lat: z
-        .number()
-        .min(-90, 'Latitude must be between -90 and 90')
-        .max(90, 'Latitude must be between -90 and 90')
-        .optional(),
-    location_long: z
-        .number()
-        .min(-180, 'Longitude must be between -180 and 180')
-        .max(180, 'Longitude must be between -180 and 180')
         .optional(),
     type: z.enum(
         [PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET],
@@ -203,6 +218,7 @@ export const UpdatePropertySchema = z.object({
         .array(z.string().min(1, 'House rule name cannot be empty'))
         .optional(),
     specifications: PropertySpecificationsSchema.partial().optional(),
+    detailed_location: PropertyDetailedLocationSchema.partial().optional(),
 });
 
 export type UpdatePropertyInput = z.infer<typeof UpdatePropertySchema>;
@@ -277,4 +293,5 @@ export default {
     PropertyQuerySchema,
     PropertyImageSchema,
     PropertySpecificationsSchema,
+    PropertyDetailedLocationSchema,
 };

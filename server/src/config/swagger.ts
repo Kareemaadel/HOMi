@@ -434,7 +434,7 @@ const options: Options = {
                 // ─── Property Specifications ──────────────────────────────────────────────
                 PropertySpecificationsInput: {
                     type: 'object',
-                    required: ['bedrooms', 'bathrooms', 'floor', 'area_sqft', 'detailed_location'],
+                    required: ['bedrooms', 'bathrooms', 'area_sqft'],
                     description: 'Physical specifications of the property unit',
                     properties: {
                         bedrooms: {
@@ -449,18 +449,6 @@ const options: Options = {
                             description: 'Number of bathrooms',
                             example: 2,
                         },
-                        floor: {
-                            type: 'integer',
-                            description: 'Floor number (0 = ground floor, negative for basement)',
-                            example: 5,
-                        },
-                        parking_spaces: {
-                            type: 'integer',
-                            minimum: 0,
-                            default: 0,
-                            description: 'Number of dedicated parking spaces',
-                            example: 1,
-                        },
                         area_sqft: {
                             type: 'number',
                             format: 'double',
@@ -468,25 +456,87 @@ const options: Options = {
                             description: 'Total area of the property in square feet',
                             example: 1200,
                         },
-                        detailed_location: {
-                            type: 'string',
-                            minLength: 1,
-                            description: 'Human-readable detailed location (building name, tower, apartment number, etc.)',
-                            example: 'Building 3, Floor 5, Apartment 12, Downtown Cairo',
-                        },
                     },
                 },
                 PropertySpecificationsResponse: {
                     type: 'object',
-                    description: 'Physical specifications of the property as returned in the API response',
+                    description: 'Physical specifications as returned in the API response',
                     properties: {
                         id: { type: 'string', format: 'uuid' },
                         bedrooms: { type: 'integer', example: 2 },
                         bathrooms: { type: 'integer', example: 2 },
-                        floor: { type: 'integer', example: 5 },
-                        parkingSpaces: { type: 'integer', example: 1 },
                         areaSqft: { type: 'number', format: 'double', example: 1200 },
-                        detailedLocation: { type: 'string', example: 'Building 3, Floor 5, Apartment 12, Downtown Cairo' },
+                    },
+                },
+                PropertyDetailedLocationInput: {
+                    type: 'object',
+                    required: ['floor', 'city', 'area', 'street_name', 'building_number', 'unit_apt', 'location_lat', 'location_long'],
+                    description: 'Detailed address breakdown and GPS coordinates',
+                    properties: {
+                        floor: {
+                            type: 'integer',
+                            description: 'Floor number',
+                            example: 5,
+                        },
+                        city: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 100,
+                            example: 'Cairo',
+                        },
+                        area: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 100,
+                            example: 'Downtown',
+                        },
+                        street_name: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 255,
+                            example: 'Tahrir Street',
+                        },
+                        building_number: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 50,
+                            example: '3',
+                        },
+                        unit_apt: {
+                            type: 'string',
+                            minLength: 1,
+                            maxLength: 50,
+                            example: 'Apt 12',
+                        },
+                        location_lat: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -90,
+                            maximum: 90,
+                            example: 30.0444,
+                        },
+                        location_long: {
+                            type: 'number',
+                            format: 'float',
+                            minimum: -180,
+                            maximum: 180,
+                            example: 31.2357,
+                        },
+                    },
+                },
+                PropertyDetailedLocationResponse: {
+                    type: 'object',
+                    description: 'Detailed location as returned in the API response',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        floor: { type: 'integer', example: 5 },
+                        city: { type: 'string', example: 'Cairo' },
+                        area: { type: 'string', example: 'Downtown' },
+                        streetName: { type: 'string', example: 'Tahrir Street' },
+                        buildingNumber: { type: 'string', example: '3' },
+                        unitApt: { type: 'string', example: 'Apt 12' },
+                        locationLat: { type: 'number', format: 'float', example: 30.0444 },
+                        locationLong: { type: 'number', format: 'float', example: 31.2357 },
                     },
                 },
 
@@ -530,20 +580,8 @@ const options: Options = {
                         },
                         address: {
                             type: 'string',
-                            description: 'Full street address of the property',
-                            example: '123 Main Street, Cairo, Egypt',
-                        },
-                        locationLat: {
-                            type: 'number',
-                            format: 'float',
-                            description: 'GPS latitude coordinate',
-                            example: 30.0444,
-                        },
-                        locationLong: {
-                            type: 'number',
-                            format: 'float',
-                            description: 'GPS longitude coordinate',
-                            example: 31.2357,
+                            description: 'Human-readable address string',
+                            example: 'Tahrir Street, Downtown, Cairo, Egypt',
                         },
                         type: {
                             allOf: [{ $ref: '#/components/schemas/PropertyType' }],
@@ -593,6 +631,11 @@ const options: Options = {
                             nullable: true,
                             description: 'Physical specifications of the property. null if not yet provided.',
                         },
+                        detailedLocation: {
+                            allOf: [{ $ref: '#/components/schemas/PropertyDetailedLocationResponse' }],
+                            nullable: true,
+                            description: 'Detailed location breakdown and GPS coordinates.',
+                        },
                     },
                 },
 
@@ -605,12 +648,11 @@ const options: Options = {
                         'monthly_price',
                         'security_deposit',
                         'address',
-                        'location_lat',
-                        'location_long',
                         'furnishing',
                         'availability_date',
                         'images',
                         'specifications',
+                        'detailed_location',
                     ],
                     description: 'Payload to create a new property listing. Requires landlord JWT token.',
                     properties: {
@@ -646,24 +688,8 @@ const options: Options = {
                         address: {
                             type: 'string',
                             minLength: 1,
-                            description: 'Full street address',
-                            example: '123 Main Street, Cairo, Egypt',
-                        },
-                        location_lat: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -90,
-                            maximum: 90,
-                            description: 'GPS latitude. Must be between -90 and 90.',
-                            example: 30.0444,
-                        },
-                        location_long: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -180,
-                            maximum: 180,
-                            description: 'GPS longitude. Must be between -180 and 180.',
-                            example: 31.2357,
+                            description: 'Human-readable address string',
+                            example: 'Tahrir Street, Downtown, Cairo, Egypt',
                         },
                         type: {
                             $ref: '#/components/schemas/PropertyType',
@@ -706,6 +732,9 @@ const options: Options = {
                         specifications: {
                             $ref: '#/components/schemas/PropertySpecificationsInput',
                         },
+                        detailed_location: {
+                            $ref: '#/components/schemas/PropertyDetailedLocationInput',
+                        },
                     },
                 },
 
@@ -746,24 +775,8 @@ const options: Options = {
                         address: {
                             type: 'string',
                             minLength: 1,
-                            description: 'Updated full address',
+                            description: 'Updated human-readable address',
                             example: '456 Nile Street, Giza, Egypt',
-                        },
-                        location_lat: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -90,
-                            maximum: 90,
-                            description: 'Updated GPS latitude',
-                            example: 30.0131,
-                        },
-                        location_long: {
-                            type: 'number',
-                            format: 'float',
-                            minimum: -180,
-                            maximum: 180,
-                            description: 'Updated GPS longitude',
-                            example: 31.2089,
                         },
                         type: {
                             $ref: '#/components/schemas/PropertyType',
@@ -810,14 +823,29 @@ const options: Options = {
                             allOf: [
                                 {
                                     type: 'object',
-                                    description: 'Partial update of property specifications. Only provided fields will be updated.',
+                                    description: 'Partial update of property specifications.',
                                     properties: {
                                         bedrooms: { type: 'integer', minimum: 0, example: 3 },
                                         bathrooms: { type: 'integer', minimum: 0, example: 2 },
-                                        floor: { type: 'integer', example: 6 },
-                                        parking_spaces: { type: 'integer', minimum: 0, example: 2 },
                                         area_sqft: { type: 'number', format: 'double', minimum: 0.01, example: 1350 },
-                                        detailed_location: { type: 'string', minLength: 1, example: 'Tower B, Floor 6, Unit 601' },
+                                    },
+                                },
+                            ],
+                        },
+                        detailed_location: {
+                            allOf: [
+                                {
+                                    type: 'object',
+                                    description: 'Partial update of detailed location.',
+                                    properties: {
+                                        floor: { type: 'integer', example: 6 },
+                                        city: { type: 'string', minLength: 1, maxLength: 100, example: 'Giza' },
+                                        area: { type: 'string', minLength: 1, maxLength: 100, example: 'Dokki' },
+                                        street_name: { type: 'string', minLength: 1, maxLength: 255, example: 'Nile Street' },
+                                        building_number: { type: 'string', minLength: 1, maxLength: 50, example: '7' },
+                                        unit_apt: { type: 'string', minLength: 1, maxLength: 50, example: 'Apt 601' },
+                                        location_lat: { type: 'number', format: 'float', example: 30.0131 },
+                                        location_long: { type: 'number', format: 'float', example: 31.2089 },
                                     },
                                 },
                             ],

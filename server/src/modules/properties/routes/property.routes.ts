@@ -67,9 +67,7 @@ const router = Router();
  *             description: "Spacious apartment with modern amenities in downtown. Close to metro and major shopping malls."
  *             monthly_price: 1500.00
  *             security_deposit: 3000.00
- *             address: "123 Main Street, Downtown, Cairo, Egypt"
- *             location_lat: 30.0444
- *             location_long: 31.2357
+ *             address: "Tahrir Street, Downtown, Cairo, Egypt"
  *             type: "APARTMENT"
  *             furnishing: "Fully"
  *             target_tenant: "FAMILIES"
@@ -89,10 +87,16 @@ const router = Router();
  *             specifications:
  *               bedrooms: 2
  *               bathrooms: 2
- *               floor: 5
- *               parking_spaces: 1
  *               area_sqft: 1200
- *               detailed_location: "Building 3, Floor 5, Apartment 12, Downtown Cairo"
+ *             detailed_location:
+ *               floor: 5
+ *               city: "Cairo"
+ *               area: "Downtown"
+ *               street_name: "Tahrir Street"
+ *               building_number: "3"
+ *               unit_apt: "Apt 12"
+ *               location_lat: 30.0444
+ *               location_long: 31.2357
  *     responses:
  *       201:
  *         description: Property created successfully
@@ -393,6 +397,14 @@ router.get(
  *             specifications:
  *               bedrooms: 3
  *               area_sqft: 1350
+ *             detailed_location:
+ *               floor: 6
+ *               city: "Giza"
+ *               street_name: "Nile Street"
+ *               building_number: "7"
+ *               unit_apt: "Apt 601"
+ *               location_lat: 30.0131
+ *               location_long: 31.2089
  *     responses:
  *       200:
  *         description: Property updated successfully

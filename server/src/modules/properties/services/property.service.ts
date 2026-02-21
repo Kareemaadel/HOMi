@@ -4,6 +4,7 @@ import {
     PropertyImage,
     Amenity,
     PropertySpecifications,
+    PropertyDetailedLocation,
     HouseRule,
     sequelize,
 } from '../models/index.js';
@@ -19,6 +20,7 @@ import type {
     AmenityResponse,
     HouseRuleResponse,
     PropertySpecificationsResponse,
+    PropertyDetailedLocationResponse,
 } from '../interfaces/property.interfaces.js';
 
 /**
@@ -85,7 +87,7 @@ class PropertyService {
     }
 
     /**
-     * Create a new property with images, specifications, and optional amenities/house rules
+     * Create a new property with images, specifications, detailed location, and optional amenities/house rules
      */
     async createProperty(
         landlordId: string,
@@ -125,8 +127,6 @@ class PropertyService {
                     monthly_price: input.monthly_price,
                     security_deposit: input.security_deposit,
                     address: input.address,
-                    location_lat: input.location_lat,
-                    location_long: input.location_long,
                     type: input.type ?? null,
                     furnishing: input.furnishing,
                     target_tenant: input.target_tenant ?? 'ANY',
@@ -142,10 +142,23 @@ class PropertyService {
                     property_id: property.id,
                     bedrooms: input.specifications.bedrooms,
                     bathrooms: input.specifications.bathrooms,
-                    floor: input.specifications.floor,
-                    parking_spaces: input.specifications.parking_spaces,
                     area_sqft: input.specifications.area_sqft,
-                    detailed_location: input.specifications.detailed_location,
+                },
+                { transaction }
+            );
+
+            // Create detailed location
+            const detailedLocation = await PropertyDetailedLocation.create(
+                {
+                    property_id: property.id,
+                    floor: input.detailed_location.floor,
+                    city: input.detailed_location.city,
+                    area: input.detailed_location.area,
+                    street_name: input.detailed_location.street_name,
+                    building_number: input.detailed_location.building_number,
+                    unit_apt: input.detailed_location.unit_apt,
+                    location_lat: input.detailed_location.location_lat,
+                    location_long: input.detailed_location.location_long,
                 },
                 { transaction }
             );
@@ -178,7 +191,7 @@ class PropertyService {
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -243,6 +256,10 @@ class PropertyService {
                     model: PropertySpecifications,
                     as: 'specifications',
                 },
+                {
+                    model: PropertyDetailedLocation,
+                    as: 'detailedLocation',
+                },
             ],
             limit,
             offset,
@@ -256,7 +273,8 @@ class PropertyService {
                 property.images || [],
                 (property as any).amenities || [],
                 (property as any).houseRules || [],
-                (property as any).specifications ?? null
+                (property as any).specifications ?? null,
+                (property as any).detailedLocation ?? null
             )
         );
 
@@ -272,7 +290,7 @@ class PropertyService {
     }
 
     /**
-     * Get a single property by ID (includes amenities, house rules, and specifications)
+     * Get a single property by ID (includes amenities, house rules, specifications, and detailed location)
      */
     async getPropertyById(id: string): Promise<PropertyResponse> {
         const property = await Property.findByPk(id, {
@@ -298,6 +316,10 @@ class PropertyService {
                     model: PropertySpecifications,
                     as: 'specifications',
                 },
+                {
+                    model: PropertyDetailedLocation,
+                    as: 'detailedLocation',
+                },
             ],
         });
 
@@ -310,12 +332,13 @@ class PropertyService {
             property.images || [],
             (property as any).amenities || [],
             (property as any).houseRules || [],
-            (property as any).specifications ?? null
+            (property as any).specifications ?? null,
+            (property as any).detailedLocation ?? null
         );
     }
 
     /**
-     * Update a property (including optional amenity/house-rule/specifications update)
+     * Update a property (including optional amenity/house-rule/specifications/detailed-location update)
      * Verifies ownership before updating
      */
     async updateProperty(
@@ -347,8 +370,6 @@ class PropertyService {
             if (input.monthly_price !== undefined) updateData.monthly_price = input.monthly_price;
             if (input.security_deposit !== undefined) updateData.security_deposit = input.security_deposit;
             if (input.address !== undefined) updateData.address = input.address;
-            if (input.location_lat !== undefined) updateData.location_lat = input.location_lat;
-            if (input.location_long !== undefined) updateData.location_long = input.location_long;
             if (input.type !== undefined) updateData.type = input.type;
             if (input.furnishing !== undefined) updateData.furnishing = input.furnishing;
             if (input.status !== undefined) updateData.status = input.status;
@@ -367,10 +388,7 @@ class PropertyService {
                         property_id: id,
                         bedrooms: 0,
                         bathrooms: 0,
-                        floor: 0,
-                        parking_spaces: 0,
                         area_sqft: 0,
-                        detailed_location: '',
                     },
                     transaction,
                 });
@@ -378,6 +396,33 @@ class PropertyService {
                 specifications = spec;
             } else {
                 specifications = await PropertySpecifications.findOne({
+                    where: { property_id: id },
+                    transaction,
+                });
+            }
+
+            // Update detailed location if provided (partial upsert)
+            let detailedLocation: PropertyDetailedLocation | null = null;
+            if (input.detailed_location !== undefined) {
+                const [loc] = await PropertyDetailedLocation.findOrCreate({
+                    where: { property_id: id },
+                    defaults: {
+                        property_id: id,
+                        floor: 0,
+                        city: '',
+                        area: '',
+                        street_name: '',
+                        building_number: '',
+                        unit_apt: '',
+                        location_lat: 0,
+                        location_long: 0,
+                    },
+                    transaction,
+                });
+                await loc.update(input.detailed_location, { transaction });
+                detailedLocation = loc;
+            } else {
+                detailedLocation = await PropertyDetailedLocation.findOne({
                     where: { property_id: id },
                     transaction,
                 });
@@ -425,7 +470,7 @@ class PropertyService {
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -466,7 +511,8 @@ class PropertyService {
         images: PropertyImage[],
         amenities: Amenity[] = [],
         houseRules: HouseRule[] = [],
-        spec: PropertySpecifications | null = null
+        spec: PropertySpecifications | null = null,
+        loc: PropertyDetailedLocation | null = null
     ): PropertyResponse {
         const formattedImages: PropertyImageResponse[] = images.map((img) => ({
             id: img.id,
@@ -490,10 +536,21 @@ class PropertyService {
                 id: spec.id,
                 bedrooms: spec.bedrooms,
                 bathrooms: spec.bathrooms,
-                floor: spec.floor,
-                parkingSpaces: spec.parking_spaces,
                 areaSqft: Number(spec.area_sqft),
-                detailedLocation: spec.detailed_location,
+            }
+            : null;
+
+        const formattedLocation: PropertyDetailedLocationResponse | null = loc
+            ? {
+                id: loc.id,
+                floor: loc.floor,
+                city: loc.city,
+                area: loc.area,
+                streetName: loc.street_name,
+                buildingNumber: loc.building_number,
+                unitApt: loc.unit_apt,
+                locationLat: loc.location_lat,
+                locationLong: loc.location_long,
             }
             : null;
 
@@ -505,8 +562,6 @@ class PropertyService {
             monthlyPrice: Number(property.monthly_price),
             securityDeposit: Number(property.security_deposit),
             address: property.address,
-            locationLat: property.location_lat,
-            locationLong: property.location_long,
             type: property.type ?? null,
             furnishing: property.furnishing,
             status: property.status,
@@ -517,6 +572,7 @@ class PropertyService {
             amenities: formattedAmenities,
             houseRules: formattedHouseRules,
             specifications: formattedSpec,
+            detailedLocation: formattedLocation,
         };
     }
 }

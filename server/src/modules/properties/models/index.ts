@@ -15,6 +15,7 @@ import { PropertyImage } from './PropertyImage.js';
 import { Amenity } from './Amenity.js';
 import { PropertyAmenity } from './PropertyAmenity.js';
 import { PropertySpecifications } from './PropertySpecifications.js';
+import { PropertyDetailedLocation } from './PropertyDetailedLocation.js';
 import { HouseRule } from './HouseRule.js';
 import { PropertyHouseRule } from './PropertyHouseRule.js';
 
@@ -56,6 +57,20 @@ Property.hasOne(PropertySpecifications, {
 
 // PropertySpecifications belongs to Property
 PropertySpecifications.belongsTo(Property, {
+    foreignKey: 'property_id',
+    as: 'property',
+});
+
+// Property has one PropertyDetailedLocation (one-to-one)
+Property.hasOne(PropertyDetailedLocation, {
+    foreignKey: 'property_id',
+    as: 'detailedLocation',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// PropertyDetailedLocation belongs to Property
+PropertyDetailedLocation.belongsTo(Property, {
     foreignKey: 'property_id',
     as: 'property',
 });
@@ -103,6 +118,7 @@ export {
     Amenity,
     PropertyAmenity,
     PropertySpecifications,
+    PropertyDetailedLocation,
     HouseRule,
     PropertyHouseRule,
 };
@@ -116,6 +132,7 @@ export default {
     Amenity,
     PropertyAmenity,
     PropertySpecifications,
+    PropertyDetailedLocation,
     HouseRule,
     PropertyHouseRule,
 };

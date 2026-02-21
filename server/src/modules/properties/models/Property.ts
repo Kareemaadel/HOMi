@@ -51,6 +51,7 @@ import type { User } from '../../auth/models/User.js';
 import type { PropertyImage } from './PropertyImage.js';
 import type { Amenity } from './Amenity.js';
 import type { PropertySpecifications } from './PropertySpecifications.js';
+import type { PropertyDetailedLocation } from './PropertyDetailedLocation.js';
 
 export class Property extends Model<
     InferAttributes<Property>,
@@ -68,8 +69,6 @@ export class Property extends Model<
     declare monthly_price: number | null;
     declare security_deposit: number | null;
     declare address: string;
-    declare location_lat: number;
-    declare location_long: number;
     declare type: PropertyTypeType | null;
     declare furnishing: FurnishingStatusType | null;
     declare status: CreationOptional<PropertyStatusType>;
@@ -86,11 +85,13 @@ export class Property extends Model<
     declare images?: NonAttribute<PropertyImage[]>;
     declare amenities?: NonAttribute<Amenity[]>;
     declare specifications?: NonAttribute<PropertySpecifications>;
+    declare detailedLocation?: NonAttribute<PropertyDetailedLocation>;
     declare static associations: {
         landlord: Association<Property, User>;
         images: Association<Property, PropertyImage>;
         amenities: Association<Property, Amenity>;
         specifications: Association<Property, PropertySpecifications>;
+        detailedLocation: Association<Property, PropertyDetailedLocation>;
     };
 }
 
@@ -136,22 +137,6 @@ Property.init(
         address: {
             type: DataTypes.TEXT,
             allowNull: false,
-        },
-        location_lat: {
-            type: DataTypes.FLOAT,
-            allowNull: false,
-            validate: {
-                min: -90,
-                max: 90,
-            },
-        },
-        location_long: {
-            type: DataTypes.FLOAT,
-            allowNull: false,
-            validate: {
-                min: -180,
-                max: 180,
-            },
         },
         type: {
             type: DataTypes.ENUM(...Object.values(PropertyType)),
