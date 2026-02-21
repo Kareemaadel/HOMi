@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PropertyStatus, FurnishingStatus } from '../models/Property.js';
+import { PropertyStatus, FurnishingStatus, PropertyType, TargetTenant } from '../models/Property.js';
 
 /**
  * Property Image Schema
@@ -81,10 +81,18 @@ export const CreatePropertySchema = z.object({
         .number()
         .min(-180, 'Longitude must be between -180 and 180')
         .max(180, 'Longitude must be between -180 and 180'),
+    type: z.enum(
+        [PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET],
+        { message: 'Type must be APARTMENT, VILLA, STUDIO, or CHALET' }
+    ).optional(),
     furnishing: z.enum(
         [FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED],
         { message: 'Furnishing must be Fully, Semi, or Unfurnished' }
     ),
+    target_tenant: z.enum(
+        [TargetTenant.ANY, TargetTenant.STUDENTS, TargetTenant.FAMILIES, TargetTenant.TOURISTS],
+        { message: 'Target tenant must be ANY, STUDENTS, FAMILIES, or TOURISTS' }
+    ).optional(),
     availability_date: z
         .string({ error: 'Availability date is required' })
         .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format'),
@@ -103,6 +111,10 @@ export const CreatePropertySchema = z.object({
         ),
     amenity_names: z
         .array(z.string().min(1, 'Amenity name cannot be empty'))
+        .optional()
+        .default([]),
+    house_rule_names: z
+        .array(z.string().min(1, 'House rule name cannot be empty'))
         .optional()
         .default([]),
     specifications: PropertySpecificationsSchema,
@@ -151,6 +163,10 @@ export const UpdatePropertySchema = z.object({
         .min(-180, 'Longitude must be between -180 and 180')
         .max(180, 'Longitude must be between -180 and 180')
         .optional(),
+    type: z.enum(
+        [PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET],
+        { message: 'Type must be APARTMENT, VILLA, STUDIO, or CHALET' }
+    ).optional(),
     furnishing: z.enum(
         [FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED],
         { message: 'Furnishing must be Fully, Semi, or Unfurnished' }
@@ -158,6 +174,10 @@ export const UpdatePropertySchema = z.object({
     status: z.enum(
         [PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED],
         { message: 'Status must be Draft, Published, or Rented' }
+    ).optional(),
+    target_tenant: z.enum(
+        [TargetTenant.ANY, TargetTenant.STUDENTS, TargetTenant.FAMILIES, TargetTenant.TOURISTS],
+        { message: 'Target tenant must be ANY, STUDENTS, FAMILIES, or TOURISTS' }
     ).optional(),
     availability_date: z
         .string()
@@ -179,6 +199,9 @@ export const UpdatePropertySchema = z.object({
     amenity_names: z
         .array(z.string().min(1, 'Amenity name cannot be empty'))
         .optional(),
+    house_rule_names: z
+        .array(z.string().min(1, 'House rule name cannot be empty'))
+        .optional(),
     specifications: PropertySpecificationsSchema.partial().optional(),
 });
 
@@ -193,8 +216,14 @@ export const PropertyQuerySchema = z.object({
     status: z
         .enum([PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED])
         .optional(),
+    type: z
+        .enum([PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET])
+        .optional(),
     furnishing: z
         .enum([FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED])
+        .optional(),
+    target_tenant: z
+        .enum([TargetTenant.ANY, TargetTenant.STUDENTS, TargetTenant.FAMILIES, TargetTenant.TOURISTS])
         .optional(),
     minPrice: z
         .string()

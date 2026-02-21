@@ -4,13 +4,19 @@ import {
     Property,
     PropertyStatus,
     FurnishingStatus,
+    PropertyType,
+    TargetTenant,
     type PropertyStatusType,
     type FurnishingStatusType,
+    type PropertyTypeType,
+    type TargetTenantType,
 } from './Property.js';
 import { PropertyImage } from './PropertyImage.js';
 import { Amenity } from './Amenity.js';
 import { PropertyAmenity } from './PropertyAmenity.js';
 import { PropertySpecifications } from './PropertySpecifications.js';
+import { HouseRule } from './HouseRule.js';
+import { PropertyHouseRule } from './PropertyHouseRule.js';
 
 // ─── Associations ─────────────────────────────────────────────────────────────
 
@@ -69,6 +75,21 @@ Amenity.belongsToMany(Property, {
     as: 'properties',
 });
 
+// Property <-> HouseRule many-to-many through PropertyHouseRule
+Property.belongsToMany(HouseRule, {
+    through: PropertyHouseRule,
+    foreignKey: 'property_id',
+    otherKey: 'house_rule_id',
+    as: 'houseRules',
+});
+
+HouseRule.belongsToMany(Property, {
+    through: PropertyHouseRule,
+    foreignKey: 'house_rule_id',
+    otherKey: 'property_id',
+    as: 'properties',
+});
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 export {
@@ -76,13 +97,17 @@ export {
     Property,
     PropertyStatus,
     FurnishingStatus,
+    PropertyType,
+    TargetTenant,
     PropertyImage,
     Amenity,
     PropertyAmenity,
     PropertySpecifications,
+    HouseRule,
+    PropertyHouseRule,
 };
 
-export type { PropertyStatusType, FurnishingStatusType };
+export type { PropertyStatusType, FurnishingStatusType, PropertyTypeType, TargetTenantType };
 
 export default {
     sequelize,
@@ -91,4 +116,6 @@ export default {
     Amenity,
     PropertyAmenity,
     PropertySpecifications,
+    HouseRule,
+    PropertyHouseRule,
 };

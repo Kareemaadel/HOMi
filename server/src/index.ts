@@ -18,6 +18,7 @@ import './modules/properties/models/index.js';
 
 // Import seed
 import { seedAmenities } from './seeds/amenities.seed.js';
+import { seedHouseRules } from './seeds/house_rules.seed.js';
 
 // Create Express app
 const app = express();
@@ -189,8 +190,9 @@ async function startServer(): Promise<void> {
         // Note: In production, use migrations instead
         await syncDatabase(false);
 
-        // Seed amenities (idempotent — safe to run every startup)
+        // Seed amenities and house rules (idempotent — safe to run every startup)
         await seedAmenities();
+        await seedHouseRules();
 
         // Start listening
         app.listen(env.PORT, () => {

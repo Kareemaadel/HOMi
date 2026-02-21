@@ -28,6 +28,24 @@ export const FurnishingStatus = {
 
 export type FurnishingStatusType = (typeof FurnishingStatus)[keyof typeof FurnishingStatus];
 
+export const PropertyType = {
+    APARTMENT: 'APARTMENT',
+    VILLA: 'VILLA',
+    STUDIO: 'STUDIO',
+    CHALET: 'CHALET',
+} as const;
+
+export type PropertyTypeType = (typeof PropertyType)[keyof typeof PropertyType];
+
+export const TargetTenant = {
+    ANY: 'ANY',
+    STUDENTS: 'STUDENTS',
+    FAMILIES: 'FAMILIES',
+    TOURISTS: 'TOURISTS',
+} as const;
+
+export type TargetTenantType = (typeof TargetTenant)[keyof typeof TargetTenant];
+
 // ─── Forward declarations ──────────────────────────────────────────────────
 import type { User } from '../../auth/models/User.js';
 import type { PropertyImage } from './PropertyImage.js';
@@ -52,8 +70,10 @@ export class Property extends Model<
     declare address: string;
     declare location_lat: number;
     declare location_long: number;
+    declare type: PropertyTypeType | null;
     declare furnishing: FurnishingStatusType | null;
     declare status: CreationOptional<PropertyStatusType>;
+    declare target_tenant: CreationOptional<TargetTenantType>;
     declare availability_date: Date | null;
 
     // Timestamps
@@ -133,6 +153,11 @@ Property.init(
                 max: 180,
             },
         },
+        type: {
+            type: DataTypes.ENUM(...Object.values(PropertyType)),
+            allowNull: true,
+            defaultValue: null,
+        },
         furnishing: {
             type: DataTypes.ENUM(...Object.values(FurnishingStatus)),
             allowNull: true,
@@ -142,6 +167,11 @@ Property.init(
             type: DataTypes.ENUM(...Object.values(PropertyStatus)),
             allowNull: false,
             defaultValue: PropertyStatus.DRAFT,
+        },
+        target_tenant: {
+            type: DataTypes.ENUM(...Object.values(TargetTenant)),
+            allowNull: false,
+            defaultValue: TargetTenant.ANY,
         },
         availability_date: {
             type: DataTypes.DATEONLY,

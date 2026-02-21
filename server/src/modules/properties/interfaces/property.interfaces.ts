@@ -1,4 +1,4 @@
-import type { PropertyStatusType, FurnishingStatusType } from '../models/Property.js';
+import type { PropertyStatusType, FurnishingStatusType, PropertyTypeType, TargetTenantType } from '../models/Property.js';
 
 /**
  * Property Image Input DTO
@@ -12,6 +12,14 @@ export interface PropertyImageInput {
  * Amenity Response DTO
  */
 export interface AmenityResponse {
+    id: string;
+    name: string;
+}
+
+/**
+ * House Rule Response DTO
+ */
+export interface HouseRuleResponse {
     id: string;
     name: string;
 }
@@ -52,10 +60,13 @@ export interface CreatePropertyRequest {
     address: string;
     location_lat: number;
     location_long: number;
+    type?: PropertyTypeType;
     furnishing: FurnishingStatusType;
+    target_tenant?: TargetTenantType;
     availability_date: string; // ISO date string (YYYY-MM-DD)
     images: PropertyImageInput[];
     amenity_names?: string[];
+    house_rule_names?: string[];
     specifications: PropertySpecificationsInput;
 }
 
@@ -71,11 +82,14 @@ export interface UpdatePropertyRequest {
     address?: string;
     location_lat?: number;
     location_long?: number;
+    type?: PropertyTypeType;
     furnishing?: FurnishingStatusType;
     status?: PropertyStatusType;
+    target_tenant?: TargetTenantType;
     availability_date?: string;
     images?: PropertyImageInput[];
     amenity_names?: string[];
+    house_rule_names?: string[];
     specifications?: Partial<PropertySpecificationsInput>;
 }
 
@@ -84,7 +98,9 @@ export interface UpdatePropertyRequest {
  */
 export interface PropertyQuery {
     status?: PropertyStatusType;
+    type?: PropertyTypeType;
     furnishing?: FurnishingStatusType;
+    target_tenant?: TargetTenantType;
     minPrice?: number;
     maxPrice?: number;
     landlordId?: string;
@@ -116,12 +132,15 @@ export interface PropertyResponse {
     address: string;
     locationLat: number;
     locationLong: number;
-    furnishing: FurnishingStatusType;
+    type: PropertyTypeType | null;
+    furnishing: FurnishingStatusType | null;
     status: PropertyStatusType;
-    availabilityDate: Date | string;
+    targetTenant: TargetTenantType;
+    availabilityDate: Date | string | null;
     createdAt: Date;
     images: PropertyImageResponse[];
     amenities: AmenityResponse[];
+    houseRules: HouseRuleResponse[];
     specifications: PropertySpecificationsResponse | null;
 }
 

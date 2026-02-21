@@ -4,6 +4,7 @@ import {
     PropertyImage,
     Amenity,
     PropertySpecifications,
+    HouseRule,
     sequelize,
 } from '../models/index.js';
 import { User } from '../../auth/models/User.js';
@@ -16,6 +17,7 @@ import type {
     PropertySuccessResponse,
     PropertyImageResponse,
     AmenityResponse,
+    HouseRuleResponse,
     PropertySpecificationsResponse,
 } from '../interfaces/property.interfaces.js';
 
@@ -61,7 +63,29 @@ class PropertyService {
     }
 
     /**
-     * Create a new property with images, specifications, and optional amenities
+     * Resolve house rule names → verified HouseRule records.
+     * Throws if any name does not exist in the database.
+     */
+    private async resolveHouseRuleNames(names: string[]): Promise<HouseRule[]> {
+        if (names.length === 0) return [];
+
+        const found = await HouseRule.findAll({ where: { name: names } });
+
+        if (found.length !== names.length) {
+            const foundNames = found.map((h) => h.name);
+            const invalid = names.filter((n) => !foundNames.includes(n));
+            throw new PropertyError(
+                `Invalid house rule name(s): ${invalid.join(', ')}. Please select from the available list.`,
+                400,
+                'INVALID_HOUSE_RULE_NAMES'
+            );
+        }
+
+        return found;
+    }
+
+    /**
+     * Create a new property with images, specifications, and optional amenities/house rules
      */
     async createProperty(
         landlordId: string,
@@ -88,6 +112,10 @@ class PropertyService {
             const amenityNames = input.amenity_names ?? [];
             const amenities = await this.resolveAmenityNames(amenityNames);
 
+            // Resolve house rule names outside transaction so errors surface early
+            const houseRuleNames = input.house_rule_names ?? [];
+            const houseRules = await this.resolveHouseRuleNames(houseRuleNames);
+
             // Create property
             const property = await Property.create(
                 {
@@ -99,7 +127,9 @@ class PropertyService {
                     address: input.address,
                     location_lat: input.location_lat,
                     location_long: input.location_long,
+                    type: input.type ?? null,
                     furnishing: input.furnishing,
+                    target_tenant: input.target_tenant ?? 'ANY',
                     availability_date: new Date(input.availability_date),
                     status: 'Draft',
                 },
@@ -138,9 +168,17 @@ class PropertyService {
                 );
             }
 
+            // Associate house rules (by their resolved IDs)
+            if (houseRules.length > 0) {
+                await (property as any).setHouseRules(
+                    houseRules.map((h) => h.id),
+                    { transaction }
+                );
+            }
+
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, specifications);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -153,7 +191,9 @@ class PropertyService {
     async getAllProperties(filters: PropertyQuery): Promise<PropertyListResponse> {
         const {
             status,
+            type,
             furnishing,
+            target_tenant,
             minPrice,
             maxPrice,
             landlordId,
@@ -165,7 +205,9 @@ class PropertyService {
         const where: any = {};
 
         if (status) where.status = status;
+        if (type) where.type = type;
         if (furnishing) where.furnishing = furnishing;
+        if (target_tenant) where.target_tenant = target_tenant;
         if (landlordId) where.landlord_id = landlordId;
         if (availabilityDate) where.availability_date = availabilityDate;
 
@@ -192,6 +234,12 @@ class PropertyService {
                     through: { attributes: [] },
                 },
                 {
+                    model: HouseRule,
+                    as: 'houseRules',
+                    attributes: ['id', 'name'],
+                    through: { attributes: [] },
+                },
+                {
                     model: PropertySpecifications,
                     as: 'specifications',
                 },
@@ -207,6 +255,7 @@ class PropertyService {
                 property,
                 property.images || [],
                 (property as any).amenities || [],
+                (property as any).houseRules || [],
                 (property as any).specifications ?? null
             )
         );
@@ -223,7 +272,7 @@ class PropertyService {
     }
 
     /**
-     * Get a single property by ID (includes amenities and specifications)
+     * Get a single property by ID (includes amenities, house rules, and specifications)
      */
     async getPropertyById(id: string): Promise<PropertyResponse> {
         const property = await Property.findByPk(id, {
@@ -236,6 +285,12 @@ class PropertyService {
                 {
                     model: Amenity,
                     as: 'amenities',
+                    attributes: ['id', 'name'],
+                    through: { attributes: [] },
+                },
+                {
+                    model: HouseRule,
+                    as: 'houseRules',
                     attributes: ['id', 'name'],
                     through: { attributes: [] },
                 },
@@ -254,12 +309,13 @@ class PropertyService {
             property,
             property.images || [],
             (property as any).amenities || [],
+            (property as any).houseRules || [],
             (property as any).specifications ?? null
         );
     }
 
     /**
-     * Update a property (including optional amenity/specifications update)
+     * Update a property (including optional amenity/house-rule/specifications update)
      * Verifies ownership before updating
      */
     async updateProperty(
@@ -293,8 +349,10 @@ class PropertyService {
             if (input.address !== undefined) updateData.address = input.address;
             if (input.location_lat !== undefined) updateData.location_lat = input.location_lat;
             if (input.location_long !== undefined) updateData.location_long = input.location_long;
+            if (input.type !== undefined) updateData.type = input.type;
             if (input.furnishing !== undefined) updateData.furnishing = input.furnishing;
             if (input.status !== undefined) updateData.status = input.status;
+            if (input.target_tenant !== undefined) updateData.target_tenant = input.target_tenant;
             if (input.availability_date !== undefined)
                 updateData.availability_date = new Date(input.availability_date);
 
@@ -353,9 +411,21 @@ class PropertyService {
                 amenities = await (property as any).getAmenities({ transaction });
             }
 
+            // Update house rules if provided (by name — replace strategy)
+            let houseRules: HouseRule[] = [];
+            if (input.house_rule_names !== undefined) {
+                houseRules = await this.resolveHouseRuleNames(input.house_rule_names);
+                await (property as any).setHouseRules(
+                    houseRules.map((h) => h.id),
+                    { transaction }
+                );
+            } else {
+                houseRules = await (property as any).getHouseRules({ transaction });
+            }
+
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, specifications);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -395,6 +465,7 @@ class PropertyService {
         property: Property,
         images: PropertyImage[],
         amenities: Amenity[] = [],
+        houseRules: HouseRule[] = [],
         spec: PropertySpecifications | null = null
     ): PropertyResponse {
         const formattedImages: PropertyImageResponse[] = images.map((img) => ({
@@ -407,6 +478,11 @@ class PropertyService {
         const formattedAmenities: AmenityResponse[] = amenities.map((a) => ({
             id: a.id,
             name: a.name,
+        }));
+
+        const formattedHouseRules: HouseRuleResponse[] = houseRules.map((h) => ({
+            id: h.id,
+            name: h.name,
         }));
 
         const formattedSpec: PropertySpecificationsResponse | null = spec
@@ -431,12 +507,15 @@ class PropertyService {
             address: property.address,
             locationLat: property.location_lat,
             locationLong: property.location_long,
+            type: property.type ?? null,
             furnishing: property.furnishing,
             status: property.status,
+            targetTenant: property.target_tenant ?? 'ANY',
             availabilityDate: property.availability_date,
             createdAt: property.created_at,
             images: formattedImages,
             amenities: formattedAmenities,
+            houseRules: formattedHouseRules,
             specifications: formattedSpec,
         };
     }
