@@ -111,3 +111,110 @@
     min-height: 100vh;
     margin-top: 50px;
 }
+
+/* client\src\features\BrowseProperties\pages\BrowseProperties.css */
+
+.browse-properties-page {
+    padding: 30px 40px;
+    background: #f8fafc;
+    min-height: 100vh;
+    margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 60px; /* Space between scrollable sections */
+}
+
+.property-scroll-section {
+    display: flex;
+    flex-direction: column;
+    margin-top: -62px;
+}
+
+/* Section Titles & Header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 25px;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-area h2 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0;
+}
+
+.icon-popular { color: #f97316; font-size: 1.5rem; }
+.icon-suits { color: #8b5cf6; font-size: 1.5rem; }
+
+.view-all-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    color: #3b82f6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-all-btn:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+/* Horizontal Scroll Container */
+.properties-grid {
+    display: flex;
+    gap: 32px;
+    overflow-x: auto;
+    overflow-y: visible; /* Important to show the card lift-up on hover */
+    padding: 20px 10px 40px 10px; /* Extra bottom padding for card shadow */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Card Width Control */
+.properties-grid > * {
+    flex: 0 0 380px; /* Fixed width for better control */
+    min-width: 380px;
+}
+
+/* Hide scrollbar but keep functionality for a cleaner look (Optional) */
+.properties-grid::-webkit-scrollbar {
+    height: 6px;
+}
+
+.properties-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.properties-grid::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.properties-grid::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .browse-properties-page {
+        padding: 20px;
+    }
+    .properties-grid > * {
+        flex: 0 0 300px;
+        min-width: 300px;
+    }
+    .title-area h2 {
+        font-size: 1.4rem;
+    }
+}
