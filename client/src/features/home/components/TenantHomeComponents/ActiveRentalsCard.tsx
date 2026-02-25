@@ -1,33 +1,91 @@
-// ActiveRentalsCard.tsx
+import React from 'react';
+import { FaMapMarkerAlt, FaCalendarAlt, FaWifi, FaBed, FaBath, FaArrowRight } from 'react-icons/fa';
 import './ActiveRentalsCard.css';
 
-const ActiveRentalsCard = () => (
-  <div className="card-base rental-card-premium">
-    <div className="card-badge-top">Primary Residence</div>
-    <div className="rental-main-content">
-      <div className="image-container">
-        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400" alt="Home" />
-        <div className="image-overlay-price">$2,400/mo</div>
+interface RentalSpecs {
+  label: string;
+  icon: React.ReactNode;
+}
+
+const ActiveRentalsCard: React.FC = () => {
+  const leaseProgress = 65; 
+  
+  const specs: RentalSpecs[] = [
+    { label: "2 Bed", icon: <FaBed /> },
+    { label: "3 Bath", icon: <FaBath /> },
+    { label: "WiFi Incl.", icon: <FaWifi /> },
+  ];
+
+  return (
+    <div className="card-base rental-card-premium">
+      <div className="ribbon-wrapper">
+        <span className="ribbon-text">Primary Residence</span>
       </div>
-      <div className="rental-details">
-        <h3>Skyline Penthouse B</h3>
-        <p className="address">📍 782 Liberty St, New York, NY 10004</p>
-        
-        <div className="lease-progress-container">
-          <div className="lease-meta">
-            <span>Lease Progress</span>
-            <span>8 months left</span>
-          </div>
-          <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{width: '65%'}}></div>
+
+      <div className="rental-grid">
+        {/* Left: Media Section */}
+        <div className="rental-media">
+          <img 
+            src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600" 
+            alt="Skyline Penthouse" 
+            className="rental-img"
+          />
+          <div className="rental-price-tag">
+            <span className="price-amt">$2,400</span>
+            <span className="price-unit">/mo</span>
           </div>
         </div>
 
-        <div className="amenities-tags">
-          <span>2 Bed</span> <span>3 Bath</span> <span>WiFi Incl.</span>
+        {/* Right: Info Section */}
+        <div className="rental-info">
+          <div className="rental-top-content">
+            <header className="rental-header">
+              <h3 className="rental-title">Skyline Penthouse B</h3>
+              <p className="rental-address">
+                <FaMapMarkerAlt className="icon-subtle" /> 782 Liberty St, New York, NY
+              </p>
+            </header>
+
+            <div className="lease-section">
+              <div className="lease-header">
+                <div className="lease-label">
+                  <FaCalendarAlt /> Lease Progress
+                </div>
+                <span className="lease-remaining">8 months left</span>
+              </div>
+              <div className="progress-container">
+                <div className="progress-track">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${leaseProgress}%` }}
+                  >
+                    <div className="progress-glow"></div>
+                  </div>
+                </div>
+                <span className="progress-pct">{leaseProgress}%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section: Specs + Manage Button */}
+          <footer className="rental-footer">
+            <div className="specs-row">
+              {specs.map((spec, index) => (
+                <div key={index} className="spec-tag">
+                  <span className="spec-icon">{spec.icon}</span>
+                  <span>{spec.label}</span>
+                </div>
+              ))}
+            </div>
+            
+            <button className="btn-manage-circle" title="Manage Rental">
+              <FaArrowRight />
+            </button>
+          </footer>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
 export default ActiveRentalsCard;

@@ -1,22 +1,38 @@
-// client\src\features\home\components\TenantHomeComponents\Notifications.tsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
+import { FaBell, FaCheckDouble, FaCreditCard, FaTools, FaGift, FaChevronRight } from 'react-icons/fa';
 import './Notifications.css';
 import NotificationsBar from './NotificationsBar';
 
-const Notifications = () => {
-  const [isBarOpen, setIsBarOpen] = useState(false);
-  const navigate = useNavigate(); // Initialize navigate
+interface Alert {
+  id: number;
+  type: 'payment' | 'maintenance' | 'system';
+  title: string;
+  desc: string;
+  time: string;
+  unread: boolean;
+}
 
-  const alerts = [
+const Notifications: React.FC = () => {
+  const [isBarOpen, setIsBarOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const [alerts] = useState<Alert[]>([
     { id: 1, type: 'payment', title: 'Request Approved', desc: 'Rent for March was processed.', time: '2h ago', unread: true },
     { id: 2, type: 'maintenance', title: 'Technician En Route', desc: 'Mike Ross will arrive in 15 mins.', time: 'Just now', unread: true },
     { id: 3, type: 'system', title: 'New Reward!', desc: 'You earned 500 points for early payment.', time: '1d ago', unread: false },
-  ];
+  ]);
 
-  const handleNotificationClick = (alert: any) => {
-    // Check if the title is "Request Approved" or type is payment
-    if (alert.title === 'Request Approved' || alert.type === 'payment') {
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'payment': return <FaCreditCard />;
+      case 'maintenance': return <FaTools />;
+      default: return <FaGift />;
+    }
+  };
+
+  const handleNotificationClick = (alert: Alert) => {
+    if (alert.type === 'payment') {
       navigate('/prepayment-page');
     }
   };
@@ -24,40 +40,49 @@ const Notifications = () => {
   return (
     <>
       <div className="card-base notifications-premium">
-        <div className="notif-header">
-          <div className="notif-title-wrapper">
+        <header className="notif-header">
+          <div className="notif-title-group">
+            <div className="bell-ring">
+              <FaBell />
+              {alerts.some(a => a.unread) && <span className="active-dot"></span>}
+            </div>
             <h3>Activity Feed</h3>
-            <span className="unread-badge">2 New</span>
           </div>
-          <button className="mark-read">Mark all as read</button>
-        </div>
+          <button className="btn-mark-all" aria-label="Mark all as read">
+            <FaCheckDouble /> <span>Read all</span>
+          </button>
+        </header>
 
-        <div className="notif-list">
+        <div className="notif-scroll-area">
           {alerts.map((alert) => (
             <div 
               key={alert.id} 
-              className={`notif-item ${alert.unread ? 'unread' : ''} ${alert.type === 'payment' ? 'clickable' : ''}`}
-              onClick={() => handleNotificationClick(alert)} // Attach the click handler
+              className={`notif-card ${alert.unread ? 'is-unread' : ''} ${alert.type === 'payment' ? 'is-clickable' : ''}`}
+              onClick={() => handleNotificationClick(alert)}
             >
-              <div className={`notif-icon-box ${alert.type}`}>
-                {alert.type === 'payment' && '💳'}
-                {alert.type === 'maintenance' && '🔧'}
-                {alert.type === 'system' && '🎉'}
+              <div className={`icon-orb ${alert.type}`}>
+                {getIcon(alert.type)}
               </div>
-              <div className="notif-content">
-                <div className="notif-top-line">
+              
+              <div className="notif-body">
+                <div className="notif-meta">
                   <span className="notif-subject">{alert.title}</span>
-                  <span className="notif-time">{alert.time}</span>
+                  <span className="notif-timestamp">{alert.time}</span>
                 </div>
-                <p className="notif-desc">{alert.desc}</p>
+                <p className="notif-text">{alert.desc}</p>
               </div>
-              {alert.unread && <div className="unread-glow"></div>}
+
+              {alert.type === 'payment' && (
+                <div className="notif-action-hint">
+                  <FaChevronRight />
+                </div>
+              )}
             </div>
           ))}
         </div>
 
-        <button className="view-history-btn" onClick={() => setIsBarOpen(true)}>
-          See Full History
+        <button className="btn-history-expand" onClick={() => setIsBarOpen(true)}>
+          View All History
         </button>
       </div>
 

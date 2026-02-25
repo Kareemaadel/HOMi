@@ -6,7 +6,7 @@
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   font-family: 'Inter', sans-serif;
   width: 100%;
-  margin-top: 0px;
+  margin-top: 100px;
 }
 
 .tenant-home-content {
@@ -16,7 +16,7 @@
   position: relative;
   overflow: hidden;
   margin-left: 78px;
-  margin-top: -30px;
+  margin-top: 0px;
   z-index: 20;
 }
 
@@ -29,7 +29,7 @@
   max-width: 1600px;
   position: relative;
   z-index: 20;
-  margin-top: 0px;
+  margin-top: 10px;
 }
 
 .tenant-home-main::-webkit-scrollbar {
@@ -53,7 +53,7 @@
   display:grid;
   background-color: var(--bg-subtle);
   min-height: 100vh;
-  margin-top: -60px;
+  margin-top: -90px;
   margin-left: -20px;
 }
 
@@ -69,7 +69,7 @@
   padding: 2rem;
   position: relative;
   max-width: 1600px;
-  margin-top: 40px;
+  margin-top: 70px;
   margin-left: 50px;
   margin: 0 auto;
   width: 200%;
@@ -81,7 +81,11 @@
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 2.5rem;
+  margin-top: 50px;
   
+}
+.welcome-text{
+  margin-top: 20px;
 }
 
 .welcome-text h1 {
@@ -186,4 +190,92 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
   border-color: rgba(59, 130, 246, 0.2);
+}
+:root {
+  --sidebar-width: 80px; /* Adjust this to match your actual sidebar */
+  --content-max-width: 1400px;
+  --grid-gap: 1.5rem;
+}
+
+.tenant-dashboard-root {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+.dashboard-main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 2rem;
+  max-width: var(--content-max-width);
+  margin-right: auto; /* Centers the content if screen is huge */
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+/* Welcome Section */
+.welcome-header {
+  margin-bottom: 2rem;
+  margin-top: 100px;
+}
+
+.welcome-text h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.welcome-text p {
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+.highlight { color: #3b82f6; }
+
+/* The Grid System - Rock Solid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--grid-gap);
+  align-items: stretch; /* Ensures cards in the same row have equal height */
+  margin-top: 50px;
+}
+
+.grid-col-2 { grid-column: span 2; }
+.grid-col-1 { grid-column: span 1; }
+
+
+
+.card-base:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsiveness */
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-main-content {
+    margin-left: 0; /* Sidebar usually turns into a bottom nav or hamburger */
+    padding: 1rem;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .grid-col-2 { grid-column: span 1; }
+}
+.welcome-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+  margin-top: 500px;
+  
 }
