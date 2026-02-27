@@ -33,8 +33,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
             {/* Top Media Section */}
             <div className="card-media">
                 <img src={property.image} alt={property.title} loading="lazy" />
-                
-                {/* Visual Overlays */}
                 <div className="card-overlay-gradient" />
 
                 <div className="card-badges">
@@ -54,14 +52,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
                     <FaHeart />
                 </button>
 
-                <div className="floating-price">
-                    <div className="price-container">
-                        <span className="currency">$</span>
-                        <span className="amount">{property.price.toLocaleString()}</span>
-                        <span className="term">/mo</span>
-                    </div>
-                </div>
-
                 <div className="rating-tag">
                     <FaStar className="star-icon" /> 
                     <span>{property.rating}</span>
@@ -70,6 +60,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
 
             {/* Bottom Content Section */}
             <div className="card-body">
+                {/* Simplified Inline Price Presentation */}
+                <div className="simple-price-tag">
+                    <span className="currency">$</span>
+                    <span className="amount">{property.price.toLocaleString()}</span>
+                    <span className="term">/ month</span>
+                </div>
+
                 <div className="location-row">
                     <div className="loc-icon-bg">
                         <FaMapMarkerAlt />
