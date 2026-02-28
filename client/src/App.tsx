@@ -13,6 +13,7 @@ import Messages from "./features/Messages/pages/Messages";
 import Balance from "./features/Balance/pages/Balance";
 import PrePayment from "./features/PrePayment/pages/PrePayment";
 import SavedProperties from "./features/SavedProperties/pages/SavedProperties";
+import AboutUs from "./features/AboutUs/pages/AboutUs";
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
         <Route path="/balance" element={<Balance />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/about-us" element={<AboutUs />} />
 
         {/* Auth Routes */}
         <Route path="/auth" element={<AuthPage />} />
