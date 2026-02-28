@@ -1,61 +1,75 @@
-import { useState, useEffect } from 'react';
-import SignIn from '../../../features/auth/components/signin.tsx';
-import SignUp from '../../../features/auth/components/signup.tsx';
+import { useState } from 'react';
+import SignIn from '../components/signin.tsx';
+import SignUp from '../components/signup.tsx';
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import './authPage.css';
-import { Home, Mail, Lock } from 'lucide-react';
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
 
+  // Premium Real Estate Image from Unsplash
+  const heroImageUrl = "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?auto=format&fit=crop&w=800&q=80";
+
   return (
-    <div className="auth-page">
-      <div className="auth-background">
-        <div className="blob blob1" />
-        <div className="blob blob2" />
-        <div className="blob blob3" />
+    <div className="auth-split-wrapper">
+      {/* Visual Side */}
+      <div className="auth-hero-side">
+        <img
+          src={heroImageUrl}
+          alt="Luxury Architecture"
+          className="hero-img-full"
+        />
+        <div className="hero-text-overlay">
+          <div className="glass-badge">Premium Living</div>
+          <h2>Discover the art of <br /><span>Modern Living.</span></h2>
+          <p>The most exclusive properties at your fingertips.</p>
+        </div>
       </div>
 
-      <div className="auth-container">
-        <div className="auth-hero">
-          <img
-            src="/rentblue.jpg"
-            alt="Welcome home"
-          />
-        </div>
+      {/* Form Side */}
+      <div className="auth-form-side">
+        <div className="auth-content-container">
+          <header className="auth-brand-header">
+            <img src="/logo.png" alt="Logo" className="auth-main-logo" />
+            <h1>{activeTab === "signin" ? "Welcome back" : "Get started"}</h1>
+            <p>Please enter your details to continue</p>
+          </header>
 
-        <div className="auth-card">
-          <div className="auth-header">
-            <div className="logo-box">
-              <img src="/logo.png" alt="Logo" />
-            </div>
-            
-            <p>Sign in to your account or create a new one</p>
-          </div>
-
-          <div className="social-buttons">
-            <button className="social-btn google">
-              <FcGoogle size={20} />
-              Continue with Google
+          <div className="social-auth-grid">
+            <button className="social-pill">
+              <FcGoogle size={22} />
+              <span>Google</span>
             </button>
-            <button className="social-btn facebook">
-              <FaFacebookF size={18} />
-              Continue with Facebook
+            <button className="social-pill">
+              <FaFacebookF size={18} color="#1877f2" />
+              <span>Facebook</span>
             </button>
           </div>
 
-          <div className="divider">Or continue with email</div>
-
-          <div className="tabs">
-            <div
-              className={`tab-slider ${activeTab === "signup" ? "right" : ""}`}
-            />
-            <button onClick={() => setActiveTab("signin")}>Sign In</button>
-            <button onClick={() => setActiveTab("signup")}>Sign Up</button>
+          <div className="auth-ui-divider">
+            <span>or email</span>
           </div>
 
-          {activeTab === "signin" ? <SignIn /> : <SignUp />}
+          <div className="tab-switcher">
+            <div className={`tab-glow-bg ${activeTab === "signup" ? "slide-right" : ""}`} />
+            <button 
+              className={activeTab === "signin" ? "active" : ""} 
+              onClick={() => setActiveTab("signin")}
+            >
+              Sign In
+            </button>
+            <button 
+              className={activeTab === "signup" ? "active" : ""} 
+              onClick={() => setActiveTab("signup")}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <div className="form-fade-in">
+            {activeTab === "signin" ? <SignIn /> : <SignUp />}
+          </div>
         </div>
       </div>
     </div>
