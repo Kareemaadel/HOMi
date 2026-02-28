@@ -1,5 +1,5 @@
 // client\src\features\BrowseProperties\components\PropertyCard.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { 
     FaBed, 
     FaBath, 
@@ -28,11 +28,22 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) => {
+    // Local state to handle the heart toggle
+    const [isSaved, setIsSaved] = useState(false);
+
+    const handleWishlistToggle = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevents the card's onClick from firing
+        setIsSaved(!isSaved);
+        console.log(isSaved ? "Removed from favorites" : "Added to favorites");
+    };
+
     return (
         <div className="tenant-card-premium" onClick={onOpenDetails}>
             {/* Top Media Section */}
             <div className="card-media">
                 <img src={property.image} alt={property.title} loading="lazy" />
+                
+                {/* Visual Overlays */}
                 <div className="card-overlay-gradient" />
 
                 <div className="card-badges">
@@ -42,12 +53,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
                 </div>
 
                 <button 
-                    className="wishlist-btn" 
+                    className={`wishlist-btn ${isSaved ? 'active' : ''}`} 
                     aria-label="Add to favorites"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        console.log("Added to favorites");
-                    }}
+                    onClick={handleWishlistToggle}
                 >
                     <FaHeart />
                 </button>
@@ -107,7 +115,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
                         className="btn-details-minimal"
                         onClick={(e) => {
                             e.stopPropagation();
-                            onOpenDetails();
+                            onOpenDetails(); // Opens the modal
                         }}
                     >
                         View Details
@@ -117,7 +125,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
                         className="btn-apply-glow" 
                         onClick={(e) => {
                             e.stopPropagation();
-                            console.log("Applying for:", property.title);
+                            onOpenDetails(); // <--- This ensures the modal opens here too!
                         }}
                     >
                         Apply Now <FaChevronRight className="arrow-icon" />

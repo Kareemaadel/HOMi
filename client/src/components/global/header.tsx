@@ -64,7 +64,7 @@ const Header = () => {
           <Link to="/for-landlords" className={`nav-link ${location.pathname === '/for-landlords' ? 'active' : ''}`}>
             How It Works
           </Link>
-          <Link to="/for-tenants" className={`nav-link ${location.pathname === '/for-tenants' ? 'active' : ''}`}>
+          <Link to="/saved-properties" className={`nav-link ${location.pathname === '/saved-properties' ? 'active' : ''}`}>
             Saved Properties
           </Link>
           <Link to="/maintenance-providers" className={`nav-link ${location.pathname === '/maintenance-providers' ? 'active' : ''}`}>
