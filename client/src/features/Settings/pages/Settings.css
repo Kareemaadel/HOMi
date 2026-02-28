@@ -53,6 +53,7 @@
     padding: 3.5rem;
     background: #ffffff;
     border-left: 1px solid #f1f5f9;
+    height: 750px;
 }
 
 /* Danger Zone Styling */
@@ -108,4 +109,35 @@
 @media (max-width: 1024px) {
     .settings-glass-card { grid-template-columns: 1fr; }
     .settings-viewport { margin-left: 0; }
+}
+
+/* The main wrapper of the settings card */
+.settings-glass-card {
+    display: grid;
+    grid-template-columns: 280px 1fr; /* Sidebar | Content */
+    height: 80vh; /* Or a fixed px height like 750px */
+    min-height: 600px;
+    overflow: hidden; /* CRITICAL: Prevents children from growing the card */
+    background: #fff;
+    border-radius: 20px;
+}
+
+/* Ensure the sidebar stays exactly the height of the card */
+.internal-settings-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%; 
+    padding: 1.5rem;
+    border-right: 1px solid #eef2f6;
+}
+
+.settings-nav {
+    flex: 1; /* Pushes the delete button to the very bottom */
+    overflow-y: auto;
+}
+
+.delete-nav {
+    flex-shrink: 0; /* Prevents the delete button from disappearing */
+    margin-top: auto;
+    color: #ef4444 !important;
 }

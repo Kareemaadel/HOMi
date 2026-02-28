@@ -1,11 +1,13 @@
 .internal-settings-sidebar {
     width: 280px;
-    padding: 2rem 1.5rem;
+    height: 100%;             /* already there */
+    padding: 2rem 1.25rem;
+    background: #fafbfc;
     border-right: 1px solid #f1f5f9;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    background-color: #2084e1;
+    position: relative;
+    overflow-y: auto;         /* allow the sidebar to scroll when it overflows */
 }
 
 .settings-nav {
@@ -120,4 +122,89 @@
 .delete-nav:hover {
     background: #fee2e2;
     color: #ef4444;
+}
+.internal-settings-sidebar {
+    width: 280px;
+    height: 100%; /* Fills the parent card height */
+    padding: 2rem 1.25rem;
+    background: #fafbfc;
+    border-right: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden; /* Keeps things neat */
+}
+
+.settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    /* This makes the nav take up all space, pushing Delete down */
+    flex: 1; 
+    overflow-y: auto; /* Scrollable menu items if they get too long */
+}
+
+/* Hide scrollbar for the nav list for a cleaner look */
+.settings-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border: none;
+    background: transparent;
+    color: #64748b; /* Slate-500 */
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.nav-item:hover {
+    background: #f1f5f9;
+    color: var(--primary-blue, #2563eb);
+}
+
+.nav-item.active {
+    background: white;
+    color: var(--primary-blue, #2563eb);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.nav-icon {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    width: 20px;
+}
+
+.nav-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 1rem 0;
+    flex-shrink: 0;
+}
+
+/* THE FIX: Pinning the Delete Button */
+.delete-nav {
+    margin-top: auto; /* Pushes it to the bottom of the flex container */
+    flex-shrink: 0;   /* Prevents it from getting squashed */
+    color: #94a3b8;
+    background: transparent;
+}
+
+.delete-nav:hover {
+    background: #fff1f2;
+    color: #ef4444;
+}
+
+.delete-nav.active {
+    background: #fff1f2;
+    color: #ef4444;
+    box-shadow: none;
 }

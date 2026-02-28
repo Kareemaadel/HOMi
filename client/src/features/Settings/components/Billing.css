@@ -1,0 +1,69 @@
+.current-plan-card {
+    background: var(--primary-gradient);
+    padding: 2.5rem;
+    border-radius: 24px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 15px 30px rgba(37, 99, 235, 0.2);
+}
+
+.plan-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.current-plan-card h2 { font-size: 2rem; margin: 10px 0; }
+.current-plan-card h2 span { font-size: 1.2rem; opacity: 0.8; font-weight: 400; }
+
+.upgrade-btn {
+    background: white;
+    color: var(--primary-blue);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.billing-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.method-card {
+    background: #f8fafc;
+    border: 1px solid #eef2f6;
+    padding: 1.5rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.card-brand {
+    background: #1e293b;
+    color: white;
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: 900;
+    font-style: italic;
+}
+
+.invoice-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}

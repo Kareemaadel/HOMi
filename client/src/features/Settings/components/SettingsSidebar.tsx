@@ -1,6 +1,10 @@
+// Updated SettingsSidebar.tsx
 import React from 'react';
 import './SettingsSidebar.css';
-import { FaUser, FaShieldAlt, FaCog, FaInfoCircle, FaTrashAlt } from 'react-icons/fa';
+import { 
+  FaUser, FaShieldAlt, FaCog, FaInfoCircle, FaTrashAlt, 
+  FaBell, FaCreditCard, FaUserShield 
+} from 'react-icons/fa';
 
 interface SettingsSidebarProps {
     activeTab: string;
@@ -10,7 +14,10 @@ interface SettingsSidebarProps {
 const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, setActiveTab }) => {
     const menuItems = [
         { id: 'profile', label: 'My Profile', icon: <FaUser /> },
+        { id: 'billing', label: 'Plan & Billing', icon: <FaCreditCard /> }, // NEW
+        { id: 'notifications', label: 'Notifications', icon: <FaBell /> }, // NEW
         { id: 'security', label: 'Security', icon: <FaShieldAlt /> },
+        { id: 'privacy', label: 'Privacy & Data', icon: <FaUserShield /> }, // NEW
         { id: 'preferences', label: 'Preferences', icon: <FaCog /> },
         { id: 'about', label: 'About', icon: <FaInfoCircle /> },
     ];
@@ -29,9 +36,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, setActiveT
                     </button>
                 ))}
             </nav>
-
             <div className="nav-divider"></div>
-
             <button 
                 className={`nav-item delete-nav ${activeTab === 'delete' ? 'active' : ''}`}
                 onClick={() => setActiveTab('delete')}

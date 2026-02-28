@@ -1,0 +1,321 @@
+/* Container takes full height of the parent view-panel */
+.notif-settings-wrapper {
+    display: flex;
+    flex-direction: column;
+    /* height: 2000px;  <-- remove this */
+    height: 100%;             /* fill whatever height the panel provides */
+    max-width: 900px;
+    overflow: hidden;         /* only the inner scroll area should scroll */
+    margin-top: 0;    
+    width: 1300px;        /* you don’t need the negative margin either */
+}
+
+.section-intro {
+    margin-bottom: 1.5rem;
+    flex-shrink: 0; /* Prevents header from shrinking */
+}
+
+/* Table Container Wrapper */
+.notif-table-container {
+    background: #ffffff;
+    border: 1px solid #eef2f6;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Grows to take available space */
+    height: 1500px; /* Important for flex-scroll to work */
+    overflow: hidden;
+    margin-top: -30px;
+    width: 1700px;
+}
+
+/* Fixed Header */
+.grid-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px;
+    background: #f8fafc;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eef2f6;
+    font-weight: 700;
+    color: var(--text-dark);
+    flex-shrink: 0;
+}
+
+/* Scrollable Body */
+.scrollable-grid-body {
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Custom Scrollbar for Premium Look */
+.scrollable-grid-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollable-grid-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.scrollable-grid-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.scrollable-grid-body::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-blue);
+}
+
+/* Rows */
+.grid-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f8fafc;
+    align-items: center;
+    transition: background 0.2s ease;
+}
+
+.grid-row:hover { 
+    background: #fcfdfe; 
+}
+
+.notif-info h4 { 
+    font-size: 0.95rem; 
+    color: var(--text-dark); 
+    margin: 0 0 2px 0; 
+}
+
+.notif-info p { 
+    font-size: 0.8rem; 
+    color: var(--text-light); 
+    margin: 0;
+}
+
+.checkbox-cell {
+    display: flex;
+    justify-content: center;
+}
+
+/* Action Footer */
+.notif-footer-sticky {
+    padding: 1.5rem 0 0;
+    flex-shrink: 0;
+    border-top: 1px solid #f1f5f9;
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Channel Icons styling */
+.channel-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    color: var(--text-light);
+}
+
+.channel-col svg {
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+.notif-settings-wrapper {
+    display: flex;
+    flex-direction: column;
+    /* This ensures it fills the 700px-850px height of your parent card */
+    height: 100%; 
+    max-width: 900px;
+}
+
+.section-intro {
+    flex-shrink: 0;
+    margin-bottom: 1.5rem;
+}
+
+.notif-card-container {
+    background: #ffffff;
+    border: 1px solid #eef2f6;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Fills available space */
+    min-height: 0; /* Critical fix for flexbox overflow */
+    overflow: hidden;
+}
+
+/* Header is sticky inside the card */
+.grid-header {
+    display: flex;
+    justify-content: space-between;
+    background: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #eef2f6;
+    font-weight: 700;
+}
+
+/* Only this part scrolls */
+.notif-scroll-area {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+/* Custom Slim Scrollbar */
+.notif-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+.notif-scroll-area::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.grid-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f8fafc;
+    transition: 0.2s;
+}
+
+.grid-row:hover { background: #fcfdfe; }
+
+/* Grouping channels to keep columns aligned */
+.channel-group {
+    display: flex;
+    gap: 0;
+}
+
+.channel-col, .checkbox-cell {
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.channel-col {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    gap: 4px;
+}
+
+.notif-info h4 { font-size: 0.95rem; color: var(--text-dark); margin: 0; }
+.notif-info p { font-size: 0.8rem; color: var(--text-light); margin: 2px 0 0 0; }
+
+.notif-footer-sticky {
+    padding: 1.5rem 0;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Ensure the wrapper fills the panel height without overflowing it */
+.notif-settings-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Important: Fills but doesn't exceed parent */
+    width: 100%;
+    max-width: 900px;
+}
+
+.section-intro {
+    flex-shrink: 0;
+    margin-bottom: 1.5rem;
+}
+
+/* The visual card containing the list */
+.notif-card-container {
+    background: #ffffff;
+    border: 1px solid #eef2f6;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Takes up all available space */
+    min-height: 0; /* THE FIX: Allows content to be smaller than its flex-basis */
+    overflow: hidden; /* Keeps the border-radius clean */
+}
+
+/* Header stays at the top of the card */
+.grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eef2f6;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ONLY this part scrolls */
+.notif-scroll-area {
+    overflow-y: auto;
+    flex-grow: 1;
+    background: #ffffff;
+}
+
+/* Custom Scrollbar */
+.notif-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+.notif-scroll-area::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.grid-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f8fafc;
+    transition: background 0.2s;
+}
+
+.grid-row:hover { background: #fcfdfe; }
+
+.channel-group {
+    display: flex;
+}
+
+.channel-col, .checkbox-cell {
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.notif-info h4 { font-size: 0.95rem; color: var(--text-dark); margin: 0; }
+.notif-info p { font-size: 0.8rem; color: var(--text-light); margin: 4px 0 0 0; }
+
+.notif-footer-sticky {
+    padding-top: 1.5rem;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.notif-settings-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Take 100% of the parent card, NO MORE */
+    padding: 2rem;
+    overflow: hidden; /* Let the internal scroll-area handle the mess */
+}
+
+.notif-card-container {
+    flex: 1; /* Grow to fill the space between header and save button */
+    min-height: 0; /* Flexbox trick to allow internal scrolling */
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+}
+
+.notif-scroll-area {
+    overflow-y: auto; /* Only this part will scroll now */
+    flex: 1;
+}
