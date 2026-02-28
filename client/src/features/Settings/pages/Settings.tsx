@@ -5,11 +5,12 @@ import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import SettingsSidebar from '../components/SettingsSidebar';
 
-// New Component Imports
+// Sub-components
 import MyProfile from '../components/MyProfile';
 import Security from '../components/Security';
 import Preferences from '../components/Preferences';
 import About from '../components/About';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState('profile');
@@ -21,10 +22,19 @@ const Settings: React.FC = () => {
             case 'preferences': return <Preferences />;
             case 'about': return <About />;
             case 'delete': return (
-                <div className="delete-zone">
+                <div className="delete-zone-container animate-fade-in">
+                    <div className="danger-icon-wrapper">
+                        <FaExclamationTriangle />
+                    </div>
                     <h2>Delete Account</h2>
-                    <p>Once you delete your account, there is no going back. Please be certain.</p>
-                    <button className="danger-btn">Permanently Delete My Account</button>
+                    <p>
+                        This action is <strong>irreversible</strong>. Deleting your account will 
+                        permanently remove all your properties, rental history, and documents.
+                    </p>
+                    <div className="delete-actions">
+                        <button className="cancel-btn" onClick={() => setActiveTab('profile')}>Keep My Account</button>
+                        <button className="danger-confirm-btn">Permanently Delete</button>
+                    </div>
                 </div>
             );
             default: return <MyProfile />;
@@ -32,23 +42,22 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <div className="layout-wrapper">
+        <div className="settings-layout">
             <Sidebar />
-            <div className="main-content">
+            <div className="settings-viewport">
                 <Header />
-                <div className="settings-page-container">
-                    <div className="settings-card">
+                <main className="settings-main-area">
+
+                    <div className="settings-glass-card">
                         <SettingsSidebar 
                             activeTab={activeTab} 
                             setActiveTab={setActiveTab} 
                         />
-                        <main className="settings-content-area">
-                            <div className="content-inner">
-                                {renderContent()}
-                            </div>
-                        </main>
+                        <section className="settings-view-panel">
+                            {renderContent()}
+                        </section>
                     </div>
-                </div>
+                </main>
                 <Footer />
             </div>
         </div>
