@@ -1,6 +1,9 @@
 import React from 'react';
 import { FaMapMarkerAlt, FaCalendarAlt, FaWifi, FaBed, FaBath, FaArrowRight } from 'react-icons/fa';
 import './ActiveRentalsCard.css';
+import { useNavigate } from 'react-router-dom';
+
+
 
 interface RentalSpecs {
   label: string;
@@ -15,6 +18,13 @@ const ActiveRentalsCard: React.FC = () => {
     { label: "3 Bath", icon: <FaBath /> },
     { label: "WiFi Incl.", icon: <FaWifi /> },
   ];
+
+    const navigate = useNavigate();
+  
+    const handleDetailsClick = () => {
+      // Navigate exactly to /active-properties as requested
+      navigate('/active-properties');
+    };
 
   return (
     <div className="card-base rental-card-premium">
@@ -78,7 +88,7 @@ const ActiveRentalsCard: React.FC = () => {
               ))}
             </div>
             
-            <button className="btn-manage-circle" title="Manage Rental">
+            <button className="btn-manage-circle" title="Manage Rental" onClick={handleDetailsClick}>
               <FaArrowRight />
             </button>
           </footer>

@@ -15,6 +15,7 @@ import PrePayment from "./features/PrePayment/pages/PrePayment";
 import SavedProperties from "./features/SavedProperties/pages/SavedProperties";
 import AboutUs from "./features/AboutUs/pages/AboutUs";
 import GetHelp from "./features/GetHelp/pages/GetHelp";
+import MyActives from "./features/ActiveRental/pages/MyActives";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/active-properties" element={<ActiveRentals />} />
         <Route path="/prepayment-page" element={<PrePayment />} />
         <Route path="/saved-properties" element={<SavedProperties />} />
+        <Route path="/actives" element={<MyActives/>} />
 
         {/* Landlord Routes */}
         <Route path="/landlord-home" element={<LandlordHome />} />

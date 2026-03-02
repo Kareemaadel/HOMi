@@ -20,8 +20,8 @@ const Sidebar = () => {
       {/* 2. Navigation */}
       <nav className="sidebar-nav">
         <ul>
-          <li><a href="/" className={location.pathname === "/" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
-          <li><a href="/active-properties" className={location.pathname === "/active-properties" ? "active" : ""}><FaBuilding /> <span>Active Properties</span></a></li>
+          <li><a href="/" className={location.pathname === "/home" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
+          <li><a href="/actives" className={location.pathname === "/actives" ? "active" : ""}><FaBuilding /> <span>Active Properties</span></a></li>
           <li><a href="/browse-properties" className={location.pathname === "/browse-properties" ? "active" : ""}><FaSearch /> <span>Browse Properties</span></a></li>
           <li><a href="/roommate-matching" className={location.pathname === "/roommate-matching" ? "active" : ""}><FaUserFriends /> <span>Matching</span></a></li>
           
