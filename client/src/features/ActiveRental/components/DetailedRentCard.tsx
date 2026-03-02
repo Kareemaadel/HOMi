@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './DetailedRentCard.css';
 import { 
   FaCalendarAlt, FaUserCircle, FaRulerCombined, 
-  FaFileDownload, FaMapMarkerAlt, FaGavel, FaTimes 
+  FaFileDownload, FaMapMarkerAlt, FaGavel, FaTimes, FaHome 
 } from 'react-icons/fa';
 
 interface RentalProps {
@@ -66,10 +66,10 @@ const DetailedRentCard: React.FC<RentalProps> = ({ rental }) => {
                     </div>
 
                     <div className="info-tile">
-                        <div className="tile-icon"><FaRulerCombined /></div>
+                        <div className="tile-icon"><FaHome /></div>
                         <div className="tile-data">
-                            <span className="tile-label">Size</span>
-                            <span className="tile-value">{rental.sqft} <small>sqft</small></span>
+                            <span className="tile-label">Type</span>
+                            <span className="tile-value">Apartment</span>
                         </div>
                     </div>
 
@@ -85,7 +85,7 @@ const DetailedRentCard: React.FC<RentalProps> = ({ rental }) => {
                 <div className="card-actions-row">
                     <button className="download-contract-btn">
                         <FaFileDownload />
-                        <span>Lease PDF</span>
+                        <span>Lease Agreement</span>
                     </button>
 
                     <div className="rules-wrapper">
