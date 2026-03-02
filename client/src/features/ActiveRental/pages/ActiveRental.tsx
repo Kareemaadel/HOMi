@@ -1,5 +1,5 @@
 import React from 'react';
-import './ActiveRentals.css';
+import './ActiveRental.css';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
@@ -8,7 +8,7 @@ import UpcomingPayment from '../components/UpcomingPayment';
 import QuickActions from '../components/QuickActions';
 import MaintenanceStatus from '../components/MaintenanceStatus';
 
-const ActiveRentals: React.FC = () => {
+const ActiveRental: React.FC = () => {
     const rentalData = {
         title: "Azure Horizon Suite",
         address: "452 Ocean Drive, Miami, FL",
@@ -59,4 +59,4 @@ const ActiveRentals: React.FC = () => {
     );
 };
 
-export default ActiveRentals;
+export default ActiveRental;

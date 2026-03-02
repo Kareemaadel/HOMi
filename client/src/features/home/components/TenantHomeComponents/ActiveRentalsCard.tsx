@@ -23,7 +23,7 @@ const ActiveRentalsCard: React.FC = () => {
   
     const handleDetailsClick = () => {
       // Navigate exactly to /active-properties as requested
-      navigate('/active-properties');
+      navigate('/active-rental');
     };
 
   return (
