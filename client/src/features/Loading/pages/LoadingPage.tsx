@@ -1,27 +1,47 @@
 // client\src\features\Loading\pages\LoadingPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './LoadingPage.css';
+
+interface LoadingState {
+  next?: string;
+  force?: boolean;
+}
 
 const LoadingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = (location.state || {}) as LoadingState;
+  const nextPath = state.next || '/tenant-home';
+  const forceShow = state.force ?? false;
   const [stage, setStage] = useState('focus'); // focus -> expand -> reveal
 
   useEffect(() => {
+    const hasSeen = sessionStorage.getItem('hasSeenLoading');
+
+    if (hasSeen && !forceShow) {
+      // skip animation if already shown and not forced
+      navigate(nextPath, { replace: true });
+      return;
+    }
+
     // Stage 1: Focus on the House (0s - 1s)
     // Stage 2: Expand to full logo (1s - 2s)
     const expandTimer = setTimeout(() => setStage('expand'), 1000);
-    
+
     // Stage 3: Fade out and navigate (2.7s - 3s)
     const exitTimer = setTimeout(() => setStage('exit'), 400);
-    const navTimer = setTimeout(() => navigate('/tenant-home'), 3000);
+    const navTimer = setTimeout(() => {
+      sessionStorage.setItem('hasSeenLoading', 'true');
+      navigate(nextPath);
+    }, 3000);
 
     return () => {
       clearTimeout(expandTimer);
       clearTimeout(exitTimer);
       clearTimeout(navTimer);
     };
-  }, [navigate]);
+  }, [navigate, nextPath, forceShow]);
 
   return (
     <div className={`loading-wrapper stage-${stage}`}>

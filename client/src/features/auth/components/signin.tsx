@@ -1,10 +1,16 @@
 import React from 'react';
 import { Mail, Lock, LogIn } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
+
 const SignIn: React.FC = () => {
+  const navigate = useNavigate();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Auth logic here
+    // Auth logic here (e.g. call API, set user state)
+    // once ready to transition, show loading and then redirect
+    navigate('/', { state: { next: '/tenant-home', force: true } });
   };
 
   return (

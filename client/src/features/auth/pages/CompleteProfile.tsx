@@ -8,13 +8,25 @@ import './CompleteProfile.css';
 
 type UserRole = 'tenant' | 'landlord' | null;
 
+import { useNavigate } from 'react-router-dom';
+
 const CompleteProfile: React.FC = () => {
     const [step, setStep] = useState(1);
     const [role, setRole] = useState<UserRole>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const navigate = useNavigate();
 
     const nextStep = () => setStep(prev => prev + 1);
     const prevStep = () => setStep(prev => prev - 1);
+
+    // handlers split for clarity
+    const completeAsTenant = () => {
+        navigate('/', { state: { next: '/tenant-home', force: true } });
+    };
+
+    const finishAsLandlord = () => {
+        navigate('/', { state: { next: '/landlord-home', force: true } });
+    };
 
     return (
         <div className="onboarding-viewport">
@@ -192,7 +204,7 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer">
                             <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
-                            <button className="btn-finish">Complete Profile</button>
+                            <button className="btn-finish" onClick={completeAsTenant}>Complete Profile</button>
                         </div>
                     </div>
                 )}
@@ -259,7 +271,7 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer">
                             <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
-                            <button className="btn-finish">Finish Setup</button>
+                            <button className="btn-finish" onClick={finishAsLandlord}>Finish Setup</button>
                         </div>
                     </div>
                 )}
