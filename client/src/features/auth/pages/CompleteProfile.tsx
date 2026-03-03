@@ -1,43 +1,271 @@
-import { useState } from "react";
-import StepGuidelines from "../../../features/auth/components/StepGuidelines";
-import StepUserType from "../../../features/auth/components/StepUserType";
-import TenantCredentials from "../../../features/auth/components/TenantCredentials";
-import TenantLifestyle from "../../../features/auth/components/TenantLifestyle";
-import LandlordCredentials from "../../../features/auth/components/LandlordCredentials";
-import LandlordProperties from "../../../features/auth/components/LandlordProperties";
-import StepAvatarFinish from "../../../features/auth/components/StepAvatarFinish";
-import "./CompleteProfile.css";
-import "../components/Onboarding.css";
+import React, { useState, useRef } from 'react';
+import { 
+  User, IdCard, Globe, MapPin, Briefcase, GraduationCap, 
+  Wallet, Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
+  Calendar, Clock, ShieldCheck, CheckCircle2, DollarSign
+} from 'lucide-react';
+import './CompleteProfile.css';
 
-export type UserType = "tenant" | "landlord" | null;
+type UserRole = 'tenant' | 'landlord' | null;
 
-export default function CompleteProfile() {
-  const [step, setStep] = useState(1);
-  const [userType, setUserType] = useState<UserType>(null);
+const CompleteProfile: React.FC = () => {
+    const [step, setStep] = useState(1);
+    const [role, setRole] = useState<UserRole>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const next = () => setStep((s) => s + 1);
-  const skip = () => (window.location.href = "/dashboard");
+    const nextStep = () => setStep(prev => prev + 1);
+    const prevStep = () => setStep(prev => prev - 1);
 
-  return (
-    <div className="onboard-page">
-      <div className="onboard-card">
-        <div className="progress-bar">
-          <div style={{ width: `${step * 14}%` }} />
+    return (
+        <div className="onboarding-viewport">
+            <div className="onboarding-card">
+                {/* Stepper Header */}
+                <div className="stepper-nav">
+                    {[1, 2, 3].map((num) => (
+                        <div key={num} className={`step-indicator ${step === num ? 'active' : step > num ? 'completed' : ''}`}>
+                            {step > num ? <CheckCircle2 size={18} /> : <span>{num}</span>}
+                        </div>
+                    ))}
+                </div>
+
+                {/* STEP 1: GLOBAL DATA */}
+                {step === 1 && (
+                    <div className="step-fade-in">
+                        <div className="section-title">
+                            <h1>Create your identity</h1>
+                            <p>Personalize your account to start connecting with the community.</p>
+                        </div>
+
+                        <div className="avatar-picker">
+                            <div className="avatar-circle" onClick={() => fileInputRef.current?.click()}>
+                                <UploadCloud size={28} />
+                                <span>Add Photo</span>
+                            </div>
+                            <input type="file" ref={fileInputRef} hidden />
+                        </div>
+
+                        <div className="modern-form-grid">
+                            <div className="form-field">
+                                <label>Date of Birth</label>
+                                <div className="input-wrapper">
+                                    <Calendar className="input-icon" size={18} />
+                                    <input type="date" />
+                                </div>
+                            </div>
+                            <div className="form-field">
+                                <label>Gender (Optional)</label>
+                                <select>
+                                    <option value="">Select...</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>National ID / Passport</label>
+                                <div className="input-wrapper">
+                                    <IdCard className="input-icon" size={18} />
+                                    <input type="text" placeholder="Document Number" />
+                                </div>
+                            </div>
+                            <div className="form-field">
+                                <label>Preferred Language</label>
+                                <div className="input-wrapper">
+                                    <Globe className="input-icon" size={18} />
+                                    <select>
+                                        <option value="ar">Arabic (العربية)</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-field full">
+                                <label>Current Location</label>
+                                <div className="input-wrapper">
+                                    <MapPin className="input-icon" size={18} />
+                                    <input type="text" placeholder="City, Country" />
+                                </div>
+                            </div>
+                            <div className="form-field full">
+                                <label>About You</label>
+                                <textarea placeholder="A short bio to introduce yourself..." rows={2}></textarea>
+                            </div>
+                        </div>
+
+                        <div className="action-footer">
+                            <button className="btn-continue" onClick={nextStep}>
+                                Next Step <ArrowRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* STEP 2: ROLE SELECTION */}
+                {step === 2 && (
+                    <div className="step-fade-in">
+                        <div className="section-title center">
+                            <h1>Choose your journey</h1>
+                            <p>Are you looking for a home or managing properties?</p>
+                        </div>
+
+                        <div className="role-grid">
+                            <div className={`role-option ${role === 'tenant' ? 'selected' : ''}`} onClick={() => setRole('tenant')}>
+                                <div className="role-visual"><User size={32} /></div>
+                                <h3>Tenant</h3>
+                                <p>Finding my next dream rental</p>
+                            </div>
+                            <div className={`role-option ${role === 'landlord' ? 'selected' : ''}`} onClick={() => setRole('landlord')}>
+                                <div className="role-visual"><Home size={32} /></div>
+                                <h3>Landlord</h3>
+                                <p>Listing and managing assets</p>
+                            </div>
+                        </div>
+
+                        <div className="action-footer">
+                            <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
+                            <button className="btn-continue" disabled={!role} onClick={nextStep}>
+                                Continue <ArrowRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* STEP 3A: TENANT SPECIFIC */}
+                {step === 3 && role === 'tenant' && (
+                    <div className="step-fade-in">
+                        <div className="section-title">
+                            <h1>Rental Preferences</h1>
+                            <p>This helps us find listings that match your lifestyle.</p>
+                        </div>
+
+                        <div className="modern-form-grid">
+                            <div className="form-field">
+                                <label>Employment</label>
+                                <select>
+                                    <option>Employed</option>
+                                    <option>Self-employed</option>
+                                    <option>Student</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Workplace / Uni</label>
+                                <div className="input-wrapper">
+                                    <Briefcase className="input-icon" size={16} />
+                                    <input type="text" placeholder="Company/School" />
+                                </div>
+                            </div>
+                            <div className="form-field">
+                                <label>Income Range</label>
+                                <select>
+                                    <option>&lt; $500</option>
+                                    <option>$500 - $1500</option>
+                                    <option>$1500+</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Move-in Date</label>
+                                <input type="date" />
+                            </div>
+                            <div className="form-field">
+                                <label>Property Type</label>
+                                <select>
+                                    <option>Apartment</option>
+                                    <option>Villa</option>
+                                    <option>Studio</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Duration</label>
+                                <select>
+                                    <option>6 Months</option>
+                                    <option>1 Year</option>
+                                    <option>Long-term</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Min Budget ($)</label>
+                                <input type="number" placeholder="500" />
+                            </div>
+                            <div className="form-field">
+                                <label>Max Budget ($)</label>
+                                <input type="number" placeholder="2500" />
+                            </div>
+                        </div>
+
+                        <div className="action-footer">
+                            <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
+                            <button className="btn-finish">Complete Profile</button>
+                        </div>
+                    </div>
+                )}
+
+                {/* STEP 3B: LANDLORD SPECIFIC */}
+                {step === 3 && role === 'landlord' && (
+                    <div className="step-fade-in">
+                        <div className="section-title">
+                            <h1>Business Profile</h1>
+                            <p>Verified landlords receive 3x more high-quality inquiries.</p>
+                        </div>
+
+                        <div className="modern-form-grid">
+                            <div className="form-field">
+                                <label>Account Type</label>
+                                <select>
+                                    <option>Individual Owner</option>
+                                    <option>Agency</option>
+                                    <option>Company</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Company Name</label>
+                                <input type="text" placeholder="Legal name" />
+                            </div>
+                            <div className="form-field">
+                                <label>Total Properties</label>
+                                <input type="number" placeholder="0" />
+                            </div>
+                            <div className="form-field">
+                                <label>Years Experience</label>
+                                <input type="number" placeholder="Ex: 5" />
+                            </div>
+                            <div className="form-field full">
+                                <label>Business Address</label>
+                                <div className="input-wrapper">
+                                    <Building2 className="input-icon" size={16} />
+                                    <input type="text" placeholder="Full address" />
+                                </div>
+                            </div>
+                            <div className="form-field">
+                                <label>Payment Method</label>
+                                <select>
+                                    <option>Bank Transfer</option>
+                                    <option>Cash</option>
+                                    <option>Online Payment</option>
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Availability</label>
+                                <div className="input-wrapper">
+                                    <Clock className="input-icon" size={16} />
+                                    <input type="text" placeholder="e.g. 9AM - 5PM" />
+                                </div>
+                            </div>
+                            <div className="form-field full">
+                                <label>Ownership Proof (Deed/License)</label>
+                                <div className="upload-zone">
+                                    <ShieldCheck size={24} />
+                                    <span>Click to upload verification documents</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="action-footer">
+                            <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
+                            <button className="btn-finish">Finish Setup</button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
+    );
+};
 
-        {step === 1 && <StepGuidelines onNext={next} />}
-        {step === 2 && <StepUserType setUserType={setUserType} onNext={next} />}
-
-        {userType === "tenant" && step === 3 && <TenantCredentials onNext={next} />}
-        {userType === "tenant" && step === 4 && <TenantLifestyle onNext={next} />}
-
-        {userType === "landlord" && step === 3 && <LandlordCredentials onNext={next} />}
-        {userType === "landlord" && step === 4 && <LandlordProperties onNext={next} />}
-
-        {step === 5 && <StepAvatarFinish />}
-
-        <button className="skip-btn" onClick={skip}>Skip for now</button>
-      </div>
-    </div>
-  );
-}
+export default CompleteProfile;
