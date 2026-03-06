@@ -16,6 +16,7 @@ import SavedProperties from "./features/SavedProperties/pages/SavedProperties";
 import AboutUs from "./features/AboutUs/pages/AboutUs";
 import GetHelp from "./features/GetHelp/pages/GetHelp";
 import MyActives from "./features/ActiveRental/pages/MyActives";
+import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/prepayment-page" element={<PrePayment />} />
         <Route path="/saved-properties" element={<SavedProperties />} />
         <Route path="/actives" element={<MyActives/>} />
+        <Route path="/tenant-payment" element={<TenantPayment />} />
 
         {/* Landlord Routes */}
         <Route path="/landlord-home" element={<LandlordHome />} />
