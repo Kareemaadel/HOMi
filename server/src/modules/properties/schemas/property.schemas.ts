@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PropertyStatus } from '../models/Property.js';
+import { PropertyStatus, FurnishingStatus, PropertyType, TargetTenant } from '../models/Property.js';
 
 /**
  * Property Image Schema
@@ -17,6 +17,69 @@ export const PropertyImageSchema = z.object({
 export type PropertyImageInput = z.infer<typeof PropertyImageSchema>;
 
 /**
+ * Property Specifications Schema
+ */
+export const PropertySpecificationsSchema = z.object({
+    bedrooms: z
+        .number({ error: 'Bedrooms is required' })
+        .int('Bedrooms must be an integer')
+        .min(0, 'Bedrooms cannot be negative'),
+    bathrooms: z
+        .number({ error: 'Bathrooms is required' })
+        .int('Bathrooms must be an integer')
+        .min(0, 'Bathrooms cannot be negative'),
+    area_sqft: z
+        .number({ error: 'Area is required' })
+        .positive('Area must be a positive number'),
+});
+
+export type PropertySpecificationsInput = z.infer<typeof PropertySpecificationsSchema>;
+
+/**
+ * Property Detailed Location Schema
+ */
+export const PropertyDetailedLocationSchema = z.object({
+    floor: z
+        .number({ error: 'Floor is required' })
+        .int('Floor must be an integer'),
+    city: z
+        .string({ error: 'City is required' })
+        .min(1, 'City is required')
+        .max(100, 'City must be at most 100 characters')
+        .trim(),
+    area: z
+        .string({ error: 'Area is required' })
+        .min(1, 'Area is required')
+        .max(100, 'Area must be at most 100 characters')
+        .trim(),
+    street_name: z
+        .string({ error: 'Street name is required' })
+        .min(1, 'Street name is required')
+        .max(255, 'Street name must be at most 255 characters')
+        .trim(),
+    building_number: z
+        .string({ error: 'Building number is required' })
+        .min(1, 'Building number is required')
+        .max(50, 'Building number must be at most 50 characters')
+        .trim(),
+    unit_apt: z
+        .string({ error: 'Unit/Apt is required' })
+        .min(1, 'Unit/Apt is required')
+        .max(50, 'Unit/Apt must be at most 50 characters')
+        .trim(),
+    location_lat: z
+        .number()
+        .min(-90, 'Latitude must be between -90 and 90')
+        .max(90, 'Latitude must be between -90 and 90'),
+    location_long: z
+        .number()
+        .min(-180, 'Longitude must be between -180 and 180')
+        .max(180, 'Longitude must be between -180 and 180'),
+});
+
+export type PropertyDetailedLocationInput = z.infer<typeof PropertyDetailedLocationSchema>;
+
+/**
  * Create Property Schema
  * Validates property creation request
  */
@@ -30,22 +93,33 @@ export const CreatePropertySchema = z.object({
         .string()
         .min(1, 'Description is required')
         .trim(),
-    price: z
-        .number()
-        .positive('Price must be a positive number')
-        .max(999999999.99, 'Price is too large'),
+    monthly_price: z
+        .number({ error: 'Monthly price is required' })
+        .positive('Monthly price must be a positive number')
+        .max(999999999.99, 'Monthly price is too large'),
+    security_deposit: z
+        .number({ error: 'Security deposit is required' })
+        .min(0, 'Security deposit cannot be negative')
+        .max(999999999.99, 'Security deposit is too large'),
     address: z
         .string()
         .min(1, 'Address is required')
         .trim(),
-    location_lat: z
-        .number()
-        .min(-90, 'Latitude must be between -90 and 90')
-        .max(90, 'Latitude must be between -90 and 90'),
-    location_long: z
-        .number()
-        .min(-180, 'Longitude must be between -180 and 180')
-        .max(180, 'Longitude must be between -180 and 180'),
+    type: z.enum(
+        [PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET],
+        { message: 'Type must be APARTMENT, VILLA, STUDIO, or CHALET' }
+    ).optional(),
+    furnishing: z.enum(
+        [FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED],
+        { message: 'Furnishing must be Fully, Semi, or Unfurnished' }
+    ),
+    target_tenant: z.enum(
+        [TargetTenant.ANY, TargetTenant.STUDENTS, TargetTenant.FAMILIES, TargetTenant.TOURISTS],
+        { message: 'Target tenant must be ANY, STUDENTS, FAMILIES, or TOURISTS' }
+    ).optional(),
+    availability_date: z
+        .string({ error: 'Availability date is required' })
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format'),
     images: z
         .array(PropertyImageSchema)
         .min(1, 'At least one image is required')
@@ -59,6 +133,16 @@ export const CreatePropertySchema = z.object({
                 message: 'Only one image can be marked as main',
             }
         ),
+    amenity_names: z
+        .array(z.string().min(1, 'Amenity name cannot be empty'))
+        .optional()
+        .default([]),
+    house_rule_names: z
+        .array(z.string().min(1, 'House rule name cannot be empty'))
+        .optional()
+        .default([]),
+    specifications: PropertySpecificationsSchema,
+    detailed_location: PropertyDetailedLocationSchema,
 });
 
 export type CreatePropertyInput = z.infer<typeof CreatePropertySchema>;
@@ -79,33 +163,41 @@ export const UpdatePropertySchema = z.object({
         .min(1, 'Description cannot be empty')
         .trim()
         .optional(),
-    price: z
+    monthly_price: z
         .number()
-        .positive('Price must be a positive number')
-        .max(999999999.99, 'Price is too large')
+        .positive('Monthly price must be a positive number')
+        .max(999999999.99, 'Monthly price is too large')
+        .optional(),
+    security_deposit: z
+        .number()
+        .min(0, 'Security deposit cannot be negative')
+        .max(999999999.99, 'Security deposit is too large')
         .optional(),
     address: z
         .string()
         .min(1, 'Address cannot be empty')
         .trim()
         .optional(),
-    location_lat: z
-        .number()
-        .min(-90, 'Latitude must be between -90 and 90')
-        .max(90, 'Latitude must be between -90 and 90')
+    type: z.enum(
+        [PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET],
+        { message: 'Type must be APARTMENT, VILLA, STUDIO, or CHALET' }
+    ).optional(),
+    furnishing: z.enum(
+        [FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED],
+        { message: 'Furnishing must be Fully, Semi, or Unfurnished' }
+    ).optional(),
+    status: z.enum(
+        [PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED],
+        { message: 'Status must be Draft, Published, or Rented' }
+    ).optional(),
+    target_tenant: z.enum(
+        [TargetTenant.ANY, TargetTenant.STUDENTS, TargetTenant.FAMILIES, TargetTenant.TOURISTS],
+        { message: 'Target tenant must be ANY, STUDENTS, FAMILIES, or TOURISTS' }
+    ).optional(),
+    availability_date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format')
         .optional(),
-    location_long: z
-        .number()
-        .min(-180, 'Longitude must be between -180 and 180')
-        .max(180, 'Longitude must be between -180 and 180')
-        .optional(),
-    status: z.enum([
-        PropertyStatus.AVAILABLE,
-        PropertyStatus.RENTED,
-        PropertyStatus.UNAVAILABLE
-    ], {
-        message: 'Status must be AVAILABLE, RENTED, or UNAVAILABLE',
-    }).optional(),
     images: z
         .array(PropertyImageSchema)
         .min(1, 'At least one image is required if updating images')
@@ -119,6 +211,14 @@ export const UpdatePropertySchema = z.object({
             }
         )
         .optional(),
+    amenity_names: z
+        .array(z.string().min(1, 'Amenity name cannot be empty'))
+        .optional(),
+    house_rule_names: z
+        .array(z.string().min(1, 'House rule name cannot be empty'))
+        .optional(),
+    specifications: PropertySpecificationsSchema.partial().optional(),
+    detailed_location: PropertyDetailedLocationSchema.partial().optional(),
 });
 
 export type UpdatePropertyInput = z.infer<typeof UpdatePropertySchema>;
@@ -130,11 +230,16 @@ export type UpdatePropertyInput = z.infer<typeof UpdatePropertySchema>;
  */
 export const PropertyQuerySchema = z.object({
     status: z
-        .enum([
-            PropertyStatus.AVAILABLE,
-            PropertyStatus.RENTED,
-            PropertyStatus.UNAVAILABLE
-        ])
+        .enum([PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED])
+        .optional(),
+    type: z
+        .enum([PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET])
+        .optional(),
+    furnishing: z
+        .enum([FurnishingStatus.FULLY, FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED])
+        .optional(),
+    target_tenant: z
+        .enum([TargetTenant.ANY, TargetTenant.STUDENTS, TargetTenant.FAMILIES, TargetTenant.TOURISTS])
         .optional(),
     minPrice: z
         .string()
@@ -149,6 +254,10 @@ export const PropertyQuerySchema = z.object({
     landlordId: z
         .string()
         .uuid('Invalid landlord ID format')
+        .optional(),
+    availabilityDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format')
         .optional(),
     page: z
         .string()
@@ -183,4 +292,6 @@ export default {
     UpdatePropertySchema,
     PropertyQuerySchema,
     PropertyImageSchema,
+    PropertySpecificationsSchema,
+    PropertyDetailedLocationSchema,
 };

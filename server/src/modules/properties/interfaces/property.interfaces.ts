@@ -1,4 +1,4 @@
-import type { PropertyStatusType } from '../models/Property.js';
+import type { PropertyStatusType, FurnishingStatusType, PropertyTypeType, TargetTenantType } from '../models/Property.js';
 
 /**
  * Property Image Input DTO
@@ -9,16 +9,87 @@ export interface PropertyImageInput {
 }
 
 /**
+ * Amenity Response DTO
+ */
+export interface AmenityResponse {
+    id: string;
+    name: string;
+}
+
+/**
+ * House Rule Response DTO
+ */
+export interface HouseRuleResponse {
+    id: string;
+    name: string;
+}
+
+/**
+ * Property Specifications Input DTO
+ */
+export interface PropertySpecificationsInput {
+    bedrooms: number;
+    bathrooms: number;
+    area_sqft: number;
+}
+
+/**
+ * Property Specifications Response DTO
+ */
+export interface PropertySpecificationsResponse {
+    id: string;
+    bedrooms: number;
+    bathrooms: number;
+    areaSqft: number;
+}
+
+/**
+ * Property Detailed Location Input DTO
+ */
+export interface PropertyDetailedLocationInput {
+    floor: number;
+    city: string;
+    area: string;
+    street_name: string;
+    building_number: string;
+    unit_apt: string;
+    location_lat: number;
+    location_long: number;
+}
+
+/**
+ * Property Detailed Location Response DTO
+ */
+export interface PropertyDetailedLocationResponse {
+    id: string;
+    floor: number;
+    city: string;
+    area: string;
+    streetName: string;
+    buildingNumber: string;
+    unitApt: string;
+    locationLat: number;
+    locationLong: number;
+}
+
+/**
  * Create Property Request DTO
  */
 export interface CreatePropertyRequest {
     title: string;
     description: string;
-    price: number;
+    monthly_price: number;
+    security_deposit: number;
     address: string;
-    location_lat: number;
-    location_long: number;
+    type?: PropertyTypeType;
+    furnishing: FurnishingStatusType;
+    target_tenant?: TargetTenantType;
+    availability_date: string; // ISO date string (YYYY-MM-DD)
     images: PropertyImageInput[];
+    amenity_names?: string[];
+    house_rule_names?: string[];
+    specifications: PropertySpecificationsInput;
+    detailed_location: PropertyDetailedLocationInput;
 }
 
 /**
@@ -28,12 +99,19 @@ export interface CreatePropertyRequest {
 export interface UpdatePropertyRequest {
     title?: string;
     description?: string;
-    price?: number;
+    monthly_price?: number;
+    security_deposit?: number;
     address?: string;
-    location_lat?: number;
-    location_long?: number;
+    type?: PropertyTypeType;
+    furnishing?: FurnishingStatusType;
     status?: PropertyStatusType;
+    target_tenant?: TargetTenantType;
+    availability_date?: string;
     images?: PropertyImageInput[];
+    amenity_names?: string[];
+    house_rule_names?: string[];
+    specifications?: Partial<PropertySpecificationsInput>;
+    detailed_location?: Partial<PropertyDetailedLocationInput>;
 }
 
 /**
@@ -41,9 +119,13 @@ export interface UpdatePropertyRequest {
  */
 export interface PropertyQuery {
     status?: PropertyStatusType;
+    type?: PropertyTypeType;
+    furnishing?: FurnishingStatusType;
+    target_tenant?: TargetTenantType;
     minPrice?: number;
     maxPrice?: number;
     landlordId?: string;
+    availabilityDate?: string;
     page?: number;
     limit?: number;
 }
@@ -66,13 +148,20 @@ export interface PropertyResponse {
     landlordId: string;
     title: string;
     description: string;
-    price: number;
+    monthlyPrice: number;
+    securityDeposit: number;
     address: string;
-    locationLat: number;
-    locationLong: number;
+    type: PropertyTypeType | null;
+    furnishing: FurnishingStatusType | null;
     status: PropertyStatusType;
+    targetTenant: TargetTenantType;
+    availabilityDate: Date | string | null;
     createdAt: Date;
     images: PropertyImageResponse[];
+    amenities: AmenityResponse[];
+    houseRules: HouseRuleResponse[];
+    specifications: PropertySpecificationsResponse | null;
+    detailedLocation: PropertyDetailedLocationResponse | null;
 }
 
 /**

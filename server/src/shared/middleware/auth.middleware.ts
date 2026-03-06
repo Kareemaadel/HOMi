@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, extractBearerToken, type JWTPayload } from '../utils/jwt.util.js';
 import type { UserRoleType } from '../../modules/auth/models/User.js';
+import { User } from '../../modules/auth/models/User.js';
 
 /**
  * Extend Express Request type to include user
@@ -97,7 +98,44 @@ export function restrictTo(...allowedRoles: UserRoleType[]) {
     };
 }
 
+/**
+ * Require Verified Middleware
+ * Ensures the authenticated user has completed account verification (is_verified = true).
+ * Must be used AFTER the protect middleware.
+ * Performs a lightweight DB lookup since is_verified is not stored in the JWT.
+ */
+export async function requireVerified(
+    req: Request,
+    res: Response<AuthErrorResponse>,
+    next: NextFunction
+): Promise<void> {
+    if (!req.user) {
+        res.status(401).json({
+            success: false,
+            message: 'Authentication required',
+            code: 'NOT_AUTHENTICATED',
+        });
+        return;
+    }
+
+    const user = await User.findByPk(req.user.userId, {
+        attributes: ['is_verified'],
+    });
+
+    if (!user || !user.is_verified) {
+        res.status(403).json({
+            success: false,
+            message: 'Your account is not fully verified. Please complete verification.',
+            code: 'ACCOUNT_NOT_VERIFIED',
+        });
+        return;
+    }
+
+    next();
+}
+
 export default {
     protect,
     restrictTo,
+    requireVerified,
 };

@@ -4,8 +4,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx src/index.ts",
-    "dev:watch": "tsx watch src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "dev:start": "tsx src/index.ts",
+    "seed:amenities": "tsx src/seeds/run-amenities.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
