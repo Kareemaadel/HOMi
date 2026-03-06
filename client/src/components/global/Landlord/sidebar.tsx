@@ -31,7 +31,7 @@ const Sidebar = () => {
           <div className="nav-divider">Management</div>
           
           <li><a href="/maintenance-requests" className={location.pathname === "/maintenance-requests" ? "active" : ""}><FaTools /> <span>Maintenance</span></a></li>
-          <li><a href="/payments" className={location.pathname === "/payments" ? "active" : ""}><FaCreditCard /> <span>Payments</span></a></li>
+          <li><a href="/landlord-payment" className={location.pathname === "/landlord-payment" ? "active" : ""}><FaCreditCard /> <span>Payments</span></a></li>
           <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages <em className="notif-dot"></em></span></a></li>
           
           <li><a href="/balance" className={location.pathname === "/balance" ? "active" : ""}><FaWallet /> <span className="badge-wrap">Balance <em className="notif-dot"></em></span></a></li>

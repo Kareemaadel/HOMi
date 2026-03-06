@@ -1,0 +1,596 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
+
+:root {
+    --bg: #ffffff;
+    --fg: #000000;
+    --accents-1: #fafafa;
+    --accents-2: #eaeaea;
+    --accents-3: #999999;
+    --accents-4: #666666;
+    --blue: #0070f3;
+    --green: #10b981;
+    --orange: #f5a623;
+    --radius: 12px;
+    --shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* --- BASE SHELL --- */
+.dashboard-shell {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: flex;
+    background: var(--bg);
+    min-height: 100vh;
+}
+
+.content-container { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    background: #fcfcfc; 
+}
+
+/* Unified Spacing with Tenant Page */
+.landlord-hub { 
+    padding: 40px 60px; 
+    max-width: 1300px; 
+    margin: 50px auto 0; 
+    width: 100%; 
+}
+
+/* --- HEADER & NAVIGATION (Synced with Tenant) --- */
+.landlord-hub-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-end; 
+    margin-bottom:37px;
+    margin-top: 10px;
+}
+
+.header-text h1 { 
+    font-size: 36px; 
+    font-weight: 800; 
+    letter-spacing: -1.5px; 
+    color: var(--fg); 
+    margin-bottom: 4px;
+}
+
+.header-text p {
+    color: var(--accents-4);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tabs-container { 
+    border-bottom: 1px solid var(--accents-2); 
+    margin-bottom: 32px; 
+}
+
+.modern-tabs { display: flex; gap: 32px; }
+
+.modern-tabs button {
+    background: none; border: none; padding: 12px 0; font-size: 14px; font-weight: 600;
+    color: var(--accents-4); cursor: pointer; display: flex; align-items: center; gap: 8px;
+    position: relative; transition: color 0.2s;
+}
+
+.modern-tabs button.active { color: var(--fg); }
+.modern-tabs button.active::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 2px; background: var(--fg);
+}
+
+/* --- STATS MOSAIC (Consistent with Tenant Overview) --- */
+.stats-grid { 
+    display: grid; 
+    grid-template-columns: 1.5fr 1fr 1fr 1fr; 
+    gap: 24px; 
+    margin-bottom: 32px; 
+}
+
+.stat-card-featured {
+    background: var(--fg); color: white; border-radius: 20px; padding: 32px;
+    position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.stat-card-white {
+    background: white; border: 1px solid var(--accents-2); border-radius: 20px;
+    padding: 24px; display: flex; flex-direction: column; justify-content: space-between;
+    transition: transform 0.2s ease;
+}
+
+.stat-card-white:hover { transform: translateY(-4px); border-color: var(--fg); }
+
+.stat-amount {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 8px 0;
+}
+
+.stat-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accents-4); }
+.stat-card-featured .stat-label { color: rgba(255,255,255,0.6); }
+
+/* --- TABLES (Unified with History Tab) --- */
+.modern-table-wrapper {
+    background: white; border: 1px solid var(--accents-2); border-radius: 16px; overflow: hidden;
+}
+
+.landlord-table { width: 100%; border-collapse: collapse; text-align: left; }
+
+.landlord-table th {
+    background: var(--accents-1);
+    padding: 16px 24px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--accents-4);
+    border-bottom: 1px solid var(--accents-2);
+}
+
+.landlord-table td {
+    padding: 20px 24px;
+    font-size: 14px;
+    color: var(--accents-4);
+    border-bottom: 1px solid var(--accents-1);
+}
+
+.user-info-cell { display: flex; align-items: center; gap: 12px; font-weight: 600; color: var(--fg); }
+.avatar-mini {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--accents-2);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+}
+
+/* --- PAYOUTS & METHODS (Card Style) --- */
+.payout-row {
+    background: white; border: 1px solid var(--accents-2); padding: 20px 24px;
+    border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+    transition: 0.2s;
+}
+
+.payout-row:hover { border-color: var(--fg); box-shadow: var(--shadow); }
+
+.methods-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; }
+
+.method-card {
+    background: white; border: 1px solid var(--accents-2); border-radius: 20px;
+    padding: 32px; position: relative; transition: 0.3s;
+}
+
+.method-card.active { border: 2px solid var(--fg); box-shadow: var(--shadow); }
+
+.add-method-card {
+    border: 2px dashed var(--accents-2); border-radius: 20px; background: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; cursor: pointer; color: var(--accents-3); transition: 0.2s;
+}
+
+.add-method-card:hover { border-color: var(--fg); color: var(--fg); background: var(--accents-1); }
+
+/* --- UPCOMING GRID (Airbnb Style) --- */
+.upcoming-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+
+.upcoming-card {
+    background: white; border: 1px solid var(--accents-2); border-radius: 20px;
+    padding: 24px; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.upcoming-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); border-color: var(--fg); }
+
+.due-tag {
+    background: #fffaf0; color: #9c4221; padding: 4px 12px; border-radius: 100px;
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+}
+
+/* --- BUTTONS & ANIMATIONS --- */
+.btn-payout-main {
+    background: var(--fg); color: white; border: none;
+    padding: 14px 28px; border-radius: 10px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s;
+}
+
+.btn-payout-main:hover { background: #333; transform: translateY(-2px); }
+
+.badge-success {
+    background: #e6fffa; color: #007d51; padding: 4px 12px; border-radius: 100px;
+    font-size: 12px; font-weight: 700;
+}
+
+.animate-fade-in {
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Response for smaller screens */
+@media (max-width: 1100px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .landlord-hub { padding: 20px; }
+}
+
+/* --- 2. RECEIVED TAB (Table Controls) --- */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 16px;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+}
+
+.search-box svg {
+    position: absolute;
+    left: 14px;
+    color: var(--accents-3);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 14px 10px 42px;
+    border-radius: 10px;
+    border: 1px solid var(--accents-2);
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--fg);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+}
+
+.btn-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--accents-2);
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-filter:hover { background: var(--accents-1); }
+
+.prop-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accents-4);
+    font-weight: 500;
+}
+
+/* --- 3. PAYOUTS TAB (List Refinement) --- */
+.payouts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.payout-info h5 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--fg);
+}
+
+.payout-info span {
+    font-size: 12px;
+    color: var(--accents-4);
+}
+
+.payout-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.payout-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--fg);
+}
+
+.status-pill {
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.status-pill.completed { background: #e6fffa; color: #007d51; }
+.status-pill.processing { background: #fffbeb; color: #92400e; }
+
+.icon-btn-sm {
+    background: none;
+    border: 1px solid var(--accents-2);
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--accents-4);
+    transition: 0.2s;
+}
+
+.icon-btn-sm:hover { color: var(--fg); border-color: var(--fg); }
+
+/* --- 4. METHODS TAB (Refined Card) --- */
+.method-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.method-badge {
+    background: var(--fg);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.method-card-body h4 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.method-card-body p {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accents-4);
+    font-size: 14px;
+    margin: 4px 0;
+}
+
+.method-card-body .holder {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    margin-top: 12px;
+    font-weight: 600;
+    color: var(--fg);
+}
+
+.method-card-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--accents-1);
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--blue);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* --- 5. UPCOMING TAB (Card Details) --- */
+.upcoming-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.upcoming-top .amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 1.2rem;
+}
+
+.upcoming-card h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.tenant-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accents-4);
+    margin-bottom: 20px;
+}
+
+.upcoming-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accents-3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- 5. METHODS (Apple Wallet / Stripe Style) --- */
+
+/* Re-using the flex layout from TenantPayment */
+.methods-viewport {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    padding-top: 10px;
+}
+
+/* The High-End Card Visual */
+.card-visual.bank-account {
+    width: 380px;
+    height: 220px;
+    border-radius: 20px;
+    padding: 32px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.card-visual.bank-account::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; width: 60%; height: 100%;
+    background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.08) 100%);
+}
+
+.card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.bank-logo {
+    opacity: 0.9;
+    letter-spacing: -0.5px;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.chip-gold {
+    width: 44px;
+    height: 32px;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    border-radius: 6px;
+}
+
+.card-mid-row {
+    margin: 24px 0;
+}
+
+.iban-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    word-spacing: 4px;
+}
+
+.card-bottom-row {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-holder-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    opacity: 0.5;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.card-holder-name {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+}
+
+/* Sidebar List (Right Side) */
+.methods-list-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.method-entry {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: white;
+    border: 1px solid var(--accents-2);
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.method-entry:hover {
+    border-color: var(--accents-3);
+    transform: translateX(4px);
+}
+
+.method-entry.active {
+    border-color: var(--fg);
+    border-width: 2px;
+    box-shadow: var(--shadow);
+}
+
+.method-icon-wrap {
+    width: 40px;
+    height: 40px;
+    background: var(--accents-1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg);
+}
+
+.method-info-text h5 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.method-info-text p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--accents-4);
+}
+
+/* Add Button */
+.btn-add-method {
+    background: white;
+    border: 1px dashed var(--accents-3);
+    padding: 20px;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--accents-4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.btn-add-method:hover {
+    border-color: var(--fg);
+    color: var(--fg);
+    background: var(--accents-1);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+    .methods-viewport {
+        flex-direction: column;
+        align-items: center;
+    }
+    .card-visual.bank-account {
+        width: 100%;
+        max-width: 380px;
+    }
+}

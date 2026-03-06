@@ -17,6 +17,7 @@ import AboutUs from "./features/AboutUs/pages/AboutUs";
 import GetHelp from "./features/GetHelp/pages/GetHelp";
 import MyActives from "./features/ActiveRental/pages/MyActives";
 import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
+import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <Route path="/landlord-home" element={<LandlordHome />} />
         <Route path="/my-properties" element={<MyProperties />} />
         <Route path="/rental-requests" element={<RentalRequests />} />
+        <Route path="/landlord-payment" element={<LandlordPayment />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
