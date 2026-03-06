@@ -7,7 +7,8 @@ import {
     LayoutDashboard, CalendarClock, History, Undo2, 
     CreditCard, FileSearch, Download, Plus, CheckCircle2, 
     Clock, ArrowUpRight, Wallet, Receipt, ShieldCheck,
-    TrendingUp, ExternalLink, MoreVertical, MapPin, Loader2, X
+    TrendingUp, ExternalLink, MoreVertical, MapPin, Loader2, X,
+    Landmark
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
@@ -308,32 +309,37 @@ const TenantPayment: React.FC = () => {
         </div>
     );
 
-    const renderMethods = () => (
-        <div className="tab-viewport animate-fade-up">
-            <div className="methods-flex">
-                <div className="card-visual visa">
-                    <div className="card-visual-top">
-                        <CreditCard size={24} />
-                        <span className="chip-gold"></span>
+   const renderMethods = () => (
+        <div className="tab-viewport animate-fade-in">
+            <div className="methods-viewport">
+                {/* Visual Card Section */}
+                <div className="card-visual bank-account">
+                    <div className="card-top-row">
+                        <span className="bank-logo">CHASE BUSINESS</span>
+                        <div className="chip-gold"></div>
                     </div>
-                    <p className="card-num">•••• •••• •••• 4242</p>
-                    <div className="card-visual-bottom">
-                        <span>EXP 12/26</span>
-                        <div className="visa-logo">VISA</div>
+                    <div className="card-mid-row">
+                        <div className="iban-display">US76 •••• •••• 9901</div>
+                    </div>
+                    <div className="card-bottom-row">
+                        <span className="card-holder-label">Account Holder</span>
+                        <span className="card-holder-name">ALEX STERLING</span>
                     </div>
                 </div>
-                
+
+                {/* List Section */}
                 <div className="methods-list-side">
                     <div className="method-entry active">
-                        <div className="entry-icon"><CreditCard size={18} /></div>
-                        <div className="entry-text">
-                            <h6>Visa ending in 4242</h6>
-                            <span>Default Method</span>
+                        <div className="method-icon-wrap"><Landmark size={20}/></div>
+                        <div className="method-info-text">
+                            <h5>Chase Business Savings</h5>
+                            <p>Primary Payout Method</p>
                         </div>
-                        <CheckCircle2 className="text-success" size={18} />
+                        <CheckCircle2 size={18} className="ml-auto text-success" />
                     </div>
-                    <button className="btn-add-new" onClick={() => setIsModalOpen(true)}>
-                        <Plus size={18} /> Add New Payment Method
+
+                    <button className="btn-add-method" onClick={() => setIsModalOpen(true)}>
+                        <Plus size={18} /> Add New Payout Method
                     </button>
                 </div>
             </div>
