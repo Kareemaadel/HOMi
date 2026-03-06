@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "dev:start": "tsx src/index.ts",
     "seed:amenities": "tsx src/seeds/run-amenities.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -23,7 +23,8 @@
     "@types/sequelize": "^4.28.20",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@types/swagger-jsdoc": "^6.0.4",
