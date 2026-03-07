@@ -8,9 +8,9 @@ import {
     verifyRefreshToken, 
     extractBearerToken,
     type JWTPayload
-} from './jwt.util.js';
+} from '../../../src/shared/utils/jwt.util.js';
 
-vi.mock('../../config/env.js', () => ({
+vi.mock('../../../src/config/env.js', () => ({
     default: {
         JWT_SECRET: 'test-access-secret',
         JWT_REFRESH_SECRET: 'test-refresh-secret',

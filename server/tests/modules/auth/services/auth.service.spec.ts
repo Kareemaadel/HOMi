@@ -1,30 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { AuthService, AuthError } from './auth.service.js';
-import { User, Profile, sequelize } from '../models/index.js';
-import { generateTokenPair } from '../../../shared/utils/jwt.util.js';
-import { generateSecureToken, hashToken } from '../../../shared/utils/encryption.util.js';
-import { emailService } from '../../../shared/services/email.service.js';
+import { AuthService, AuthError } from '../../../../src/modules/auth/services/auth.service.js';
+import { User, Profile, sequelize } from '../../../../src/modules/auth/models/index.js';
+import { generateTokenPair } from '../../../../src/shared/utils/jwt.util.js';
+import { generateSecureToken, hashToken } from '../../../../src/shared/utils/encryption.util.js';
+import { emailService } from '../../../../src/shared/services/email.service.js';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
 vi.mock('axios');
-vi.mock('../models/index.js', () => ({
+vi.mock('../../../../src/modules/auth/models/index.js', () => ({
     sequelize: { transaction: vi.fn() },
     User: { findOne: vi.fn(), create: vi.fn(), findByPk: vi.fn() },
     Profile: { findOne: vi.fn(), create: vi.fn() },
 }));
 
-vi.mock('../../../shared/utils/jwt.util.js', () => ({
+vi.mock('../../../../src/shared/utils/jwt.util.js', () => ({
     generateTokenPair: vi.fn(),
 }));
 
-vi.mock('../../../shared/utils/encryption.util.js', () => ({
+vi.mock('../../../../src/shared/utils/encryption.util.js', () => ({
     generateSecureToken: vi.fn(),
     hashToken: vi.fn(),
 }));
 
-vi.mock('../../../shared/services/email.service.js', () => ({
+vi.mock('../../../../src/shared/services/email.service.js', () => ({
     emailService: {
         sendVerificationEmail: vi.fn(),
         sendPasswordResetEmail: vi.fn(),

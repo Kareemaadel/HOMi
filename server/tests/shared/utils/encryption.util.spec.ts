@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { encrypt, decrypt, generateSecureToken, hashToken } from './encryption.util.js';
+import { encrypt, decrypt, generateSecureToken, hashToken } from '../../../src/shared/utils/encryption.util.js';
 
-vi.mock('../../config/env.js', () => ({
+vi.mock('../../../src/config/env.js', () => ({
     default: {
         ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
     },

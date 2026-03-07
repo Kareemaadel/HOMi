@@ -8,16 +8,16 @@ import {
     PropertySpecifications,
     PropertyDetailedLocation,
     HouseRule,
-} from '../models/index.js';
-import { User } from '../../auth/models/User.js';
-import { propertyService, PropertyError } from './property.service.js';
+} from '../../../../src/modules/properties/models/index.js';
+import { User } from '../../../../src/modules/auth/models/User.js';
+import { propertyService, PropertyError } from '../../../../src/modules/properties/services/property.service.js';
 import type { 
     CreatePropertyRequest, 
     UpdatePropertyRequest, 
     PropertyQuery 
-} from '../interfaces/property.interfaces.js';
+} from '../../../../src/modules/properties/interfaces/property.interfaces.js';
 
-vi.mock('../models/index.js', () => ({
+vi.mock('../../../../src/modules/properties/models/index.js', () => ({
     sequelize: { transaction: vi.fn() },
     Property: { create: vi.fn(), findByPk: vi.fn(), findAndCountAll: vi.fn() },
     PropertyImage: { bulkCreate: vi.fn(), destroy: vi.fn(), findAll: vi.fn() },
@@ -27,7 +27,7 @@ vi.mock('../models/index.js', () => ({
     HouseRule: { findAll: vi.fn() },
 }));
 
-vi.mock('../../auth/models/User.js', () => ({
+vi.mock('../../../../src/modules/auth/models/User.js', () => ({
     User: { findByPk: vi.fn() },
 }));
 
