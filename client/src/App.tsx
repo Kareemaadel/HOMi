@@ -19,6 +19,7 @@ import MyActives from "./features/ActiveRental/pages/MyActives";
 import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import Contract from "./features/TenantContractView/pages/Contract";
+import LandlordContract from "./features/LandlordContractView/pages/Contract";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
         <Route path="/my-properties" element={<MyProperties />} />
         <Route path="/rental-requests" element={<RentalRequests />} />
         <Route path="/landlord-payment" element={<LandlordPayment />} />
+        <Route path="/landlord-contracts" element={<LandlordContract />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />

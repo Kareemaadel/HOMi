@@ -1,0 +1,843 @@
+/* --- ContractDetailView.css --- */
+
+.contract-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.detail-panel {
+  width: 100%;
+  max-width: 580px;
+  background: #ffffff;
+  height: 100vh;
+  box-shadow: -10px 0 60px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  border-left: 1px solid var(--saas-border);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.panel-header {
+  padding: 40px;
+  border-bottom: 1px solid var(--saas-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title h2 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin: 0 0 4px 0;
+}
+
+.header-title span {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--saas-text-muted);
+  background: #f1f1f1;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.close-btn {
+  background: #f1f1f1;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--saas-text-muted);
+}
+
+.close-btn:hover {
+  background: #000;
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+.panel-content {
+  padding: 40px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* --- Vercel-style Progress Tracker --- */
+.flow-tracker {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+
+.step {
+  flex: 1;
+  height: 4px;
+  background: #eee;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  padding-top: 14px;
+  color: #a1a1a1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+
+.step.done {
+  background: var(--saas-text-main);
+  color: var(--saas-text-main);
+}
+
+/* --- Summary Box --- */
+.contract-summary-box {
+  background: #ffffff;
+  border: 1px solid var(--saas-border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 40px;
+  box-shadow: var(--saas-shadow-sm);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.summary-row.total {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--saas-border);
+}
+
+.summary-row .label { color: var(--saas-text-muted); font-size: 14px; font-weight: 500; }
+.summary-row .value { font-weight: 600; font-size: 14px; color: var(--saas-text-main); }
+.summary-row.total .label { font-weight: 700; color: var(--saas-text-main); }
+.summary-row.total .value { font-size: 24px; font-weight: 900; letter-spacing: -0.04em; }
+
+/* --- Action Section (Black Canvas) --- */
+.action-section {
+  padding: 48px 32px;
+  background: #000;
+  border-radius: 20px;
+  color: white;
+  text-align: center;
+  margin-bottom: 40px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.cta-icon {
+  width: 72px;
+  height: 72px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: #fff;
+}
+
+.action-section h4 { font-size: 22px; font-weight: 700; margin: 0 0 10px 0; letter-spacing: -0.02em; }
+.action-section p { font-size: 15px; color: #a1a1a1; margin-bottom: 32px; line-height: 1.5; }
+
+.btn-action-primary {
+  width: 100%;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  padding: 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-action-primary:hover {
+  background: #f1f1f1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+}
+
+/* --- Payment Breakdown (Inside Action Section) --- */
+.breakdown {
+  background: rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.b-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 10px; color: #a1a1a1; }
+.b-total { 
+  display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; 
+  margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.2); 
+}
+
+/* --- Lease Terms Preview --- */
+.lease-terms-preview .terms-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--saas-text-main);
+}
+
+.lease-terms-preview h4 {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.terms-scroll {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--saas-text-muted);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--saas-border);
+  border-radius: 12px;
+}
+
+.terms-scroll p { margin-bottom: 16px; }
+.terms-scroll strong { color: var(--saas-text-main); font-weight: 600; }
+
+/* --- Add/Update these in ContractDetailView.css --- */
+
+.legal-document-paper {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    padding: 60px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    color: #1a1a1a;
+    line-height: 1.5;
+}
+
+.doc-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.doc-section.highlight {
+    background: #fafafa;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+}
+
+.doc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 24px;
+}
+
+.doc-field label {
+    display: block;
+    font-size: 11px;
+    color: #999;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.doc-field div {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.doc-field div.bold {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.doc-list {
+    list-style: none;
+    padding: 0;
+    font-size: 13px;
+}
+
+.doc-list li {
+    margin-bottom: 8px;
+    position: relative;
+    padding-left: 18px;
+}
+
+.doc-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #ccc;
+}
+
+.legal-text {
+    font-size: 12px;
+    color: #666;
+    background: #fdfdfd;
+    padding: 16px;
+    border-radius: 6px;
+}
+
+/* Signatures Area */
+.signature-display-area {
+    margin-top: 48px;
+    display: flex;
+    gap: 40px;
+}
+
+.sig-box {
+    flex: 1;
+}
+
+.sig-box label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #999;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.sig-line {
+    border-bottom: 2px solid #000;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+}
+
+.landlord-signed {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.signed-stamp {
+    background: #10b981;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+}
+
+/* Fixed Footer Action */
+.panel-actions-footer {
+    padding: 24px 40px;
+    border-top: 1px solid #eee;
+    background: #fff;
+}
+
+.pay-btn {
+    background: #0070f3 !important;
+}
+
+/* Stepper UI */
+.contract-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.step-pill {
+    font-size: 12px;
+    font-weight: 700;
+    color: #999;
+    padding: 6px 16px;
+    background: #f5f5f5;
+    border-radius: 100px;
+}
+
+.step-pill.active {
+    background: #000;
+    color: #fff;
+}
+
+.step-line {
+    width: 30px;
+    height: 1px;
+    background: #ddd;
+}
+
+/* Autofill Grid */
+.autofill-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: #fafafa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+}
+
+.field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 4px;
+    font-weight: 700;
+}
+
+.field span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+}
+
+.field.full { grid-column: span 2; }
+
+/* Input Styling */
+.input-group { margin-bottom: 24px; }
+.input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: border 0.2s;
+}
+
+.input-group input:focus { border-color: #000; outline: none; }
+
+.section-divider { margin: 32px 0 16px; font-size: 14px; text-transform: uppercase; color: #888; }
+
+.confirmation-check {
+    display: flex;
+    gap: 12px;
+    background: #fff8f0;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid #ffeacc;
+    margin-top: 32px;
+}
+
+.confirmation-check label { font-size: 13px; line-height: 1.4; cursor: pointer; }
+
+/* Footer Navigation */
+.panel-footer-nav {
+    padding: 24px 40px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.btn-nav-primary, .btn-nav-secondary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-nav-primary { background: #000; color: #fff; border: none; flex: 2; justify-content: center; }
+.btn-nav-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.btn-nav-secondary { background: #fff; color: #000; border: 1px solid #ddd; flex: 1; }
+
+.btn-request-changes {
+    width: 100%;
+    margin-top: 24px;
+    background: #fff;
+    border: 1px solid #ffcfcf;
+    color: #ff4d4d;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-request-changes:hover {
+    background: #fff5f5;
+    border-color: #ff4d4d;
+}
+
+.review-alert {
+    background: #f0f7ff;
+    border: 1px solid #cfe4ff;
+    color: #0052cc;
+    padding: 12px 16px;
+    border-radius: 10px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 32px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #000;
+}
+
+.section-title h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.notice-icon {
+    width: 80px;
+    height: 80px;
+    background: #f0fdf4;
+    color: #16a34a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+
+.btn-nav-primary.full-width {
+    flex: 1;
+}
+
+/* Price & Tags */
+.price-text {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #000 !important;
+}
+
+.verified-tag {
+    color: #16a34a !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+}
+
+/* Policy Grid */
+.policy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.policy-item {
+    background: #f9f9f9;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.policy-item label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.policy-item p {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    color: #111;
+}
+
+.policy-item.full { grid-column: span 2; }
+
+/* Responsibility Box */
+.responsibility-box {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.resp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.resp-row:last-child { border-bottom: none; }
+
+.resp-label { font-size: 13px; font-weight: 500; color: #444; }
+
+.resp-owner {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.resp-owner.tenant { background: #fff7ed; color: #c2410c; }
+.resp-owner.landlord { background: #f0fdf4; color: #16a34a; }
+
+/* Highlighted Financial Grid */
+.autofill-grid.highlight {
+    background: #fff;
+    border: 2px solid #000;
+}
+
+/* Step 3 Automated Box */
+.homi-auto-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.auto-section {
+    margin-bottom: 24px;
+}
+
+.mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding-top: 8px;
+}
+
+.item label {
+    display: block;
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.item span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Signature Display Fix */
+.signature-display-card {
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.sig-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #f1f1f1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.sig-header button {
+    background: none;
+    border: none;
+    color: #0070f3;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sig-preview {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.sig-preview img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.sig-footer {
+    padding: 8px 16px;
+    border-top: 1px solid #eee;
+    font-size: 11px;
+    color: #666;
+}
+
+.signature-trigger {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.signature-trigger:hover {
+    border-color: #000;
+    background: #f8fafc;
+    color: #000;
+}
+.success-panel {
+    text-align: center;
+    max-width: 450px !important;
+    padding: 60px 40px !important;
+}
+
+.success-icon-wrapper {
+    margin-bottom: 24px;
+    animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.success-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 40px;
+}
+
+.btn-pay-now {
+    background: #000;
+    color: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+@keyframes scaleIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.success-panel {
+    max-width: 500px !important;
+    text-align: center;
+    padding: 60px 40px !important;
+}
+
+.success-icon-badge {
+    width: 100px;
+    height: 100px;
+    background: #f0fdf4;
+    color: #16a34a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 30px;
+    animation: bounce 1s infinite alternate;
+}
+
+.success-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 40px;
+}
+
+.btn-pay-action {
+    background: #000;
+    color: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-close-dashboard {
+    background: #f1f1f1;
+    color: #666;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+}
+/* Landlord Specific additions to ContractDetailView.css */
+.ownership-notice {
+    display: flex;
+    gap: 12px;
+    background: #ecfdf5;
+    border: 1px solid #10b981;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    color: #065f46;
+    font-size: 13px;
+}
+
+.input-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+}
+
+/* Red-themed status if needed or keep existing blue */
+.status-tag.signing {
+    background: #eef2ff;
+    color: #4f46e5;
+}
