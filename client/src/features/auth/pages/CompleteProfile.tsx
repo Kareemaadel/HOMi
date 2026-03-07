@@ -1,20 +1,80 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  User, IdCard, Globe, MapPin, Briefcase, GraduationCap, 
-  Wallet, Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
-  Calendar, Clock, ShieldCheck, CheckCircle2, DollarSign
+  User, IdCard, Globe, MapPin, Briefcase,
+  Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
+  Calendar, Clock, ShieldCheck, CheckCircle2
 } from 'lucide-react';
 import './CompleteProfile.css';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/auth.service';
+import type { RegisterRequest } from '../../../types/auth.types';
 
 type UserRole = 'tenant' | 'landlord' | null;
 
-import { useNavigate } from 'react-router-dom';
+interface SignUpFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+}
 
 const CompleteProfile: React.FC = () => {
     const [step, setStep] = useState(1);
     const [role, setRole] = useState<UserRole>(null);
+    const [signupData, setSignupData] = useState<SignUpFormData | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Get signup data from sessionStorage
+        const storedData = sessionStorage.getItem('signupData');
+        if (storedData) {
+            setSignupData(JSON.parse(storedData));
+        } else {
+            // If no signup data, redirect back to signup
+            navigate('/auth');
+        }
+    }, [navigate]);
+
+    const handleRoleSelection = async () => {
+        if (!role || !signupData) {
+            setError('Please select a role');
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            // Create registration request with the selected role
+            const registerData: RegisterRequest = {
+                email: signupData.email,
+                password: signupData.password,
+                firstName: signupData.firstName,
+                lastName: signupData.lastName,
+                phone: signupData.phone,
+                role: role.toUpperCase() as 'TENANT' | 'LANDLORD',
+            };
+
+            // Call registration API
+            await authService.register(registerData);
+
+            // Clear signup data from sessionStorage
+            sessionStorage.removeItem('signupData');
+
+            // Move to next step for additional profile details
+            nextStep();
+        } catch (err: any) {
+            console.error('❌ Registration failed:', err);
+            const errorMessage = err.response?.data?.message || 'Registration failed. Please try again.';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const nextStep = () => setStep(prev => prev + 1);
     const prevStep = () => setStep(prev => prev - 1);
@@ -39,6 +99,20 @@ const CompleteProfile: React.FC = () => {
                         </div>
                     ))}
                 </div>
+
+                {/* Error Display */}
+                {error && (
+                    <div style={{ 
+                        padding: '12px', 
+                        backgroundColor: '#fee', 
+                        color: '#c00', 
+                        borderRadius: '4px',
+                        marginBottom: '16px',
+                        fontSize: '14px',
+                    }}>
+                        {error}
+                    </div>
+                )}
 
                 {/* STEP 1: GLOBAL DATA */}
                 {step === 1 && (
@@ -132,9 +206,15 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
-                            <button className="btn-continue" disabled={!role} onClick={nextStep}>
-                                Continue <ArrowRight size={18} />
+                            <button className="btn-back" onClick={prevStep} disabled={loading}>
+                                <ArrowLeft size={18} /> Back
+                            </button>
+                            <button 
+                                className="btn-continue" 
+                                disabled={!role || loading} 
+                                onClick={handleRoleSelection}
+                            >
+                                {loading ? 'Creating Account...' : 'Continue'} <ArrowRight size={18} />
                             </button>
                         </div>
                     </div>

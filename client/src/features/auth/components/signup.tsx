@@ -2,21 +2,53 @@ import React, { useState } from 'react';
 import { Mail, Lock, User, UserPlus, PhoneCall } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+interface SignUpFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
 const SignUp: React.FC = () => {
   const [strength, setStrength] = useState(0);
   const navigate = useNavigate();
+  const [formData, setFormData] = useState<SignUpFormData>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+  });
 
   const checkStrength = (value: string) => {
     let score = 0;
     if (value.length > 6) score++;
     if (/[A-Z]/.test(value)) score++;
-    if (/[0-9]/.test(value)) score++;
+    if (/\d/.test(value)) score++;
     if (/[^A-Za-z0-9]/.test(value)) score++;
     setStrength(score);
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+    
+    if (name === 'password') {
+      checkStrength(value);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Store signup data in sessionStorage to be used in CompleteProfile
+    sessionStorage.setItem('signupData', JSON.stringify(formData));
+    
+    // Navigate to complete profile page where user will select role and complete registration
     navigate("/complete-profile");
   };
 
@@ -25,30 +57,60 @@ const SignUp: React.FC = () => {
       <div className="input-row">
         <div className="input-block">
           <User size={18}/>
-          <input type="text" placeholder="First Name" required />
+          <input 
+            type="text" 
+            name="firstName"
+            placeholder="First Name" 
+            value={formData.firstName}
+            onChange={handleChange}
+            required 
+          />
         </div>
         <div className="input-block">
           <User size={18}/>
-          <input type="text" placeholder="Last Name" required />
+          <input 
+            type="text"
+            name="lastName" 
+            placeholder="Last Name" 
+            value={formData.lastName}
+            onChange={handleChange}
+            required 
+          />
         </div>
       </div>
 
       <div className="input-block">
         <Mail size={18}/>
-        <input type="email" placeholder="Email" required />
+        <input 
+          type="email" 
+          name="email"
+          placeholder="Email" 
+          value={formData.email}
+          onChange={handleChange}
+          required 
+        />
       </div>
 
       <div className="input-block">
         <PhoneCall size={18}/>
-        <input type="tel" placeholder="Phone Number" required />
+        <input 
+          type="tel" 
+          name="phone"
+          placeholder="Phone Number" 
+          value={formData.phone}
+          onChange={handleChange}
+          required 
+        />
       </div>
 
       <div className="input-block">
         <Lock size={18}/>
         <input 
           type="password" 
+          name="password"
           placeholder="Password" 
-          onChange={(e) => checkStrength(e.target.value)}
+          value={formData.password}
+          onChange={handleChange}
           required 
         />
       </div>

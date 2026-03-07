@@ -2,7 +2,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useState } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 export const GoogleLoginBtn = () => {
     const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ export const GoogleLoginBtn = () => {
 
             try {
                 const googleToken = tokenResponse.access_token;
-                const res = await axios.post(`${API_BASE_URL}/auth/google`, {
+                const res = await axios.post(`${API_BASE_URL}/api/auth/google`, {
                     googleAccessToken: googleToken,
                 });
 
