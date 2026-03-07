@@ -18,6 +18,7 @@ import GetHelp from "./features/GetHelp/pages/GetHelp";
 import MyActives from "./features/ActiveRental/pages/MyActives";
 import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
+import Contract from "./features/TenantContractView/pages/Contract";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="/saved-properties" element={<SavedProperties />} />
         <Route path="/actives" element={<MyActives/>} />
         <Route path="/tenant-payment" element={<TenantPayment />} />
+        <Route path="/tenant-contracts" element={<Contract />} />
 
         {/* Landlord Routes */}
         <Route path="/landlord-home" element={<LandlordHome />} />
