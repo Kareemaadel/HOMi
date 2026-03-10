@@ -163,7 +163,7 @@
 /* New Request CTA Section */
 .new-request-cta {
   flex: 1; /* Takes up all remaining space in the 415px */
-  margin-top: 1.5rem;
+  margin-top: .5rem;
   border: 2px dashed #e2e8f0;
   border-radius: 20px;
   display: flex;

@@ -24,7 +24,7 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-container animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="credit-card-modal-container animate-slide-up" onClick={e => e.stopPropagation()}>
                 <header className="modal-header">
                     <div className="header-icon-title">
                         <div className="shield-icon-box"><ShieldCheck size={20} /></div>

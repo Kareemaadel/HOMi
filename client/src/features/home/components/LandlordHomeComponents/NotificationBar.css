@@ -1,0 +1,32 @@
+.notif-sidebar-overlay {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px); z-index: 9999;
+    visibility: hidden; opacity: 0; transition: 0.3s;
+}
+
+.notif-sidebar-overlay.open { visibility: visible; opacity: 1; }
+
+.notif-sidebar {
+    position: absolute; right: 0; top: 0; width: 400px; height: 100%;
+    background: white; transform: translateX(100%); transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; flex-direction: column;
+}
+
+.notif-sidebar-overlay.open .notif-sidebar { transform: translateX(0); }
+
+.sidebar-header { padding: 30px; background: #f8fafc; display: flex; justify-content: space-between; align-items: flex-start; }
+.header-title { display: flex; gap: 15px; }
+.icon-circle { width: 40px; height: 40px; background: #3b82f6; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.header-title h2 { margin: 0; font-size: 1.2rem; }
+.header-title p { margin: 4px 0 0 0; font-size: 0.8rem; color: #64748b; }
+
+.close-btn { background: white; border: 1px solid #e2e8f0; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+
+.sidebar-content { flex: 1; padding: 30px; overflow-y: auto; }
+.history-card { padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9; margin-bottom: 15px; }
+.history-tag { font-size: 0.6rem; text-transform: uppercase; font-weight: 800; color: #3b82f6; margin-bottom: 8px; }
+.history-card h4 { margin: 0 0 4px 0; font-size: 0.95rem; }
+.history-card span { font-size: 0.75rem; color: #94a3b8; }
+
+.sidebar-footer { padding: 20px; border-top: 1px solid #f1f5f9; }
+.clear-btn { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #fee2e2; background: #fef2f2; color: #ef4444; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }

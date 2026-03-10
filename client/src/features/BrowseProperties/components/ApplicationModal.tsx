@@ -1,6 +1,6 @@
 // client\src\features\BrowseProperties\components\ApplicationModal.tsx
 import React, { useState } from 'react';
-import { FaTimes, FaCheckCircle, FaCalendarAlt, FaHourglassHalf, FaCommentDots, FaPaperPlane, FaUsers, FaPaw, FaUserTie, FaArrowLeft, FaPlus, FaChevronRight } from 'react-icons/fa';
+import { FaTimes, FaCheckCircle, FaCalendarAlt, FaHourglassHalf, FaCommentDots, FaPaperPlane, FaUsers, FaUserFriends, FaPaw, FaUserTie, FaArrowLeft, FaPlus, FaChevronRight } from 'react-icons/fa';
 import './ApplicationModal.css';
 
 const PRESET_HABITS = [
@@ -117,10 +117,12 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
                                                 <input type="number" min="1" placeholder="People" required />
                                             </div>
                                             <div className="field-group">
-                                                <label><FaPaw /> Pets</label>
+                                                <label><FaUserFriends /> living situation</label>
                                                 <select required className="premium-select">
-                                                    <option value="no">No Pets</option>
-                                                    <option value="yes">Yes, I have pets</option>
+                                                    <option value="">Single</option>
+                                                    <option value="">Married</option>
+                                                    <option value="">Family</option>
+                                                    <option value="">Students</option>
                                                 </select>
                                             </div>
                                         </div>

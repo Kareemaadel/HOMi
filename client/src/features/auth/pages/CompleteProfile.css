@@ -262,3 +262,284 @@
     .modern-form-grid, .role-grid { grid-template-columns: 1fr; }
     .btn-back { padding: 16px 18px; }
 }
+/* Habits Selection Styling */
+.habits-container {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.habits-selection-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* Custom Scrollbar for Habits Grid */
+.habits-selection-grid::-webkit-scrollbar {
+    width: 5px;
+}
+.habits-selection-grid::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.habit-tag {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    font-size: 0.9rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.habit-tag:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.habit-tag.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.custom-habit-group {
+    margin-top: 0.5rem;
+}
+
+.custom-habit-group .input-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 0 12px;
+}
+
+.custom-habit-group input {
+    border: none !important;
+    background: transparent !important;
+    padding: 12px !important;
+    flex: 1;
+}
+
+.add-habit-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.add-habit-btn:hover {
+    transform: scale(1.05);
+    background: #2563eb;
+}
+
+.ml-1 {
+    margin-left: 4px;
+}
+/* Landlord Specific Components */
+.range-selector {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.range-btn {
+    flex: 1;
+    padding: 10px 4px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #64748b;
+}
+
+.range-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.range-btn.active {
+    background: #3b82f6;
+    color: white !important;
+    border-color: #3b82f6;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
+}
+
+.contact-preferences-box {
+    background: #f8fafc;
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid #f1f5f9;
+    margin: 10px 0;
+}
+
+.contact-preferences-box h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+@media (min-width: 768px) {
+    .contact-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.upload-zone {
+    border: 2px dashed #cbd5e1;
+    padding: 24px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+    cursor: pointer;
+    background: #fafafa;
+    transition: all 0.2s ease;
+}
+
+.upload-zone:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.upload-zone span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+textarea:focus {
+    border-color: #3b82f6;
+}
+/* --- Landlord Step 3 Refinement --- */
+
+/* Fix the grid to handle the mix of small inputs and large sections */
+.modern-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+/* Ensure full-width sections don't inherit weird heights */
+.form-field.full, 
+.contact-preferences-box.full {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+/* Range Selector: Prevent squishing */
+.range-selector {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.range-btn {
+    flex: 1;
+    white-space: nowrap;
+    padding: 12px 2px;
+}
+
+/* Contact Box: Create clear separation */
+.contact-preferences-box {
+    background: #f8fafc;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1.5px solid #f1f5f9;
+    margin: 12px 0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.contact-preferences-box h3 {
+    font-size: 0.8rem;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+/* Textarea: Professional sizing */
+textarea {
+    min-height: 100px;
+    line-height: 1.6;
+    padding: 16px !important;
+}
+
+/* Verification Zone: Make it look like a distinct action */
+.upload-zone {
+    margin-top: 8px;
+    border: 2px dashed #cbd5e1;
+    background: #fcfdfe;
+    min-height: 120px;
+}
+
+/* Fix for mobile viewports */
+@media (max-width: 640px) {
+    .modern-form-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .range-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
