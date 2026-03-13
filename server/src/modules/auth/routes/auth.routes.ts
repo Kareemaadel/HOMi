@@ -656,4 +656,103 @@ router.put(
     authController.changePassword.bind(authController)
 );
 
+/**
+ * @swagger
+ * /auth/habits:
+ *   put:
+ *     summary: Set user habits
+ *     description: |
+ *       Replace the authenticated user's habits with the provided list.
+ *       Pass an empty array `[]` to clear all habits.
+ *
+ *       Habit names must exactly match the seeded values (e.g. "Non-smoker", "Early Riser").
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SetUserHabitsRequest'
+ *           example:
+ *             habit_names: ["Non-smoker", "Early Riser", "Work from Home"]
+ *     responses:
+ *       200:
+ *         description: Habits updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Habits updated successfully"
+ *                 habits:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/HabitResponse'
+ *       400:
+ *         description: Unknown habit name(s)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Unknown habit(s): Skydiver"
+ *               code: "INVALID_HABIT_NAMES"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put(
+    '/habits',
+    protect,
+    authController.setUserHabits.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/habits:
+ *   get:
+ *     summary: Get user habits
+ *     description: Retrieve the authenticated user's selected habits.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User habits retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 habits:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/HabitResponse'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get(
+    '/habits',
+    protect,
+    authController.getUserHabits.bind(authController)
+);
+
 export default router;

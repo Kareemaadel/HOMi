@@ -284,6 +284,45 @@ export class AuthController {
             next(error);
         }
     }
+
+    /**
+     * PUT /auth/habits
+     * Set (replace) user habits
+     */
+    async setUserHabits(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+
+            const { habit_names } = req.body as { habit_names: string[] };
+            const result = await authService.setUserHabits(userId, habit_names ?? []);
+
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /auth/habits
+     * Get current user's habits
+     */
+    async getUserHabits(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+
+            const result = await authService.getUserHabits(userId);
+
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 // Export singleton instance

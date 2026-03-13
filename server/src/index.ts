@@ -2,6 +2,7 @@ import { env } from './config/env.js';
 import { testConnection, syncDatabase } from './config/database.js';
 import { seedAmenities } from './seeds/amenities.seed.js';
 import { seedHouseRules } from './seeds/house_rules.seed.js';
+import { seedHabits } from './seeds/habits.seed.js';
 import app from './app.js';
 
 // ======================
@@ -13,6 +14,7 @@ async function startServer(): Promise<void> {
         await syncDatabase(false);
         await seedAmenities();
         await seedHouseRules();
+        await seedHabits();
 
         app.listen(env.PORT, () => {
             console.log(`
