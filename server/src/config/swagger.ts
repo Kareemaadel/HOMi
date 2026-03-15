@@ -853,6 +853,198 @@ const options: Options = {
                     },
                 },
 
+                // ─── Rental Request Enums ─────────────────────────────────────────────────
+                RentalRequestDuration: {
+                    type: 'string',
+                    enum: ['6_MONTHS', '12_MONTHS', '24_MONTHS'],
+                    description: 'Desired lease duration',
+                    example: '12_MONTHS',
+                },
+                LivingSituation: {
+                    type: 'string',
+                    enum: ['SINGLE', 'FAMILY', 'MARRIED', 'STUDENTS'],
+                    description: 'Tenant living situation',
+                    example: 'MARRIED',
+                },
+                RentalRequestStatus: {
+                    type: 'string',
+                    enum: ['PENDING', 'APPROVED', 'DECLINED'],
+                    description: 'Rental request status. Starts as **PENDING**. Landlord can set to **APPROVED** or **DECLINED** (final).',
+                    example: 'PENDING',
+                },
+
+                // ─── Habits ───────────────────────────────────────────────────────────────
+                HabitName: {
+                    type: 'string',
+                    description: 'Available habit name — must exactly match one of the seeded values',
+                    enum: [
+                        'Non-smoker',
+                        'Early Riser',
+                        'Social',
+                        'Work from Home',
+                        'Vegan',
+                        'Musician',
+                        'Gamer',
+                        'Chef at Home',
+                        'Pet Owner',
+                        'Very Clean',
+                        'Night Owl',
+                    ],
+                    example: 'Non-smoker',
+                },
+                HabitResponse: {
+                    type: 'object',
+                    description: 'A habit record',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        name: { $ref: '#/components/schemas/HabitName' },
+                    },
+                },
+
+                // ─── Tenant Summary (for landlord view) ───────────────────────────────────
+                TenantSummary: {
+                    type: 'object',
+                    description: 'Summary of tenant info shown to landlord when reviewing applications',
+                    properties: {
+                        id: { type: 'string', format: 'uuid', description: 'Tenant user ID' },
+                        firstName: { type: 'string', example: 'Ahmed' },
+                        lastName: { type: 'string', example: 'Hassan' },
+                        avatarUrl: { type: 'string', format: 'uri', nullable: true, example: 'https://example.com/avatar.jpg' },
+                        bio: { type: 'string', nullable: true, example: 'Software developer looking for a quiet place' },
+                    },
+                },
+
+                // ─── Property Summary (in rental request) ─────────────────────────────────
+                PropertySummary: {
+                    type: 'object',
+                    description: 'Minimal property info included in rental request responses',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        title: { type: 'string', example: 'Beautiful 2BR Apartment' },
+                        address: { type: 'string', example: 'Tahrir Street, Downtown, Cairo' },
+                    },
+                },
+
+                // ─── Rental Request Bodies ─────────────────────────────────────────────────
+                CreateRentalRequestBody: {
+                    type: 'object',
+                    required: ['property_id', 'move_in_date', 'duration', 'occupants', 'living_situation'],
+                    description: 'Payload to submit a rental request on a published property',
+                    properties: {
+                        property_id: {
+                            type: 'string',
+                            format: 'uuid',
+                            description: 'UUID of the property to request',
+                            example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+                        },
+                        move_in_date: {
+                            type: 'string',
+                            format: 'date',
+                            pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+                            description: 'Desired move-in date (YYYY-MM-DD)',
+                            example: '2026-04-01',
+                        },
+                        duration: {
+                            $ref: '#/components/schemas/RentalRequestDuration',
+                        },
+                        occupants: {
+                            type: 'integer',
+                            minimum: 1,
+                            description: 'Number of people who will live in the property',
+                            example: 2,
+                        },
+                        living_situation: {
+                            $ref: '#/components/schemas/LivingSituation',
+                        },
+                        message: {
+                            type: 'string',
+                            maxLength: 2000,
+                            description: 'Optional message to the landlord',
+                            example: 'We are a quiet couple looking for a long-term stay.',
+                        },
+                    },
+                },
+                UpdateRentalRequestStatusBody: {
+                    type: 'object',
+                    required: ['status'],
+                    description: 'Payload to approve or decline a rental request',
+                    properties: {
+                        status: {
+                            type: 'string',
+                            enum: ['APPROVED', 'DECLINED'],
+                            description: 'New status (only APPROVED or DECLINED allowed)',
+                            example: 'APPROVED',
+                        },
+                    },
+                },
+
+                // ─── Rental Request Responses ─────────────────────────────────────────────
+                RentalRequestResponse: {
+                    type: 'object',
+                    description: 'Rental request object (without tenant details)',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        tenantId: { type: 'string', format: 'uuid' },
+                        propertyId: { type: 'string', format: 'uuid' },
+                        moveInDate: { type: 'string', format: 'date', example: '2026-04-01' },
+                        duration: { $ref: '#/components/schemas/RentalRequestDuration' },
+                        occupants: { type: 'integer', example: 2 },
+                        livingSituation: { $ref: '#/components/schemas/LivingSituation' },
+                        message: { type: 'string', nullable: true },
+                        status: { $ref: '#/components/schemas/RentalRequestStatus' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        property: {
+                            allOf: [{ $ref: '#/components/schemas/PropertySummary' }],
+                            nullable: true,
+                        },
+                    },
+                },
+                RentalRequestWithTenantResponse: {
+                    type: 'object',
+                    description: 'Rental request object with tenant profile summary and property info',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        tenantId: { type: 'string', format: 'uuid' },
+                        propertyId: { type: 'string', format: 'uuid' },
+                        moveInDate: { type: 'string', format: 'date', example: '2026-04-01' },
+                        duration: { $ref: '#/components/schemas/RentalRequestDuration' },
+                        occupants: { type: 'integer', example: 2 },
+                        livingSituation: { $ref: '#/components/schemas/LivingSituation' },
+                        message: { type: 'string', nullable: true },
+                        status: { $ref: '#/components/schemas/RentalRequestStatus' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        tenant: { $ref: '#/components/schemas/TenantSummary' },
+                        property: { $ref: '#/components/schemas/PropertySummary' },
+                    },
+                },
+                PaginationResponse: {
+                    type: 'object',
+                    description: 'Pagination metadata',
+                    properties: {
+                        total: { type: 'integer', example: 50 },
+                        page: { type: 'integer', example: 1 },
+                        limit: { type: 'integer', example: 10 },
+                        totalPages: { type: 'integer', example: 5 },
+                    },
+                },
+
+                // ─── Set User Habits ──────────────────────────────────────────────────────
+                SetUserHabitsRequest: {
+                    type: 'object',
+                    required: ['habit_names'],
+                    description: 'Payload to set (replace) the authenticated user\'s habits',
+                    properties: {
+                        habit_names: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/HabitName' },
+                            description: 'List of habit names. Pass `[]` to clear all habits.',
+                            example: ['Non-smoker', 'Early Riser', 'Work from Home'],
+                        },
+                    },
+                },
+
             },
         },
         tags: [
@@ -867,6 +1059,10 @@ const options: Options = {
             {
                 name: 'Properties',
                 description: 'Property listing management endpoints — create, read, update, delete.',
+            },
+            {
+                name: 'Rental Requests',
+                description: 'Tenant rental request submission and landlord review / approve / decline.',
             },
         ],
     },
