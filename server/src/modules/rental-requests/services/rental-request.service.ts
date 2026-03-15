@@ -69,18 +69,17 @@ class RentalRequestService {
             );
         }
 
-        // Check if tenant already has a pending request for this property
+        // Check if tenant already has a request for this property
         const existingRequest = await RentalRequest.findOne({
             where: {
                 tenant_id: tenantId,
                 property_id: input.property_id,
-                status: RentalRequestStatus.PENDING,
             },
         });
 
         if (existingRequest) {
             throw new RentalRequestError(
-                'You already have a pending rental request for this property',
+                'You already have a rental request for this property',
                 409,
                 'DUPLICATE_REQUEST'
             );
