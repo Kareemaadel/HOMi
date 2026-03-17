@@ -1,0 +1,139 @@
+import { z } from 'zod';
+import { ContractStatus, RentDueDate } from '../models/Contract.js';
+import { MaintenanceArea, ResponsibleParty } from '../models/ContractMaintenanceResponsibility.js';
+
+/**
+ * Landlord Step 1: Lease Terms & Financials
+ */
+export const LandlordLeaseTermsSchema = z.object({
+    rent_due_date: z.enum(
+        [RentDueDate.FIRST_OF_MONTH, RentDueDate.FIFTH_OF_MONTH, RentDueDate.LAST_DAY_OF_MONTH],
+        { message: 'Rent due date must be 1ST_OF_MONTH, 5TH_OF_MONTH, or LAST_DAY_OF_MONTH' }
+    ),
+    late_fee_amount: z
+        .number({ error: 'Late fee amount is required' })
+        .min(0, 'Late fee amount must be at least 0'),
+    max_occupants: z
+        .number({ error: 'Max occupants is required' })
+        .int('Max occupants must be an integer')
+        .min(1, 'Max occupants must be at least 1'),
+});
+
+/**
+ * Landlord Step 2: Identity Details
+ */
+export const LandlordIdentitySchema = z.object({
+    national_id: z
+        .string({ error: 'National ID is required' })
+        .min(1, 'National ID cannot be empty')
+        .max(50, 'National ID must be at most 50 characters'),
+});
+
+/**
+ * Maintenance Responsibility Item
+ */
+const MaintenanceResponsibilityItemSchema = z.object({
+    area: z.enum(
+        Object.values(MaintenanceArea) as [string, ...string[]],
+        { message: `Area must be one of: ${Object.values(MaintenanceArea).join(', ')}` }
+    ),
+    responsible_party: z.enum(
+        [ResponsibleParty.LANDLORD, ResponsibleParty.TENANT],
+        { message: 'Responsible party must be LANDLORD or TENANT' }
+    ),
+});
+
+/**
+ * Landlord Step 3: Property Ownership Confirmation & Maintenance
+ */
+export const LandlordPropertyConfirmationSchema = z.object({
+    property_registration_number: z
+        .string({ error: 'Property registration number is required' })
+        .min(1, 'Property registration number cannot be empty')
+        .max(100, 'Property registration number must be at most 100 characters'),
+    maintenance_responsibilities: z
+        .array(MaintenanceResponsibilityItemSchema)
+        .min(1, 'At least one maintenance responsibility is required'),
+});
+
+/**
+ * Landlord Step 5: Sign Contract
+ */
+export const LandlordSignSchema = z.object({
+    signature_url: z
+        .string({ error: 'Signature is required' })
+        .min(1, 'Signature URL cannot be empty')
+        .max(500, 'Signature URL must be at most 500 characters'),
+    certify_ownership: z
+        .boolean({ error: 'Ownership certification is required' })
+        .refine((val) => val === true, 'You must certify that you are the legal owner'),
+});
+
+/**
+ * Tenant Step 2: Identity Verification
+ */
+export const TenantIdentitySchema = z.object({
+    national_id: z
+        .string({ error: 'National ID is required' })
+        .min(1, 'National ID cannot be empty')
+        .max(50, 'National ID must be at most 50 characters'),
+});
+
+/**
+ * Tenant Step 4: Sign Contract
+ */
+export const TenantSignSchema = z.object({
+    signature_url: z
+        .string({ error: 'Signature is required' })
+        .min(1, 'Signature URL cannot be empty')
+        .max(500, 'Signature URL must be at most 500 characters'),
+    agree_to_terms: z
+        .boolean({ error: 'Terms agreement is required' })
+        .refine((val) => val === true, 'You must agree to the HOMI terms'),
+});
+
+/**
+ * Contract List Query Parameters
+ */
+export const ContractQuerySchema = z.object({
+    status: z
+        .enum([
+            ContractStatus.PENDING_LANDLORD,
+            ContractStatus.PENDING_TENANT,
+            ContractStatus.ACTIVE,
+            ContractStatus.TERMINATED,
+            ContractStatus.EXPIRED,
+        ])
+        .optional(),
+    page: z
+        .string()
+        .regex(/^\d+$/, 'Page must be a positive integer')
+        .default('1')
+        .transform(Number)
+        .optional(),
+    limit: z
+        .string()
+        .regex(/^\d+$/, 'Limit must be a positive integer')
+        .default('10')
+        .transform(Number)
+        .refine((val) => val <= 100, 'Limit cannot exceed 100')
+        .optional(),
+}).passthrough();
+
+export type LandlordLeaseTermsInput = z.infer<typeof LandlordLeaseTermsSchema>;
+export type LandlordIdentityInput = z.infer<typeof LandlordIdentitySchema>;
+export type LandlordPropertyConfirmationInput = z.infer<typeof LandlordPropertyConfirmationSchema>;
+export type LandlordSignInput = z.infer<typeof LandlordSignSchema>;
+export type TenantIdentityInput = z.infer<typeof TenantIdentitySchema>;
+export type TenantSignInput = z.infer<typeof TenantSignSchema>;
+export type ContractQueryInput = z.infer<typeof ContractQuerySchema>;
+
+export default {
+    LandlordLeaseTermsSchema,
+    LandlordIdentitySchema,
+    LandlordPropertyConfirmationSchema,
+    LandlordSignSchema,
+    TenantIdentitySchema,
+    TenantSignSchema,
+    ContractQuerySchema,
+};
