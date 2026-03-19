@@ -4,6 +4,7 @@ import {
   Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
   Calendar, Clock, ShieldCheck, CheckCircle2
 } from 'lucide-react';
+import axios from 'axios';
 import './CompleteProfile.css';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/auth.service';
@@ -49,7 +50,6 @@ const CompleteProfile: React.FC = () => {
         setError(null);
 
         try {
-            // Create registration request with the selected role
             const registerData: RegisterRequest = {
                 email: signupData.email,
                 password: signupData.password,
@@ -59,17 +59,23 @@ const CompleteProfile: React.FC = () => {
                 role: role.toUpperCase() as 'TENANT' | 'LANDLORD',
             };
 
-            // Call registration API
             await authService.register(registerData);
+            console.log('✅ Registration successful!');
 
-            // Clear signup data from sessionStorage
+            const loginResponse = await authService.login({
+                identifier: signupData.email,
+                password: signupData.password,
+            });
+            console.log('✅ Auto-login successful!', loginResponse);
+
             sessionStorage.removeItem('signupData');
 
-            // Move to next step for additional profile details
             nextStep();
-        } catch (err: any) {
+        } catch (err) {
             console.error('❌ Registration failed:', err);
-            const errorMessage = err.response?.data?.message || 'Registration failed. Please try again.';
+            const errorMessage = axios.isAxiosError(err) 
+                ? err.response?.data?.message || 'Registration failed. Please try again.'
+                : 'Registration failed. Please try again.';
             setError(errorMessage);
         } finally {
             setLoading(false);

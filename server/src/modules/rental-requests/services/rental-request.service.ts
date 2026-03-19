@@ -327,6 +327,17 @@ class RentalRequestService {
 
         await request.update({ status: input.status });
 
+        // If approved, automatically create a contract
+        if (input.status === RentalRequestStatus.APPROVED) {
+            try {
+                const { contractService } = await import('../../contracts/services/contract.service.js');
+                await contractService.createContractFromApproval(requestId);
+            } catch (contractError) {
+                console.error('⚠️ Contract auto-creation failed:', contractError);
+                // Don't fail the approval if contract creation fails
+            }
+        }
+
         return this.formatRentalRequestResponse(request, true, true);
     }
 

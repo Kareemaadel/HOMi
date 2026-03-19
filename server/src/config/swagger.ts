@@ -1045,6 +1045,124 @@ const options: Options = {
                     },
                 },
 
+                // ─── Contract Enums ──────────────────────────────────────────────────────
+                ContractStatusEnum: {
+                    type: 'string',
+                    enum: ['PENDING_LANDLORD', 'PENDING_TENANT', 'ACTIVE', 'TERMINATED', 'EXPIRED'],
+                    description: 'Contract lifecycle status',
+                    example: 'PENDING_LANDLORD',
+                },
+                RentDueDateEnum: {
+                    type: 'string',
+                    enum: ['1ST_OF_MONTH', '5TH_OF_MONTH', 'LAST_DAY_OF_MONTH'],
+                    description: 'Day of month when rent is due',
+                    example: '1ST_OF_MONTH',
+                },
+                ResponsiblePartyEnum: {
+                    type: 'string',
+                    enum: ['LANDLORD', 'TENANT'],
+                    description: 'Party responsible for a maintenance area',
+                },
+                MaintenanceAreaEnum: {
+                    type: 'string',
+                    description: 'Predefined maintenance area options (selectable in frontend)',
+                    enum: [
+                        'Structural Repairs',
+                        'Interior Appliances',
+                        'Utility Bills',
+                        'Plumbing',
+                        'Electrical',
+                        'HVAC / Air Conditioning',
+                        'Pest Control',
+                        'Exterior Maintenance',
+                        'Common Areas',
+                        'Security Systems',
+                    ],
+                    example: 'Structural Repairs',
+                },
+
+                // ─── Contract Responses ──────────────────────────────────────────────────
+                ContractResponse: {
+                    type: 'object',
+                    description: 'Full contract object returned by the API',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        contractId: { type: 'string', example: 'HOMI-8821' },
+                        leaseId: { type: 'string', example: 'L-8829-Z', nullable: true },
+                        rentalRequestId: { type: 'string', format: 'uuid' },
+                        propertyId: { type: 'string', format: 'uuid' },
+                        landlordId: { type: 'string', format: 'uuid' },
+                        tenantId: { type: 'string', format: 'uuid' },
+                        status: { $ref: '#/components/schemas/ContractStatusEnum' },
+                        rentAmount: { type: 'number', nullable: true, example: 2400 },
+                        securityDeposit: { type: 'number', nullable: true, example: 3000 },
+                        serviceFee: { type: 'number', example: 10 },
+                        paymentSchedule: { type: 'string', enum: ['MONTHLY', 'QUARTERLY', 'ANNUALLY'] },
+                        rentDueDate: { $ref: '#/components/schemas/RentDueDateEnum', nullable: true },
+                        lateFeeAmount: { type: 'number', nullable: true, example: 50 },
+                        maxOccupants: { type: 'integer', nullable: true, example: 4 },
+                        moveInDate: { type: 'string', format: 'date' },
+                        leaseDurationMonths: { type: 'integer', example: 12 },
+                        propertyRegistrationNumber: { type: 'string', nullable: true },
+                        landlordSignedAt: { type: 'string', format: 'date-time', nullable: true },
+                        tenantSignedAt: { type: 'string', format: 'date-time', nullable: true },
+                        tenantAgreedTerms: { type: 'boolean' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        maintenanceResponsibilities: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string', format: 'uuid' },
+                                    area: { $ref: '#/components/schemas/MaintenanceAreaEnum' },
+                                    responsibleParty: { $ref: '#/components/schemas/ResponsiblePartyEnum' },
+                                },
+                            },
+                        },
+                    },
+                },
+                VerificationSummaryResponse: {
+                    type: 'object',
+                    description: 'Auto-generated platform verification summary',
+                    properties: {
+                        platformMetadata: {
+                            type: 'object',
+                            properties: {
+                                contractId: { type: 'string', example: 'HOMI-8821' },
+                                created: { type: 'string', format: 'date-time' },
+                                leaseId: { type: 'string', example: 'L-8829-Z', nullable: true },
+                            },
+                        },
+                        verifiedPropertyInfo: {
+                            type: 'object',
+                            properties: {
+                                title: { type: 'string' },
+                                type: { type: 'string', nullable: true },
+                                rooms: { type: 'string', example: '2 Bedrooms' },
+                                furnishing: { type: 'string', nullable: true },
+                                address: { type: 'string' },
+                            },
+                        },
+                        paymentTerms: {
+                            type: 'object',
+                            properties: {
+                                rent: { type: 'number', nullable: true },
+                                securityDeposit: { type: 'number', nullable: true },
+                                serviceFee: { type: 'number' },
+                                schedule: { type: 'string' },
+                            },
+                        },
+                        leaseDuration: {
+                            type: 'object',
+                            properties: {
+                                moveIn: { type: 'string', format: 'date' },
+                                durationMonths: { type: 'integer' },
+                            },
+                        },
+                    },
+                },
+
             },
         },
         tags: [
@@ -1063,6 +1181,10 @@ const options: Options = {
             {
                 name: 'Rental Requests',
                 description: 'Tenant rental request submission and landlord review / approve / decline.',
+            },
+            {
+                name: 'Contracts',
+                description: 'Contract lifecycle management — multi-step landlord and tenant signing workflow.',
             },
         ],
     },

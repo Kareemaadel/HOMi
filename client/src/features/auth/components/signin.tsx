@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { authService } from '../../../services/auth.service';
 import type { LoginRequest } from '../../../types/auth.types';
 
@@ -40,9 +41,11 @@ const SignIn: React.FC = () => {
       } else {
         navigate('/');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ Login failed:', err);
-      const errorMessage = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      const errorMessage = axios.isAxiosError(err)
+        ? err.response?.data?.message || 'Login failed. Please check your credentials.'
+        : 'Login failed. Please check your credentials.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -95,7 +98,7 @@ const SignIn: React.FC = () => {
           <input type="checkbox" /> 
           <span>Remember me</span>
         </label>
-        <a href="#forgot">Forgot password?</a>
+        <a href="/forgot-password" style={{ textDecoration: 'none' }}>Forgot password?</a>
       </div>
 
       <button type="submit" className="btn-primary-v2" disabled={loading}>

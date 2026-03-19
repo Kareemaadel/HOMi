@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import LoadingPage from "./features/Loading/pages/LoadingPage"; // Import the loader
+import LoadingPage from "./features/Loading/pages/LoadingPage";
 import AuthPage from "./features/auth/pages/authPage";
+import ForgotPasswordPage from "./features/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "./features/auth/pages/ResetPasswordPage";
 import TenantHome from "./features/home/pages/TenantHome";
 import LandlordHome from "./features/home/pages/LandlordHome";
 import CompleteProfile from "./features/auth/pages/CompleteProfile";
@@ -55,6 +57,8 @@ function App() {
         {/* Auth Routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Routes>
     </BrowserRouter>
   );
