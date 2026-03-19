@@ -1,0 +1,214 @@
+import type { Request, Response, NextFunction } from 'express';
+import { contractService, ContractError } from '../services/contract.service.js';
+import type {
+    LandlordLeaseTermsInput,
+    LandlordIdentityInput,
+    LandlordPropertyConfirmationInput,
+    LandlordSignInput,
+    TenantIdentityInput,
+    TenantSignInput,
+} from '../interfaces/contract.interfaces.js';
+
+/**
+ * Contract Controller
+ * Handles HTTP request/response for contract endpoints
+ */
+class ContractController {
+    /**
+     * GET /api/contracts/landlord
+     */
+    async getLandlordContracts(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const landlordId = (req as any).user.userId;
+            const filters = (req as any).validatedQuery || req.query;
+            const result = await contractService.getLandlordContracts(landlordId, filters);
+
+            res.status(200).json({
+                success: true,
+                data: result.contracts,
+                pagination: result.pagination,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/tenant
+     */
+    async getTenantContracts(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const tenantId = (req as any).user.userId;
+            const filters = (req as any).validatedQuery || req.query;
+            const result = await contractService.getTenantContracts(tenantId, filters);
+
+            res.status(200).json({
+                success: true,
+                data: result.contracts,
+                pagination: result.pagination,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/:id
+     */
+    async getContractById(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const userId = (req as any).user.userId;
+            const contract = await contractService.getContractById(id as string, userId);
+
+            res.status(200).json({
+                success: true,
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/:id/verification-summary
+     */
+    async getVerificationSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const userId = (req as any).user.userId;
+            const summary = await contractService.getVerificationSummary(id as string, userId);
+
+            res.status(200).json({
+                success: true,
+                data: summary,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/contracts/:id/landlord/lease-terms
+     */
+    async submitLandlordLeaseTerms(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const landlordId = (req as any).user.userId;
+            const input: LandlordLeaseTermsInput = req.body;
+            const contract = await contractService.submitLandlordLeaseTerms(id as string, landlordId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Lease terms submitted successfully',
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/contracts/:id/landlord/identity
+     */
+    async submitLandlordIdentity(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const landlordId = (req as any).user.userId;
+            const input: LandlordIdentityInput = req.body;
+            const contract = await contractService.submitLandlordIdentity(id as string, landlordId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Identity details submitted successfully',
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/contracts/:id/landlord/property-confirmation
+     */
+    async submitLandlordPropertyConfirmation(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const landlordId = (req as any).user.userId;
+            const input: LandlordPropertyConfirmationInput = req.body;
+            const contract = await contractService.submitLandlordPropertyConfirmation(id as string, landlordId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Property confirmation submitted successfully',
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/contracts/:id/landlord/sign
+     */
+    async signContractLandlord(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const landlordId = (req as any).user.userId;
+            const input: LandlordSignInput = req.body;
+            const contract = await contractService.signContractLandlord(id as string, landlordId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Contract signed by landlord successfully',
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/contracts/:id/tenant/identity
+     */
+    async submitTenantIdentity(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const input: TenantIdentityInput = req.body;
+            const contract = await contractService.submitTenantIdentity(id as string, tenantId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Identity verification submitted successfully',
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/contracts/:id/tenant/sign
+     */
+    async signContractTenant(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const input: TenantSignInput = req.body;
+            const contract = await contractService.signContractTenant(id as string, tenantId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Contract signed by tenant successfully. Contract is now active!',
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+}
+
+// Export singleton instance
+export const contractController = new ContractController();
+export default contractController;
