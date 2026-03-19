@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import SignIn from '../components/signin.tsx';
 import SignUp from '../components/signup.tsx';
-import { FcGoogle } from "react-icons/fc";
+import { GoogleLoginBtn } from '../components/GoogleLoginBtn.tsx';
 import { FaFacebookF } from "react-icons/fa";
 import './authPage.css';
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
 
-  // Premium Real Estate Image from Unsplash
   const heroImageUrl = "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?auto=format&fit=crop&w=800&q=80";
 
   return (
@@ -37,13 +36,10 @@ const AuthPage = () => {
           </header>
 
           <div className="social-auth-grid">
-            <button className="social-pill">
-              <FcGoogle size={22} />
-              <span>Google</span>
-            </button>
-            <button className="social-pill">
+            <GoogleLoginBtn />
+            <button className="social-pill" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
               <FaFacebookF size={18} color="#1877f2" />
-              <span>Facebook</span>
+              <span>Facebook (Coming Soon)</span>
             </button>
           </div>
 
