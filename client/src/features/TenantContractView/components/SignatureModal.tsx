@@ -55,21 +55,25 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
         }
     };
 
-    const handleSave = () => {
-        if (mode === 'draw') {
-            const canvas = sigCanvas.current;
+        const handleSave = () => {
+                if (mode === 'draw') {
+                    const canvas = sigCanvas.current;
 
-            if (canvas && canvas.toData().length > 0) {
-                const dataURL = canvas.getTrimmedCanvas().toDataURL('image/png');
-                onSave(dataURL);
-            } else {
-                alert("Please draw your signature first.");
-            }
-        } 
-        else if (mode === 'upload' && uploadedImage) {
-            onSave(uploadedImage);
-        }
-    };
+                    // 1. Use isEmpty() instead of toData().length
+                    if (canvas && !canvas.isEmpty()) {
+                        
+                        // 2. Bypass getTrimmedCanvas() to avoid the blank image bug
+                        const dataURL = canvas.getCanvas().toDataURL('image/png');
+                        
+                        onSave(dataURL);
+                    } else {
+                        alert("Please draw your signature first.");
+                    }
+                } 
+                else if (mode === 'upload' && uploadedImage) {
+                    onSave(uploadedImage);
+                }
+            };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
