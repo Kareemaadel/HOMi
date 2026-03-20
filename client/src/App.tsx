@@ -22,6 +22,7 @@ import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
+import GuestHome from "./features/Guest/pages/GuestHome";
 
 function App() {
   return (
@@ -29,6 +30,8 @@ function App() {
       <Routes>
         {/* Entry Point: The Loading Sequence */}
         <Route path="/" element={<LoadingPage />} />
+        <Route path="/guest-home" element={<GuestHome />} />
+
 
         {/* Tenant Routes */}
         <Route path="/tenant-home" element={<TenantHome />} />
