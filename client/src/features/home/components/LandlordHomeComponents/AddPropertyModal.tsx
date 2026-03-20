@@ -4,7 +4,8 @@ import {
   FaTimes, FaBed, FaBath, FaParking, FaImage, 
   FaMapMarkerAlt, FaChevronRight, FaChevronLeft, FaCloudUploadAlt, 
   FaRocket, FaCalendarAlt, FaShieldAlt, FaChair, 
-  FaMapMarkedAlt, FaCity, FaBuilding, FaLayerGroup 
+  FaMapMarkedAlt, FaCity, FaBuilding, FaLayerGroup,
+  FaTools, FaUserTie, FaUserAlt
 } from 'react-icons/fa';
 
 // Leaflet Imports
@@ -29,7 +30,6 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Define Egypt's geographical boundaries
 const EGYPT_BOUNDS = L.latLngBounds(
   L.latLng(21.9, 24.6), 
   L.latLng(31.7, 36.9)
@@ -39,12 +39,8 @@ interface AddPropertyModalProps {
   onClose: () => void;
 }
 
-/**
- * Search Bar Component inside Map
- */
 const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   const map = useMap();
-
   useEffect(() => {
     // @ts-ignore
     const geocoder = L.Control.Geocoder.nominatim();
@@ -64,24 +60,17 @@ const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng
         }
       })
       .addTo(map);
-
     return () => { map.removeControl(control); };
   }, [map, onLocationSelect]);
-
   return null;
 };
 
-/**
- * Map Interaction Handler
- */
 const MapEventsHandler = ({ setPosition, position, onLocationSelect }: any) => {
   const map = useMap();
-  
   useEffect(() => {
     map.invalidateSize();
     map.setMaxBounds(EGYPT_BOUNDS);
   }, [map]);
-
   useMapEvents({
     click(e) {
       if (EGYPT_BOUNDS.contains(e.latlng)) {
@@ -89,7 +78,6 @@ const MapEventsHandler = ({ setPosition, position, onLocationSelect }: any) => {
       }
     },
   });
-
   return position === null ? null : <Marker position={[position.lat, position.lng]} />;
 };
 
@@ -98,11 +86,25 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Form States for Auto-fill
+  // Form States
   const [city, setCity] = useState('');
   const [area, setArea] = useState('');
   const [position, setPosition] = useState<{lat: number, lng: number} | null>(null);
   const [isMapActive, setIsMapActive] = useState(false);
+
+  // Maintenance State
+  const [maintenance, setMaintenance] = useState<Record<string, 'landlord' | 'tenant'>>({
+    "Structural Repairs": 'landlord',
+    "Interior Appliances": 'tenant',
+    "Utility Bills": 'tenant',
+    "Plumbing": 'landlord',
+    "Electrical": 'landlord',
+    "HVAC/Air": 'landlord',
+    "Pest Control": 'tenant',
+    "Exterior Maintenance": 'landlord',
+    "Common Areas": 'landlord',
+    "Security Systems": 'landlord',
+  });
 
   const amenitiesList = ["Pet Friendly", "Fitness Center", "Swimming Pool", "WiFi Included", "Air Conditioning", "Smart Lock", "Balcony", "Laundry in Unit"];
   const houseRules = ["No Smoking", "Pets Allowed", "Families Only", "Students Allowed", "No Parties", "Couple Friendly", "Work Professionals", "Quiet Hours (10PM-6AM)"];
@@ -110,17 +112,16 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
-  // Reverse Geocoding Logic
+  const toggleMaintenance = (type: string, role: 'landlord' | 'tenant') => {
+    setMaintenance(prev => ({ ...prev, [type]: role }));
+  };
+
   const handleLocationSelect = async (lat: number, lng: number) => {
     setPosition({ lat, lng });
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
-      );
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
       const data = await response.json();
       const addr = data.address;
-      
-      // Attempt to find City and Neighborhood/Suburb
       setCity(addr.city || addr.state || addr.governorate || '');
       setArea(addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || '');
     } catch (error) {
@@ -149,7 +150,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
 
   return (
     <div className="property-modal-overlay" onClick={onClose}>
-      <div className={`property-modal-container ${isSuccess ? 'success-mode' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`property-modal-container ${isSuccess ? 'success-mode' : ''} ${step === 4 ? 'wide-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
         {!isSuccess ? (
           <>
             <div className="property-modal-header">
@@ -158,7 +159,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
                 <p>Step {step} of 4: {
                   step === 1 ? "Basic Details" : 
                   step === 2 ? "Specifications" : 
-                  step === 3 ? "Location Details" : "Final Touches"
+                  step === 3 ? "Location Details" : "Responsibility & Finalize"
                 }</p>
               </div>
               <button className="close-btn" onClick={onClose}><FaTimes /></button>
@@ -249,21 +250,16 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
                     ) : (
                       <div className="leaflet-wrapper" style={{ height: '300px', width: '100%', position: 'relative' }}>
                         <MapContainer 
-                          center={[26.8206, 30.8025]} // Egypt Center
+                          center={[26.8206, 30.8025]} 
                           zoom={6} 
                           maxBounds={EGYPT_BOUNDS}
                           style={{ height: '100%', width: '100%' }}
                         >
                           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                           <SearchField onLocationSelect={handleLocationSelect} />
-                          <MapEventsHandler 
-                            position={position} 
-                            onLocationSelect={handleLocationSelect} 
-                          />
+                          <MapEventsHandler position={position} onLocationSelect={handleLocationSelect} />
                         </MapContainer>
-                        <button className="confirm-map-btn" onClick={() => setIsMapActive(false)}>
-                          Confirm Location
-                        </button>
+                        <button className="confirm-map-btn" onClick={() => setIsMapActive(false)}>Confirm Location</button>
                       </div>
                     )}
                   </div>
@@ -271,23 +267,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
                   <div className="address-grid-structured">
                     <div className="field-group">
                       <label><FaCity /> City</label>
-                      <input 
-                        type="text" 
-                        value={city} 
-                        onChange={(e) => setCity(e.target.value)} 
-                        placeholder="e.g. Cairo" 
-                        className="premium-input" 
-                      />
+                      <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Cairo" className="premium-input" />
                     </div>
                     <div className="field-group">
                       <label><FaMapMarkerAlt /> Area / Neighborhood</label>
-                      <input 
-                        type="text" 
-                        value={area} 
-                        onChange={(e) => setArea(e.target.value)} 
-                        placeholder="e.g. Maadi" 
-                        className="premium-input" 
-                      />
+                      <input type="text" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Maadi" className="premium-input" />
                     </div>
                     <div className="field-group">
                       <label>Street Name</label>
@@ -312,30 +296,64 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
               )}
 
               {step === 4 && (
-                <div className="step-view animate-fade-in">
-                  <div className="field-group">
-                    <label>About Property</label>
-                    <textarea placeholder="Describe the atmosphere..." className="premium-textarea" rows={3}></textarea>
-                  </div>
-                  <div className="dual-grid-section">
-                    <div className="grid-col">
-                      <label className="section-subtitle">Amenities</label>
-                      <div className="chip-container">
-                        {amenitiesList.map(item => (
-                          <label key={item} className="amenity-chip mini">
-                            <input type="checkbox" /> <span>{item}</span>
-                          </label>
-                        ))}
+                <div className="step-view animate-fade-in step-four-layout">
+                  <div className="maintenance-box">
+                    <div className="section-header-flex">
+                      <FaTools className="header-icon" />
+                      <div>
+                        <label className="section-subtitle">Maintenance Responsibilities</label>
+                        <p className="section-desc">Who handles these tasks?</p>
                       </div>
                     </div>
-                    <div className="grid-col">
-                      <label className="section-subtitle">House Rules</label>
-                      <div className="chip-container">
-                        {houseRules.map(rule => (
-                          <label key={rule} className="amenity-chip mini rule">
-                            <input type="checkbox" /> <span>{rule}</span>
-                          </label>
-                        ))}
+                    
+                    <div className="maintenance-grid">
+                      {Object.entries(maintenance).map(([type, assigned]) => (
+                        <div key={type} className="maintenance-card">
+                          <span className="m-title">{type}</span>
+                          <div className="m-toggle-group">
+                            <button 
+                              className={`m-btn ${assigned === 'landlord' ? 'active landlord' : ''}`}
+                              onClick={() => toggleMaintenance(type, 'landlord')}
+                            >
+                              <FaUserTie /> L
+                            </button>
+                            <button 
+                              className={`m-btn ${assigned === 'tenant' ? 'active tenant' : ''}`}
+                              onClick={() => toggleMaintenance(type, 'tenant')}
+                            >
+                              <FaUserAlt /> T
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="final-details-box">
+                    <div className="field-group">
+                      <label>About Property</label>
+                      <textarea placeholder="Describe the atmosphere..." className="premium-textarea" rows={3}></textarea>
+                    </div>
+                    <div className="dual-grid-section">
+                      <div className="grid-col">
+                        <label className="section-subtitle">Amenities</label>
+                        <div className="chip-container">
+                          {amenitiesList.map(item => (
+                            <label key={item} className="amenity-chip mini">
+                              <input type="checkbox" /> <span>{item}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid-col">
+                        <label className="section-subtitle">House Rules</label>
+                        <div className="chip-container">
+                          {houseRules.map(rule => (
+                            <label key={rule} className="amenity-chip mini rule">
+                              <input type="checkbox" /> <span>{rule}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -358,7 +376,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
           </>
         ) : (
           <div className="success-animation-view">
-             <div className="checkmark-wrapper">
+              <div className="checkmark-wrapper">
                 <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
                   <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
                   <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>

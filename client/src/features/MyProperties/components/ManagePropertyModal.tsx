@@ -3,21 +3,23 @@ import React, { useState, useMemo } from 'react';
 import { 
   FaTimes, FaSave, FaTrashAlt, FaHome, FaDollarSign, 
   FaClipboardList, FaImages, FaExclamationTriangle,
-  FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShieldAlt, FaCheckCircle
+  FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShieldAlt, FaCheckCircle, FaWrench
 } from 'react-icons/fa';
 import './ManagePropertyModal.css';
 
 interface ManagePropertyModalProps {
   property: any;
   onClose: () => void;
+  initialTab?: string;
 }
 
-const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onClose }) => {
-  const [activeTab, setActiveTab] = useState('general');
+const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onClose, initialTab }) => {
+  const [activeTab, setActiveTab] = useState(initialTab || 'general');
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   // 1. Initial State for Comparison (Dirty Checking)
+  // Included the full 10-item maintenance list here
   const initialState = useMemo(() => ({
     name: property.name || '',
     price: property.price?.toString().replace(/[^0-9]/g, '') || '',
@@ -25,7 +27,19 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     status: property.status || 'available',
     beds: property.beds || 0,
     baths: property.baths || 0,
-    sqft: property.sqft || 0
+    sqft: property.sqft || 0,
+    maintenance: property.maintenance || {
+        structural: 'Landlord',
+        appliances: 'Tenant',
+        utilities: 'Tenant',
+        plumbing: 'Landlord',
+        electrical: 'Landlord',
+        hvac: 'Landlord',
+        pest: 'Tenant',
+        exterior: 'Landlord',
+        common: 'Landlord',
+        security: 'Landlord'
+    }
   }), [property]);
 
   // 2. Form State
@@ -51,14 +65,12 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
   // 5. Submit Handler
   const handleUpdate = () => {
     if (!validate()) {
-      // Auto-switch to tab with errors
       if (errors.name || errors.address) setActiveTab('general');
       else if (errors.price) setActiveTab('financials');
       return;
     }
 
     setLoading(true);
-    // Simulate API Call
     setTimeout(() => {
       setLoading(false);
       setShowToast(true);
@@ -69,16 +81,23 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     }, 1200);
   };
 
+  // Helper dictionary for clean display names
+  const maintenanceDisplayNames: Record<string, string> = {
+      structural: 'Structural Repairs', appliances: 'Interior Appliances', 
+      utilities: 'Utility Bills', plumbing: 'Plumbing', 
+      electrical: 'Electrical', hvac: 'HVAC / Air', 
+      pest: 'Pest Control', exterior: 'Exterior Maintenance', 
+      common: 'Common Areas', security: 'Security Systems'
+  };
+
   return (
     <div className="manage-modal-overlay" onClick={onClose}>
       <div className="manage-modal-container" onClick={(e) => e.stopPropagation()}>
         
-        {/* Success Toast Notification */}
         <div className={`success-toast ${showToast ? 'show' : ''}`}>
            <FaCheckCircle /> <span>Changes saved successfully!</span>
         </div>
 
-        {/* Sidebar Navigation */}
         <aside className="manage-modal-sidebar">
           <div className="sidebar-header">
             <div className="property-mini-avatar"><FaHome /></div>
@@ -101,6 +120,9 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
             <button className={activeTab === 'media' ? 'active' : ''} onClick={() => setActiveTab('media')}>
               <FaImages /> Media Assets
             </button>
+            <button className={activeTab === 'maintenance' ? 'active' : ''} onClick={() => setActiveTab('maintenance')}>
+              <FaWrench /> Maintenance Details
+            </button>
           </nav>
 
           <div className="sidebar-footer">
@@ -108,7 +130,6 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
           </div>
         </aside>
 
-        {/* Main Content Area */}
         <main className="manage-modal-main">
           <header className="main-header">
             <div className="header-text">
@@ -261,6 +282,36 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                    </div>
                 </div>
               </div>
+            )}
+
+            {/* --- MAINTENANCE TAB (EDITABLE & SCROLLABLE) --- */}
+            {activeTab === 'maintenance' && (
+                <div className="manage-view animate-fade-in">
+                    <div className="manage-card-group">
+                        <p className="section-instruction" style={{marginBottom: '12px', fontSize: '0.9rem', color: '#64748b'}}>
+                            Assign who is financially and physically responsible for the following items. This will be publicly visible to applicants.
+                        </p>
+                        <div className="responsibility-box scrollable">
+                            {Object.entries(formData.maintenance).map(([key, value]) => (
+                                <div className="resp-row" key={key}>
+                                    <span>{maintenanceDisplayNames[key]}</span>
+                                    <select 
+                                        className="m-select compact"
+                                        style={{ width: '120px', padding: '6px', fontSize: '0.85rem' }}
+                                        value={value as string}
+                                        onChange={(e) => setFormData({
+                                            ...formData, 
+                                            maintenance: { ...formData.maintenance, [key]: e.target.value }
+                                        })}
+                                    >
+                                        <option value="Landlord">Landlord</option>
+                                        <option value="Tenant">Tenant</option>
+                                    </select>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             )}
 
           </div>

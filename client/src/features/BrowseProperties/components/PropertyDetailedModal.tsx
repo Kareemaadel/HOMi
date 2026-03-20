@@ -4,7 +4,7 @@ import {
     FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, 
     FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, 
     FaArrowRight, FaComment, FaSmokingBan, 
-    FaPaw, FaVolumeMute, FaInfoCircle,
+    FaPaw, FaVolumeMute, FaInfoCircle, FaWrench,
     FaShieldAlt, FaChair, FaUsers, FaRegCompass,
     FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
@@ -31,6 +31,21 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
         { icon: <FaVolumeMute />, text: "Quiet Hours (10PM)", active: true },
         { icon: <FaUsers />, text: property.targetTenant || 'Any Tenant', active: true },
     ];
+
+    // Fallback data if property object doesn't have maintenance defined yet
+    const maintenance = property.maintenance || {
+        structural: 'Landlord', appliances: 'Tenant', utilities: 'Tenant',
+        plumbing: 'Landlord', electrical: 'Landlord', hvac: 'Landlord',
+        pest: 'Tenant', exterior: 'Landlord', common: 'Landlord', security: 'Landlord'
+    };
+
+    const maintenanceDisplayNames: Record<string, string> = {
+        structural: 'Structural Repairs', appliances: 'Interior Appliances', 
+        utilities: 'Utility Bills', plumbing: 'Plumbing', 
+        electrical: 'Electrical', hvac: 'HVAC / Air', 
+        pest: 'Pest Control', exterior: 'Exterior Maintenance', 
+        common: 'Common Areas', security: 'Security Systems'
+    };
 
     const nextImg = () => setCurrentImgIdx((prev) => (prev + 1) % images.length);
     const prevImg = () => setCurrentImgIdx((prev) => (prev - 1 + images.length) % images.length);
@@ -87,7 +102,6 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                         </section>
 
                         <div className="content-inner">
-                            {/* AVAILABILITY BANNER - WELL OBSERVED */}
                             <div className="availability-highlight-bar">
                                 <FaCalendarAlt className="calendar-pulse" />
                                 <div className="availability-text">
@@ -134,6 +148,25 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                                     ))}
                                 </div>
                             </section>
+
+                            {/* MAINTENANCE RESPONSIBILITIES (VIEW ONLY & SCROLLABLE) */}
+                            <section className="maintenance-box">
+                                <h3 className="section-h3" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '32px', marginBottom: '16px' }}>
+                                    <FaWrench style={{ color: '#64748b'}} /> Maintenance Responsibilities
+                                </h3>
+                                <div className="responsibility-box scrollable">
+                                    {Object.entries(maintenance).map(([key, value]) => (
+                                        <div className="resp-row" key={key}>
+                                            <span>{maintenanceDisplayNames[key]}</span>
+                                            {/* Adds the 'landlord' or 'tenant' class dynamically based on the value */}
+                                            <span className={`owner-badge ${String(value).toLowerCase()}`}>
+                                                {String(value)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
                         </div>
                     </div>
 
@@ -142,7 +175,7 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                             <div className="pricing-header">
                                 <div className="main-price">
                                     <span className="currency">$</span>
-                                    <span className="amount">{property.price.toLocaleString()}</span>
+                                    <span className="amount">{property.price?.toLocaleString()}</span>
                                     <span className="freq">/mo</span>
                                 </div>
                                 <div className="deposit-info">

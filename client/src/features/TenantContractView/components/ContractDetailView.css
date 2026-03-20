@@ -814,3 +814,40 @@
     from { transform: translateY(0); }
     to { transform: translateY(-10px); }
 }
+/* --- Scrollable Responsibility Box --- */
+.responsibility-box.scrollable {
+  max-height: 180px; /* Forces the box to scroll after 4-5 items */
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  padding: 4px; /* Slight padding so the scrollbar doesn't hug the text */
+}
+
+/* Custom Webkit Scrollbar for a cleaner look */
+.responsibility-box.scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.responsibility-box.scrollable::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.responsibility-box.scrollable::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+.responsibility-box.scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Ensure rows within the scrollable box look tidy */
+.responsibility-box.scrollable .resp-row {
+  margin: 4px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 6px;
+}

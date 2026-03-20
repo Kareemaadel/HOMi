@@ -397,3 +397,157 @@
     color: #0f172a;
     border-color: #e2e8f0;
 }
+/* --- Drag & Drop Image Zone --- */
+.image-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8fafc;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.image-dropzone:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.image-dropzone.drag-active {
+    border-color: #2563eb;
+    background: #eff6ff;
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.1);
+}
+
+.image-dropzone svg {
+    font-size: 36px;
+    color: #94a3b8;
+    transition: 0.2s;
+}
+
+.image-dropzone.drag-active svg {
+    color: #2563eb;
+    transform: translateY(-5px);
+}
+
+/* --- Modern Toggle Switch (Replaces basic checkboxes) --- */
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .toggle-slider {
+    background-color: #10b981;
+}
+
+input:focus + .toggle-slider {
+    box-shadow: 0 0 1px #10b981;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* --- Danger Zone Confirmation --- */
+.danger-zone-confirm {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.danger-zone-confirm p {
+    color: #be123c;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.danger-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-danger-confirm {
+    background: #e11d48;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-danger-confirm:hover { background: #be123c; }
+
+/* --- Unsaved Changes Indicator Dot --- */
+.unsaved-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #f59e0b;
+    border-radius: 50%;
+    margin-left: 8px;
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0.4);
+    animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
