@@ -6,11 +6,16 @@ import {
   MapPin, Bed, Bath, Maximize, Zap, PlayCircle
 } from 'lucide-react';
 import './GuestHome.css';
+import PropertyDetailedModal from '../../BrowseProperties/components/PropertyDetailedModal';
 
 const GuestHome: React.FC = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Modal State
+  const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -22,6 +27,12 @@ const GuestHome: React.FC = () => {
     navigate('/auth', { state: { message: `Please log in to ${action}` } });
   };
 
+  const handlePropertyClick = (property: any) => {
+    setSelectedProperty(property);
+    setIsModalOpen(true);
+  };
+
+  // Expanded to 5 properties
   const mockProperties = [
     { 
       id: 1, 
@@ -58,9 +69,10 @@ const GuestHome: React.FC = () => {
       type: 'Studio', 
       beds: 1, baths: 1, sqft: 65,
       rating: 4.8, reviews: 89,
-      image: 'https://images.unsplash.com/photo-1502672260266-1c1de2d92043?auto=format&fit=crop&q=80&w=800',
+      image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&q=80&w=800',
       hostImg: 'https://i.pravatar.cc/150?u=3'
     },
+
   ];
 
   return (
@@ -69,8 +81,7 @@ const GuestHome: React.FC = () => {
       <nav className={`guest-nav ${isScrolled ? 'scrolled' : ''}`}>
         <div className="nav-container">
           <Link to="/" className="brand-logo">
-        <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
-
+            <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
           </Link>
 
           <div className="nav-links desktop-only">
@@ -185,13 +196,13 @@ const GuestHome: React.FC = () => {
               <h2>Handpicked Homes</h2>
               <p className="section-desc">Properties with the highest ratings and verified landlords.</p>
             </div>
-            <Link to="/browse" className="view-all-link">Explore all <ArrowRight size={16}/></Link>
+            <Link to="/guest-search" className="view-all-link">Explore all <ArrowRight size={16}/></Link>
           </div>
           
           <div className="property-grid">
             {mockProperties.map(prop => (
-              <div key={prop.id} className="prop-card group">
-                <div className="prop-img-wrapper" onClick={() => navigate(`/browse/${prop.id}`)}>
+              <div key={prop.id} className="prop-card group" onClick={() => handlePropertyClick(prop)}>
+                <div className="prop-img-wrapper">
                   <img src={prop.image} alt={prop.title} className="group-hover-scale" />
                   <div className="prop-overlay-gradient"></div>
                   {prop.badge && <div className="prop-badge"><Star size={12} className="fill-star"/> {prop.badge}</div>}
@@ -254,9 +265,9 @@ const GuestHome: React.FC = () => {
               <p>Pay your deposit securely via HOMI and get your keys.</p>
             </div>
             <div className="m-step-card">
-              <div className="m-step-icon-box"><CreditCard size={24} /></div>
+              <div className="m-step-icon-box"><Key size={24} /></div>
               <h4>5. Move In & Manage</h4>
-              <p>get your keys and manage your property.</p>
+              <p>Get your keys and manage your property.</p>
             </div>
           </div>
         </div>
@@ -349,7 +360,6 @@ const GuestHome: React.FC = () => {
 
       {/* Footer */}
       <footer className="guest-footer">
-        {/* ... Footer content remains identical to previous structure, enhanced by CSS ... */}
          <div className="section-container">
           <div className="footer-grid">
             <div className="footer-brand">
@@ -383,6 +393,15 @@ const GuestHome: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Modal Component Mount */}
+      {isModalOpen && selectedProperty && (
+        <PropertyDetailedModal 
+          property={selectedProperty} 
+          onClose={() => setIsModalOpen(false)} 
+          isGuest={true} 
+        />
+      )}
     </div>
   );
 };

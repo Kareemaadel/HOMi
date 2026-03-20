@@ -1,5 +1,6 @@
 // client/src/features/BrowseProperties/components/PropertyDetailModal.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, 
     FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, 
@@ -11,7 +12,8 @@ import {
 import ApplicationModal from './ApplicationModal';
 import './PropertyDetailedModal.css';
 
-const PropertyDetailModal = ({ property, onClose }: any) => {
+const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
+    const navigate = useNavigate();
     const [showApplication, setShowApplication] = useState(false);
     const [showGallery, setShowGallery] = useState(false);
     const [currentImgIdx, setCurrentImgIdx] = useState(0);
@@ -49,6 +51,15 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
 
     const nextImg = () => setCurrentImgIdx((prev) => (prev + 1) % images.length);
     const prevImg = () => setCurrentImgIdx((prev) => (prev - 1 + images.length) % images.length);
+
+    const handleApplyClick = () => {
+        if (isGuest) {
+            onClose();
+            navigate('/auth', { state: { message: 'Please log in or register to apply for this property.' } });
+        } else {
+            setShowApplication(true);
+        }
+    };
 
     if (showApplication) {
         return <ApplicationModal property={property} onClose={onClose} onBack={() => setShowApplication(false)} />;
@@ -183,8 +194,8 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                                 </div>
                             </div>
 
-                            <button className="primary-cta-btn" onClick={() => setShowApplication(true)}>
-                                Start Application <FaArrowRight />
+                            <button className="primary-cta-btn" onClick={handleApplyClick}>
+                                {isGuest ? 'Register to Apply' : 'Start Application'} <FaArrowRight />
                             </button>
                             <p className="cta-subtext">Verified secure application process</p>
 
@@ -199,7 +210,12 @@ const PropertyDetailModal = ({ property, onClose }: any) => {
                                     <span className="name">Sarah Jenkins</span>
                                     <span className="role">Verified Owner • 4.9★</span>
                                 </div>
-                                <button className="chat-btn"><FaComment /></button>
+                                <button className="chat-btn" onClick={() => {
+                                    if (isGuest) {
+                                        onClose();
+                                        navigate('/auth', { state: { message: 'Please log in to chat with the owner.' } });
+                                    }
+                                }}><FaComment /></button>
                             </div>
 
                             <div className="secondary-actions">
