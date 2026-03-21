@@ -73,9 +73,16 @@ const CompleteProfile: React.FC = () => {
             nextStep();
         } catch (err) {
             console.error('❌ Registration failed:', err);
-            const errorMessage = axios.isAxiosError(err) 
-                ? err.response?.data?.message || 'Registration failed. Please try again.'
-                : 'Registration failed. Please try again.';
+            let errorMessage = 'Registration failed. Please try again.';
+            if (axios.isAxiosError(err) && err.response?.data) {
+                const data = err.response.data;
+                // Show first specific field error if present, otherwise the general message
+                if (Array.isArray(data.errors) && data.errors.length > 0) {
+                    errorMessage = data.errors[0].message;
+                } else if (data.message) {
+                    errorMessage = data.message;
+                }
+            }
             setError(errorMessage);
         } finally {
             setLoading(false);

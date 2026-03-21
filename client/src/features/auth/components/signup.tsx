@@ -12,6 +12,7 @@ interface SignUpFormData {
 
 const SignUp: React.FC = () => {
   const [strength, setStrength] = useState(0);
+  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [formData, setFormData] = useState<SignUpFormData>({
     firstName: '',
@@ -44,16 +45,32 @@ const SignUp: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setFormError(null);
+
+    // Must match the backend RegisterSchema password regex exactly
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/]).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setFormError(
+        'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character (e.g. @$!%*?&).'
+      );
+      return;
+    }
+
     // Store signup data in sessionStorage to be used in CompleteProfile
     sessionStorage.setItem('signupData', JSON.stringify(formData));
-    
-    // Navigate to complete profile page where user will select role and complete registration
     navigate("/complete-profile");
   };
 
   return (
     <form className="form-layout-v2" onSubmit={handleSubmit}>
+      {formError && (
+        <div style={{
+          padding: '10px 14px', marginBottom: 12,
+          background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+          borderRadius: 8, fontSize: 13, fontWeight: 500,
+          border: '1px solid rgba(239,68,68,0.3)',
+        }}>{formError}</div>
+      )}
       <div className="input-row">
         <div className="input-block">
           <User size={18}/>
