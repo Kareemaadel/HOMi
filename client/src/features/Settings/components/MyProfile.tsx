@@ -47,6 +47,18 @@ const MyProfile: React.FC = () => {
         setSaving(true);
         setMessage(null);
         try {
+            // ── Client-side validation ────────────────────────────────────
+            if (!firstName.trim()) {
+                setMessage({ type: 'error', text: 'First name cannot be empty.' });
+                setSaving(false);
+                return;
+            }
+            if (!lastName.trim()) {
+                setMessage({ type: 'error', text: 'Last name cannot be empty.' });
+                setSaving(false);
+                return;
+            }
+
             // Only send fields that have actually changed vs the stored original.
             // This prevents 400 errors from the backend when nothing changed,
             // and avoids sending an empty phone (Google OAuth users may have none).
