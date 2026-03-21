@@ -1,5 +1,5 @@
 // client/src/features/Settings/components/MyProfile.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './MyProfile.css';
 import { FaCamera, FaIdBadge, FaEnvelope, FaPhone } from 'react-icons/fa';
 import { authService } from '../../../services/auth.service';
@@ -16,6 +16,8 @@ const MyProfile: React.FC = () => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [phone, setPhone] = useState('');
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -42,6 +44,68 @@ const MyProfile: React.FC = () => {
         };
         fetchProfile();
     }, []);
+
+    // ── Avatar upload ──────────────────────────────────────────────────────
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            setMessage({ type: 'error', text: 'Please select an image file.' });
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            setMessage({ type: 'error', text: 'Image must be smaller than 10 MB.' });
+            return;
+        }
+
+        // Resize to max 300×300 px using canvas, then export as JPEG 80%
+        // so the base64 string stays small enough for the DB (typically ~30–50 KB)
+        const resizeImage = (src: string): Promise<string> =>
+            new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const MAX = 300;
+                    let { width, height } = img;
+                    if (width > height) {
+                        if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+                    } else {
+                        if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.src = src;
+            });
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+            try {
+                const resized = await resizeImage(reader.result as string);
+                // Optimistic preview
+                setAvatarSrc(resized);
+                setUploadingAvatar(true);
+                setMessage(null);
+                const updated = await authService.updateProfile({ avatarUrl: resized });
+                setUser(updated.user);
+                setProfile(updated.profile);
+                window.dispatchEvent(new Event('storage'));
+                setMessage({ type: 'success', text: 'Profile photo updated!' });
+                setTimeout(() => setMessage(null), 3000);
+            } catch {
+                setMessage({ type: 'error', text: 'Failed to upload photo. Please try again.' });
+                setAvatarSrc(profile?.avatarUrl || fallbackAvatar);
+            } finally {
+                setUploadingAvatar(false);
+                e.target.value = '';
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
 
     const handleSave = async () => {
         setSaving(true);
@@ -134,8 +198,25 @@ const MyProfile: React.FC = () => {
                         alt="Profile"
                         onError={() => setAvatarSrc(fallbackAvatar)}
                         referrerPolicy="no-referrer"
+                        style={{ opacity: uploadingAvatar ? 0.6 : 1, transition: 'opacity 0.2s' }}
                     />
-                    <button className="edit-btn-floating"><FaCamera /></button>
+                    {/* Hidden file input */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleAvatarChange}
+                    />
+                    <button
+                        className="edit-btn-floating"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        title="Change profile photo"
+                        style={{ opacity: uploadingAvatar ? 0.6 : 1 }}
+                    >
+                        <FaCamera />
+                    </button>
                 </div>
                 <div className="identity-text">
                     <h3>{`${firstName} ${lastName}`.trim() || 'User'}</h3>
