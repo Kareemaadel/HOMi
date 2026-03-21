@@ -450,6 +450,7 @@
 .text-gradient {
   background: linear-gradient(135deg, var(--brand-blue), #8b5cf6);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -592,7 +593,7 @@
 /* --- Trust Ticker --- */
 .trust-ticker-section { padding: 40px 0; border-top: 1px solid var(--neutral-100); border-bottom: 1px solid var(--neutral-100); background: #fafafa; text-align: center; }
 .ticker-label { font-size: 12px; font-weight: 800; color: var(--neutral-400); letter-spacing: 0.1em; margin-bottom: 24px; }
-.ticker-logos { display: flex; justify-content: center; align-items: center; gap: 64px; flex-wrap: wrap; opacity: 0.6; grayscale: 100%; filter: grayscale(1); transition: 0.3s;}
+.ticker-logos { display: flex; justify-content: center; align-items: center; gap: 64px; flex-wrap: wrap; opacity: 0.6; filter: grayscale(1); transition: 0.3s;}
 .ticker-logos:hover { filter: grayscale(0); opacity: 1; }
 .logo-placeholder { font-size: 20px; font-weight: 800; color: var(--neutral-700); letter-spacing: -0.02em; }
 
@@ -744,6 +745,7 @@
 .text-gradient-opposite {
   background: linear-gradient(-135deg, var(--brand-blue), #8b5cf6);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .brand-logo {

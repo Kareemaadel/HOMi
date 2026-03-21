@@ -158,9 +158,14 @@ const Security: React.FC = () => {
                 </div>
                 <div className="tool-card">
                     <div className="tool-icon-box"><FaHistory /></div>
-                    <h4>Sessions</h4>
-                    <p>Last login: 2 hours ago</p>
-                    <button className="tool-btn">Review</button>
+                    <h4>Complete Profile</h4>
+                    <p>Finish setting up your account</p>
+                    <button
+                        className="tool-btn"
+                        onClick={() => window.location.href = '/complete-profile'}
+                    >
+                        Continue
+                    </button>
                 </div>
             </div>
 

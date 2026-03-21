@@ -3,6 +3,7 @@ import LoadingPage from "./features/Loading/pages/LoadingPage";
 import AuthPage from "./features/auth/pages/authPage";
 import ForgotPasswordPage from "./features/auth/pages/ForgotPasswordPage";
 import ResetPasswordPage from "./features/auth/pages/ResetPasswordPage";
+import EmailVerificationPage from "./features/auth/pages/EmailVerificationPage";
 import TenantHome from "./features/home/pages/TenantHome";
 import LandlordHome from "./features/home/pages/LandlordHome";
 import CompleteProfile from "./features/auth/pages/CompleteProfile";
@@ -67,6 +68,7 @@ function App() {
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<EmailVerificationPage />} />
       </Routes>
     </BrowserRouter>
   );

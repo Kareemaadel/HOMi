@@ -153,10 +153,11 @@ class AuthService {
     }
 
     /**
-     * Resend verification email
+     * Send / resend email verification link
+     * Requires the user to be logged in (JWT must be in localStorage)
      */
-    async resendVerification(): Promise<AuthSuccessResponse> {
-        const response = await apiClient.post<AuthSuccessResponse>('/auth/resend-verification');
+    async sendVerificationEmail(): Promise<AuthSuccessResponse> {
+        const response = await apiClient.post<AuthSuccessResponse>('/auth/send-verification-email');
         return response.data;
     }
 
