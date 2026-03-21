@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
     X, ChevronRight, ChevronLeft, ShieldCheck, Pencil, 
     Landmark, Zap, Ban, User, DollarSign, Cpu, Clock, Globe, 
-    Fingerprint, CheckCircle2, CreditCard
+    Fingerprint, CheckCircle2, CreditCard, MoreVertical,
+    Download, HelpCircle, FileText
 } from 'lucide-react';
 import { type LeaseContract } from '../pages/Contract';
 import SignatureModal from './SignatureModal';
@@ -18,6 +19,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(null);
     const [isFinalized, setIsFinalized] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     
     const [tenantData, setTenantData] = useState({
         idNumber: '',
@@ -71,7 +73,24 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                         <h2>Step {step} of 4</h2>
                         <span>{contract.id} • {contract.property}</span>
                     </div>
-                    <button className="close-btn" onClick={onClose}><X size={20}/></button>
+                    <div className="header-actions">
+                        <div className="action-menu-container">
+                            <button 
+                                className={`icon-btn-menu ${isMenuOpen ? 'active' : ''}`} 
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            >
+                                <MoreVertical size={20}/>
+                            </button>
+                            {isMenuOpen && (
+                                <div className="action-dropdown-menu animate-fade-in">
+                                    <button onClick={() => setIsMenuOpen(false)}><Download size={16}/> Save PDF Copy</button>
+                                    <button onClick={() => setIsMenuOpen(false)}><FileText size={16}/> Review Local Laws</button>
+                                    <button onClick={() => setIsMenuOpen(false)}><HelpCircle size={16}/> Contract Help</button>
+                                </div>
+                            )}
+                        </div>
+                        <button className="close-btn" onClick={onClose}><X size={20}/></button>
+                    </div>
                 </header>
 
                 <div className="panel-content">
@@ -84,6 +103,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                         ))}
                     </div>
 
+                    {/* STEP 1: LANDLORD TERMS */}
                     {step === 1 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Landlord's Terms & Conditions</h3>
@@ -106,15 +126,23 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                             </section>
                             <section className="info-section">
                                 <div className="section-title"><Zap size={16}/> <h4>Responsibilities</h4></div>
-                                <div className="responsibility-box">
-                                    <div className="resp-row"><span>Structural Maintenance</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Appliance Repairs</span><span className="owner-badge tenant">Tenant</span></div>
+                                <div className="responsibility-box scrollable">
+                                    <div className="resp-row"><span>Structural Repairs</span><span className="owner-badge landlord">Landlord</span></div>
+                                    <div className="resp-row"><span>Interior Appliances</span><span className="owner-badge tenant">Tenant</span></div>
                                     <div className="resp-row"><span>Utility Bills</span><span className="owner-badge tenant">Tenant</span></div>
+                                    <div className="resp-row"><span>Plumbing</span><span className="owner-badge landlord">Landlord</span></div>
+                                    <div className="resp-row"><span>Electrical</span><span className="owner-badge landlord">Landlord</span></div>
+                                    <div className="resp-row"><span>HVAC / Air Conditioning</span><span className="owner-badge landlord">Landlord</span></div>
+                                    <div className="resp-row"><span>Pest Control</span><span className="owner-badge tenant">Tenant</span></div>
+                                    <div className="resp-row"><span>Exterior Maintenance</span><span className="owner-badge landlord">Landlord</span></div>
+                                    <div className="resp-row"><span>Common Areas</span><span className="owner-badge landlord">Landlord</span></div>
+                                    <div className="resp-row"><span>Security Systems</span><span className="owner-badge landlord">Landlord</span></div>
                                 </div>
                             </section>
                         </div>
                     )}
 
+                    {/* STEP 2: TENANT IDENTITY */}
                     {step === 2 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Tenant Identity Details</h3>
@@ -150,6 +178,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                         </div>
                     )}
 
+                    {/* STEP 3: SUMMARY */}
                     {step === 3 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Platform Verification Summary</h3>
@@ -192,6 +221,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                         </div>
                     )}
 
+                    {/* STEP 4: SIGNATURE */}
                     {step === 4 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Finalize & Sign</h3>

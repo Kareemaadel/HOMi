@@ -41,18 +41,25 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
     if (!isOpen) return null;
 
-    const handleSave = () => {
-        if (mode === 'draw') {
-            const canvas = sigCanvas.current;
-            if (canvas && canvas.toData().length > 0) {
-                onSave(canvas.getTrimmedCanvas().toDataURL('image/png'));
-            } else {
-                alert("Please draw your signature.");
-            }
-        } else if (mode === 'upload' && uploadedImage) {
-            onSave(uploadedImage);
-        }
-    };
+        const handleSave = () => {
+                if (mode === 'draw') {
+                    const canvas = sigCanvas.current;
+
+                    // 1. Use isEmpty() instead of toData().length
+                    if (canvas && !canvas.isEmpty()) {
+                        
+                        // 2. Bypass getTrimmedCanvas() to avoid the blank image bug
+                        const dataURL = canvas.getCanvas().toDataURL('image/png');
+                        
+                        onSave(dataURL);
+                    } else {
+                        alert("Please draw your signature first.");
+                    }
+                } 
+                else if (mode === 'upload' && uploadedImage) {
+                    onSave(uploadedImage);
+                }
+            };
 
     return (
         <div className="modal-overlay">

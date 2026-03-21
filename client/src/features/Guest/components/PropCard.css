@@ -1,0 +1,174 @@
+/* client/src/features/guest/components/PropCard.css */
+
+.prop-card {
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: 16px;
+  overflow: hidden;
+  background: white;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Allows it to stretch to grid height */
+  box-sizing: border-box;
+}
+
+.prop-card:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-6px);
+  border-color: transparent;
+}
+
+.prop-img-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3; /* REPLACES fixed height: perfectly responsive images */
+  overflow: hidden;
+  background-color: var(--neutral-100, #f3f4f6);
+}
+
+.group-hover-scale {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.prop-card:hover .group-hover-scale {
+  transform: scale(1.05);
+}
+
+.prop-overlay-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.prop-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+
+.fill-star {
+  fill: #f59e0b;
+  color: #f59e0b;
+}
+
+.heart-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--neutral-500, #6b7280);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+
+.heart-btn:hover {
+  color: #ef4444;
+  transform: scale(1.1);
+}
+
+.prop-details {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Pushes the footer to the bottom evenly across all cards */
+}
+
+.prop-meta-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--neutral-500, #6b7280);
+  font-weight: 600;
+}
+
+.prop-loc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.prop-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--neutral-900, #111827);
+}
+
+.prop-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: var(--neutral-900, #111827);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Ensures long titles don't break the layout */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.prop-specs {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--neutral-100, #f3f4f6);
+  margin-bottom: 16px;
+  margin-top: auto; /* Pushes specs and footer to the very bottom */
+}
+
+.prop-specs span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--neutral-600, #4b5563);
+}
+
+.prop-footer-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--neutral-900, #111827);
+}
+
+.price-period {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--neutral-500, #6b7280);
+  margin-left: 4px;
+}

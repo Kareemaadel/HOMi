@@ -22,6 +22,8 @@ import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
+import GuestHome from "./features/Guest/pages/GuestHome";
+import GuestSearch from "./features/Guest/pages/GuestSearch";
 
 function App() {
   return (
@@ -29,6 +31,7 @@ function App() {
       <Routes>
         {/* Entry Point: The Loading Sequence */}
         <Route path="/" element={<LoadingPage />} />
+
 
         {/* Tenant Routes */}
         <Route path="/tenant-home" element={<TenantHome />} />
@@ -53,6 +56,11 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/get-help" element={<GetHelp />} />
+
+        {/* Guest Routes */}
+        <Route path="/guest-home" element={<GuestHome />} />
+        <Route path="/guest-search" element={<GuestSearch />} />
+        
 
         {/* Auth Routes */}
         <Route path="/auth" element={<AuthPage />} />
