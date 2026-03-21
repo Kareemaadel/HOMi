@@ -25,14 +25,29 @@ apiClient.interceptors.request.use(
     }
 );
 
+// Error codes that are business-logic 401s — NOT token expiration.
+// These should never trigger a token refresh or logout.
+const BUSINESS_LOGIC_401_CODES = new Set([
+    'INVALID_CURRENT_PASSWORD',
+    'INVALID_CREDENTIALS',
+    'NOT_AUTHENTICATED',   // user intentionally not logged in (handled by caller)
+]);
+
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+        const errorCode: string | undefined = error.response?.data?.code;
 
-        // If the error is 401 and we haven't retried yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Only attempt token refresh for real token-expiry 401s.
+        // Business-logic 401s (wrong password, etc.) pass straight through.
+        const isTokenError =
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !BUSINESS_LOGIC_401_CODES.has(errorCode ?? '');
+
+        if (isTokenError) {
             originalRequest._retry = true;
 
             try {
@@ -51,7 +66,7 @@ apiClient.interceptors.response.use(
                     return apiClient(originalRequest);
                 }
             } catch (refreshError) {
-                // If refresh fails, clear tokens and redirect to login
+                // Refresh failed — clear session and redirect to login
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
                 localStorage.removeItem('user');
