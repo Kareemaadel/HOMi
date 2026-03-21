@@ -173,8 +173,12 @@ export const UpdateProfileSchema = z.object({
         .nullable(),
     avatarUrl: z
         .string()
-        .url('Avatar URL must be a valid URL')
-        .max(500, 'Avatar URL must be at most 500 characters')
+        .refine(
+            (val) =>
+                /^https?:\/\/.+/.test(val) ||    // regular URL
+                /^data:image\/.+;base64,/.test(val), // base64 data URI from file upload
+            { message: 'Avatar must be a valid image URL or uploaded image.' }
+        )
         .optional()
         .nullable(),
     preferredBudgetMin: z

@@ -16,6 +16,8 @@ import type {
 /**
  * Authentication Service
  * Handles all auth-related API calls
+ * NOTE: apiClient baseURL already includes /api (from VITE_API_BASE_URL),
+ * so all paths here are relative to /api (e.g. '/auth/login' → /api/auth/login)
  */
 class AuthService {
     /**
@@ -38,6 +40,7 @@ class AuthService {
             localStorage.setItem('refreshToken', response.data.refreshToken);
             localStorage.setItem('user', JSON.stringify(response.data.user));
             localStorage.setItem('profile', JSON.stringify(response.data.profile));
+            localStorage.setItem('authProvider', 'email');
         }
         
         return response.data;
@@ -51,6 +54,7 @@ class AuthService {
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         localStorage.removeItem('profile');
+        localStorage.removeItem('authProvider');
     }
 
     /**
@@ -104,12 +108,14 @@ class AuthService {
 
     /**
      * Update user profile
+     * Returns the updated UserProfileResponse (user + profile)
      */
-    async updateProfile(data: UpdateProfileRequest): Promise<AuthSuccessResponse> {
-        const response = await apiClient.put<AuthSuccessResponse>('/api/auth/profile', data);
+    async updateProfile(data: UpdateProfileRequest): Promise<UserProfileResponse> {
+        const response = await apiClient.put<UserProfileResponse>('/auth/profile', data);
         
-        // Refresh user data after update
-        await this.getProfile();
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('profile', JSON.stringify(response.data.profile));
         
         return response.data;
     }
@@ -167,6 +173,7 @@ class AuthService {
             localStorage.setItem('refreshToken', response.data.refreshToken);
             localStorage.setItem('user', JSON.stringify(response.data.user));
             localStorage.setItem('profile', JSON.stringify(response.data.profile));
+            localStorage.setItem('authProvider', 'google');
         }
         
         return response.data;

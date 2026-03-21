@@ -120,7 +120,7 @@ Profile.init(
             allowNull: true,
         },
         avatar_url: {
-            type: DataTypes.STRING(500),
+            type: DataTypes.TEXT,   // TEXT to support base64-encoded images
             allowNull: true,
         },
         national_id: {
