@@ -25,50 +25,49 @@ import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
 import GuestHome from "./features/Guest/pages/GuestHome";
 import GuestSearch from "./features/Guest/pages/GuestSearch";
+import AuthGuard from "./components/global/AuthGuard";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Entry Point: The Loading Sequence */}
+        {/* Entry Point */}
         <Route path="/" element={<LoadingPage />} />
 
+        {/* Tenant Routes — protected */}
+        <Route path="/tenant-home"   element={<AuthGuard><TenantHome /></AuthGuard>} />
+        <Route path="/browse-properties" element={<BrowseProperties />} /> {/* guests can browse; Apply Now button guards itself */}
+        <Route path="/active-rental" element={<AuthGuard><ActiveRental /></AuthGuard>} />
+        <Route path="/prepayment-page" element={<AuthGuard><PrePayment /></AuthGuard>} />
+        <Route path="/saved-properties" element={<AuthGuard><SavedProperties /></AuthGuard>} />
+        <Route path="/actives"       element={<AuthGuard><MyActives /></AuthGuard>} />
+        <Route path="/tenant-payment" element={<AuthGuard><TenantPayment /></AuthGuard>} />
+        <Route path="/tenant-contracts" element={<AuthGuard><Contract /></AuthGuard>} />
 
-        {/* Tenant Routes */}
-        <Route path="/tenant-home" element={<TenantHome />} />
-        <Route path="/browse-properties" element={<BrowseProperties />} />
-        <Route path="/active-rental" element={<ActiveRental />} />
-        <Route path="/prepayment-page" element={<PrePayment />} />
-        <Route path="/saved-properties" element={<SavedProperties />} />
-        <Route path="/actives" element={<MyActives/>} />
-        <Route path="/tenant-payment" element={<TenantPayment />} />
-        <Route path="/tenant-contracts" element={<Contract />} />
+        {/* Landlord Routes — protected */}
+        <Route path="/landlord-home" element={<AuthGuard><LandlordHome /></AuthGuard>} />
+        <Route path="/my-properties" element={<AuthGuard><MyProperties /></AuthGuard>} />
+        <Route path="/rental-requests" element={<AuthGuard><RentalRequests /></AuthGuard>} />
+        <Route path="/landlord-payment" element={<AuthGuard><LandlordPayment /></AuthGuard>} />
+        <Route path="/landlord-contracts" element={<AuthGuard><LandlordContract /></AuthGuard>} />
 
-        {/* Landlord Routes */}
-        <Route path="/landlord-home" element={<LandlordHome />} />
-        <Route path="/my-properties" element={<MyProperties />} />
-        <Route path="/rental-requests" element={<RentalRequests />} />
-        <Route path="/landlord-payment" element={<LandlordPayment />} />
-        <Route path="/landlord-contracts" element={<LandlordContract />} />
+        {/* Global Dashboard Routes — protected */}
+        <Route path="/balance"   element={<AuthGuard><Balance /></AuthGuard>} />
+        <Route path="/settings"  element={<Settings />} /> {/* has its own guard */}
+        <Route path="/messages"  element={<AuthGuard><Messages /></AuthGuard>} />
+        <Route path="/about-us"  element={<AboutUs />} />
+        <Route path="/get-help"  element={<GetHelp />} />
 
-        {/* Global Dashboard Routes */}
-        <Route path="/balance" element={<Balance />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/about-us" element={<AboutUs />} />
-        <Route path="/get-help" element={<GetHelp />} />
-
-        {/* Guest Routes */}
-        <Route path="/guest-home" element={<GuestHome />} />
+        {/* Guest Routes — public */}
+        <Route path="/guest-home"   element={<GuestHome />} />
         <Route path="/guest-search" element={<GuestSearch />} />
-        
 
-        {/* Auth Routes */}
-        <Route path="/auth" element={<AuthPage />} />
+        {/* Auth Routes — public */}
+        <Route path="/auth"             element={<AuthPage />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<EmailVerificationPage />} />
+        <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
+        <Route path="/reset-password"   element={<ResetPasswordPage />} />
+        <Route path="/verify-email"     element={<EmailVerificationPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -52,13 +52,13 @@ const SignInRequired: React.FC = () => {
                 </div>
 
                 <h2 style={{
-                    fontSize: 26, fontWeight: 800, color: '#f1f5f9',
+                    fontSize: 26, fontWeight: 800, color: '#131415ff',
                     marginBottom: 12, letterSpacing: '-0.02em',
                 }}>
                     Sign in to access Settings
                 </h2>
                 <p style={{
-                    fontSize: 15, color: '#94a3b8', lineHeight: 1.6,
+                    fontSize: 15, color: '#313234ff', lineHeight: 1.6,
                     marginBottom: 36,
                 }}>
                     Your profile, billing, notifications, and security options are only visible to signed-in users.
