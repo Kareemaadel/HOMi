@@ -4,23 +4,115 @@ import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import SettingsSidebar from '../components/SettingsSidebar';
+import { useNavigate } from 'react-router-dom';
 
 // Component Imports
 import MyProfile from '../components/MyProfile';
 import Security from '../components/Security';
 import Preferences from '../components/Preferences';
 import About from '../components/About';
-import Notifications from '../components/Notifications'; // Ensure naming matches your file
+import Notifications from '../components/Notifications';
 import Billing from '../components/Billing';
 import Privacy from '../components/Privacy';
 
-import { FaExclamationTriangle } from 'react-icons/fa';
+import { FaExclamationTriangle, FaLock, FaUserCircle } from 'react-icons/fa';
 
+// ── Auth Guard Screen ──────────────────────────────────────────────────────────
+const SignInRequired: React.FC = () => {
+    const navigate = useNavigate();
+    return (
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-main, #0f172a)',
+            padding: 24,
+            fontFamily: 'Inter, system-ui, sans-serif',
+        }}>
+            <div style={{
+                background: 'var(--bg-card, rgba(255,255,255,0.04))',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 24,
+                padding: '56px 48px',
+                maxWidth: 440,
+                width: '100%',
+                textAlign: 'center',
+            }}>
+                {/* Icon */}
+                <div style={{
+                    width: 80, height: 80, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2))',
+                    border: '2px solid rgba(99,102,241,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 28px',
+                }}>
+                    <FaLock style={{ fontSize: 32, color: '#818cf8' }} />
+                </div>
+
+                <h2 style={{
+                    fontSize: 26, fontWeight: 800, color: '#f1f5f9',
+                    marginBottom: 12, letterSpacing: '-0.02em',
+                }}>
+                    Sign in to access Settings
+                </h2>
+                <p style={{
+                    fontSize: 15, color: '#94a3b8', lineHeight: 1.6,
+                    marginBottom: 36,
+                }}>
+                    Your profile, billing, notifications, and security options are only visible to signed-in users.
+                </p>
+
+                {/* CTA Buttons */}
+                <button
+                    onClick={() => navigate('/auth')}
+                    style={{
+                        width: '100%', padding: '14px 0', border: 'none', borderRadius: 12,
+                        background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                        color: '#fff', fontSize: 15, fontWeight: 700,
+                        cursor: 'pointer', marginBottom: 12, fontFamily: 'inherit',
+                        transition: 'opacity 0.2s',
+                    }}
+                    onMouseOver={e => (e.currentTarget.style.opacity = '0.9')}
+                    onMouseOut={e => (e.currentTarget.style.opacity = '1')}
+                >
+                    Sign In
+                </button>
+                <button
+                    onClick={() => navigate('/auth')}
+                    style={{
+                        width: '100%', padding: '13px 0',
+                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12,
+                        background: 'transparent', color: '#94a3b8',
+                        fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                        fontFamily: 'inherit', transition: 'border-color 0.2s, color 0.2s',
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = '#e2e8f0'; }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#94a3b8'; }}
+                >
+                    <FaUserCircle style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                    Create a free account
+                </button>
+
+                <p style={{ marginTop: 24, fontSize: 12, color: '#475569' }}>
+                    Your data is private and secure.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// ── Main Settings Page ─────────────────────────────────────────────────────────
 const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState('profile');
 
+    // Auth guard — show sign-in screen if no token exists
+    const isAuthenticated = !!localStorage.getItem('accessToken');
+    if (!isAuthenticated) {
+        return <SignInRequired />;
+    }
+
     // Senior Approach: Component Mapping Object
-    // This replaces the switch statement for better readability
     const tabComponents: Record<string, React.ReactNode> = {
         profile: <MyProfile />,
         billing: <Billing />,

@@ -15,8 +15,8 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [userName, setUserName] = useState('');
-  const [userRole, setUserRole] = useState('');
+  const [userName, setUserName] = useState('Guest');
+  const [userRole, setUserRole] = useState('Not signed in');
   const [avatarSrc, setAvatarSrc] = useState(
     'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=80'
   );
