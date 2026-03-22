@@ -29,15 +29,33 @@ const CompleteProfile: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
+    const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
+
     useEffect(() => {
-        // Get signup data from sessionStorage
+        // Case 1: fresh registration — signupData stored right before navigating here
         const storedData = sessionStorage.getItem('signupData');
         if (storedData) {
             setSignupData(JSON.parse(storedData));
-        } else {
-            // If no signup data, redirect back to signup
-            navigate('/auth');
+            return;
         }
+
+        // Case 2: already-logged-in user coming from Settings > Complete Profile
+        const cached = authService.getCurrentUser();
+        if (cached) {
+            setAlreadyLoggedIn(true);
+            // Pre-populate signupData shape so role-selection validation passes
+            setSignupData({
+                email: cached.user.email,
+                password: '',            // not needed — we won't re-register
+                firstName: cached.profile.firstName,
+                lastName: cached.profile.lastName,
+                phone: cached.profile.phoneNumber,
+            });
+            return;
+        }
+
+        // Neither — send back to sign-up
+        navigate('/auth');
     }, [navigate]);
 
     const handleRoleSelection = async () => {
@@ -50,6 +68,13 @@ const CompleteProfile: React.FC = () => {
         setError(null);
 
         try {
+            if (alreadyLoggedIn) {
+                // User is already registered — no need to call register again.
+                // Just advance to the next step (role-specific preferences).
+                nextStep();
+                return;
+            }
+
             const registerData: RegisterRequest = {
                 email: signupData.email,
                 password: signupData.password,
@@ -62,21 +87,27 @@ const CompleteProfile: React.FC = () => {
             await authService.register(registerData);
             console.log('✅ Registration successful!');
 
-            const loginResponse = await authService.login({
+            // Auto-login to get a JWT so we can call the send-verification-email endpoint
+            await authService.login({
                 identifier: signupData.email,
                 password: signupData.password,
             });
-            console.log('✅ Auto-login successful!', loginResponse);
 
             sessionStorage.removeItem('signupData');
 
-            nextStep();
+            // Send verification email (requires the JWT from the login above)
+            try {
+                await authService.sendVerificationEmail();
+            } catch {
+                console.warn('Could not send verification email automatically');
+            }
+
+            navigate('/verify-email', { state: { email: signupData.email } });
         } catch (err) {
             console.error('❌ Registration failed:', err);
             let errorMessage = 'Registration failed. Please try again.';
             if (axios.isAxiosError(err) && err.response?.data) {
                 const data = err.response.data;
-                // Show first specific field error if present, otherwise the general message
                 if (Array.isArray(data.errors) && data.errors.length > 0) {
                     errorMessage = data.errors[0].message;
                 } else if (data.message) {
@@ -228,6 +259,24 @@ const CompleteProfile: React.FC = () => {
                                 onClick={handleRoleSelection}
                             >
                                 {loading ? 'Creating Account...' : 'Continue'} <ArrowRight size={18} />
+                            </button>
+                        </div>
+                        {/* Skip link */}
+                        <div style={{ textAlign: 'center', marginTop: 16 }}>
+                            <button
+                                onClick={() => {
+                                    sessionStorage.removeItem('signupData');
+                                    // Logged-in users came from Settings — go back there
+                                    // New registrants have no session yet — go to sign-in
+                                    navigate(alreadyLoggedIn ? '/settings' : '/auth');
+                                }}
+                                style={{
+                                    background: 'none', border: 'none', cursor: 'pointer',
+                                    color: '#94a3b8', fontSize: 13, fontWeight: 500,
+                                    textDecoration: 'underline', textUnderlineOffset: 3,
+                                }}
+                            >
+                                Skip for now
                             </button>
                         </div>
                     </div>

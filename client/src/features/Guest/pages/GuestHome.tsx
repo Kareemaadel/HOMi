@@ -7,11 +7,13 @@ import {
 } from 'lucide-react';
 import './GuestHome.css';
 import PropertyDetailedModal from '../../BrowseProperties/components/PropertyDetailedModal';
+import AuthModal from '../../../components/global/AuthModal';
 
 const GuestHome: React.FC = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   // Modal State
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -23,8 +25,8 @@ const GuestHome: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleProtectedAction = (action: string) => {
-    navigate('/auth', { state: { message: `Please log in to ${action}` } });
+  const handleProtectedAction = () => {
+    setShowAuthModal(true);
   };
 
   const handlePropertyClick = (property: any) => {
@@ -206,7 +208,7 @@ const GuestHome: React.FC = () => {
                   <img src={prop.image} alt={prop.title} className="group-hover-scale" />
                   <div className="prop-overlay-gradient"></div>
                   {prop.badge && <div className="prop-badge"><Star size={12} className="fill-star"/> {prop.badge}</div>}
-                  <button className="heart-btn" onClick={(e) => { e.stopPropagation(); handleProtectedAction('save properties'); }}>
+                  <button className="heart-btn" onClick={(e) => { e.stopPropagation(); handleProtectedAction(); }}>
                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                   </button>
                 </div>
@@ -287,7 +289,7 @@ const GuestHome: React.FC = () => {
                   <li><CheckCircle size={18} className="text-green"/> Build your digital rental resume</li>
                   <li><CheckCircle size={18} className="text-green"/> Automated rent reminders & receipts</li>
                 </ul>
-                <button className="btn-primary-pill mt-auto" onClick={() => navigate('/browse')}>Start Browsing</button>
+                <button className="btn-primary-pill mt-auto" onClick={() => setShowAuthModal(true)}>Start Browsing</button>
               </div>
             </div>
 
@@ -301,7 +303,7 @@ const GuestHome: React.FC = () => {
                   <li><CheckCircle size={18} className="text-blue"/> Auto-generated legal contracts</li>
                   <li><CheckCircle size={18} className="text-blue"/> Guaranteed on-time payouts</li>
                 </ul>
-                <button className="btn-outline-dark mt-auto" onClick={() => navigate('/auth')}>List Your Property</button>
+                <button className="btn-outline-dark mt-auto" onClick={() => setShowAuthModal(true)}>List Your Property</button>
               </div>
             </div>
           </div>
@@ -352,7 +354,7 @@ const GuestHome: React.FC = () => {
             <p>Join thousands of users on HOMI. Create your free account today.</p>
           </div>
           <div className="cta-actions relative-z">
-            <button className="btn-white-massive shadow-hover" onClick={() => navigate('/auth')}>Get Started Now</button>
+            <button className="btn-white-massive shadow-hover" onClick={() => setShowAuthModal(true)}>Get Started Now</button>
             <span className="cta-subtext">No credit card required to sign up.</span>
           </div>
         </div>
@@ -372,7 +374,7 @@ const GuestHome: React.FC = () => {
             <div className="footer-links">
               <h4>Platform</h4>
               <Link to="/browse">Browse Homes</Link>
-              <Link to="/auth">List a Property</Link>
+              <a href="#" className="footer-link-override" onClick={(e) => { e.preventDefault(); setShowAuthModal(true); }}>List a Property</a>
               <Link to="/pricing">Pricing</Link>
             </div>
             <div className="footer-links">
@@ -402,6 +404,9 @@ const GuestHome: React.FC = () => {
           isGuest={true} 
         />
       )}
+
+      {/* Reusable Auth Modal for Guests */}
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>
   );
 };
