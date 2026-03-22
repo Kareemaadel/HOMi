@@ -129,6 +129,23 @@ class AuthService {
     }
 
     /**
+     * Update user role
+     */
+    async updateRole(data: { role: string }): Promise<LoginResponse> {
+        const response = await apiClient.put<LoginResponse>('/auth/role', data);
+        
+        // Update localStorage with fresh data and tokens
+        if (response.data.accessToken) {
+            localStorage.setItem('accessToken', response.data.accessToken);
+            localStorage.setItem('refreshToken', response.data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            localStorage.setItem('profile', JSON.stringify(response.data.profile));
+        }
+        
+        return response.data;
+    }
+
+    /**
      * Request password reset
      */
     async forgotPassword(data: ForgotPasswordRequest): Promise<AuthSuccessResponse> {

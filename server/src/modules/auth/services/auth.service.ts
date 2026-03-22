@@ -20,6 +20,7 @@ import type {
     UpdateProfileRequest,
     EmailVerificationResponse,
     ChangePasswordRequest,
+    UpdateRoleRequest,
 } from '../interfaces/auth.interfaces.js';
 
 /**
@@ -661,6 +662,83 @@ export class AuthService {
 
             console.error('Profile update error:', error);
             throw new AuthError('Failed to update profile. Please try again.', 500, 'PROFILE_UPDATE_FAILED');
+        }
+    }
+
+    /**
+     * Update user role
+     * Allows users to change their role between TENANT and LANDLORD
+     */
+    async updateRole(
+        userId: string,
+        input: UpdateRoleRequest
+    ): Promise<LoginResponse> {
+        const transaction = await sequelize.transaction();
+
+        try {
+            // Find user and profile
+            const user = await User.findByPk(userId, {
+                include: [{ model: Profile, as: 'profile' }],
+                transaction,
+            });
+
+            if (!user) {
+                throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+            }
+
+            const profile = user.profile;
+            if (!profile) {
+                throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
+            }
+
+            // Update user role
+            await user.update({ role: input.role }, { transaction });
+
+            await transaction.commit();
+
+            // Return updated user and profile, with new tokens (since token embeds role)
+            const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
+
+            const userResponse: UserResponse = {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                isVerified: user.is_verified,
+                emailVerified: user.email_verified,
+                createdAt: user.created_at,
+            };
+
+            const profileResponse: ProfileResponse = {
+                id: profile.id,
+                userId: profile.user_id,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                phoneNumber: profile.phone_number,
+                bio: profile.bio ?? null,
+                avatarUrl: profile.avatar_url ?? null,
+                gender: profile.gender ?? null,
+                birthdate: profile.birthdate ? String(profile.birthdate) : null,
+                gamificationPoints: profile.gamification_points,
+                preferredBudgetMin: profile.preferred_budget_min ?? null,
+                preferredBudgetMax: profile.preferred_budget_max ?? null,
+                isVerificationComplete: profile.isVerificationComplete(),
+            };
+
+            return {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                user: userResponse,
+                profile: profileResponse,
+            };
+        } catch (error) {
+            await transaction.rollback();
+
+            if (error instanceof AuthError) {
+                throw error;
+            }
+
+            console.error('Role update error:', error);
+            throw new AuthError('Failed to update role. Please try again.', 500, 'ROLE_UPDATE_FAILED');
         }
     }
 
