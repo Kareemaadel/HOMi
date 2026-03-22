@@ -9,6 +9,7 @@ import type {
     GoogleLoginRequest,
     UpdateProfileRequest,
     ChangePasswordRequest,
+    UpdateRoleRequest,
 } from '../interfaces/auth.interfaces.js';
 
 /**
@@ -150,6 +151,27 @@ export class AuthController {
 
             const input = req.body as UpdateProfileRequest;
             const result = await authService.updateProfile(userId, input);
+
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /auth/role
+     * Update user's role
+     * Requires authentication
+     */
+    async updateRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+
+            const input = req.body as UpdateRoleRequest;
+            const result = await authService.updateRole(userId, input);
 
             res.status(200).json(result);
         } catch (error) {

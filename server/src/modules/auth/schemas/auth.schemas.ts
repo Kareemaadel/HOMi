@@ -243,6 +243,18 @@ export const ChangePasswordSchema = z.object({
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 
+/**
+ * Update Role Schema
+ * Validates role update request
+ */
+export const UpdateRoleSchema = z.object({
+    role: z.enum([UserRole.LANDLORD, UserRole.TENANT], {
+        message: 'Role must be LANDLORD or TENANT',
+    }),
+});
+
+export type UpdateRoleInput = z.infer<typeof UpdateRoleSchema>;
+
 export default {
     RegisterSchema,
     CompleteVerificationSchema,
@@ -254,4 +266,5 @@ export default {
     UpdateProfileSchema,
     VerifyEmailSchema,
     ChangePasswordSchema,
+    UpdateRoleSchema,
 };

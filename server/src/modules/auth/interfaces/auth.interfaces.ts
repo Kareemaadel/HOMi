@@ -185,3 +185,10 @@ export interface ChangePasswordRequest {
     currentPassword: string;
     newPassword: string;
 }
+
+/**
+ * Update Role Request DTO
+ */
+export interface UpdateRoleRequest {
+    role: 'TENANT' | 'LANDLORD';
+}

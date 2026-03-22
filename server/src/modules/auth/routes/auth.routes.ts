@@ -11,6 +11,7 @@ import {
     GoogleLoginSchema,
     UpdateProfileSchema,
     ChangePasswordSchema,
+    UpdateRoleSchema,
 } from '../schemas/auth.schemas.js';
 
 const router = Router();
@@ -448,6 +449,54 @@ router.put(
     protect,
     validate(UpdateProfileSchema),
     authController.updateProfile.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/role:
+ *   put:
+ *     summary: Update user role
+ *     description: |
+ *       Update the authenticated user's role (LANDLORD or TENANT).
+ *       Returns new JWT tokens embedded with the updated role.
+ *       
+ *       **Authentication Required**: This endpoint requires a valid JWT access token.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateRoleRequest'
+ *           example:
+ *             role: "LANDLORD"
+ *     responses:
+ *       200:
+ *         description: Role updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put(
+    '/role',
+    protect,
+    validate(UpdateRoleSchema),
+    authController.updateRole.bind(authController)
 );
 
 /**
