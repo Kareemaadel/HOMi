@@ -1,22 +1,23 @@
 // client/src/features/BrowseProperties/components/PropertyDetailModal.tsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+
 import { 
     FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, 
-    FaHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, 
+    FaHeart, FaShareAlt, FaCalendarAlt, 
     FaArrowRight, FaComment, FaSmokingBan, 
     FaPaw, FaVolumeMute, FaInfoCircle, FaWrench,
     FaShieldAlt, FaChair, FaUsers, FaRegCompass,
     FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 import ApplicationModal from './ApplicationModal';
+import AuthModal from '../../../components/global/AuthModal';
 import './PropertyDetailedModal.css';
 
 const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
-    const navigate = useNavigate();
     const [showApplication, setShowApplication] = useState(false);
     const [showGallery, setShowGallery] = useState(false);
     const [currentImgIdx, setCurrentImgIdx] = useState(0);
+    const [showAuthModal, setShowAuthModal] = useState(false);
     
     // Dynamic/Fallback Images
     const images = property.allImages || [
@@ -54,8 +55,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
 
     const handleApplyClick = () => {
         if (isGuest) {
-            onClose();
-            navigate('/auth', { state: { message: 'Please log in or register to apply for this property.' } });
+            setShowAuthModal(true);
         } else {
             setShowApplication(true);
         }
@@ -212,8 +212,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
                                 </div>
                                 <button className="chat-btn" onClick={() => {
                                     if (isGuest) {
-                                        onClose();
-                                        navigate('/auth', { state: { message: 'Please log in to chat with the owner.' } });
+                                        setShowAuthModal(true);
                                     }
                                 }}><FaComment /></button>
                             </div>
@@ -226,6 +225,9 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
                     </aside>
                 </div>
             </div>
+
+            {/* Auth Modal for Guests */}
+            {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
         </div>
     );
 };
