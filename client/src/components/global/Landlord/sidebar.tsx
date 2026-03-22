@@ -58,7 +58,7 @@ const Sidebar = () => {
       {/* 2. Navigation */}
       <nav className="sidebar-nav">
         <ul>
-          <li><a href="/" className={location.pathname === "/" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
+          <li><a href="/landlord-home" className={location.pathname === "/landlord-home" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
           <li><a href="/my-properties" className={location.pathname === "/my-properties" ? "active" : ""}><FaBuilding /> <span>My Properties</span></a></li>
           <li><a href="/rental-requests" className={location.pathname === "/rental-requests" ? "active" : ""}><FaInbox /> <span>Rental Requests</span></a></li>
           

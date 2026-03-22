@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import './Settings.css';
 import Header from '../../../components/global/header';
-import Sidebar from '../../../components/global/Landlord/sidebar';
+import LandlordSidebar from '../../../components/global/Landlord/sidebar';
+import TenantSidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import SettingsSidebar from '../components/SettingsSidebar';
 import { useNavigate } from 'react-router-dom';
@@ -112,6 +113,11 @@ const Settings: React.FC = () => {
         return <SignInRequired />;
     }
 
+    // Pick the correct sidebar based on the stored user role
+    const storedUser = localStorage.getItem('user');
+    const userRole = storedUser ? JSON.parse(storedUser).role : null;
+    const SidebarComponent = userRole === 'LANDLORD' ? LandlordSidebar : TenantSidebar;
+
     // Senior Approach: Component Mapping Object
     const tabComponents: Record<string, React.ReactNode> = {
         profile: <MyProfile />,
@@ -141,7 +147,7 @@ const Settings: React.FC = () => {
 
     return (
         <div className="settings-layout">
-            <Sidebar />
+            <SidebarComponent />
             
             <div className="settings-viewport">
                 <Header />
