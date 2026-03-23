@@ -8,7 +8,7 @@ import {
     CreditCard, FileSearch, Download, Plus, CheckCircle2, 
     Clock, ArrowUpRight, Wallet, Receipt, ShieldCheck,
     TrendingUp, ExternalLink, MoreVertical, MapPin, Loader2, X,
-    Landmark
+    Landmark, ToggleLeft, ToggleRight, SearchX, CalendarX
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
@@ -30,6 +30,9 @@ const TenantPayment: React.FC = () => {
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const location = useLocation();
 
+    // DEV TOGGLE: Switch between empty and populated states
+    const [hasData, setHasData] = useState(true);
+
     // --- EFFECTS ---
     useEffect(() => {
         if (location.state?.tab) {
@@ -45,6 +48,7 @@ const TenantPayment: React.FC = () => {
             setIsProcessing(false);
             setCheckoutData(null); // Return to dashboard
             setShowSuccessToast(true);
+            setHasData(true); // Automatically switch to "populated" state on successful payment!
             setActiveTab('history'); // Move them to history to see the record
             
             // Auto-hide toast after 5 seconds
@@ -71,13 +75,19 @@ const TenantPayment: React.FC = () => {
                         <section className="checkout-section">
                             <h3>1. Select Payment Method</h3>
                             <div className="method-selector-mini">
-                                <div className="mini-card selected">
-                                    <div className="card-brand-info">
-                                        <CreditCard size={18} />
-                                        <span>Visa ending in 4242</span>
+                                {hasData ? (
+                                    <div className="mini-card selected">
+                                        <div className="card-brand-info">
+                                            <CreditCard size={18} />
+                                            <span>Visa ending in 4242</span>
+                                        </div>
+                                        <CheckCircle2 size={16} className="text-success" />
                                     </div>
-                                    <CheckCircle2 size={16} className="text-success" />
-                                </div>
+                                ) : (
+                                    <div className="empty-method-prompt text-muted" style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', marginBottom: '12px' }}>
+                                        No payment methods saved.
+                                    </div>
+                                )}
                                 <button className="add-new-mini" onClick={() => setIsModalOpen(true)}>
                                     <Plus size={16} /> Add New Method
                                 </button>
@@ -143,30 +153,34 @@ const TenantPayment: React.FC = () => {
         <div className="tab-viewport animate-fade-up">
             <div className="stats-mosaic">
                 <div className="stat-card-featured">
-                    <div className="card-glass-overlay"></div>
+                    {hasData && <div className="card-glass-overlay"></div>}
                     <div className="card-content">
                         <div className="icon-wrap-blur"><Wallet size={20} /></div>
                         <label>Current Balance</label>
                         <div className="amount-row">
-                            <h2>$120.00</h2>
-                            <span className="mini-badge">Utilities</span>
+                            <h2>{hasData ? "$120.00" : "$0.00"}</h2>
+                            {hasData && <span className="mini-badge">Utilities</span>}
                         </div>
-                        <p className="card-footer-text">Auto-pay scheduled for April 15</p>
+                        <p className={`card-footer-text ${!hasData ? 'opacity-70' : ''}`}>
+                            {hasData ? "Auto-pay scheduled for April 15" : "No outstanding balances"}
+                        </p>
                     </div>
                 </div>
 
                 <div className="stat-card-white">
                     <div className="card-header-row">
                         <label>Next Rent</label>
-                        <TrendingUp size={16} className="text-success" />
+                        <TrendingUp size={16} className={hasData ? "text-success" : "text-muted"} />
                     </div>
                     <div className="flex-baseline">
-                        <h3>$800.00</h3>
+                        <h3 className={!hasData ? "text-muted" : ""}>{hasData ? "$800.00" : "$0.00"}</h3>
                         <span className="sub-label">/mo</span>
                     </div>
                     <div className="due-indicator">
-                        <div className="pulse-dot"></div>
-                        <span>Due in 12 days (May 01)</span>
+                        {hasData && <div className="pulse-dot"></div>}
+                        <span className={!hasData ? "text-muted" : ""}>
+                            {hasData ? "Due in 12 days (May 01)" : "No active lease"}
+                        </span>
                     </div>
                 </div>
 
@@ -175,137 +189,172 @@ const TenantPayment: React.FC = () => {
                         <label>Annual Spend</label>
                         <Receipt size={16} className="text-slate" />
                     </div>
-                    <h3>$3,200.00</h3>
-                    <p className="sub-label-sm">4 successful payments in 2024</p>
+                    <h3 className={!hasData ? "text-muted" : ""}>{hasData ? "$3,200.00" : "$0.00"}</h3>
+                    <p className="sub-label-sm">{hasData ? "4 successful payments in 2024" : "No payments made yet"}</p>
                 </div>
             </div>
 
-            <div className="stripe-style-banner">
+            <div className={`stripe-style-banner ${!hasData ? 'inactive-banner' : ''}`}>
                 <div className="banner-left">
-                    <div className="banner-icon"><ShieldCheck size={24} /></div>
+                    <div className="banner-icon">
+                        {hasData ? <ShieldCheck size={24} /> : <FileSearch size={24} />}
+                    </div>
                     <div className="banner-copy">
-                        <h4>Payment protection is active</h4>
-                        <p>Your transactions are encrypted and monitored for your security.</p>
+                        <h4>{hasData ? "Payment protection is active" : "Looking for a place?"}</h4>
+                        <p>{hasData 
+                            ? "Your transactions are encrypted and monitored for your security." 
+                            : "Browse properties and submit applications to get started."}
+                        </p>
                     </div>
                 </div>
-                <button className="btn-vercel-black" onClick={() => setActiveTab('upcoming')}>
-                    Pay Now! <ArrowUpRight size={16} />
-                </button>
+                {hasData ? (
+                    <button className="btn-vercel-black" onClick={() => setActiveTab('upcoming')}>
+                        Pay Now! <ArrowUpRight size={16} />
+                    </button>
+                ) : (
+                    <button className="btn-vercel-black" style={{ background: '#334155' }}>
+                        Find Properties
+                    </button>
+                )}
             </div>
         </div>
     );
 
     const renderUpcoming = () => (
         <div className="tab-viewport animate-fade-up">
-            <div className="list-container">
-                {[
-                    { title: 'May 2024 Rent', date: 'May 01', amount: 800, status: 'Active' },
-                    { title: 'June 2024 Rent', date: 'Jun 01', amount: 800, status: 'Scheduled' },
-                    { title: 'July 2024 Rent', date: 'Jul 01', amount: 800, status: 'Scheduled' },
-                ].map((item, i) => (
-                    <div className="list-row" key={i}>
-                        <div className="row-main">
-                            <div className="calendar-box">
-                                <span className="month">{item.date.split(' ')[0]}</span>
-                                <span className="day">{item.date.split(' ')[1]}</span>
+            {hasData ? (
+                <div className="list-container">
+                    {[
+                        { title: 'May 2024 Rent', date: 'May 01', amount: 800, status: 'Active' },
+                        { title: 'June 2024 Rent', date: 'Jun 01', amount: 800, status: 'Scheduled' },
+                        { title: 'July 2024 Rent', date: 'Jul 01', amount: 800, status: 'Scheduled' },
+                    ].map((item, i) => (
+                        <div className="list-row" key={i}>
+                            <div className="row-main">
+                                <div className="calendar-box">
+                                    <span className="month">{item.date.split(' ')[0]}</span>
+                                    <span className="day">{item.date.split(' ')[1]}</span>
+                                </div>
+                                <div className="row-text">
+                                    <h5>{item.title}</h5>
+                                    <p>{item.status === 'Active' ? 'Awaiting payment' : 'Automatic payment scheduled'}</p>
+                                </div>
                             </div>
-                            <div className="row-text">
-                                <h5>{item.title}</h5>
-                                <p>{item.status === 'Active' ? 'Awaiting payment' : 'Automatic payment scheduled'}</p>
+                            <div className="row-actions">
+                                <span className="row-amount">${item.amount}</span>
+                                <button 
+                                    className={item.status === 'Active' ? 'btn-pay-now' : 'btn-manage-ghost'}
+                                    onClick={item.status === 'Active' ? () => setCheckoutData({ 
+                                        name: item.title, 
+                                        price: item.amount, 
+                                        location: 'Current Rental' 
+                                    }) : undefined}
+                                >
+                                    {item.status === 'Active' ? 'Pay Now' : 'Manage'}
+                                </button>
                             </div>
                         </div>
-                        <div className="row-actions">
-                            <span className="row-amount">${item.amount}</span>
-                            <button 
-                                className={item.status === 'Active' ? 'btn-pay-now' : 'btn-manage-ghost'}
-                                onClick={item.status === 'Active' ? () => setCheckoutData({ 
-                                    name: item.title, 
-                                    price: item.amount, 
-                                    location: 'Current Rental' 
-                                }) : undefined}
-                            >
-                                {item.status === 'Active' ? 'Pay Now' : 'Manage'}
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="empty-state">
+                    <div className="empty-icon"><CalendarX size={32} /></div>
+                    <h4>No Upcoming Payments</h4>
+                    <p>You don't have any upcoming rent or utility payments scheduled. Once your lease begins, they will appear here.</p>
+                </div>
+            )}
         </div>
     );
 
     const renderHistory = () => (
         <div className="tab-viewport animate-fade-up">
-            <div className="table-wrapper">
-                <table className="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Reference</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {[
-                            { date: 'Apr 01, 2024', ref: 'Sunset Loft - April Rent', amount: 800, status: 'Success' },
-                            { date: 'Mar 01, 2024', ref: 'Sunset Loft - March Rent', amount: 800, status: 'Success' },
-                        ].map((row, i) => (
-                            <tr key={i}>
-                                <td>{row.date}</td>
-                                <td className="font-medium">{row.ref}</td>
-                                <td>${row.amount}</td>
-                                <td><span className="pill success">{row.status}</span></td>
-                                <td className="text-right">
-                                    <button className="icon-btn"><Download size={16} /></button>
-                                </td>
+            {hasData ? (
+                <div className="table-wrapper">
+                    <table className="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reference</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th></th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {[
+                                { date: 'Apr 01, 2024', ref: 'Sunset Loft - April Rent', amount: 800, status: 'Success' },
+                                { date: 'Mar 01, 2024', ref: 'Sunset Loft - March Rent', amount: 800, status: 'Success' },
+                            ].map((row, i) => (
+                                <tr key={i}>
+                                    <td>{row.date}</td>
+                                    <td className="font-medium">{row.ref}</td>
+                                    <td>${row.amount}</td>
+                                    <td><span className="pill success">{row.status}</span></td>
+                                    <td className="text-right">
+                                        <button className="icon-btn"><Download size={16} /></button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="empty-state">
+                    <div className="empty-icon"><History size={32} /></div>
+                    <h4>No Payment History</h4>
+                    <p>You haven't made any payments on the platform yet. Past invoices and receipts will be stored securely here.</p>
+                </div>
+            )}
         </div>
     );
 
     const renderPending = () => (
         <div className="tab-viewport animate-fade-up">
-            <div className="grid-responsive">
-                {[
-                    { property: 'Azure Horizon Suite', status: 'Accepted', price: 1200, loc: 'Miami, FL' },
-                    { property: 'Urban Glass Tower', status: 'Pending', price: 950, loc: 'New York, NY' },
-                ].map((req, i) => (
-                    <div className="application-card-premium" key={i}>
-                        <div className="app-card-top">
-                            <span className={`status-tag ${req.status.toLowerCase()}`}>
-                                {req.status === 'Accepted' ? <CheckCircle2 size={12}/> : <Clock size={12}/>}
-                                {req.status}
-                            </span>
-                            <button className="icon-btn"><MoreVertical size={16}/></button>
-                        </div>
-                        <div className="app-card-body">
-                            <h4>{req.property}</h4>
-                            <p className="location-tag"><MapPin size={12}/> {req.loc}</p>
-                        </div>
-                        <div className="app-card-footer">
-                            <div className="price-group">
-                                <label>Offer</label>
-                                <span>${req.price}</span>
+            {hasData ? (
+                <div className="grid-responsive">
+                    {[
+                        { property: 'Azure Horizon Suite', status: 'Accepted', price: 1200, loc: 'Miami, FL' },
+                        { property: 'Urban Glass Tower', status: 'Pending', price: 950, loc: 'New York, NY' },
+                    ].map((req, i) => (
+                        <div className="application-card-premium" key={i}>
+                            <div className="app-card-top">
+                                <span className={`status-tag ${req.status.toLowerCase()}`}>
+                                    {req.status === 'Accepted' ? <CheckCircle2 size={12}/> : <Clock size={12}/>}
+                                    {req.status}
+                                </span>
+                                <button className="icon-btn"><MoreVertical size={16}/></button>
                             </div>
-                            <button 
-                                className="btn-app-action" 
-                                disabled={req.status !== 'Accepted'}
-                                onClick={() => setCheckoutData({ 
-                                    name: req.property, 
-                                    price: req.price, 
-                                    location: req.loc 
-                                })}
-                            >
-                                {req.status === 'Accepted' ? 'Proceed to Payment' : 'Under Review'}
-                            </button>
+                            <div className="app-card-body">
+                                <h4>{req.property}</h4>
+                                <p className="location-tag"><MapPin size={12}/> {req.loc}</p>
+                            </div>
+                            <div className="app-card-footer">
+                                <div className="price-group">
+                                    <label>Offer</label>
+                                    <span>${req.price}</span>
+                                </div>
+                                <button 
+                                    className="btn-app-action" 
+                                    disabled={req.status !== 'Accepted'}
+                                    onClick={() => setCheckoutData({ 
+                                        name: req.property, 
+                                        price: req.price, 
+                                        location: req.loc 
+                                    })}
+                                >
+                                    {req.status === 'Accepted' ? 'Proceed to Payment' : 'Under Review'}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="empty-state">
+                    <div className="empty-icon"><SearchX size={32} /></div>
+                    <h4>No Active Applications</h4>
+                    <p>You haven't submitted any rental offers. Pending offers and approved lease payments will appear here.</p>
+                </div>
+            )}
         </div>
     );
 
@@ -313,33 +362,48 @@ const TenantPayment: React.FC = () => {
         <div className="tab-viewport animate-fade-in">
             <div className="methods-viewport">
                 {/* Visual Card Section */}
-                <div className="card-visual bank-account">
-                    <div className="card-top-row">
-                        <span className="bank-logo">CHASE BUSINESS</span>
-                        <div className="chip-gold"></div>
+                {hasData ? (
+                    <div className="card-visual bank-account">
+                        <div className="card-top-row">
+                            <span className="bank-logo">CHASE BUSINESS</span>
+                            <div className="chip-gold"></div>
+                        </div>
+                        <div className="card-mid-row">
+                            <div className="iban-display">US76 •••• •••• 9901</div>
+                        </div>
+                        <div className="card-bottom-row">
+                            <span className="card-holder-label">Account Holder</span>
+                            <span className="card-holder-name">ALEX STERLING</span>
+                        </div>
                     </div>
-                    <div className="card-mid-row">
-                        <div className="iban-display">US76 •••• •••• 9901</div>
+                ) : (
+                    <div className="card-visual empty-card">
+                        <div className="empty-card-content">
+                            <CreditCard size={32} className="empty-card-icon" />
+                            <span>No Methods Added</span>
+                        </div>
                     </div>
-                    <div className="card-bottom-row">
-                        <span className="card-holder-label">Account Holder</span>
-                        <span className="card-holder-name">ALEX STERLING</span>
-                    </div>
-                </div>
+                )}
 
                 {/* List Section */}
                 <div className="methods-list-side">
-                    <div className="method-entry active">
-                        <div className="method-icon-wrap"><Landmark size={20}/></div>
-                        <div className="method-info-text">
-                            <h5>Chase Business Savings</h5>
-                            <p>Primary Payout Method</p>
+                    {hasData ? (
+                        <div className="method-entry active">
+                            <div className="method-icon-wrap"><Landmark size={20}/></div>
+                            <div className="method-info-text">
+                                <h5>Chase Business Savings</h5>
+                                <p>Primary Payout Method</p>
+                            </div>
+                            <CheckCircle2 size={18} className="ml-auto text-success" />
                         </div>
-                        <CheckCircle2 size={18} className="ml-auto text-success" />
-                    </div>
+                    ) : (
+                        <div className="empty-method-text" style={{ marginBottom: '20px', color: '#64748b' }}>
+                            <p>You haven't linked a payment method yet. Add a credit card or bank account to quickly pay for deposits and rent.</p>
+                        </div>
+                    )}
 
                     <button className="btn-add-method" onClick={() => setIsModalOpen(true)}>
-                        <Plus size={18} /> Add New Payout Method
+                        <Plus size={18} /> Add New Payment Method
                     </button>
                 </div>
             </div>
@@ -348,11 +412,31 @@ const TenantPayment: React.FC = () => {
 
     const renderRefunds = () => (
         <div className="tab-viewport animate-fade-up">
-            <div className="empty-state">
-                <div className="empty-icon"><Undo2 size={32} /></div>
-                <h4>No active refunds</h4>
-                <p>Refunds for security deposits or overpayments will appear here.</p>
-            </div>
+            {hasData ? (
+                <div className="list-container">
+                    <div className="list-row" style={{ borderLeft: '4px solid #f59e0b' }}>
+                        <div className="row-main">
+                            <div className="calendar-box" style={{ background: '#fef3c7', color: '#d97706' }}>
+                                <Undo2 size={24} />
+                            </div>
+                            <div className="row-text">
+                                <h5>Security Deposit Return</h5>
+                                <p>Processing back to Chase •••• 9901</p>
+                            </div>
+                        </div>
+                        <div className="row-actions">
+                            <span className="row-amount text-success">+$500.00</span>
+                            <span className="status-tag pending">Processing</span>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="empty-state">
+                    <div className="empty-icon"><Undo2 size={32} /></div>
+                    <h4>No active refunds</h4>
+                    <p>Refunds for security deposits or overpayments will appear here.</p>
+                </div>
+            )}
         </div>
     );
 
@@ -362,12 +446,21 @@ const TenantPayment: React.FC = () => {
             <div className="content-container">
                 <Header />
                 <main className="payment-hub">
-                    <header className="hub-header">
+                    <header className="hub-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div className="header-text">
                             <h1>{checkoutData ? 'Checkout' : 'Billing & Payments'}</h1>
                         </div>
-                        <div className="header-buttons">
+                        <div className="header-buttons" style={{ display: 'flex', gap: '12px' }}>
                             <button className="btn-ghost"><ExternalLink size={16}/> View Contracts</button>
+                            
+                            {/* DEV TOGGLE BUTTON
+                            <button 
+                                onClick={() => setHasData(!hasData)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#334155' }}
+                            >
+                                {hasData ? <ToggleRight size={20} className="text-success" /> : <ToggleLeft size={20} className="text-muted" />}
+                                Toggle Data State
+                            </button> */}
                         </div>
                     </header>
 
