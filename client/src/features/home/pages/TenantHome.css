@@ -279,3 +279,368 @@
   margin-top: 500px;
   
 }
+.empty-state-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+/* Hero CTA Banner */
+.hero-cta-card {
+  background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+  border-radius: 16px;
+  padding: 3rem 4rem;
+  color: white;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* Abstract Background Shapes */
+.hero-bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  z-index: 1;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  right: -50px;
+}
+
+.shape-2 {
+  width: 200px;
+  height: 200px;
+  bottom: -80px;
+  right: 250px;
+}
+
+.hero-cta-content {
+  position: relative;
+  z-index: 2;
+  max-width: 550px;
+}
+
+.hero-cta-content h2 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: white;
+  line-height: 1.2;
+}
+
+.hero-cta-content p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.btn-search-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: white;
+  color: var(--primary);
+  border: none;
+  padding: 1rem 1.75rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-search-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Floating Decorative Graphics */
+.hero-cta-graphics {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 250px;
+  padding-right: 2rem;
+}
+
+.floating-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-card.card-2 {
+  margin-left: -2rem; /* Offsets the second card for an overlapping look */
+  animation-delay: -3s;
+}
+
+.float-icon {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem;
+  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+}
+
+.float-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.line {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.line-short { width: 40%; }
+.line-long { width: 80%; }
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Make it stack cleanly on smaller screens */
+@media (max-width: 992px) {
+  .hero-cta-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem;
+  }
+  .hero-cta-graphics {
+    display: none; /* Hide graphics on small screens to save space */
+  }
+}
+.btn-search-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: white;
+  color: var(--primary);
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-search-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Onboarding Steps Grid */
+.section-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-main);
+  margin-bottom: -0.5rem;
+  font-weight: 600;
+}
+
+.onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.section-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-main);
+  margin-bottom: -0.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.onboarding-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  min-height: 280px; /* Removed 416px, lets content dictate size but keeps it unified */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.onboarding-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px -8px rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Faint Background Watermark Graphic */
+.card-bg-icon {
+  position: absolute;
+  bottom: -15px;
+  right: -15px;
+  color: var(--text-muted);
+  opacity: 0.04;
+  transform: rotate(-15deg);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.onboarding-card:hover .card-bg-icon {
+  transform: rotate(0deg) scale(1.1);
+  color: var(--primary);
+}
+
+/* Step Badge */
+.step-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.icon-wrapper.blue { background: #eff6ff; color: #3b82f6; }
+.icon-wrapper.green { background: #ecfdf5; color: #10b981; }
+.icon-wrapper.purple { background: #f5f3ff; color: #8b5cf6; }
+
+.onboarding-card h4 {
+  font-size: 1.15rem;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+}
+
+.onboarding-card p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Dynamic Text Link pushed to the bottom */
+.text-link {
+  margin-top: auto; /* Pushes the button to the absolute bottom of the card */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  background: none;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+}
+
+.text-link .arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.onboarding-card:hover .text-link {
+  text-decoration: underline;
+}
+
+.onboarding-card:hover .arrow-icon {
+  transform: translateX(5px);
+}
+
+.icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.icon-wrapper.blue { background: #eff6ff; color: #3b82f6; }
+.icon-wrapper.green { background: #ecfdf5; color: #10b981; }
+.icon-wrapper.purple { background: #f5f3ff; color: #8b5cf6; }
+
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--primary);
+  background: none;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+/* Fade In Animation */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsiveness for Empty State */
+@media (max-width: 992px) {
+  .onboarding-grid { grid-template-columns: 1fr; }
+}
