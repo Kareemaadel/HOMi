@@ -7,17 +7,21 @@ import {
     FaArrowRight, FaComment, FaSmokingBan, 
     FaPaw, FaVolumeMute, FaInfoCircle, FaWrench,
     FaShieldAlt, FaChair, FaUsers, FaRegCompass,
-    FaChevronLeft, FaChevronRight
+    FaChevronLeft, FaChevronRight, FaCheckCircle
 } from 'react-icons/fa';
 import ApplicationModal from './ApplicationModal';
 import AuthModal from '../../../components/global/AuthModal';
 import './PropertyDetailedModal.css';
 
-const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
+const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequestView = false }: any) => {
     const [showApplication, setShowApplication] = useState(false);
     const [showGallery, setShowGallery] = useState(false);
     const [currentImgIdx, setCurrentImgIdx] = useState(0);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    
+    // Cancel Request States
+    const [showCancelPrompt, setShowCancelPrompt] = useState(false);
+    const [showCancelSuccess, setShowCancelSuccess] = useState(false);
     
     // Dynamic/Fallback Images
     const images = property.allImages || [
@@ -35,7 +39,6 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
         { icon: <FaUsers />, text: property.targetTenant || 'Any Tenant', active: true },
     ];
 
-    // Fallback data if property object doesn't have maintenance defined yet
     const maintenance = property.maintenance || {
         structural: 'Landlord', appliances: 'Tenant', utilities: 'Tenant',
         plumbing: 'Landlord', electrical: 'Landlord', hvac: 'Landlord',
@@ -61,8 +64,19 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
         }
     };
 
+    const handleCancelYes = () => {
+        setShowCancelPrompt(false);
+        setShowCancelSuccess(true);
+    };
+
     if (showApplication) {
-        return <ApplicationModal property={property} onClose={onClose} onBack={() => setShowApplication(false)} />;
+        // If it's the sent request view, open application as Read-Only
+        return <ApplicationModal 
+            property={property} 
+            onClose={onClose} 
+            onBack={() => setShowApplication(false)} 
+            isReadOnly={isSentRequestView} 
+        />;
     }
 
     return (
@@ -160,7 +174,6 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
                                 </div>
                             </section>
 
-                            {/* MAINTENANCE RESPONSIBILITIES (VIEW ONLY & SCROLLABLE) */}
                             <section className="maintenance-box">
                                 <h3 className="section-h3" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '32px', marginBottom: '16px' }}>
                                     <FaWrench style={{ color: '#64748b'}} /> Maintenance Responsibilities
@@ -169,7 +182,6 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
                                     {Object.entries(maintenance).map(([key, value]) => (
                                         <div className="resp-row" key={key}>
                                             <span>{maintenanceDisplayNames[key]}</span>
-                                            {/* Adds the 'landlord' or 'tenant' class dynamically based on the value */}
                                             <span className={`owner-badge ${String(value).toLowerCase()}`}>
                                                 {String(value)}
                                             </span>
@@ -177,7 +189,6 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
                                     ))}
                                 </div>
                             </section>
-
                         </div>
                     </div>
 
@@ -194,10 +205,37 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
                                 </div>
                             </div>
 
-                            <button className="primary-cta-btn" onClick={handleApplyClick}>
-                                {isGuest ? 'Register to Apply' : 'Start Application'} <FaArrowRight />
-                            </button>
-                            <p className="cta-subtext">Verified secure application process</p>
+                            {/* CONDITIONAL ACTION BUTTONS */}
+                            {isSentRequestView ? (
+                                <div className="sent-request-actions" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <button className="primary-cta-btn" style={{ backgroundColor: '#22c55e', cursor: 'default' }} disabled>
+                                        <FaCheckCircle /> Request Sent
+                                    </button>
+                                    <div className="sent-request-actions" style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            className="sec-btn" 
+                                            style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                                            onClick={() => setShowApplication(true)}
+                                        >
+                                            Review Application
+                                        </button>
+                                        <button 
+                                            className="sec-btn" 
+                                            style={{ flex: 1, padding: '8px', fontSize: '0.8rem', color: '#ef4444', borderColor: '#ef4444' }}
+                                            onClick={() => setShowCancelPrompt(true)}
+                                        >
+                                            Cancel Request
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <button className="primary-cta-btn" onClick={handleApplyClick}>
+                                        {isGuest ? 'Register to Apply' : 'Start Application'} <FaArrowRight />
+                                    </button>
+                                    <p className="cta-subtext">Verified secure application process</p>
+                                </>
+                            )}
 
                             <div className="sidebar-divider"></div>
 
@@ -211,9 +249,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
                                     <span className="role">Verified Owner • 4.9★</span>
                                 </div>
                                 <button className="chat-btn" onClick={() => {
-                                    if (isGuest) {
-                                        setShowAuthModal(true);
-                                    }
+                                    if (isGuest) setShowAuthModal(true);
                                 }}><FaComment /></button>
                             </div>
 
@@ -228,6 +264,30 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false }: any) => {
 
             {/* Auth Modal for Guests */}
             {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+
+            {/* Cancel Confirmation Prompt */}
+            {showCancelPrompt && (
+                <div className="mini-modal-overlay" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="mini-modal" style={{ background: 'white', padding: '24px', borderRadius: '12px', width: '300px', textAlign: 'center' }}>
+                        <p style={{ marginBottom: '20px', fontWeight: 'bold' }}>Cancel rental request for "{property.title}"?</p>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                            <button onClick={handleCancelYes} style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Yes</button>
+                            <button onClick={() => setShowCancelPrompt(false)} style={{ padding: '8px 16px', background: '#e2e8f0', color: '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>No</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Success Message */}
+            {showCancelSuccess && (
+                <div className="mini-modal-overlay" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="mini-modal" style={{ background: 'white', padding: '24px', borderRadius: '12px', width: '300px', textAlign: 'center' }}>
+                        <FaCheckCircle style={{ color: '#22c55e', fontSize: '2rem', marginBottom: '10px' }} />
+                        <p style={{ marginBottom: '20px', fontWeight: 'bold' }}>Request cancelled successfully.</p>
+                        <button onClick={onClose} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '100%' }}>Back to Properties</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

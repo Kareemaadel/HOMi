@@ -26,6 +26,7 @@ import LandlordContract from "./features/LandlordContractView/pages/Contract";
 import GuestHome from "./features/Guest/pages/GuestHome";
 import GuestSearch from "./features/Guest/pages/GuestSearch";
 import AuthGuard from "./components/global/AuthGuard";
+import SentRequests from "./features/SentRequests/pages/SentRequests";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
         <Route path="/actives"       element={<AuthGuard><MyActives /></AuthGuard>} />
         <Route path="/tenant-payment" element={<AuthGuard><TenantPayment /></AuthGuard>} />
         <Route path="/tenant-contracts" element={<AuthGuard><Contract /></AuthGuard>} />
+        <Route path="/sent-requests" element={<AuthGuard><SentRequests /></AuthGuard>} />
 
         {/* Landlord Routes — protected */}
         <Route path="/landlord-home" element={<AuthGuard><LandlordHome /></AuthGuard>} />

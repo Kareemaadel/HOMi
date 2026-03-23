@@ -430,3 +430,10 @@
     border-bottom-color: transparent;
     transition: all 0.3s ease;
 }
+.sent-request-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
