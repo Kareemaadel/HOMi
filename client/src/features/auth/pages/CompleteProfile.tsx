@@ -70,6 +70,8 @@ const CompleteProfile: React.FC = () => {
         try {
             if (alreadyLoggedIn) {
                 // User is already registered — no need to call register again.
+                // Update their role in the backend
+                await authService.updateRole({ role: role.toUpperCase() });
                 // Just advance to the next step (role-specific preferences).
                 nextStep();
                 return;

@@ -20,7 +20,9 @@ export const GoogleLoginBtn = () => {
 
                 console.log('✅ Google Login successful!', response);
 
-                if (response.user.role === 'TENANT') {
+                if (!response.profile.isVerificationComplete) {
+                    navigate('/complete-profile');
+                } else if (response.user.role === 'TENANT') {
                     navigate('/', { state: { next: '/tenant-home', force: true } });
                 } else if (response.user.role === 'LANDLORD') {
                     navigate('/', { state: { next: '/landlord-home', force: true } });
