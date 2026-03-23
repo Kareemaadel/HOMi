@@ -13,7 +13,7 @@
     right: -5%;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+    background: white;
     z-index: 0;
     pointer-events: none;
 }
@@ -30,7 +30,7 @@
 .saved-header-section h1 {
     font-size: 2.2rem;
     font-weight: 800;
-    color: #0f172a;
+    color: #ffffff;
     margin-bottom: 8px;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .count-badge {
-    background: #eff6ff;
+    background: white;
     color: #3b82f6;
     padding: 8px 16px;
     border-radius: 12px;
@@ -60,28 +60,61 @@
 
 .empty-saved-state {
     text-align: center;
-    padding: 100px 0;
+    padding: 60px 0; /* Reduced slightly from 100px to accommodate the larger video */
     color: #94a3b8;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* New Styling for the Custom Video */
+.empty-state-video {
+    width: 280px; /* Adjust this width based on your video's aspect ratio */
+    max-width: 100%;
+    height: auto;
+    border-radius: 20px; /* Gives the video soft edges */
+    margin-bottom: 1.5rem;
+    pointer-events: none; /* Prevents users from clicking/pausing the video */
+    /* Optional: Add a soft shadow if it fits the aesthetic */
+    /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); */
+}
+
+.empty-saved-state h3 {
+    font-size: 1.5rem;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+}
+
+.btn-browse {
+    margin-top: 1.5rem;
+    background: white;
+    color: #0f172a;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-browse:hover {
+    background: #f1f5f9;
 }
 
 /* Update to PropertyCard wishlist button to handle red state */
 .wishlist-btn.active {
     color: #ef4444;
-    background: #fff1f2;
+    background: white;
 }
 
 .wishlist-btn.active svg {
     fill: #ef4444;
 }
 
-@media (max-width: 768px) {
-    .saved-content { padding: 1.5rem; }
-    .saved-header-section { flex-direction: column; align-items: flex-start; gap: 1rem; }
-    .saved-properties-grid { grid-template-columns: 1fr; }
-}
-
 /* --- Business Layout Enhancements --- */
-
 .kicker {
     display: block;
     color: #3b82f6;
@@ -128,7 +161,7 @@
 }
 
 .btn-clear-all {
-    background: #fff1f2;
+    background: white;
     color: #ef4444;
     border: none;
     width: 40px;
@@ -142,13 +175,13 @@
 }
 
 .btn-clear-all:hover {
-    background: #ef4444;
-    color: white;
+    background: #f1f5f9;
+    color: #ef4444;
 }
 
 .market-insight-alert {
-    background: linear-gradient(90deg, #0f172a, #1e293b);
-    color: white;
+    background: white;
+    color: #0f172a;
     padding: 16px 24px;
     border-radius: 20px;
     display: flex;
@@ -157,11 +190,13 @@
     margin-top: 10px;
     position: relative;
     z-index: 1;
-    width: 1200px;
+    max-width: 800px;
+    width: 100%;
+    border: 1px solid #e2e8f0;
 }
 
 .insight-icon {
-    background: rgba(59, 130, 246, 0.2);
+    background: white;
     color: #3b82f6;
     width: 40px;
     height: 40px;
@@ -169,18 +204,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid #e2e8f0;
 }
 
 .insight-text {
     flex: 1;
     font-size: 0.9rem;
-    opacity: 0.9;
+    opacity: 1;
+    color: #0f172a;
 }
 
 .insight-cta {
-    background: #3b82f6;
-    color: white;
-    border: none;
+    background: white;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
     padding: 8px 18px;
     border-radius: 10px;
     font-weight: 600;
@@ -190,26 +228,17 @@
     align-items: center;
     gap: 8px;
     transition: 0.3s;
+    white-space: nowrap;
 }
 
 .insight-cta:hover {
-    background: #2563eb;
+    background: #eff6ff;
     transform: translateX(4px);
 }
 
-/* Empty State Styling */
-.empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.btn-browse {
-    margin-top: 1.5rem;
-    background: #0f172a;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
+@media (max-width: 768px) {
+    .saved-content { padding: 1.5rem; background: white;}
+    .saved-header-section { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .market-insight-alert { flex-direction: column; align-items: flex-start; }
+    .saved-properties-grid { grid-template-columns: 1fr; }
 }
