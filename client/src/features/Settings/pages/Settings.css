@@ -2,7 +2,7 @@
 .settings-layout {
     display: flex;
     background-color: #f8fafc;
-    min-height: 100vh;
+    height: 120vh;
 }
 
 .settings-viewport {
@@ -10,6 +10,7 @@
     margin-left: var(--sidebar-width); /* Respects your Sidebar.css variable */
     display: flex;
     flex-direction: column;
+    height: 900px
 }
 
 .settings-main-area {
@@ -45,7 +46,7 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.05);
     border: 1px solid #eef2f6;
     overflow: hidden;
-    height: 750px;
+    height: 900px;
     width: 1770px;
 }
 
@@ -115,11 +116,10 @@
 .settings-glass-card {
     display: grid;
     grid-template-columns: 280px 1fr; /* Sidebar | Content */
-    height: 80vh; /* Or a fixed px height like 750px */
-    min-height: 600px;
+    height: 93vh; /* Or a fixed px height like 750px */
     overflow: hidden; /* CRITICAL: Prevents children from growing the card */
     background: #fff;
-    border-radius: 20px;
+    margin-bottom: -41px;
 }
 
 /* Ensure the sidebar stays exactly the height of the card */
