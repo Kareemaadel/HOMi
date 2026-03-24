@@ -62,8 +62,7 @@ const MyActives: React.FC = () => {
                         </div>
                     ) : (
                         <div className="empty-state-container">
-                            <Home size={48} className="empty-state-icon" />
-                            <h3 className="empty-state-title">No Active Rentals</h3>
+<Home size={56} className="empty-state-icon" />                            <h3 className="empty-state-title">No Active Rentals</h3>
                             <p className="empty-state-text">
                                 You don't have any active leases at the moment. Check the status of your submitted applications to see if you've been approved!
                             </p>

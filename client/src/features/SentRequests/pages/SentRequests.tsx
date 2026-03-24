@@ -1,5 +1,7 @@
 // client/src/features/SentRequests/pages/SentRequests.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Inbox } from 'lucide-react';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
@@ -40,7 +42,16 @@ const MOCK_SENT_REQUESTS = [
 ];
 
 const SentRequests = () => {
+    // Hooks for routing and state
+    const navigate = useNavigate();
+    
+    // DEV TOGGLE: Set to true to see mock requests, or false to see the empty state.
+    const [hasData, setHasData] = useState(false);
+    
     const [selectedProperty, setSelectedProperty] = useState<any>(null);
+
+    // Conditionally load requests based on hasData state
+    const currentRequests = hasData ? MOCK_SENT_REQUESTS : [];
 
     return (
         <div className="sent-requests-layout">
@@ -55,30 +66,48 @@ const SentRequests = () => {
                         <p>Track and manage the status of your rental applications.</p>
                     </div>
 
-                    <div className="requests-grid">
-                        {MOCK_SENT_REQUESTS.map(property => (
-                            <div 
-                                key={property.id} 
-                                className="request-card" 
-                                onClick={() => setSelectedProperty(property)}
-                            >
-                                <div className="request-card-image-wrapper">
-                                    <img src={property.image} alt={property.title} />
-                                    <span className={`status-badge ${property.status.toLowerCase()}`}>
-                                        {property.status}
-                                    </span>
-                                </div>
-                                <div className="request-card-info">
-                                    <h3>{property.title}</h3>
-                                    <p className="request-address">{property.address}</p>
-                                    <div className="request-card-footer">
-                                        <span className="request-price">${property.price.toLocaleString()}<span>/mo</span></span>
-                                        <button className="view-details-btn">View Request</button>
+                    {hasData ? (
+                        <div className="requests-grid">
+                            {currentRequests.map(property => (
+                                <div 
+                                    key={property.id} 
+                                    className="request-card" 
+                                    onClick={() => setSelectedProperty(property)}
+                                >
+                                    <div className="request-card-image-wrapper">
+                                        <img src={property.image} alt={property.title} />
+                                        <span className={`status-badge ${property.status.toLowerCase()}`}>
+                                            {property.status}
+                                        </span>
+                                    </div>
+                                    <div className="request-card-info">
+                                        <h3>{property.title}</h3>
+                                        <p className="request-address">{property.address}</p>
+                                        <div className="request-card-footer">
+                                            <span className="request-price">${property.price.toLocaleString()}<span>/mo</span></span>
+                                            <button className="view-details-btn">View Request</button>
+                                        </div>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="sent-empty-state-container">
+                            <div className="sent-empty-icon-wrapper">
+                                <Inbox size={56} className="sent-empty-icon" />
                             </div>
-                        ))}
-                    </div>
+                            <h3 className="sent-empty-title">No Requests Sent Yet</h3>
+                            <p className="sent-empty-text">
+                                You haven't applied to any properties. Start exploring available rentals and find your perfect home today!
+                            </p>
+                            <button 
+                                className="btn-browse-action"
+                                onClick={() => navigate('/browse-properties')}
+                            >
+                                Browse Properties
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

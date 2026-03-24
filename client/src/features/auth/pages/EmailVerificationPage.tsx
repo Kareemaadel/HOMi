@@ -54,9 +54,7 @@ const EmailVerificationPage: React.FC = () => {
         <div className="email-verify-wrapper">
             <div className="email-verify-card">
                 {/* Icon */}
-                <div className="ev-icon-ring">
-                    <Mail />
-                </div>
+                <img src="/logo.png" alt="HOMi logo" className="ev-logo-image" />
 
                 <h1>Check your inbox</h1>
                 <p className="subtitle">We sent a verification link to</p>
