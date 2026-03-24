@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Home } from 'lucide-react';
 import './MyActives.css';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
@@ -6,8 +8,14 @@ import Footer from '../../../components/global/footer';
 import RentedPropertyCard from '../components/RentedPropertyCard';
 
 const MyActives: React.FC = () => {
-    // Mocking a list of properties (In reality, this comes from an API/Hook)
-    const activeRentals = [
+    // Hooks for routing and state
+    const navigate = useNavigate();
+    
+    // DEV TOGGLE: Change to true or false to test both views.
+    const [hasData, setHasData] = useState(false);
+
+    // Mocking a list of properties
+    const mockRentals = [
         {
             id: "1",
             title: "Azure Horizon Suite",
@@ -26,6 +34,9 @@ const MyActives: React.FC = () => {
         }
     ];
 
+    // Conditionally load rentals based on our hasData state
+    const activeRentals = hasData ? mockRentals : [];
+
     return (
         <div className="layout-wrapper">
             <Sidebar />
@@ -39,15 +50,31 @@ const MyActives: React.FC = () => {
                         </div>
                         <div className="stats-mini-grid">
                             <div className="stat-pill"><strong>{activeRentals.length}</strong> Properties</div>
-                            <div className="stat-pill"><strong>1</strong> Pending Maintenance</div>
+                            <div className="stat-pill"><strong>{hasData ? "1" : "0"}</strong> Pending Maintenance</div>
                         </div>
                     </div>
 
-                    <div className="rentals-grid">
-                        {activeRentals.map(property => (
-                            <RentedPropertyCard key={property.id} property={property} />
-                        ))}
-                    </div>
+                    {hasData ? (
+                        <div className="rentals-grid">
+                            {activeRentals.map(property => (
+                                <RentedPropertyCard key={property.id} property={property} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="empty-state-container">
+                            <Home size={48} className="empty-state-icon" />
+                            <h3 className="empty-state-title">No Active Rentals</h3>
+                            <p className="empty-state-text">
+                                You don't have any active leases at the moment. Check the status of your submitted applications to see if you've been approved!
+                            </p>
+                            <button 
+                                className="btn-empty-state"
+                                onClick={() => navigate('/sent-requests')}
+                            >
+                                View your rent requests
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <Footer />
             </div>

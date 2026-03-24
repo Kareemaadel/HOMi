@@ -73,3 +73,49 @@
         grid-template-columns: 1fr;
     }
 }
+/* --- Empty State Styles --- */
+.empty-state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+    margin-top: 2rem;
+}
+
+.empty-state-icon {
+    color: #94a3b8;
+    margin-bottom: 16px;
+}
+
+.empty-state-title {
+    margin: 0 0 8px 0;
+    color: #334155;
+    font-size: 1.25rem;
+}
+
+.empty-state-text {
+    margin: 0 0 24px 0;
+    color: #64748b;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.btn-empty-state {
+    padding: 10px 20px;
+    background: #0f172a;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.btn-empty-state:hover {
+    background: #1e293b;
+}
