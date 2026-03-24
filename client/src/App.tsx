@@ -27,6 +27,7 @@ import GuestHome from "./features/Guest/pages/GuestHome";
 import GuestSearch from "./features/Guest/pages/GuestSearch";
 import AuthGuard from "./components/global/AuthGuard";
 import SentRequests from "./features/SentRequests/pages/SentRequests";
+import PageNotFound from "./features/PageNotFound/pages/PageNotFound";
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
         <Route path="/messages"  element={<AuthGuard><Messages /></AuthGuard>} />
         <Route path="/about-us"  element={<AboutUs />} />
         <Route path="/get-help"  element={<GetHelp />} />
+        <Route path="/not-found"  element={<PageNotFound />} />
 
         {/* Guest Routes — public */}
         <Route path="/guest-home"   element={<GuestHome />} />

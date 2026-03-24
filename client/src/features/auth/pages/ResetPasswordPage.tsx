@@ -1,7 +1,10 @@
+// client/src/features/auth/pages/ResetPasswordPage.tsx
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import axios from 'axios'; // Added axios import to fix your existing type error
 import { authService } from '../../../services/auth.service';
+import './ResetPasswordPage.css'; // Importing our new custom CSS
 
 const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -66,15 +69,13 @@ const ResetPasswordPage: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-8">
-        <div className="w-full max-w-[400px] text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center">
-              <CheckCircle2 size={40} className="text-green-400" />
-            </div>
+      <div className="reset-auth-wrapper">
+        <div className="reset-auth-card text-center">
+          <div className="reset-success-icon-wrapper">
+            <CheckCircle2 size={48} className="reset-success-icon" />
           </div>
-          <h2 className="text-[28px] font-bold text-white mb-4">Password Reset!</h2>
-          <p className="text-gray-400 text-[15px] mb-8">
+          <h2 className="reset-title">Password Reset!</h2>
+          <p className="reset-subtitle">
             Your password has been successfully reset. Redirecting to login...
           </p>
         </div>
@@ -83,33 +84,24 @@ const ResetPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-8">
-      <div className="w-full max-w-[400px]">
-        <div className="mb-10">
-          <h2 className="text-[28px] font-bold text-white mb-4">Reset Password</h2>
-          <p className="text-gray-400 text-[15px]">
-            Enter your new password below
-          </p>
+    <div className="reset-auth-wrapper">
+      <div className="reset-auth-card">
+        <div className="reset-header">
+          <h2 className="reset-title">Reset Password</h2>
+          <p className="reset-subtitle">Enter your new password below</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="reset-form">
           {error && (
-            <div style={{ 
-              padding: '12px', 
-              backgroundColor: '#fee', 
-              color: '#c00', 
-              borderRadius: '4px',
-              marginBottom: '16px',
-              fontSize: '14px',
-            }}>
+            <div className="reset-error-banner">
               {error}
             </div>
           )}
 
-          <div className="mb-6">
-            <label className="block text-gray-400 text-[14px] mb-3">New Password</label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+          <div className="reset-input-group">
+            <label>New Password</label>
+            <div className="reset-input-wrapper">
+              <div className="reset-input-icon left">
                 <Lock size={20} />
               </div>
               <input
@@ -118,26 +110,23 @@ const ResetPasswordPage: React.FC = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter new password"
-                className="w-full pl-12 pr-12 py-4 bg-[#1e293b] border border-[#334155] rounded-none 
-                         text-[15px] text-gray-300 placeholder-gray-500
-                         focus:outline-none focus:border-[#475569] transition-colors"
                 required
                 minLength={8}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                className="reset-input-icon right"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          <div className="mb-8">
-            <label className="block text-gray-400 text-[14px] mb-3">Confirm Password</label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+          <div className="reset-input-group">
+            <label>Confirm Password</label>
+            <div className="reset-input-wrapper">
+              <div className="reset-input-icon left">
                 <Lock size={20} />
               </div>
               <input
@@ -146,15 +135,12 @@ const ResetPasswordPage: React.FC = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm new password"
-                className="w-full pl-12 pr-12 py-4 bg-[#1e293b] border border-[#334155] rounded-none 
-                         text-[15px] text-gray-300 placeholder-gray-500
-                         focus:outline-none focus:border-[#475569] transition-colors"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                className="reset-input-icon right"
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -164,9 +150,7 @@ const ResetPasswordPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-white text-[#0f172a] text-[15px] font-semibold rounded-none
-                     border border-gray-200 hover:bg-gray-100 transition-colors
-                     disabled:opacity-60 disabled:cursor-not-allowed"
+            className="reset-submit-btn"
           >
             {loading ? 'Resetting Password...' : 'Reset Password'}
           </button>
