@@ -18,6 +18,9 @@ import GetHelp from "./features/GetHelp/pages/GetHelp";
 import MyActives from "./features/ActiveRental/pages/MyActives";
 import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
+import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
+
+
 
 function App() {
   return (
@@ -47,6 +50,7 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/get-help" element={<GetHelp />} />
+        <Route path="/for-landlords"  element={<HowItWorks />} />
 
         {/* Auth Routes */}
         <Route path="/auth" element={<AuthPage />} />
