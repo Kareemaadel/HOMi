@@ -21,6 +21,11 @@ import GetHelp from "./features/GetHelp/pages/GetHelp";
 import MyActives from "./features/ActiveRental/pages/MyActives";
 import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
+import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
+import ForTenants from "./features/HowItWorks/pages/ForTenants";
+
+
+
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
 import GuestHome from "./features/Guest/pages/GuestHome";
@@ -54,6 +59,14 @@ function App() {
         <Route path="/landlord-payment" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordPayment /></AuthGuard>} />
         <Route path="/landlord-contracts" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordContract /></AuthGuard>} />
 
+        {/* Global Dashboard Routes */}
+        <Route path="/balance" element={<Balance />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/get-help" element={<GetHelp />} />
+        <Route path="/for-landlords"  element={<HowItWorks />} />
+        <Route path="/for-tenants" element={<ForTenants />} />
         {/* Global Dashboard Routes — protected */}
         <Route path="/balance"   element={<AuthGuard><Balance /></AuthGuard>} />
         <Route path="/settings"  element={<Settings />} /> {/* has its own guard */}
