@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaSearch } from 'react-icons/fa';
 import './header.css';
 
@@ -7,6 +7,22 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const getSignedInRole = (): string | null => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return null;
+      const parsed = JSON.parse(userStr) as { role?: string } | null;
+      return parsed?.role ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const signedInRole = getSignedInRole();
+  const isSignedIn = Boolean(localStorage.getItem('accessToken')) && signedInRole !== null;
+  const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
 
   // Add a nice shadow effect on scroll
   useEffect(() => {
@@ -19,6 +35,21 @@ const Header = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // If a signed-in user lands on the "other role" How It Works page,
+  // immediately route them to the correct one.
+  useEffect(() => {
+    if (!signedInRole) return;
+
+    const isOnLandlordsPage = location.pathname === '/for-landlords';
+    const isOnTenantsPage = location.pathname === '/for-tenants';
+
+    if (signedInRole === 'TENANT' && isOnLandlordsPage) {
+      navigate('/for-tenants', { replace: true, state: { fromAppNavbar: true } });
+    } else if (signedInRole === 'LANDLORD' && isOnTenantsPage) {
+      navigate('/for-landlords', { replace: true, state: { fromAppNavbar: true } });
+    }
+  }, [navigate, location.pathname, signedInRole]);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -61,7 +92,15 @@ const Header = () => {
           <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
             Home
           </Link>
-          <Link to="/for-landlords" className={`nav-link ${location.pathname === '/for-landlords' ? 'active' : ''}`}>
+          <Link
+            to={howItWorksPath}
+            className={`nav-link ${location.pathname === howItWorksPath ? 'active' : ''}`}
+            onClick={(e) => {
+              if (!isSignedIn) return;
+              e.preventDefault();
+              navigate(howItWorksPath, { state: { fromAppNavbar: true } });
+            }}
+          >
             How It Works
           </Link>
           <Link to="/saved-properties" className={`nav-link ${location.pathname === '/saved-properties' ? 'active' : ''}`}>

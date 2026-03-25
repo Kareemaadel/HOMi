@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
   ChevronDown,
@@ -18,6 +18,7 @@ import {
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
+import GuestNavbar from '../../../components/guest/GuestNavbar';
 import './ForTenants.css';
 
 type FaqItem = {
@@ -28,6 +29,32 @@ type FaqItem = {
 
 const ForTenants: React.FC = () => {
   const [openFaqId, setOpenFaqId] = useState<string | null>('apply');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const appState = (location.state as { fromGuestHome?: boolean; fromAppNavbar?: boolean } | null) ?? null;
+  const fromGuestHome = Boolean(appState?.fromGuestHome);
+  const fromAppNavbar = Boolean(appState?.fromAppNavbar);
+
+  const storedUserRole = (() => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return null;
+      const parsed = JSON.parse(userStr) as { role?: string } | null;
+      return parsed?.role ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const isSignedIn = Boolean(localStorage.getItem('accessToken'));
+  const hideSidebar = fromGuestHome || !fromAppNavbar || !isSignedIn || storedUserRole !== 'TENANT';
+
+  useEffect(() => {
+    // Keep users on the correct role page if they were routed here from the app navbar.
+    if (!fromAppNavbar || !isSignedIn || storedUserRole !== 'LANDLORD') return;
+    navigate('/for-landlords', { replace: true, state: { fromAppNavbar: true } });
+  }, [navigate, fromAppNavbar, isSignedIn, storedUserRole]);
 
   const steps = useMemo(
     () => [
@@ -122,11 +149,11 @@ const ForTenants: React.FC = () => {
   );
 
   return (
-    <div className="how-page-layout">
-      <Sidebar />
+    <div className={`how-page-layout ${hideSidebar ? 'how-page-layout--no-sidebar' : ''}`}>
+      {!hideSidebar && <Sidebar />}
 
       <div className="how-main-content">
-        <Header />
+        {hideSidebar ? <GuestNavbar /> : <Header />}
 
         <main className="how-content" aria-label="How HOMi works for tenants">
           <section className="how-hero">

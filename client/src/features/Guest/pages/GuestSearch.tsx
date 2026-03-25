@@ -38,7 +38,7 @@ const GuestSearch: React.FC = () => {
         <div className="search-layout">
             <nav className="search-nav glass-panel-nav">
                 <div className="nav-container">
-                    <Link to="/" className="brand-logo">
+                    <Link to="/guest-home" className="brand-logo">
                         <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
                     </Link>
                     
