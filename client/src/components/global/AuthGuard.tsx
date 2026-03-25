@@ -1,8 +1,11 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import AuthModal from './AuthModal';
+import { authService } from '../../services/auth.service';
 
 interface AuthGuardProps {
     children: React.ReactNode;
+    allowedRoles?: Array<'TENANT' | 'LANDLORD'>;
 }
 
 /**
@@ -10,8 +13,15 @@ interface AuthGuardProps {
  * if the user is not authenticated. The underlying page is still
  * rendered (blurred behind the overlay) so the layout stays intact.
  */
-const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
+const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
     const isAuthenticated = !!localStorage.getItem('accessToken');
+    const cached = authService.getCurrentUser();
+    const role = cached?.user?.role;
+
+    if (isAuthenticated && allowedRoles && role && !allowedRoles.includes(role)) {
+        const redirectPath = role === 'LANDLORD' ? '/landlord-home' : '/tenant-home';
+        return <Navigate to={redirectPath} replace />;
+    }
 
     return (
         <>

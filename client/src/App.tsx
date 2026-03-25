@@ -37,22 +37,22 @@ function App() {
         <Route path="/" element={<LoadingPage />} />
 
         {/* Tenant Routes — protected */}
-        <Route path="/tenant-home"   element={<AuthGuard><TenantHome /></AuthGuard>} />
+        <Route path="/tenant-home"   element={<AuthGuard allowedRoles={['TENANT']}><TenantHome /></AuthGuard>} />
         <Route path="/browse-properties" element={<BrowseProperties />} /> {/* guests can browse; Apply Now button guards itself */}
-        <Route path="/active-rental" element={<AuthGuard><ActiveRental /></AuthGuard>} />
-        <Route path="/prepayment-page" element={<AuthGuard><PrePayment /></AuthGuard>} />
-        <Route path="/saved-properties" element={<AuthGuard><SavedProperties /></AuthGuard>} />
-        <Route path="/actives"       element={<AuthGuard><MyActives /></AuthGuard>} />
-        <Route path="/tenant-payment" element={<AuthGuard><TenantPayment /></AuthGuard>} />
-        <Route path="/tenant-contracts" element={<AuthGuard><Contract /></AuthGuard>} />
-        <Route path="/sent-requests" element={<AuthGuard><SentRequests /></AuthGuard>} />
+        <Route path="/active-rental" element={<AuthGuard allowedRoles={['TENANT']}><ActiveRental /></AuthGuard>} />
+        <Route path="/prepayment-page" element={<AuthGuard allowedRoles={['TENANT']}><PrePayment /></AuthGuard>} />
+        <Route path="/saved-properties" element={<AuthGuard allowedRoles={['TENANT']}><SavedProperties /></AuthGuard>} />
+        <Route path="/actives"       element={<AuthGuard allowedRoles={['TENANT']}><MyActives /></AuthGuard>} />
+        <Route path="/tenant-payment" element={<AuthGuard allowedRoles={['TENANT']}><TenantPayment /></AuthGuard>} />
+        <Route path="/tenant-contracts" element={<AuthGuard allowedRoles={['TENANT']}><Contract /></AuthGuard>} />
+        <Route path="/sent-requests" element={<AuthGuard allowedRoles={['TENANT']}><SentRequests /></AuthGuard>} />
 
         {/* Landlord Routes — protected */}
-        <Route path="/landlord-home" element={<AuthGuard><LandlordHome /></AuthGuard>} />
-        <Route path="/my-properties" element={<AuthGuard><MyProperties /></AuthGuard>} />
-        <Route path="/rental-requests" element={<AuthGuard><RentalRequests /></AuthGuard>} />
-        <Route path="/landlord-payment" element={<AuthGuard><LandlordPayment /></AuthGuard>} />
-        <Route path="/landlord-contracts" element={<AuthGuard><LandlordContract /></AuthGuard>} />
+        <Route path="/landlord-home" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordHome /></AuthGuard>} />
+        <Route path="/my-properties" element={<AuthGuard allowedRoles={['LANDLORD']}><MyProperties /></AuthGuard>} />
+        <Route path="/rental-requests" element={<AuthGuard allowedRoles={['LANDLORD']}><RentalRequests /></AuthGuard>} />
+        <Route path="/landlord-payment" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordPayment /></AuthGuard>} />
+        <Route path="/landlord-contracts" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordContract /></AuthGuard>} />
 
         {/* Global Dashboard Routes — protected */}
         <Route path="/balance"   element={<AuthGuard><Balance /></AuthGuard>} />
