@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { Op } from 'sequelize';
 import { User, Profile, Habit, UserHabit, sequelize } from '../models/index.js';
-import { generateTokenPair, type TokenPair } from '../../../shared/utils/jwt.util.js';
+import {
+    generateTokenPair,
+    generateAccessToken,
+    verifyRefreshToken,
+    type TokenPair,
+} from '../../../shared/utils/jwt.util.js';
 import { generateSecureToken, hashToken } from '../../../shared/utils/encryption.util.js';
 import { emailService } from '../../../shared/services/email.service.js';
 import type {
@@ -323,6 +328,19 @@ export class AuthService {
     }
 
     /**
+     * Issue a new access token from a valid refresh JWT (body or cookie).
+     */
+    async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+        try {
+            const payload = verifyRefreshToken(refreshToken);
+            const accessToken = generateAccessToken(payload);
+            return { accessToken };
+        } catch {
+            throw new AuthError('Invalid or expired refresh token', 401, 'INVALID_REFRESH_TOKEN');
+        }
+    }
+
+    /**
      * Initiate forgot password flow
      * Generates reset token and sends password reset email
      */
@@ -432,7 +450,9 @@ export class AuthService {
         });
 
         // 3. If user doesn't exist, auto-register them
+        let isNewUser = false;
         if (!user) {
+            isNewUser = true;
             const transaction = await sequelize.transaction();
 
             try {
@@ -519,6 +539,7 @@ export class AuthService {
             refreshToken: tokens.refreshToken,
             user: userResponse,
             profile: profileResponse,
+            isNewUser,
         };
     }
 

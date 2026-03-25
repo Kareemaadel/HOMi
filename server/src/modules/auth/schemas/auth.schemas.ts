@@ -83,6 +83,8 @@ export const LoginSchema = z.object({
     password: z
         .string()
         .min(1, 'Password is required'),
+    /** When true, refresh token is stored in an httpOnly cookie (Remember me). */
+    rememberMe: z.boolean().optional(),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;
@@ -131,6 +133,18 @@ export const RefreshTokenSchema = z.object({
 });
 
 export type RefreshTokenInput = z.infer<typeof RefreshTokenSchema>;
+
+/**
+ * Refresh body: refresh token may be omitted when sent via httpOnly cookie.
+ */
+export const RefreshTokenBodySchema = z.preprocess(
+    (val) => (val == null || typeof val !== 'object' ? {} : val),
+    z.object({
+        refreshToken: z.string().min(1).optional(),
+    })
+);
+
+export type RefreshTokenBodyInput = z.infer<typeof RefreshTokenBodySchema>;
 
 /**
  * Google OAuth Login Schema
@@ -262,6 +276,7 @@ export default {
     ForgotPasswordSchema,
     ResetPasswordSchema,
     RefreshTokenSchema,
+    RefreshTokenBodySchema,
     GoogleLoginSchema,
     UpdateProfileSchema,
     VerifyEmailSchema,

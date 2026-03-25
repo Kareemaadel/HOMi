@@ -12,6 +12,7 @@ import {
     UpdateProfileSchema,
     ChangePasswordSchema,
     UpdateRoleSchema,
+    RefreshTokenBodySchema,
 } from '../schemas/auth.schemas.js';
 
 const router = Router();
@@ -64,6 +65,11 @@ router.post(
  *       Login with email or phone number and password to receive JWT tokens.
  *       The system automatically detects whether you're using an email or phone number.
  *       Unverified users can login but should complete verification.
+ *
+ *       **Remember me:** When `rememberMe` is `true`, the refresh token is stored in an
+ *       httpOnly cookie (`homi_refresh_token`) instead of the JSON body. Send requests with
+ *       credentials (cookies) enabled. When `rememberMe` is `false` or omitted, any existing
+ *       refresh cookie is cleared and the refresh token is returned in the response body.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -82,9 +88,21 @@ router.post(
  *               value:
  *                 identifier: "+201234567890"
  *                 password: "Password123"
+ *             rememberMe:
+ *               summary: Remember me (refresh in httpOnly cookie)
+ *               value:
+ *                 identifier: "user@example.com"
+ *                 password: "Password123"
+ *                 rememberMe: true
  *     responses:
  *       200:
  *         description: Login successful
+ *         headers:
+ *           Set-Cookie:
+ *             description: Present when rememberMe is true — httpOnly refresh JWT
+ *             schema:
+ *               type: string
+ *               example: homi_refresh_token=...; Path=/; HttpOnly; SameSite=Lax
  *         content:
  *           application/json:
  *             schema:
@@ -100,6 +118,64 @@ router.post(
     '/login',
     validate(LoginSchema),
     authController.login.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: |
+ *       Returns a new access JWT using the refresh token from the JSON body **or**
+ *       from the httpOnly `homi_refresh_token` cookie (Remember me). At least one must be present.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: New access token issued
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *       401:
+ *         description: Missing or invalid refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post(
+    '/refresh',
+    validate(RefreshTokenBodySchema),
+    authController.refresh.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Log out (clear refresh cookie)
+ *     description: Clears the httpOnly refresh cookie set by Remember me. Clients should also clear local session storage.
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthSuccessResponse'
+ */
+router.post(
+    '/logout',
+    authController.logout.bind(authController)
 );
 
 /**
@@ -272,6 +348,9 @@ router.post(
  *       - Profile populated with Google's first name, last name, and avatar
  *       - Phone number and national ID are left empty (must be collected later)
  *       - Password is set to placeholder "GOOGLE_OAUTH_USER" (they can't use password login)
+ *
+ *       **Remember me:** Same as password login — when `rememberMe` is true, refresh token is
+ *       set in httpOnly cookie `homi_refresh_token` instead of the JSON body.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -286,6 +365,10 @@ router.post(
  *                 type: string
  *                 description: Google access token obtained from Google Sign-In on frontend
  *                 example: "ya29.a0AfH6SMBx..."
+ *               rememberMe:
+ *                 type: boolean
+ *                 description: Store refresh token in httpOnly cookie for persistent sessions
+ *                 example: true
  *     responses:
  *       200:
  *         description: Login/registration successful

@@ -14,11 +14,13 @@ import UpcomingPayments from '../components/TenantHomeComponents/UpcomingPayment
 import MaintenanceRequests from '../components/TenantHomeComponents/MaintenanceRequests';
 import Notifications from '../components/TenantHomeComponents/Notifications';
 import RewardsSummary from '../components/TenantHomeComponents/RewardsSummary';
+import { authService } from '../../../services/auth.service';
 
 const TenantHome: React.FC = () => {
   // TODO: Replace this with actual API data
   const [hasActiveRentals, setHasActiveRentals] = useState<boolean>(false); 
   const navigate = useNavigate(); 
+  const firstName = authService.getCurrentUser()?.profile?.firstName?.trim() || 'there';
 
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
@@ -33,7 +35,7 @@ const TenantHome: React.FC = () => {
         <main className="content-area">
           <header className="welcome-section">
             <div className="welcome-text">
-              <h1>{greeting}, <span className="highlight">Mohy!</span></h1>
+              <h1>{greeting}, <span className="highlight">{firstName}!</span></h1>
               {hasActiveRentals ? (
                 <p>You have 2 payments due this week and 1 active maintenance request.</p>
               ) : (

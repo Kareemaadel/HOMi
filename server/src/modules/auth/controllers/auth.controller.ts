@@ -1,5 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import { authService, AuthError } from '../services/auth.service.js';
+import {
+    REFRESH_COOKIE_NAME,
+    setRefreshCookie,
+    clearRefreshCookie,
+} from '../../../shared/utils/auth-cookie.util.js';
+import type { LoginInput } from '../schemas/auth.schemas.js';
 import type {
     RegisterRequest,
     LoginRequest,
@@ -39,10 +45,49 @@ export class AuthController {
      */
     async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const input = req.body as LoginRequest;
-            const result = await authService.login(input);
+            const { rememberMe, ...credentials } = req.body as LoginInput;
+            const result = await authService.login(credentials as LoginRequest);
 
-            res.status(200).json(result);
+            if (rememberMe === true) {
+                setRefreshCookie(res, result.refreshToken!);
+                res.status(200).json({ ...result, refreshToken: undefined });
+            } else {
+                clearRefreshCookie(res);
+                res.status(200).json(result);
+            }
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/refresh
+     * New access token using refresh JWT from body or httpOnly cookie
+     */
+    async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const cookieToken = req.cookies?.[REFRESH_COOKIE_NAME] as string | undefined;
+            const bodyToken = (req.body as { refreshToken?: string })?.refreshToken;
+            const token = cookieToken || bodyToken;
+            if (!token) {
+                throw new AuthError('Refresh token required', 401, 'NO_REFRESH_TOKEN');
+            }
+
+            const { accessToken } = await authService.refreshAccessToken(token);
+            res.status(200).json({ accessToken });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/logout
+     * Clears httpOnly refresh cookie (Remember me)
+     */
+    async logout(_req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            clearRefreshCookie(res);
+            res.status(200).json({ success: true, message: 'Logged out successfully' });
         } catch (error) {
             next(error);
         }
@@ -107,10 +152,16 @@ export class AuthController {
      */
     async googleLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { googleAccessToken } = req.body as GoogleLoginRequest;
+            const { googleAccessToken, rememberMe } = req.body as GoogleLoginRequest;
             const result = await authService.loginWithGoogle(googleAccessToken);
 
-            res.status(200).json(result);
+            if (rememberMe === true) {
+                setRefreshCookie(res, result.refreshToken!);
+                res.status(200).json({ ...result, refreshToken: undefined });
+            } else {
+                clearRefreshCookie(res);
+                res.status(200).json(result);
+            }
         } catch (error) {
             next(error);
         }
@@ -173,7 +224,12 @@ export class AuthController {
             const input = req.body as UpdateRoleRequest;
             const result = await authService.updateRole(userId, input);
 
-            res.status(200).json(result);
+            if (req.cookies?.[REFRESH_COOKIE_NAME]) {
+                setRefreshCookie(res, result.refreshToken!);
+                res.status(200).json({ ...result, refreshToken: undefined });
+            } else {
+                res.status(200).json(result);
+            }
         } catch (error) {
             next(error);
         }

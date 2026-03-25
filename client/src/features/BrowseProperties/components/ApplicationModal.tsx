@@ -113,10 +113,15 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: any
                                             </div>
                                             <div className="field-group">
                                                 <label><FaHourglassHalf /> Duration</label>
-                                                <select required className="premium-select" disabled={isReadOnly}>
+                                                <select
+                                                    required
+                                                    className="premium-select"
+                                                    disabled={isReadOnly}
+                                                    defaultValue={isReadOnly ? '12' : ''}
+                                                >
                                                     <option value="">Select duration</option>
                                                     <option value="6">6 Months</option>
-                                                    <option value="12" selected={isReadOnly}>12 Months</option>
+                                                    <option value="12">12 Months</option>
                                                     <option value="24">24 Months</option>
                                                 </select>
                                             </div>
@@ -129,11 +134,16 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: any
                                             </div>
                                             <div className="field-group">
                                                 <label><FaUserFriends /> living situation</label>
-                                                <select required className="premium-select" disabled={isReadOnly}>
-                                                    <option value="">Single</option>
-                                                    <option value="married" selected={isReadOnly}>Married</option>
-                                                    <option value="">Family</option>
-                                                    <option value="">Students</option>
+                                                <select
+                                                    required
+                                                    className="premium-select"
+                                                    disabled={isReadOnly}
+                                                    defaultValue={isReadOnly ? 'married' : 'single'}
+                                                >
+                                                    <option value="single">Single</option>
+                                                    <option value="married">Married</option>
+                                                    <option value="family">Family</option>
+                                                    <option value="students">Students</option>
                                                 </select>
                                             </div>
                                         </div>

@@ -9,6 +9,7 @@ import {
     sequelize,
 } from '../models/index.js';
 import { User } from '../../auth/models/User.js';
+import { Profile } from '../../auth/models/Profile.js';
 import type {
     CreatePropertyRequest,
     UpdatePropertyRequest,
@@ -21,6 +22,7 @@ import type {
     HouseRuleResponse,
     PropertySpecificationsResponse,
     PropertyDetailedLocationResponse,
+    PropertyLandlordResponse,
 } from '../interfaces/property.interfaces.js';
 
 /**
@@ -253,6 +255,18 @@ class PropertyService {
                     through: { attributes: [] },
                 },
                 {
+                    model: User,
+                    as: 'landlord',
+                    attributes: ['id'],
+                    include: [
+                        {
+                            model: Profile,
+                            as: 'profile',
+                            attributes: ['first_name', 'last_name', 'avatar_url'],
+                        },
+                    ],
+                },
+                {
                     model: PropertySpecifications,
                     as: 'specifications',
                 },
@@ -311,6 +325,18 @@ class PropertyService {
                     as: 'houseRules',
                     attributes: ['id', 'name'],
                     through: { attributes: [] },
+                },
+                {
+                    model: User,
+                    as: 'landlord',
+                    attributes: ['id'],
+                    include: [
+                        {
+                            model: Profile,
+                            as: 'profile',
+                            attributes: ['first_name', 'last_name', 'avatar_url'],
+                        },
+                    ],
                 },
                 {
                     model: PropertySpecifications,
@@ -554,6 +580,16 @@ class PropertyService {
             }
             : null;
 
+        const landlordProfile = property.landlord?.profile;
+        const formattedLandlord: PropertyLandlordResponse | null = landlordProfile
+            ? {
+                id: property.landlord_id,
+                firstName: landlordProfile.first_name,
+                lastName: landlordProfile.last_name,
+                avatarUrl: landlordProfile.avatar_url ?? null,
+            }
+            : null;
+
         return {
             id: property.id,
             landlordId: property.landlord_id,
@@ -573,6 +609,7 @@ class PropertyService {
             houseRules: formattedHouseRules,
             specifications: formattedSpec,
             detailedLocation: formattedLocation,
+            landlord: formattedLandlord,
         };
     }
 }

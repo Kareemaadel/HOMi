@@ -13,6 +13,7 @@ interface SignUpFormData {
 const SignUp: React.FC = () => {
   const [strength, setStrength] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState<SignUpFormData>({
     firstName: '',
@@ -46,6 +47,11 @@ const SignUp: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    if (!agreeToTerms) {
+      setFormError('Please agree to the Terms & Conditions to continue.');
+      return;
+    }
 
     // Must match the backend RegisterSchema password regex exactly
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/]).{8,}$/;
@@ -137,9 +143,17 @@ const SignUp: React.FC = () => {
         <div className={`strength-fill s-${strength}`} />
       </div>
 
-      <label className="form-extras" style={{ justifyContent: 'flex-start', gap: '10px', cursor: 'pointer' }}>
-        <input type="checkbox" required />
-        <span>I agree to the <a href="#terms">Terms & Conditions</a></span>
+      <label className="remember-me-label terms-agree-label">
+        <input
+          type="checkbox"
+          name="agreeToTerms"
+          checked={agreeToTerms}
+          onChange={(e) => setAgreeToTerms(e.target.checked)}
+        />
+        <span className="remember-me-text">
+          I agree to the{' '}
+          <a href="#terms" className="terms-inline-link">Terms &amp; Conditions</a>
+        </span>
       </label>
 
       <button type="submit" className="btn-primary-v2">

@@ -13,7 +13,7 @@ import './PropertyCard.css';
 
 interface PropertyCardProps {
     property: {
-        id: number;
+        id: string | number;
         title: string;
         address: string;
         price: number;

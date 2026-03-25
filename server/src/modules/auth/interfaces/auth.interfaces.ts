@@ -53,6 +53,7 @@ export interface ResetPasswordRequest {
  */
 export interface GoogleLoginRequest {
     googleAccessToken: string;
+    rememberMe?: boolean;
 }
 
 /**
@@ -106,9 +107,11 @@ export interface UserResponse {
  */
 export interface LoginResponse {
     accessToken: string;
-    refreshToken: string;
+    /** Omitted when refresh token is only set via httpOnly cookie (Remember me). */
+    refreshToken?: string;
     user: UserResponse;
     profile: ProfileResponse;
+    isNewUser?: boolean;
 }
 
 /**

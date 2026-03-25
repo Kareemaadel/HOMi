@@ -14,6 +14,7 @@ vi.mock('../../../src/modules/auth/services/auth.service.js', async (importOrigi
         authService: {
             register: vi.fn(),
             login: vi.fn(),
+            refreshAccessToken: vi.fn(),
             completeVerification: vi.fn(),
             forgotPassword: vi.fn(),
             resetPassword: vi.fn(),
@@ -158,6 +159,58 @@ describe('Auth Integration Tests', () => {
             expect(res.status).toBe(200);
             expect(res.body.accessToken).toBe('access-token');
             expect(res.body.user.email).toBe('john@example.com');
+        });
+
+        it('sets httpOnly refresh cookie and omits refresh token when rememberMe is true', async () => {
+            vi.mocked(authService.login).mockResolvedValue({
+                accessToken: 'access-token',
+                refreshToken: 'refresh-token',
+                user: { id: 'u1', email: 'john@example.com', role: 'TENANT' },
+                profile: {} as any,
+            } as any);
+
+            const res = await request(app)
+                .post('/api/auth/login')
+                .send({ ...VALID_LOGIN_BODY, rememberMe: true });
+            expect(res.status).toBe(200);
+            expect(res.body.refreshToken).toBeUndefined();
+            const setCookie = res.headers['set-cookie'];
+            expect(setCookie).toBeDefined();
+            expect(String(setCookie)).toContain('homi_refresh_token');
+        });
+    });
+
+    // ── POST /api/auth/refresh ───────────────────────────────────────────────
+    describe('POST /api/auth/refresh', () => {
+        it('returns 401 when no refresh token in body or cookie', async () => {
+            const res = await request(app).post('/api/auth/refresh').send({});
+            expect(res.status).toBe(401);
+            expect(res.body.code).toBe('NO_REFRESH_TOKEN');
+        });
+
+        it('returns 200 with new access token when refresh token is valid', async () => {
+            vi.mocked(authService.refreshAccessToken).mockResolvedValue({
+                accessToken: 'new-access',
+            });
+
+            const res = await request(app)
+                .post('/api/auth/refresh')
+                .send({ refreshToken: 'valid-refresh-jwt' });
+            expect(res.status).toBe(200);
+            expect(res.body.accessToken).toBe('new-access');
+            expect(authService.refreshAccessToken).toHaveBeenCalledWith('valid-refresh-jwt');
+        });
+    });
+
+    // ── POST /api/auth/logout ────────────────────────────────────────────────
+    describe('POST /api/auth/logout', () => {
+        it('returns 200 and clears refresh cookie', async () => {
+            const res = await request(app).post('/api/auth/logout');
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            const setCookie = res.headers['set-cookie'];
+            expect(setCookie).toBeDefined();
+            expect(String(setCookie)).toMatch(/homi_refresh_token=/);
         });
     });
 

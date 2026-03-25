@@ -1,3 +1,4 @@
+import axios from 'axios';
 import apiClient from '../config/api';
 import type {
     RegisterRequest,
@@ -13,11 +14,52 @@ import type {
     EmailVerificationResponse,
 } from '../types/auth.types';
 
+const REFRESH_VIA_COOKIE = 'refreshViaCookie';
+
+function parseJwtExpMs(accessToken: string): number | null {
+    try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1])) as { exp?: number };
+        return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+    } catch {
+        return null;
+    }
+}
+
+function isAccessTokenValid(accessToken: string): boolean {
+    const expMs = parseJwtExpMs(accessToken);
+    if (expMs === null) return false;
+    return Date.now() < expMs - 10_000;
+}
+
+/**
+ * Store tokens after login/register — aligns session storage with Remember me (httpOnly cookie vs body).
+ */
+function persistLoginSession(data: LoginResponse, rememberMe: boolean): void {
+    localStorage.setItem('accessToken', data.accessToken);
+
+    if (data.refreshToken) {
+        sessionStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem(REFRESH_VIA_COOKIE);
+    } else if (rememberMe) {
+        sessionStorage.removeItem('refreshToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.setItem(REFRESH_VIA_COOKIE, '1');
+    } else {
+        sessionStorage.removeItem('refreshToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem(REFRESH_VIA_COOKIE);
+    }
+
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('profile', JSON.stringify(data.profile));
+}
+
 /**
  * Authentication Service
  * Handles all auth-related API calls
- * NOTE: apiClient baseURL already includes /api (from VITE_API_BASE_URL),
- * so all paths here are relative to /api (e.g. '/auth/login' → /api/auth/login)
+ * NOTE: apiClient baseURL should include /api (e.g. http://localhost:3000/api),
+ * so paths here are relative to /api (e.g. '/auth/login' → /api/auth/login)
  */
 class AuthService {
     /**
@@ -33,25 +75,28 @@ class AuthService {
      */
     async login(data: LoginRequest): Promise<LoginResponse> {
         const response = await apiClient.post<LoginResponse>('/auth/login', data);
-        
-        // Store tokens and user data
+
         if (response.data.accessToken) {
-            localStorage.setItem('accessToken', response.data.accessToken);
-            localStorage.setItem('refreshToken', response.data.refreshToken);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            localStorage.setItem('profile', JSON.stringify(response.data.profile));
+            persistLoginSession(response.data, data.rememberMe === true);
             localStorage.setItem('authProvider', 'email');
         }
-        
+
         return response.data;
     }
 
     /**
-     * Logout - clear local storage
+     * Logout — clears httpOnly refresh cookie on the server and local session data
      */
-    logout(): void {
+    async logout(): Promise<void> {
+        try {
+            await apiClient.post('/auth/logout', {});
+        } catch {
+            // Still clear client state if the network fails
+        }
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem(REFRESH_VIA_COOKIE);
+        sessionStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         localStorage.removeItem('profile');
         localStorage.removeItem('authProvider');
@@ -63,11 +108,11 @@ class AuthService {
     getCurrentUser() {
         const userStr = localStorage.getItem('user');
         const profileStr = localStorage.getItem('profile');
-        
+
         if (!userStr || !profileStr) {
             return null;
         }
-        
+
         return {
             user: JSON.parse(userStr),
             profile: JSON.parse(profileStr),
@@ -82,15 +127,69 @@ class AuthService {
     }
 
     /**
+     * Restore a logged-in session: valid access JWT, or refresh via cookie / stored refresh token.
+     * Use on /auth (redirect away) and in AuthGuard before treating the user as logged out.
+     */
+    async tryRestoreSession(): Promise<boolean> {
+        const token = localStorage.getItem('accessToken');
+        let cached = this.getCurrentUser();
+
+        if (token && isAccessTokenValid(token)) {
+            if (!cached) {
+                try {
+                    await this.getProfile();
+                    cached = this.getCurrentUser();
+                } catch {
+                    localStorage.removeItem('accessToken');
+                    return false;
+                }
+            }
+            return !!cached;
+        }
+
+        const refreshViaCookie = localStorage.getItem(REFRESH_VIA_COOKIE) === '1';
+        const refreshToken =
+            sessionStorage.getItem('refreshToken') ?? localStorage.getItem('refreshToken');
+
+        if (!refreshViaCookie && !refreshToken) {
+            if (token) {
+                localStorage.removeItem('accessToken');
+            }
+            return false;
+        }
+
+        try {
+            const base = apiClient.defaults.baseURL?.replace(/\/$/, '') ?? '';
+            const body = refreshViaCookie ? {} : { refreshToken };
+            const { data } = await axios.post<{ accessToken: string }>(
+                `${base}/auth/refresh`,
+                body,
+                { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+            );
+            localStorage.setItem('accessToken', data.accessToken);
+            if (!this.getCurrentUser()) {
+                await this.getProfile();
+            }
+            return true;
+        } catch {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem(REFRESH_VIA_COOKIE);
+            sessionStorage.removeItem('refreshToken');
+            localStorage.removeItem('refreshToken');
+            return false;
+        }
+    }
+
+    /**
      * Get current user profile from API
      */
     async getProfile(): Promise<UserProfileResponse> {
         const response = await apiClient.get<UserProfileResponse>('/auth/me');
-        
+
         // Update localStorage
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('profile', JSON.stringify(response.data.profile));
-        
+
         return response.data;
     }
 
@@ -99,10 +198,10 @@ class AuthService {
      */
     async completeVerification(data: CompleteVerificationRequest): Promise<AuthSuccessResponse> {
         const response = await apiClient.post<AuthSuccessResponse>('/auth/complete-verification', data);
-        
+
         // Refresh user data after completing verification
         await this.getProfile();
-        
+
         return response.data;
     }
 
@@ -112,11 +211,11 @@ class AuthService {
      */
     async updateProfile(data: UpdateProfileRequest): Promise<UserProfileResponse> {
         const response = await apiClient.put<UserProfileResponse>('/auth/profile', data);
-        
+
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('profile', JSON.stringify(response.data.profile));
-        
+
         return response.data;
     }
 
@@ -133,15 +232,18 @@ class AuthService {
      */
     async updateRole(data: { role: string }): Promise<LoginResponse> {
         const response = await apiClient.put<LoginResponse>('/auth/role', data);
-        
-        // Update localStorage with fresh data and tokens
+
         if (response.data.accessToken) {
             localStorage.setItem('accessToken', response.data.accessToken);
-            localStorage.setItem('refreshToken', response.data.refreshToken);
+            if (response.data.refreshToken) {
+                sessionStorage.setItem('refreshToken', response.data.refreshToken);
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem(REFRESH_VIA_COOKIE);
+            }
             localStorage.setItem('user', JSON.stringify(response.data.user));
             localStorage.setItem('profile', JSON.stringify(response.data.profile));
         }
-        
+
         return response.data;
     }
 
@@ -181,19 +283,17 @@ class AuthService {
     /**
      * Login with Google OAuth
      */
-    async loginWithGoogle(googleAccessToken: string): Promise<LoginResponse> {
+    async loginWithGoogle(googleAccessToken: string, rememberMe = false): Promise<LoginResponse> {
         const response = await apiClient.post<LoginResponse>('/auth/google', {
             googleAccessToken,
+            rememberMe,
         });
-        
+
         if (response.data.accessToken) {
-            localStorage.setItem('accessToken', response.data.accessToken);
-            localStorage.setItem('refreshToken', response.data.refreshToken);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            localStorage.setItem('profile', JSON.stringify(response.data.profile));
+            persistLoginSession(response.data, rememberMe);
             localStorage.setItem('authProvider', 'google');
         }
-        
+
         return response.data;
     }
 }

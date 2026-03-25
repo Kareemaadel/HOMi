@@ -23,14 +23,13 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
     const [showCancelPrompt, setShowCancelPrompt] = useState(false);
     const [showCancelSuccess, setShowCancelSuccess] = useState(false);
     
-    // Dynamic/Fallback Images
-    const images = property.allImages || [
-        property.image, 
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800",
-        "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=800",
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800",
-        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800"
-    ];
+    // Use only real property images, with a single safe fallback
+    const images = (property.allImages && property.allImages.length > 0)
+        ? property.allImages
+        : [
+            property.image ||
+            "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800",
+        ];
 
     const houseRules = [
         { icon: <FaSmokingBan />, text: "No Smoking", active: true },
@@ -115,15 +114,23 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                             <div className="hero-image-wrapper">
                                 <img src={images[0]} alt="Property Main" />
                             </div>
-                            <div className="secondary-images">
-                                <img src={images[1]} alt="Interior" />
-                                <div className="image-stack-footer">
-                                    <img src={images[2]} alt="Interior" />
-                                    <div className="more-overlay">
-                                        <span>+ {images.length - 3} photos</span>
+                            {images.length > 1 && (
+                                <div className="secondary-images">
+                                    <img src={images[1]} alt="Interior" />
+                                    <div className="image-stack-footer">
+                                        {images[2] ? (
+                                            <img src={images[2]} alt="Interior" />
+                                        ) : (
+                                            <img src={images[0]} alt="Interior" />
+                                        )}
+                                        {images.length > 3 && (
+                                            <div className="more-overlay">
+                                                <span>+ {images.length - 3} photos</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </section>
 
                         <div className="content-inner">
@@ -241,11 +248,11 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
 
                             <div className="owner-profile">
                                 <div className="avatar-wrapper">
-                                    <img src="https://i.pravatar.cc/150?u=sarah" alt="Agent" />
+                                    <img src={property.ownerImage || 'https://i.pravatar.cc/150?u=owner-fallback'} alt={property.ownerName || 'Owner'} />
                                     <span className="online-indicator"></span>
                                 </div>
                                 <div className="owner-details">
-                                    <span className="name">Sarah Jenkins</span>
+                                    <span className="name">{property.ownerName || 'Owner'}</span>
                                     <span className="role">Verified Owner • 4.9★</span>
                                 </div>
                                 <button className="chat-btn" onClick={() => {

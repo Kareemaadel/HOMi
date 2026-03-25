@@ -127,6 +127,21 @@ const options: Options = {
                             type: 'string',
                             example: 'SecurePass123',
                         },
+                        rememberMe: {
+                            type: 'boolean',
+                            description: 'If true, refresh token is set as httpOnly cookie `homi_refresh_token` (not returned in JSON).',
+                            example: true,
+                        },
+                    },
+                },
+                RefreshTokenRequest: {
+                    type: 'object',
+                    description: 'Optional when refresh JWT is sent via httpOnly cookie from Remember me.',
+                    properties: {
+                        refreshToken: {
+                            type: 'string',
+                            description: 'JWT refresh token (required if no refresh cookie)',
+                        },
                     },
                 },
                 CompleteVerificationRequest: {
@@ -198,9 +213,14 @@ const options: Options = {
                     type: 'object',
                     properties: {
                         accessToken: { type: 'string', description: 'JWT access token (15m expiry)' },
-                        refreshToken: { type: 'string', description: 'JWT refresh token (7d expiry)' },
+                        refreshToken: {
+                            type: 'string',
+                            description: 'JWT refresh token — omitted when stored in httpOnly cookie (Remember me)',
+                            nullable: true,
+                        },
                         user: { $ref: '#/components/schemas/User' },
                         profile: { $ref: '#/components/schemas/Profile' },
+                        isNewUser: { type: 'boolean', description: 'Google OAuth only — true when account was just created' },
                     },
                 },
                 UserProfileResponse: {

@@ -1,5 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
@@ -27,10 +28,16 @@ const app = express();
 // ======================
 // Security Middleware
 // ======================
+const helmetOptions = {
+    crossOriginOpenerPolicy: {
+        policy: 'same-origin-allow-popups' as const,
+    },
+};
+
 if (env.NODE_ENV === 'production') {
-    app.use(helmet());
+    app.use(helmet(helmetOptions));
 } else {
-    app.use(helmet({ contentSecurityPolicy: false }));
+    app.use(helmet({ ...helmetOptions, contentSecurityPolicy: false }));
 }
 app.use(cors({
     origin: env.NODE_ENV === 'production'
@@ -38,6 +45,8 @@ app.use(cors({
         : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
 }));
+
+app.use(cookieParser());
 
 // ======================
 // Body Parsing

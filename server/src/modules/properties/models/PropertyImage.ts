@@ -54,10 +54,16 @@ PropertyImage.init(
             },
         },
         image_url: {
-            type: DataTypes.STRING(500),
+            type: DataTypes.TEXT('long'),
             allowNull: false,
             validate: {
-                isUrl: true,
+                isValidImageInput(value: string) {
+                    const isHttpUrl = /^https?:\/\/.+/i.test(value);
+                    const isDataImage = /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value);
+                    if (!isHttpUrl && !isDataImage) {
+                        throw new Error('Image must be a valid URL or a base64 data image');
+                    }
+                },
             },
         },
         is_main: {
