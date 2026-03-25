@@ -65,6 +65,7 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/get-help" element={<GetHelp />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/for-landlords"  element={<HowItWorks />} />
         <Route path="/for-tenants" element={<ForTenants />} />
         {/* Global Dashboard Routes — protected */}

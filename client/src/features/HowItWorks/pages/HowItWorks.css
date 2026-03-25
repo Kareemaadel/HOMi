@@ -24,6 +24,12 @@
   overflow-x: hidden;
 }
 
+/* Guest/embedded variant: hide sidebar and don't reserve its space. */
+.how-page-layout--no-sidebar .how-main-content {
+  margin-left: 0;
+  width: 100%;
+}
+
 .how-content {
   padding-bottom: 12px;
 }

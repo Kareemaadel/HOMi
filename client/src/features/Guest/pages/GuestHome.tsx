@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, ShieldCheck, CreditCard, FileSignature, 
-  Home, Key, Star, ArrowRight, Menu, X, CheckCircle,
+  Key, Star, ArrowRight, Menu, X, CheckCircle,
   MapPin, Bed, Bath, Maximize, Zap, PlayCircle
 } from 'lucide-react';
 import './GuestHome.css';
@@ -14,6 +14,25 @@ const GuestHome: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const getSignedInRole = (): string | null => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return null;
+      const parsed = JSON.parse(userStr) as { role?: string } | null;
+      return parsed?.role ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // If a signed-in user is on GuestHome, show the correct "How it Works" page.
+  const signedInRole = getSignedInRole();
+  const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
+  const howItWorksTo = {
+    pathname: howItWorksPath,
+    state: { fromGuestHome: true },
+  };
   
   // Modal State
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -82,13 +101,13 @@ const GuestHome: React.FC = () => {
       {/* 1. Glassmorphic Navbar */}
       <nav className={`guest-nav ${isScrolled ? 'scrolled' : ''}`}>
         <div className="nav-container">
-          <Link to="/" className="brand-logo">
+          <Link to="/guest-home" className="brand-logo">
             <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
           </Link>
 
           <div className="nav-links desktop-only">
-            <Link to="/browse">Browse Homes</Link>
-            <Link to="/about">How it Works</Link>
+            <Link to="/guest-search">Browse Homes</Link>
+            <Link to={howItWorksTo}>How it Works</Link>
             <Link to="/help">Help Center</Link>
           </div>
 
@@ -365,7 +384,7 @@ const GuestHome: React.FC = () => {
          <div className="section-container">
           <div className="footer-grid">
             <div className="footer-brand">
-          <Link to="/" className="brand-logo">
+          <Link to="/guest-home" className="brand-logo">
         <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
 
           </Link>
@@ -373,7 +392,7 @@ const GuestHome: React.FC = () => {
             </div>
             <div className="footer-links">
               <h4>Platform</h4>
-              <Link to="/browse">Browse Homes</Link>
+              <Link to="/guest-search">Browse Homes</Link>
               <a href="#" className="footer-link-override" onClick={(e) => { e.preventDefault(); setShowAuthModal(true); }}>List a Property</a>
               <Link to="/pricing">Pricing</Link>
             </div>
