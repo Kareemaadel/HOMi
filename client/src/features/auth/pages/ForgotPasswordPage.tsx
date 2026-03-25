@@ -1,18 +1,44 @@
-import React, { useState } from 'react';
-import { Mail, ArrowLeft, Send } from 'lucide-react';
+import React, { useId, useMemo, useState } from 'react';
+import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../../../services/auth.service';
 import axios from 'axios';
+import { authService } from '../../../services/auth.service';
+import './ForgotPasswordPage.css';
+
+function isValidEmail(value: string) {
+  // pragmatic email check (good UX, not RFC-perfect)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+const FieldError = ({ id, message }: { id: string; message: string }) => {
+  return (
+    <p id={id} className="fp-field-error" role="alert">
+      {message}
+    </p>
+  );
+};
 
 const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
+  const emailInputId = useId();
+  const emailErrorId = useId();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
+  const [touched, setTouched] = useState(false);
+
+  const emailError = useMemo(() => {
+    if (!touched) return null;
+    if (!email.trim()) return 'Email is required.';
+    if (!isValidEmail(email)) return 'Please enter a valid email address.';
+    return null;
+  }, [email, touched]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched(true);
+    if (!email.trim() || !isValidEmail(email)) return;
     setLoading(true);
     setError(null);
 
@@ -20,11 +46,13 @@ const ForgotPasswordPage: React.FC = () => {
       const response = await authService.forgotPassword({ email });
       console.log('✅ Password reset email sent!', response);
       setSuccess(true);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('❌ Password reset failed:', err);
-      const errorMessage = axios.isAxiosError(err)
-        ? err.response?.data?.message || 'Failed to send reset email. Please try again.'
-        : 'Failed to send reset email. Please try again.';
+      let errorMessage = 'Failed to send reset email. Please try again.';
+      if (axios.isAxiosError(err)) {
+        const data = err.response?.data as { message?: string } | undefined;
+        errorMessage = data?.message || errorMessage;
+      }
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -33,22 +61,17 @@ const ForgotPasswordPage: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-8">
-        <div className="w-full max-w-[400px] text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center">
-              <Mail size={40} className="text-green-400" />
-            </div>
+      <div className="fp-wrapper">
+        <div className="fp-card fp-fade-in">
+          <div className="fp-success-icon" aria-hidden="true">
+            <CheckCircle2 size={44} />
           </div>
-          <h2 className="text-[28px] font-bold text-white mb-4">Check your email</h2>
-          <p className="text-gray-400 text-[15px] mb-8">
-            We've sent a password reset link to <span className="text-white font-medium">{email}</span>
+          <h1 className="fp-title">Check your email</h1>
+          <p className="fp-subtitle">
+            If an account exists for <span className="fp-email">{email}</span>, you’ll receive a reset link shortly.
           </p>
-          <button
-            onClick={() => navigate('/auth')}
-            className="w-full py-4 bg-white text-[#0f172a] text-[15px] font-semibold rounded-none
-                     border border-gray-200 hover:bg-gray-100 transition-colors"
-          >
+
+          <button type="button" className="fp-btn-primary" onClick={() => navigate('/auth')}>
             Back to Login
           </button>
         </div>
@@ -57,80 +80,62 @@ const ForgotPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-8">
-      <div className="w-full max-w-[400px]">
-        <button
-          onClick={() => navigate('/auth')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
-        >
-          <ArrowLeft size={20} />
-          <span className="text-[14px]">Back to Login</span>
+    <div className="fp-wrapper">
+      <div className="fp-card fp-fade-in">
+        <button type="button" onClick={() => navigate('/auth')} className="fp-back-link">
+          <ArrowLeft size={18} />
+          Back to Login
         </button>
 
-        <div className="mb-10">
-          <h2 className="text-[28px] font-bold text-white mb-4">Forgot Password?</h2>
-          <p className="text-gray-400 text-[15px]">
-            No worries! Enter your email address and we'll send you instructions to reset your password.
-          </p>
-        </div>
+        <header className="fp-header">
+          <h1 className="fp-title">Forgot Password</h1>
+          <p className="fp-subtitle">Enter your email to receive a reset link.</p>
+        </header>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="fp-form" noValidate>
           {error && (
-            <div style={{ 
-              padding: '12px', 
-              backgroundColor: '#fee', 
-              color: '#c00', 
-              borderRadius: '4px',
-              marginBottom: '16px',
-              fontSize: '14px',
-            }}>
+            <div className="fp-error-banner" role="alert">
               {error}
             </div>
           )}
 
-          <div className="mb-6">
-            <label className="block text-gray-400 text-[14px] mb-3">Email Address</label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <Mail size={20} />
-              </div>
+          <div className="fp-field">
+            <label htmlFor={emailInputId} className="fp-label">
+              Email
+            </label>
+
+            <div className={`fp-input-wrap ${emailError ? 'has-error' : ''}`}>
+              <Mail size={18} className="fp-input-icon" aria-hidden="true" />
               <input
+                id={emailInputId}
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                inputMode="email"
+                autoComplete="email"
                 placeholder="mail@website.com"
-                className="w-full pl-12 pr-5 py-4 bg-[#1e293b] border border-[#334155] rounded-none 
-                         text-[15px] text-gray-300 placeholder-gray-500
-                         focus:outline-none focus:border-[#475569] transition-colors"
-                required
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
+                onBlur={() => setTouched(true)}
+                aria-invalid={Boolean(emailError)}
+                aria-describedby={emailError ? emailErrorId : undefined}
+                disabled={loading}
               />
             </div>
+
+            {emailError && <FieldError id={emailErrorId} message={emailError} />}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-white text-[#0f172a] text-[15px] font-semibold rounded-none
-                     border border-gray-200 hover:bg-gray-100 transition-colors
-                     disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
+          <button type="submit" disabled={loading} className="fp-btn-primary">
             {loading ? (
               <>
-                <div style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  border: '2px solid #0f172a', 
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
-                <span>Sending...</span>
+                <span className="fp-spinner" aria-hidden="true" />
+                Sending…
               </>
             ) : (
-              <>
-                <Send size={18} />
-                <span>Send Reset Link</span>
-              </>
+              'Send Reset Link'
             )}
           </button>
         </form>
