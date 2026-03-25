@@ -1,5 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
@@ -44,6 +45,8 @@ app.use(cors({
         : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
 }));
+
+app.use(cookieParser());
 
 // ======================
 // Body Parsing

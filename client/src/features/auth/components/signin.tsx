@@ -5,7 +5,12 @@ import axios from 'axios';
 import { authService } from '../../../services/auth.service';
 import type { LoginRequest } from '../../../types/auth.types';
 
-const SignIn: React.FC = () => {
+interface SignInProps {
+  rememberMe: boolean;
+  onRememberMeChange: (value: boolean) => void;
+}
+
+const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +34,7 @@ const SignIn: React.FC = () => {
     setError(null);
 
     try {
-      const response = await authService.login(formData);
+      const response = await authService.login({ ...formData, rememberMe });
       
       console.log('✅ Login successful!', response);
       
@@ -94,11 +99,17 @@ const SignIn: React.FC = () => {
       </div>
 
       <div className="form-extras">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-          <input type="checkbox" /> 
-          <span>Remember me</span>
+        <label className="remember-me-label">
+          <input
+            type="checkbox"
+            name="rememberMe"
+            checked={rememberMe}
+            onChange={(e) => onRememberMeChange(e.target.checked)}
+            disabled={loading}
+          />
+          <span className="remember-me-text">Remember me</span>
         </label>
-        <a href="/forgot-password" style={{ textDecoration: 'none' }}>Forgot password?</a>
+        <a href="/forgot-password" className="auth-forgot-link">Forgot password?</a>
       </div>
 
       <button type="submit" className="btn-primary-v2" disabled={loading}>

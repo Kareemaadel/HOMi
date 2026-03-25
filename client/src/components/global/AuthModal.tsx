@@ -21,6 +21,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
     const [loading, setLoading]       = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
     const [error, setError]           = useState<string | null>(null);
+    const [rememberMe, setRememberMe] = useState(false);
 
     // ── Email / Phone + Password login ────────────────────────────────────────
     const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +33,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await authService.login({ identifier: identifier.trim(), password });
+            const res = await authService.login({
+                identifier: identifier.trim(),
+                password,
+                rememberMe,
+            });
             // Navigate to the correct home for the role
             if (res.user.role === 'LANDLORD') {
                 navigate('/landlord-home', { replace: true });
@@ -61,7 +66,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
             setGoogleLoading(true);
             setError(null);
             try {
-                const res = await authService.loginWithGoogle(tokenResponse.access_token);
+                const res = await authService.loginWithGoogle(tokenResponse.access_token, rememberMe);
                 if (res.user.role === 'LANDLORD') {
                     navigate('/landlord-home', { replace: true });
                 } else {
@@ -139,6 +144,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
                             </button>
                         </div>
                     </div>
+
+                    <label className="auth-modal-remember" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer', fontSize: 14, color: '#64748b' }}>
+                        <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            disabled={loading || googleLoading}
+                        />
+                        Remember me
+                    </label>
 
                     <button
                         type="submit"

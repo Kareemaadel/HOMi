@@ -39,8 +39,8 @@ const Sidebar = () => {
     return () => window.removeEventListener('storage', load);
   }, []);
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout();
     navigate('/auth');
   };
 

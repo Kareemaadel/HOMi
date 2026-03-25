@@ -9,6 +9,7 @@ export const apiClient = axios.create({
         'Content-Type': 'application/json',
     },
     timeout: 10000, // 10 seconds
+    withCredentials: true, // httpOnly refresh cookie (Remember me)
 });
 
 // Request interceptor to add auth token
@@ -51,12 +52,21 @@ apiClient.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                const refreshToken = localStorage.getItem('refreshToken');
-                if (refreshToken) {
-                    // Try to refresh the token
-                    const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-                        refreshToken,
-                    });
+                const refreshViaCookie = localStorage.getItem('refreshViaCookie') === '1';
+                const refreshToken =
+                    sessionStorage.getItem('refreshToken') ?? localStorage.getItem('refreshToken');
+
+                if (refreshViaCookie || refreshToken) {
+                    const base = apiClient.defaults.baseURL?.replace(/\/$/, '') ?? '';
+                    const body = refreshViaCookie ? {} : { refreshToken };
+                    const response = await axios.post<{ accessToken: string }>(
+                        `${base}/auth/refresh`,
+                        body,
+                        {
+                            withCredentials: true,
+                            headers: { 'Content-Type': 'application/json' },
+                        }
+                    );
 
                     const { accessToken } = response.data;
                     localStorage.setItem('accessToken', accessToken);
@@ -69,6 +79,8 @@ apiClient.interceptors.response.use(
                 // Refresh failed — clear session and redirect to login
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
+                localStorage.removeItem('refreshViaCookie');
+                sessionStorage.removeItem('refreshToken');
                 localStorage.removeItem('user');
                 localStorage.removeItem('profile');
                 globalThis.location.href = '/auth';

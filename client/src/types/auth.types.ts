@@ -21,6 +21,8 @@ export interface RegisterRequest {
 export interface LoginRequest {
     identifier: string; // Can be email or phone number
     password: string;
+    /** When true, server stores refresh token in httpOnly cookie (Remember me). */
+    rememberMe?: boolean;
 }
 
 export interface ForgotPasswordRequest {
@@ -84,7 +86,8 @@ export interface UserResponse {
 
 export interface LoginResponse {
     accessToken: string;
-    refreshToken: string;
+    /** Omitted when refresh token is only in httpOnly cookie (Remember me). */
+    refreshToken?: string;
     user: UserResponse;
     profile: ProfileResponse;
     isNewUser?: boolean;

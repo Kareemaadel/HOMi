@@ -4,7 +4,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/auth.service';
 
-export const GoogleLoginBtn = () => {
+export interface GoogleLoginBtnProps {
+    /** From parent (e.g. auth page) — same “Remember me” as email sign-in. */
+    rememberMe?: boolean;
+}
+
+export const GoogleLoginBtn = ({ rememberMe = false }: GoogleLoginBtnProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
@@ -16,7 +21,7 @@ export const GoogleLoginBtn = () => {
 
             try {
                 const googleToken = tokenResponse.access_token;
-                const response = await authService.loginWithGoogle(googleToken);
+                const response = await authService.loginWithGoogle(googleToken, rememberMe);
 
                 console.log('✅ Google Login successful!', response);
 

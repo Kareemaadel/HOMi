@@ -263,6 +263,101 @@
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
+/* --- Sign-in extras: Remember me + forgot password --- */
+.form-extras {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.auth-forgot-link {
+    text-decoration: none;
+    color: var(--auth-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.auth-forgot-link:hover {
+    color: var(--auth-primary-hover);
+    text-decoration: underline;
+}
+
+.remember-me-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+.remember-me-text {
+    font-size: 0.9rem;
+    color: var(--auth-text-muted);
+}
+
+.remember-me-label input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    flex-shrink: 0;
+    border: 2px solid var(--auth-border);
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.remember-me-label input[type="checkbox"]:hover:not(:disabled) {
+    border-color: var(--auth-primary);
+}
+
+.remember-me-label input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.remember-me-label input[type="checkbox"]:checked {
+    background-color: var(--auth-primary);
+    border-color: var(--auth-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+    background-size: 12px 12px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.remember-me-label input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Terms & Conditions (sign-up) — same circular checkbox */
+.terms-agree-label {
+    align-items: flex-start;
+    margin-top: 4px;
+}
+
+.terms-agree-label .remember-me-text {
+    line-height: 1.45;
+    text-align: left;
+}
+
+.terms-inline-link {
+    color: var(--auth-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.terms-inline-link:hover {
+    color: var(--auth-primary-hover);
+    text-decoration: underline;
+}
+
 /* --- Animations --- */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(15px); }
