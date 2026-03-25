@@ -1,0 +1,391 @@
+import { Op } from 'sequelize';
+import {
+    RentalRequest,
+    RentalRequestStatus,
+    User,
+    Property,
+    Profile,
+    sequelize,
+} from '../models/index.js';
+import type {
+    CreateRentalRequestInput,
+    UpdateRentalRequestStatusInput,
+    RentalRequestResponse,
+    RentalRequestListResponse,
+    TenantSummary,
+    RentalRequestSuccessResponse,
+} from '../interfaces/rental-request.interfaces.js';
+import { PropertyImage } from '../../properties/models/PropertyImage.js';
+
+/**
+ * Custom error class for rental request errors
+ */
+export class RentalRequestError extends Error {
+    constructor(
+        message: string,
+        public statusCode: number = 400,
+        public code: string = 'RENTAL_REQUEST_ERROR'
+    ) {
+        super(message);
+        this.name = 'RentalRequestError';
+    }
+}
+
+/**
+ * Rental Request Service
+ * Handles all rental request business logic
+ */
+class RentalRequestService {
+    /**
+     * Create a new rental request (tenant only)
+     */
+    async createRentalRequest(
+        tenantId: string,
+        input: CreateRentalRequestInput
+    ): Promise<RentalRequestResponse> {
+        // Verify user is a tenant
+        const user = await User.findByPk(tenantId);
+        if (!user) {
+            throw new RentalRequestError('User not found', 404, 'USER_NOT_FOUND');
+        }
+        if (user.role !== 'TENANT') {
+            throw new RentalRequestError(
+                'Only tenants can submit rental requests',
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        // Verify property exists and is published
+        const property = await Property.findByPk(input.property_id);
+        if (!property) {
+            throw new RentalRequestError('Property not found', 404, 'PROPERTY_NOT_FOUND');
+        }
+        if (property.status !== 'Published') {
+            throw new RentalRequestError(
+                'Rental requests can only be submitted for published properties',
+                400,
+                'PROPERTY_NOT_PUBLISHED'
+            );
+        }
+
+        // Check if tenant already has a request for this property
+        const existingRequest = await RentalRequest.findOne({
+            where: {
+                tenant_id: tenantId,
+                property_id: input.property_id,
+            },
+        });
+
+        if (existingRequest) {
+            throw new RentalRequestError(
+                'You already have a rental request for this property',
+                409,
+                'DUPLICATE_REQUEST'
+            );
+        }
+
+        const rentalRequest = await RentalRequest.create({
+            tenant_id: tenantId,
+            property_id: input.property_id,
+            move_in_date: new Date(input.move_in_date),
+            duration: input.duration,
+            occupants: input.occupants,
+            living_situation: input.living_situation,
+            message: input.message ?? null,
+            status: RentalRequestStatus.PENDING,
+        });
+
+        return this.formatRentalRequestResponse(rentalRequest);
+    }
+
+    /**
+     * Get all rental requests for a landlord's properties (with tenant details)
+     */
+    async getLandlordRentalRequests(
+        landlordId: string,
+        filters: { status?: string; page?: number; limit?: number }
+    ): Promise<RentalRequestListResponse> {
+        // Verify user is a landlord
+        const user = await User.findByPk(landlordId);
+        if (!user) {
+            throw new RentalRequestError('User not found', 404, 'USER_NOT_FOUND');
+        }
+        if (user.role !== 'LANDLORD') {
+            throw new RentalRequestError(
+                'Only landlords can view rental requests for their properties',
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        const { status, page = 1, limit = 10 } = filters;
+        const offset = (page - 1) * limit;
+
+        const where: any = {};
+        if (status) where.status = status;
+
+        // Get landlord's property IDs
+        const landlordProperties = await Property.findAll({
+            where: { landlord_id: landlordId },
+            attributes: ['id'],
+        });
+
+        const propertyIds = landlordProperties.map((p) => p.id);
+
+        if (propertyIds.length === 0) {
+            return {
+                rentalRequests: [],
+                pagination: { total: 0, page, limit, totalPages: 0 },
+            };
+        }
+
+        where.property_id = { [Op.in]: propertyIds };
+
+        const { count, rows: requests } = await RentalRequest.findAndCountAll({
+            where,
+            include: [
+                {
+                    model: User,
+                    as: 'tenant',
+                    attributes: ['id'],
+                    include: [
+                        {
+                            model: Profile,
+                            as: 'profile',
+                            attributes: ['first_name', 'last_name', 'avatar_url', 'bio'],
+                        },
+                    ],
+                },
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title', 'address'],
+                },
+            ],
+            limit,
+            offset,
+            order: [['created_at', 'DESC']],
+        });
+
+        const formattedRequests = requests.map((req) =>
+            this.formatRentalRequestResponse(req, true, true)
+        );
+
+        return {
+            rentalRequests: formattedRequests,
+            pagination: {
+                total: count,
+                page,
+                limit,
+                totalPages: Math.ceil(count / limit),
+            },
+        };
+    }
+
+    /**
+     * Get all rental requests made by a tenant
+     */
+    async getTenantRentalRequests(
+        tenantId: string,
+        filters: { status?: string; page?: number; limit?: number }
+    ): Promise<RentalRequestListResponse> {
+        const { status, page = 1, limit = 10 } = filters;
+        const offset = (page - 1) * limit;
+
+        const where: any = { tenant_id: tenantId };
+        if (status) where.status = status;
+
+        const { count, rows: requests } = await RentalRequest.findAndCountAll({
+            where,
+            include: [
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title', 'address'],
+                },
+            ],
+            limit,
+            offset,
+            order: [['created_at', 'DESC']],
+        });
+
+        const formattedRequests = requests.map((req) =>
+            this.formatRentalRequestResponse(req, false, true)
+        );
+
+        return {
+            rentalRequests: formattedRequests,
+            pagination: {
+                total: count,
+                page,
+                limit,
+                totalPages: Math.ceil(count / limit),
+            },
+        };
+    }
+
+    /**
+     * Get a single rental request by ID
+     */
+    async getRentalRequestById(
+        requestId: string,
+        userId: string
+    ): Promise<RentalRequestResponse> {
+        const request = await RentalRequest.findByPk(requestId, {
+            include: [
+                {
+                    model: User,
+                    as: 'tenant',
+                    attributes: ['id'],
+                    include: [
+                        {
+                            model: Profile,
+                            as: 'profile',
+                            attributes: ['first_name', 'last_name', 'avatar_url', 'bio'],
+                        },
+                    ],
+                },
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title', 'address', 'landlord_id'],
+                },
+            ],
+        });
+
+        if (!request) {
+            throw new RentalRequestError('Rental request not found', 404, 'RENTAL_REQUEST_NOT_FOUND');
+        }
+
+        // Only the tenant who created it or the landlord who owns the property can view
+        const isOwner = request.tenant_id === userId;
+        const isLandlord = (request.property as any)?.landlord_id === userId;
+
+        if (!isOwner && !isLandlord) {
+            throw new RentalRequestError(
+                'You do not have permission to view this rental request',
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        return this.formatRentalRequestResponse(request, true, true);
+    }
+
+    /**
+     * Update rental request status (landlord only — approve or decline)
+     */
+    async updateRentalRequestStatus(
+        requestId: string,
+        landlordId: string,
+        input: UpdateRentalRequestStatusInput
+    ): Promise<RentalRequestResponse> {
+        const request = await RentalRequest.findByPk(requestId, {
+            include: [
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title', 'address', 'landlord_id'],
+                },
+                {
+                    model: User,
+                    as: 'tenant',
+                    attributes: ['id'],
+                    include: [
+                        {
+                            model: Profile,
+                            as: 'profile',
+                            attributes: ['first_name', 'last_name', 'avatar_url', 'bio'],
+                        },
+                    ],
+                },
+            ],
+        });
+
+        if (!request) {
+            throw new RentalRequestError('Rental request not found', 404, 'RENTAL_REQUEST_NOT_FOUND');
+        }
+
+        // Verify the property belongs to this landlord
+        if ((request.property as any)?.landlord_id !== landlordId) {
+            throw new RentalRequestError(
+                'You do not have permission to update this rental request',
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        // Only PENDING requests can be updated
+        if (request.status !== RentalRequestStatus.PENDING) {
+            throw new RentalRequestError(
+                `This rental request has already been ${request.status.toLowerCase()}`,
+                400,
+                'REQUEST_ALREADY_PROCESSED'
+            );
+        }
+
+        await request.update({ status: input.status });
+
+        // If approved, automatically create a contract
+        if (input.status === RentalRequestStatus.APPROVED) {
+            try {
+                const { contractService } = await import('../../contracts/services/contract.service.js');
+                await contractService.createContractFromApproval(requestId);
+            } catch (contractError) {
+                console.error('⚠️ Contract auto-creation failed:', contractError);
+                // Don't fail the approval if contract creation fails
+            }
+        }
+
+        return this.formatRentalRequestResponse(request, true, true);
+    }
+
+    /**
+     * Helper method to format rental request response
+     */
+    private formatRentalRequestResponse(
+        request: RentalRequest,
+        includeTenant: boolean = false,
+        includeProperty: boolean = false
+    ): RentalRequestResponse {
+        const response: RentalRequestResponse = {
+            id: request.id,
+            tenantId: request.tenant_id,
+            propertyId: request.property_id,
+            moveInDate: request.move_in_date,
+            duration: request.duration,
+            occupants: request.occupants,
+            livingSituation: request.living_situation,
+            message: request.message,
+            status: request.status,
+            createdAt: request.created_at,
+            updatedAt: request.updated_at,
+        };
+
+        if (includeTenant && request.tenant) {
+            const profile = (request.tenant as any).profile;
+            response.tenant = {
+                id: request.tenant.id,
+                firstName: profile?.first_name ?? '',
+                lastName: profile?.last_name ?? '',
+                avatarUrl: profile?.avatar_url ?? null,
+                bio: profile?.bio ?? null,
+            };
+        }
+
+        if (includeProperty && request.property) {
+            response.property = {
+                id: request.property.id,
+                title: request.property.title,
+                address: request.property.address,
+            };
+        }
+
+        return response;
+    }
+}
+
+// Export singleton instance
+export const rentalRequestService = new RentalRequestService();
+export default rentalRequestService;

@@ -1,6 +1,6 @@
-// client\src\features\BrowseProperties\components\ApplicationModal.tsx
-import React, { useState } from 'react';
-import { FaTimes, FaCheckCircle, FaCalendarAlt, FaHourglassHalf, FaCommentDots, FaPaperPlane, FaUsers, FaPaw, FaUserTie, FaArrowLeft, FaPlus, FaChevronRight } from 'react-icons/fa';
+// client/src/features/BrowseProperties/components/ApplicationModal.tsx
+import React, { useState, useEffect } from 'react';
+import { FaTimes, FaCheckCircle, FaCalendarAlt, FaHourglassHalf, FaCommentDots, FaPaperPlane, FaUsers, FaUserFriends, FaPaw, FaUserTie, FaArrowLeft, FaPlus, FaChevronRight } from 'react-icons/fa';
 import './ApplicationModal.css';
 
 const PRESET_HABITS = [
@@ -10,7 +10,7 @@ const PRESET_HABITS = [
     "Gamer", "Chef at Home", "Organized", "Eco-friendly", "Introverted"
 ];
 
-const ApplicationModal = ({ property, onClose, onBack }: any) => {
+const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: any) => {
     const [step, setStep] = useState(1); // Step 1: Form, Step 2: Habits
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -19,12 +19,20 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
     const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
     const [customHabit, setCustomHabit] = useState("");
 
+    // If Read Only, mock some previously selected habits
+    useEffect(() => {
+        if (isReadOnly) {
+            setSelectedHabits(["Early Riser", "Non-smoker", "Very Clean"]);
+        }
+    }, [isReadOnly]);
+
     const handleNext = (e: React.FormEvent) => {
         e.preventDefault();
         setStep(2);
     };
 
     const toggleHabit = (habit: string) => {
+        if (isReadOnly) return; // Disable toggling if read-only
         setSelectedHabits(prev => 
             prev.includes(habit) ? prev.filter(h => h !== habit) : [...prev, habit]
         );
@@ -39,7 +47,7 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
 
     const handleSubmit = () => {
         setLoading(true);
-        // Simulate API call including selectedHabits
+        // Simulate API call
         setTimeout(() => {
             setLoading(false);
             setIsSubmitted(true);
@@ -63,7 +71,9 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
                             <div className="property-mini-card">
                                 <img src={property.image} alt={property.title} />
                                 <div className="mini-info">
-                                    <span className="badge">Application Step {step}/2</span>
+                                    <span className="badge">
+                                        {isReadOnly ? "Submitted Application" : `Application Step ${step}/2`}
+                                    </span>
                                     <h4>{property.title}</h4>
                                     <p className="mini-price">${property.price.toLocaleString()}<span>/mo</span></p>
                                 </div>
@@ -90,19 +100,25 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
                             {step === 1 ? (
                                 <>
                                     <div className="form-header">
-                                        <h1>Rental Application</h1>
-                                        <p>Provide your rental preferences to start the process.</p>
+                                        <h1>{isReadOnly ? "Your Application" : "Rental Application"}</h1>
+                                        <p>{isReadOnly ? "This form is currently locked for editing." : "Provide your rental preferences to start the process."}</p>
                                     </div>
 
                                     <form onSubmit={handleNext} className="premium-form">
                                         <div className="form-row">
                                             <div className="field-group">
                                                 <label><FaCalendarAlt /> Move-in Date</label>
-                                                <input type="date" required />
+                                                {/* value omitted for brevity, but you'd bind to state here if you had it */}
+                                                <input type="date" required disabled={isReadOnly} />
                                             </div>
                                             <div className="field-group">
                                                 <label><FaHourglassHalf /> Duration</label>
-                                                <select required className="premium-select">
+                                                <select
+                                                    required
+                                                    className="premium-select"
+                                                    disabled={isReadOnly}
+                                                    defaultValue={isReadOnly ? '12' : ''}
+                                                >
                                                     <option value="">Select duration</option>
                                                     <option value="6">6 Months</option>
                                                     <option value="12">12 Months</option>
@@ -114,20 +130,33 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
                                         <div className="form-row">
                                             <div className="field-group">
                                                 <label><FaUsers /> Occupants</label>
-                                                <input type="number" min="1" placeholder="People" required />
+                                                <input type="number" min="1" placeholder="People" required disabled={isReadOnly} defaultValue={isReadOnly ? 2 : undefined} />
                                             </div>
                                             <div className="field-group">
-                                                <label><FaPaw /> Pets</label>
-                                                <select required className="premium-select">
-                                                    <option value="no">No Pets</option>
-                                                    <option value="yes">Yes, I have pets</option>
+                                                <label><FaUserFriends /> living situation</label>
+                                                <select
+                                                    required
+                                                    className="premium-select"
+                                                    disabled={isReadOnly}
+                                                    defaultValue={isReadOnly ? 'married' : 'single'}
+                                                >
+                                                    <option value="single">Single</option>
+                                                    <option value="married">Married</option>
+                                                    <option value="family">Family</option>
+                                                    <option value="students">Students</option>
                                                 </select>
                                             </div>
                                         </div>
 
                                         <div className="field-group">
                                             <label><FaCommentDots /> Message to Landlord</label>
-                                            <textarea placeholder="Introduce yourself..." rows={3} className="premium-textarea"></textarea>
+                                            <textarea 
+                                                placeholder="Introduce yourself..." 
+                                                rows={3} 
+                                                className="premium-textarea" 
+                                                disabled={isReadOnly}
+                                                defaultValue={isReadOnly ? "Hi, we are very interested in this property!" : ""}
+                                            ></textarea>
                                         </div>
 
                                         <button type="submit" className="submit-btn">
@@ -139,7 +168,7 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
                                 <div className="habits-selection-view">
                                     <div className="form-header">
                                         <h1>Your Habits</h1>
-                                        <p>Let the landlord know a bit more about your lifestyle.</p>
+                                        <p>{isReadOnly ? "Habits submitted with your application." : "Let the landlord know a bit more about your lifestyle."}</p>
                                     </div>
 
                                     <div className="habits-grid">
@@ -148,29 +177,38 @@ const ApplicationModal = ({ property, onClose, onBack }: any) => {
                                                 key={habit} 
                                                 className={`habit-chip ${selectedHabits.includes(habit) ? 'selected' : ''}`}
                                                 onClick={() => toggleHabit(habit)}
+                                                style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
                                             >
                                                 {habit}
                                             </div>
                                         ))}
                                     </div>
 
-                                    <div className="custom-habit-input">
-                                        <input 
-                                            type="text" 
-                                            value={customHabit}
-                                            onChange={(e) => setCustomHabit(e.target.value)}
-                                            placeholder="Add a custom habit..." 
-                                        />
-                                        <button type="button" onClick={addCustomHabit}><FaPlus /></button>
-                                    </div>
+                                    {!isReadOnly && (
+                                        <div className="custom-habit-input">
+                                            <input 
+                                                type="text" 
+                                                value={customHabit}
+                                                onChange={(e) => setCustomHabit(e.target.value)}
+                                                placeholder="Add a custom habit..." 
+                                            />
+                                            <button type="button" onClick={addCustomHabit}><FaPlus /></button>
+                                        </div>
+                                    )}
 
-                                    <button 
-                                        onClick={handleSubmit} 
-                                        className={`submit-btn ${loading ? 'loading' : ''}`} 
-                                        disabled={loading || selectedHabits.length === 0}
-                                    >
-                                        {loading ? <div className="spinner"></div> : <><FaPaperPlane /> Submit Application</>}
-                                    </button>
+                                    {!isReadOnly ? (
+                                        <button 
+                                            onClick={handleSubmit} 
+                                            className={`submit-btn ${loading ? 'loading' : ''}`} 
+                                            disabled={loading || selectedHabits.length === 0}
+                                        >
+                                            {loading ? <div className="spinner"></div> : <><FaPaperPlane /> Submit Application</>}
+                                        </button>
+                                    ) : (
+                                        <button onClick={onClose} className="submit-btn" style={{ marginTop: '20px' }}>
+                                            Close Application View
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

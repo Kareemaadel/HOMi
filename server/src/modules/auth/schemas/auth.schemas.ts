@@ -83,6 +83,8 @@ export const LoginSchema = z.object({
     password: z
         .string()
         .min(1, 'Password is required'),
+    /** When true, refresh token is stored in an httpOnly cookie (Remember me). */
+    rememberMe: z.boolean().optional(),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;
@@ -133,6 +135,18 @@ export const RefreshTokenSchema = z.object({
 export type RefreshTokenInput = z.infer<typeof RefreshTokenSchema>;
 
 /**
+ * Refresh body: refresh token may be omitted when sent via httpOnly cookie.
+ */
+export const RefreshTokenBodySchema = z.preprocess(
+    (val) => (val == null || typeof val !== 'object' ? {} : val),
+    z.object({
+        refreshToken: z.string().min(1).optional(),
+    })
+);
+
+export type RefreshTokenBodyInput = z.infer<typeof RefreshTokenBodySchema>;
+
+/**
  * Google OAuth Login Schema
  * Validates Google access token from frontend
  */
@@ -173,8 +187,12 @@ export const UpdateProfileSchema = z.object({
         .nullable(),
     avatarUrl: z
         .string()
-        .url('Avatar URL must be a valid URL')
-        .max(500, 'Avatar URL must be at most 500 characters')
+        .refine(
+            (val) =>
+                /^https?:\/\/.+/.test(val) ||    // regular URL
+                /^data:image\/.+;base64,/.test(val), // base64 data URI from file upload
+            { message: 'Avatar must be a valid image URL or uploaded image.' }
+        )
         .optional()
         .nullable(),
     preferredBudgetMin: z
@@ -239,6 +257,18 @@ export const ChangePasswordSchema = z.object({
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 
+/**
+ * Update Role Schema
+ * Validates role update request
+ */
+export const UpdateRoleSchema = z.object({
+    role: z.enum([UserRole.LANDLORD, UserRole.TENANT], {
+        message: 'Role must be LANDLORD or TENANT',
+    }),
+});
+
+export type UpdateRoleInput = z.infer<typeof UpdateRoleSchema>;
+
 export default {
     RegisterSchema,
     CompleteVerificationSchema,
@@ -246,8 +276,10 @@ export default {
     ForgotPasswordSchema,
     ResetPasswordSchema,
     RefreshTokenSchema,
+    RefreshTokenBodySchema,
     GoogleLoginSchema,
     UpdateProfileSchema,
     VerifyEmailSchema,
     ChangePasswordSchema,
+    UpdateRoleSchema,
 };

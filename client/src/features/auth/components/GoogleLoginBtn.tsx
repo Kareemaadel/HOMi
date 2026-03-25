@@ -1,12 +1,18 @@
-import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/auth.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export interface GoogleLoginBtnProps {
+    /** From parent (e.g. auth page) — same “Remember me” as email sign-in. */
+    rememberMe?: boolean;
+}
 
-export const GoogleLoginBtn = () => {
+export const GoogleLoginBtn = ({ rememberMe = false }: GoogleLoginBtnProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const loginWithGoogle = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
@@ -15,20 +21,25 @@ export const GoogleLoginBtn = () => {
 
             try {
                 const googleToken = tokenResponse.access_token;
-                const res = await axios.post(`${API_BASE_URL}/auth/google`, {
-                    googleAccessToken: googleToken,
-                });
+                const response = await authService.loginWithGoogle(googleToken, rememberMe);
 
-                console.log('✅ Login Success!', res.data);
-                localStorage.setItem('accessToken', res.data.accessToken);
-                localStorage.setItem('refreshToken', res.data.refreshToken);
-                localStorage.setItem('user', JSON.stringify(res.data.user));
-                localStorage.setItem('profile', JSON.stringify(res.data.profile));
+                console.log('✅ Google Login successful!', response);
 
-                alert(`Welcome ${res.data.profile.firstName}! Login successful.`);
-            } catch (err: any) {
-                console.error('❌ Login Failed', err);
-                setError(err.response?.data?.message || 'Login failed. Please try again.');
+                if (response.isNewUser) {
+                    navigate('/complete-profile');
+                } else if (response.user.role === 'TENANT') {
+                    navigate('/', { state: { next: '/tenant-home', force: true } });
+                } else if (response.user.role === 'LANDLORD') {
+                    navigate('/', { state: { next: '/landlord-home', force: true } });
+                } else {
+                    navigate('/');
+                }
+            } catch (err) {
+                console.error('❌ Google Login failed:', err);
+                const errorMessage = axios.isAxiosError(err)
+                    ? err.response?.data?.message || 'Google login failed. Please try again.'
+                    : 'Google login failed. Please try again.';
+                setError(errorMessage);
             } finally {
                 setLoading(false);
             }
@@ -40,43 +51,51 @@ export const GoogleLoginBtn = () => {
     });
 
     return (
-        <div className="w-full space-y-4">
+        <>
             <button
                 onClick={() => loginWithGoogle()}
                 disabled={loading}
                 type="button"
-                className="w-full flex items-center justify-center gap-3 
-                         px-6 py-4 bg-[#1e293b] border border-[#334155] rounded-none
-                         text-[15px] font-medium text-white
-                         transition-all duration-200
-                         hover:bg-[#283548] hover:border-[#475569]
-                         disabled:opacity-60 disabled:cursor-not-allowed
-                         focus:outline-none"
+                className="social-pill"
             >
                 {loading ? (
                     <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent 
-                                      rounded-full animate-spin" />
+                        <div style={{ 
+                            width: '20px', 
+                            height: '20px', 
+                            border: '2px solid #ccc', 
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                        }} />
                         <span>Signing in...</span>
                     </>
                 ) : (
                     <>
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
+                        <svg style={{ width: '22px', height: '22px' }} viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                         </svg>
-                        <span>Sign in with Google</span>
+                        <span>Google</span>
                     </>
                 )}
             </button>
 
             {error && (
-                <div className="p-4 text-[14px] text-red-400 bg-red-900/30 border border-red-800 rounded-none">
+                <div style={{ 
+                    padding: '12px', 
+                    backgroundColor: '#fee', 
+                    color: '#c00', 
+                    borderRadius: '4px',
+                    marginTop: '12px',
+                    fontSize: '14px',
+                    gridColumn: '1 / -1'
+                }}>
                     {error}
                 </div>
             )}
-        </div>
+        </>
     );
 };

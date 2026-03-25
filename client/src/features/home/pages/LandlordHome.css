@@ -101,3 +101,16 @@
   width: 100%;
 }
 
+/* Add this to your existing landlordHome.css */
+.top-actions-row {
+    display: flex;
+    gap: 24px;
+    align-items: stretch; /* Makes both cards the same height */
+    margin-bottom: 24px;
+}
+
+/* Ensure AddPropertyCard and Notifications share space well */
+.add-property-section {
+    flex: 1;
+    width: 1000px; /* Adjust based on your AddPropertyCard design */
+}

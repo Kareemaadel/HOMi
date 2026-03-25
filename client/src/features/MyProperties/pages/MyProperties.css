@@ -1,28 +1,87 @@
 .my-properties-container {
   padding: 100px 40px 40px;
-  max-width: 1800px;
-  margin: 0 auto;
-  margin-top: 46px;
-  margin-left: -10px;
-  height: 100%;
+  width: 1660px; /* Centered slightly more for readability */
+  margin: 46px auto 0;
+  background-color: #ffffff;
+  min-height: 100vh;
+  margin-left: 0px;
+  margin-right: -30px;
 }
 
-.page-header-simple {
+/* Header Layout */
+.my-props-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   margin-bottom: 40px;
-  margin-top: 60px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.page-header-simple h1 {
-  font-size: 2.9rem;
+.header-left h1 {
+  font-size: 2.5rem;
   color: #0f172a;
   font-weight: 900;
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+
+.header-left p {
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Premium Button Styling */
+.add-prop-primary-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0f172a; /* Dark sleek color */
+  color: white;
+  border: none;
+  padding: 8px 24px 8px 8px; /* Offset padding for the circle */
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+}
+
+.add-prop-primary-btn:hover {
+  background: #2563eb; /* Shifts to brand blue on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(37, 99, 235, 0.2);
+}
+
+.add-prop-primary-btn:active {
+  transform: translateY(0);
+}
+
+.btn-icon-circle {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: 0.3s;
+}
+
+.add-prop-primary-btn:hover .btn-icon-circle {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(90deg);
+}
+
+.btn-text {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
 }
 
 .detailed-list-wrapper {
   display: flex;
-  flex-direction: column; /* This keeps cards in a vertical list, but card content is horizontal */
-}
-
-.my-properties-container{
-  background-color:#ffffff
+  flex-direction: column;
+  gap: 20px; /* Space between the long property cards */
 }

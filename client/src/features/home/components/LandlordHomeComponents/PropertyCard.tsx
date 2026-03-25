@@ -1,90 +1,94 @@
-// client\src\features\home\components\LandlordHomeComponents\PropertyCard.tsx
 import React, { useState } from 'react';
 import { 
-  FaMapMarkerAlt, FaEllipsisV, FaBed, FaBath, 
-  FaRulerCombined, FaArrowRight, FaEye 
-} from 'react-icons/fa';
+  FiMapPin, FiMoreHorizontal, FiMaximize, 
+  FiUsers, FiActivity, FiArrowUpRight, FiCheckCircle, FiClock 
+} from 'react-icons/fi';
 import ManagePropertyModal from '../../../MyProperties/components/ManagePropertyModal';
 import './PropertyCard.css';
 
-const PropertyCard = ({ name, address, status, price, beds = 3, baths = 2, sqft = "1,200", id }: any) => {
+// Added specific landlord-relevant props
+const PropertyCard = ({ 
+  name = "Skyline Apartments", 
+  address = "Downtown, Dubai", 
+  status = "Occupied", 
+  price = "2,500", 
+  tenantName = "Sarah Jenkins",
+  paymentStatus = "Paid",
+  beds = 3, 
+  baths = 2, 
+  sqft = "1,200", 
+  id 
+}: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const propertyData = { id, name, address, status, price, beds, baths, sqft };
+  const propertyData = { id, name, address, status, price, beds, baths, sqft, tenantName };
 
   return (
     <>
-      <div className="property-card" onClick={() => setIsModalOpen(true)}>
-        <div className="card-image-wrapper">
-          <img src="/rentblue.jpg" alt={name} className="property-image" />
+      <div className="prop-card-container" onClick={() => setIsModalOpen(true)}>
+        <div className="prop-card-media">
+          <img src="/rentblue.jpg" alt={name} className="prop-main-img" />
           
-          <div className="image-overlay-top">
-            <span className={`status-badge $`}>
-              <span className="pulse-dot"></span>
+          <div className="prop-floating-badges">
+            <div className={`status-pill ${status.toLowerCase()}`}>
+              <span className="pulse-indicator"></span>
               {status}
-            </span>
-            <button className="options-glass-btn" onClick={(e) => e.stopPropagation()}>
-              <FaEllipsisV />
+            </div>
+            <button className="prop-options-btn" onClick={(e) => e.stopPropagation()}>
+              <FiMoreHorizontal />
             </button>
           </div>
 
-          <div className="view-overlay">
-            <div className="view-circle">
-              <FaEye />
-              <span>Manage Unit</span>
+          <div className="prop-media-overlay">
+            <div className="manage-glass-pill">
+              <span>Property Analytics</span>
+              <FiArrowUpRight />
             </div>
           </div>
-
-          <div className="image-overlay-bottom">
-             <span className="category-tag">Premium Unit</span>
-          </div>
         </div>
-        
-        <div className="card-body">
-          <div className="card-header-info">
-            <h3 className="property-title">{name}</h3>
-            <p className="address-text">
-              <FaMapMarkerAlt className="loc-icon" /> {address}
+
+        <div className="prop-card-content">
+          <div className="prop-header">
+            <h3 className="prop-title">{name}</h3>
+            <p className="prop-location">
+              <FiMapPin size={12} /> {address}
             </p>
           </div>
 
-          <div className="property-spec-grid">
-            <div className="spec-item">
-              <FaBed />
-              <div className="spec-val">
-                <span className="num">{beds}</span>
-                <span className="lbl">Beds</span>
+          {/* New Section: Tenant Snapshot */}
+          <div className="tenant-snapshot">
+            <div className="tenant-info">
+              <div className="tenant-avatar">{tenantName.charAt(0)}</div>
+              <div className="tenant-details">
+                <span className="label">Current Tenant</span>
+                <span className="name">{tenantName}</span>
               </div>
             </div>
-            <div className="spec-item">
-              <FaBath />
-              <div className="spec-val">
-                <span className="num">{baths}</span>
-                <span className="lbl">Baths</span>
-              </div>
-            </div>
-            <div className="spec-item">
-              <FaRulerCombined />
-              <div className="spec-val">
-                <span className="num">{sqft}</span>
-                <span className="lbl">sqft</span>
-              </div>
+            <div className={`payment-status ${paymentStatus.toLowerCase()}`}>
+               {paymentStatus === "Paid" ? <FiCheckCircle size={14}/> : <FiClock size={14}/>}
+               {paymentStatus}
             </div>
           </div>
-          
-          <div className="card-footer-luxury">
-            <div className="rent-info">
-              <span className="rent-label">Annual Revenue Est.</span>
-              <div className="rent-value">
-                <span className="currency">$</span>
-                <span className="amount">{price}</span>
-                <span className="per">/mo</span>
+
+          <div className="prop-specs-minimal">
+            <div className="spec-unit"><b>{beds}</b><span>Beds</span></div>
+            <div className="spec-divider"></div>
+            <div className="spec-unit"><b>{baths}</b><span>Baths</span></div>
+            <div className="spec-divider"></div>
+            <div className="spec-unit"><b>{sqft}</b><span>sqft</span></div>
+          </div>
+
+          <div className="prop-footer">
+            <div className="price-stack">
+              <span className="price-label">Net Monthly Income</span>
+              <div className="price-display">
+                <span className="price-amt">${price}</span>
+                <span className="price-period">/mo</span>
               </div>
             </div>
-            
-            <button className="manage-action-btn">
-              <FaArrowRight />
-            </button>
+            <div className="prop-action-icon">
+                <FiMaximize />
+            </div>
           </div>
         </div>
       </div>

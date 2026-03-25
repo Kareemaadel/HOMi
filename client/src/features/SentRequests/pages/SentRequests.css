@@ -1,0 +1,231 @@
+/* client/src/features/SentRequests/pages/SentRequests.css */
+
+/* Layout wrapper */
+.sent-requests-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f8fafc; /* Light gray background for the dashboard */
+}
+
+/* Main content area containing sidebar and page content */
+.sent-requests-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Specific content wrapper to the right of the sidebar */
+.sent-requests-content {
+    flex: 1;
+    padding: 2rem 3rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-left: 250px;
+    margin-top: 70px;
+}
+
+.sent-requests-header h1 {
+    font-size: 2rem;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+}
+
+.sent-requests-header p {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* Grid for the application cards */
+.requests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Individual Request Card */
+.request-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+}
+
+.request-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+
+.request-card-image-wrapper {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+.request-card-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Status Badges positioned over the image */
+.status-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(4px);
+}
+
+.status-badge.pending {
+    background-color: rgba(245, 158, 11, 0.9); /* Amber */
+    color: white;
+}
+
+.status-badge.reviewed {
+    background-color: rgba(56, 189, 248, 0.9); /* Light Blue */
+    color: white;
+}
+
+/* Info section of the card */
+.request-card-info {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.request-card-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.15rem;
+    color: #1e293b;
+}
+
+.request-address {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+.request-card-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 1rem;
+}
+
+.request-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.request-price span {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #64748b;
+}
+
+.view-details-btn {
+    background: transparent;
+    color: #3b82f6;
+    border: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.request-card:hover .view-details-btn {
+    color: #2563eb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sent-requests-main {
+        flex-direction: column; /* Stacks sidebar and content on small screens if Sidebar doesn't have its own mobile menu logic */
+    }
+    
+    .sent-requests-content {
+        padding: 1.5rem;
+    }
+}
+/* --- Empty State Styles --- */
+.sent-empty-state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 20px;
+    text-align: center;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px dashed #e2e8f0;
+    margin-top: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.sent-empty-icon-wrapper {
+    background: #f1f5f9;
+    padding: 24px;
+    border-radius: 50%;
+    margin-bottom: 24px;
+}
+
+.sent-empty-icon {
+    color: #64748b;
+}
+
+.sent-empty-title {
+    margin: 0 0 12px 0;
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.sent-empty-text {
+    margin: 0 0 32px 0;
+    color: #64748b;
+    max-width: 450px;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Premium Button Styling */
+.btn-browse-action {
+    padding: 12px 28px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-browse-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.btn-browse-action:active {
+    transform: translateY(0);
+}

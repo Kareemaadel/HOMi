@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import DetailedPropertyCard from '../components/DetailedPropertyCard';
-import AddPropertyCard from '../../home/components/LandlordHomeComponents/AddPropertyCard';
+import AddPropertyModal from '../../home/components/LandlordHomeComponents/AddPropertyModal'; // Import modal
+import { FiPlus, FiHome } from 'react-icons/fi'; // Icons for the button
 import './MyProperties.css';
 
 const MyProperties = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const myProperties = [
     { id: 1, name: "Skyline Apartments", address: "Downtown, Unit 402", status: "rented", price: "$2,400", beds: 2, baths: 2, sqft: "1,100", tenantName: "John Doe", leaseEnd: "Dec 2026", yield: "6.4" },
     { id: 2, name: "Oak Ridge Villa", address: "Suburban St. 12", status: "available", price: "$1,850", beds: 4, baths: 3, sqft: "2,500", tenantName: null, leaseEnd: null, yield: "5.2" },
@@ -20,22 +23,33 @@ const MyProperties = () => {
       <div className="main-content">
         <Header />
         <main className="my-properties-container">
-          {/* <div className="page-header-simple">
-            <h1>My Properties</h1>
-            <p>You have {myProperties.length} active listings</p>
-          </div> */}
           
+          <div className="my-props-header">
+            <div className="header-left">
+              <h1>Portfolio</h1>
+              <p>Managing {myProperties.length} total units</p>
+            </div>
+            
+            <button className="add-prop-primary-btn" onClick={() => setIsModalOpen(true)}>
+              <div className="btn-icon-circle">
+                <FiPlus />
+              </div>
+              <span className="btn-text">Add New Property</span>
+            </button>
+          </div>
+
           <div className="detailed-list-wrapper">
             {myProperties.map(prop => (
               <DetailedPropertyCard key={prop.id} property={prop} />
             ))}
-            <AddPropertyCard onClick={function (): void {
-              throw new Error('Function not implemented.');
-            } } />
           </div>
         </main>
         <Footer />
       </div>
+
+      {isModalOpen && (
+        <AddPropertyModal onClose={() => setIsModalOpen(false)} />
+      )}
     </div>
   );
 };

@@ -1,19 +1,53 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  FaHome, FaBuilding, FaSearch, FaUserFriends, 
-  FaTools, FaCreditCard, FaEnvelope, FaStar, 
-  FaQuestionCircle, FaSignOutAlt,
+  FaHome, FaBuilding,
+  FaTools, FaCreditCard, FaEnvelope,
+  FaSignOutAlt,
   FaCog,
-  FaBalanceScale,
   FaInbox,
-  FaPaperPlane,
   FaWallet
 } from 'react-icons/fa';
 import './sidebar.css';
+import { authService } from '../../../services/auth.service';
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const [userName, setUserName] = useState('Guest');
+  const [userRole, setUserRole] = useState('Not signed in');
+  const [avatarSrc, setAvatarSrc] = useState(
+    'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=80'
+  );
+
+  useEffect(() => {
+    const load = () => {
+      const cached = authService.getCurrentUser();
+      if (cached) {
+        const { profile, user } = cached;
+        setUserName(`${profile.firstName} ${profile.lastName}`.trim() || user.email);
+        setUserRole(user.role === 'LANDLORD' ? 'Landlord' : 'Tenant');
+        const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          `${profile.firstName} ${profile.lastName}`.trim() || 'User'
+        )}&background=6366f1&color=fff&size=80`;
+        setAvatarSrc(profile.avatarUrl || fallback);
+      }
+    };
+
+    load();
+    // Re-read on storage changes (e.g. after profile save in Settings)
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
+  }, []);
+
+  const handleLogout = async () => {
+    await authService.logout();
+    navigate('/auth');
+  };
+
+  const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6366f1&color=fff&size=80`;
+
   return (
     <aside className="sidebar">
       {/* 1. Brand Section */}
@@ -24,7 +58,7 @@ const Sidebar = () => {
       {/* 2. Navigation */}
       <nav className="sidebar-nav">
         <ul>
-          <li><a href="/" className={location.pathname === "/" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
+          <li><a href="/landlord-home" className={location.pathname === "/landlord-home" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
           <li><a href="/my-properties" className={location.pathname === "/my-properties" ? "active" : ""}><FaBuilding /> <span>My Properties</span></a></li>
           <li><a href="/rental-requests" className={location.pathname === "/rental-requests" ? "active" : ""}><FaInbox /> <span>Rental Requests</span></a></li>
           
@@ -42,13 +76,20 @@ const Sidebar = () => {
       {/* 3. User Section */}
       <div className="sidebar-footer">
         <div className="user-info">
-          <img src="https://i.pravatar.cc/150?u=tenant" alt="Profile" />
+          <img
+            src={avatarSrc}
+            alt="Profile"
+            referrerPolicy="no-referrer"
+            onError={() => setAvatarSrc(fallbackAvatar)}
+          />
           <div className="user-text">
-            <p className="user-name">Alex Rivera</p>
-            <p className="user-role">Premium Tenant</p>
+            <p className="user-name">{userName || 'Loading…'}</p>
+            <p className="user-role">{userRole}</p>
           </div>
         </div>
-        <button className="logout-btn"><FaSignOutAlt /></button>
+        <button className="logout-btn" onClick={handleLogout} title="Sign out">
+          <FaSignOutAlt />
+        </button>
       </div>
     </aside>
   );

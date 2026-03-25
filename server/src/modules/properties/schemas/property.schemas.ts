@@ -7,8 +7,15 @@ import { PropertyStatus, FurnishingStatus, PropertyType, TargetTenant } from '..
 export const PropertyImageSchema = z.object({
     image_url: z
         .string()
-        .url('Image URL must be a valid URL')
-        .max(500, 'Image URL must be at most 500 characters'),
+        .min(1, 'Image is required')
+        .refine(
+            (value) => {
+                const isHttpUrl = /^https?:\/\/.+/i.test(value);
+                const isDataImage = /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value);
+                return isHttpUrl || isDataImage;
+            },
+            { message: 'Image must be a valid URL or a base64 data image' }
+        ),
     is_main: z
         .boolean()
         .default(false),

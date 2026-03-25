@@ -1,0 +1,230 @@
+/* client/src/features/guest/pages/GuestSearch.css */
+
+/* --- Global & Layout --- */
+.search-layout {
+  height: 100vh; /* Locks exact screen height */
+  background-color: #ffffff; 
+  font-family: var(--font-main, system-ui, sans-serif);
+  padding-top: 80px; /* Leaves exact room for the fixed nav */
+  box-sizing: border-box;
+  overflow: hidden; /* Absolutely prevents the whole page from scrolling */
+  display: flex;
+  flex-direction: column;
+  margin-top: 60px;
+}
+
+.search-layout * {
+  box-sizing: border-box;
+}
+
+/* --- Navigation --- */
+.glass-panel-nav {
+  position: fixed; 
+  top: 0; left: 0; width: 100%; 
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--neutral-200, #e5e7eb);
+  height: 80px;
+  display: flex;
+  align-items: center;
+}
+
+.search-nav-bar {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: 40px;
+  padding: 6px 6px 6px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  flex-grow: 1;
+  max-width: 650px;
+  margin: 0 32px;
+}
+
+.search-nav-bar input {
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--neutral-900, #111827);
+  width: 100%;
+}
+
+.search-nav-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--neutral-200, #e5e7eb);
+  margin: 0 16px;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--neutral-600, #4b5563);
+  cursor: pointer;
+}
+
+.search-btn {
+  background: var(--brand-blue, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+  cursor: pointer;
+}
+
+/* --- Main Content & 3-Column Container --- */
+.search-main-content {
+  flex-grow: 1; 
+  width: 100%;
+  padding-top: 32px;
+  display: flex; /* Crucial for controlling inner heights */
+  flex-direction: column;
+  min-height: 0; /* THE FIX: Stops content from stretching beyond 100vh */
+}
+
+.search-container {
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 40px; 
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  flex-grow: 1; 
+  min-height: 0; /* THE FIX: Forces grid to stay within bounds */
+}
+
+/* --- The Vertical Scroll Columns --- */
+.property-scroll-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* THE FIX: Allows the internal scroller to work */
+  height: 100%;
+}
+
+/* --- Column Headers --- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--neutral-100, #f3f4f6);
+  flex-shrink: 0; /* Keeps header visible while scrolling */
+}
+
+.title-area {
+  position: relative;
+  padding-left: 16px;
+}
+
+.title-area::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: var(--brand-blue, #2563eb);
+  border-radius: 4px;
+}
+
+.title-area h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--neutral-900, #111827);
+  letter-spacing: -0.02em;
+  margin: 0 0 4px 0;
+}
+
+.title-area p {
+  font-size: 13px;
+  color: var(--neutral-500, #6b7280);
+  font-weight: 500;
+  margin: 0;
+}
+
+.view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--brand-blue, #2563eb);
+  cursor: pointer;
+}
+
+/* --- Vertical Properties Scroller --- */
+.properties-scroller {
+  display: flex;
+  flex-direction: column; 
+  gap: 20px;
+  overflow-y: auto; /* Adds the scrollbar */
+  flex-grow: 1; 
+  min-height: 0; /* THE FIX: Allows the container to actually scroll */
+  padding-right: 8px; 
+  padding-bottom: 40px;
+  
+  /* Modern Scrollbar Styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--neutral-300, #d1d5db) transparent;
+}
+
+.properties-scroller > * {
+  flex-shrink: 0; 
+  height: max-content; /* THE FIX: Forces the card to its natural height */
+  min-height: min-content; /* Overrides any inherited 100% height rules */
+}
+
+.properties-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.properties-scroller::-webkit-scrollbar-track {
+  background: transparent; 
+}
+.properties-scroller::-webkit-scrollbar-thumb {
+  background-color: var(--neutral-300, #d1d5db); 
+  border-radius: 10px;
+}
+
+/* --- Responsive Overrides --- */
+@media (max-width: 1200px) {
+  .search-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .search-nav-bar { display: none; }
+  .search-container { padding: 0 24px; }
+}
+
+@media (max-width: 768px) {
+  .search-layout, .search-main-content, .search-container {
+    height: auto; /* Reverts to normal scrolling on mobile */
+    min-height: auto;
+    overflow: visible;
+  }
+  .search-container {
+    grid-template-columns: 1fr;
+  }
+  .properties-scroller {
+    overflow-y: visible;
+  }
+}

@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { Op } from 'sequelize';
-import { User, Profile, sequelize } from '../models/index.js';
-import { generateTokenPair, type TokenPair } from '../../../shared/utils/jwt.util.js';
+import { User, Profile, Habit, UserHabit, sequelize } from '../models/index.js';
+import {
+    generateTokenPair,
+    generateAccessToken,
+    verifyRefreshToken,
+    type TokenPair,
+} from '../../../shared/utils/jwt.util.js';
 import { generateSecureToken, hashToken } from '../../../shared/utils/encryption.util.js';
 import { emailService } from '../../../shared/services/email.service.js';
 import type {
@@ -20,6 +25,7 @@ import type {
     UpdateProfileRequest,
     EmailVerificationResponse,
     ChangePasswordRequest,
+    UpdateRoleRequest,
 } from '../interfaces/auth.interfaces.js';
 
 /**
@@ -322,6 +328,19 @@ export class AuthService {
     }
 
     /**
+     * Issue a new access token from a valid refresh JWT (body or cookie).
+     */
+    async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+        try {
+            const payload = verifyRefreshToken(refreshToken);
+            const accessToken = generateAccessToken(payload);
+            return { accessToken };
+        } catch {
+            throw new AuthError('Invalid or expired refresh token', 401, 'INVALID_REFRESH_TOKEN');
+        }
+    }
+
+    /**
      * Initiate forgot password flow
      * Generates reset token and sends password reset email
      */
@@ -351,12 +370,18 @@ export class AuthService {
             reset_token_expires: tokenExpires,
         });
 
-        // Send password reset email using email service
-        const emailSent = await emailService.sendPasswordResetEmail(user.email, token);
-
-        if (!emailSent) {
-            console.warn('Failed to send password reset email, but token was generated');
-        }
+        // Send password reset email without blocking the HTTP response.
+        // SMTP can occasionally take >10s; the client has a 10s Axios timeout.
+        void emailService
+            .sendPasswordResetEmail(user.email, token)
+            .then((emailSent) => {
+                if (!emailSent) {
+                    console.warn('Failed to send password reset email, but token was generated');
+                }
+            })
+            .catch((error) => {
+                console.error('Password reset email send failed:', error);
+            });
 
         return {
             success: true,
@@ -431,7 +456,9 @@ export class AuthService {
         });
 
         // 3. If user doesn't exist, auto-register them
+        let isNewUser = false;
         if (!user) {
+            isNewUser = true;
             const transaction = await sequelize.transaction();
 
             try {
@@ -518,6 +545,7 @@ export class AuthService {
             refreshToken: tokens.refreshToken,
             user: userResponse,
             profile: profileResponse,
+            isNewUser,
         };
     }
 
@@ -665,6 +693,83 @@ export class AuthService {
     }
 
     /**
+     * Update user role
+     * Allows users to change their role between TENANT and LANDLORD
+     */
+    async updateRole(
+        userId: string,
+        input: UpdateRoleRequest
+    ): Promise<LoginResponse> {
+        const transaction = await sequelize.transaction();
+
+        try {
+            // Find user and profile
+            const user = await User.findByPk(userId, {
+                include: [{ model: Profile, as: 'profile' }],
+                transaction,
+            });
+
+            if (!user) {
+                throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+            }
+
+            const profile = user.profile;
+            if (!profile) {
+                throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
+            }
+
+            // Update user role
+            await user.update({ role: input.role }, { transaction });
+
+            await transaction.commit();
+
+            // Return updated user and profile, with new tokens (since token embeds role)
+            const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
+
+            const userResponse: UserResponse = {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                isVerified: user.is_verified,
+                emailVerified: user.email_verified,
+                createdAt: user.created_at,
+            };
+
+            const profileResponse: ProfileResponse = {
+                id: profile.id,
+                userId: profile.user_id,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                phoneNumber: profile.phone_number,
+                bio: profile.bio ?? null,
+                avatarUrl: profile.avatar_url ?? null,
+                gender: profile.gender ?? null,
+                birthdate: profile.birthdate ? String(profile.birthdate) : null,
+                gamificationPoints: profile.gamification_points,
+                preferredBudgetMin: profile.preferred_budget_min ?? null,
+                preferredBudgetMax: profile.preferred_budget_max ?? null,
+                isVerificationComplete: profile.isVerificationComplete(),
+            };
+
+            return {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                user: userResponse,
+                profile: profileResponse,
+            };
+        } catch (error) {
+            await transaction.rollback();
+
+            if (error instanceof AuthError) {
+                throw error;
+            }
+
+            console.error('Role update error:', error);
+            throw new AuthError('Failed to update role. Please try again.', 500, 'ROLE_UPDATE_FAILED');
+        }
+    }
+
+    /**
      * Send verification email to user
      * Generates a token and sends branded email
      */
@@ -786,6 +891,104 @@ export class AuthService {
         return {
             success: true,
             message: 'Password changed successfully.',
+        };
+    }
+
+    /**
+     * Set (replace) user habits
+     * Resolves habit names → IDs, then replaces the user's habits atomically
+     */
+    async setUserHabits(
+        userId: string,
+        habitNames: string[]
+    ): Promise<{ success: boolean; message: string; habits: { id: string; name: string }[] }> {
+        const transaction = await sequelize.transaction();
+
+        try {
+            const user = await User.findByPk(userId, { transaction });
+            if (!user) {
+                throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+            }
+
+            // Remove all existing habits
+            await UserHabit.destroy({ where: { user_id: userId }, transaction });
+
+            if (habitNames.length === 0) {
+                await transaction.commit();
+                return {
+                    success: true,
+                    message: 'Habits cleared successfully',
+                    habits: [],
+                };
+            }
+
+            // Resolve habit names to records
+            const habits = await Habit.findAll({
+                where: { name: habitNames },
+                transaction,
+            });
+
+            const foundNames = habits.map((h) => h.name);
+            const missing = habitNames.filter((n) => !foundNames.includes(n));
+            if (missing.length > 0) {
+                throw new AuthError(
+                    `Unknown habit(s): ${missing.join(', ')}`,
+                    400,
+                    'INVALID_HABIT_NAMES'
+                );
+            }
+
+            // Create new associations
+            await UserHabit.bulkCreate(
+                habits.map((h) => ({ user_id: userId, habit_id: h.id })),
+                { transaction }
+            );
+
+            await transaction.commit();
+
+            return {
+                success: true,
+                message: 'Habits updated successfully',
+                habits: habits.map((h) => ({ id: h.id, name: h.name })),
+            };
+        } catch (error) {
+            await transaction.rollback();
+            if (error instanceof AuthError) throw error;
+            console.error('Set habits error:', error);
+            throw new AuthError('Failed to update habits', 500, 'HABITS_UPDATE_FAILED');
+        }
+    }
+
+    /**
+     * Get user habits
+     */
+    async getUserHabits(
+        userId: string
+    ): Promise<{ success: boolean; habits: { id: string; name: string }[] }> {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+        }
+
+        const userHabits = await UserHabit.findAll({
+            where: { user_id: userId },
+        });
+
+        const habitIds = userHabits.map((uh) => uh.habit_id);
+
+        if (habitIds.length === 0) {
+            return { success: true, habits: [] };
+        }
+
+        const habits = await Habit.findAll({
+            where: { id: habitIds },
+            attributes: ['id', 'name'],
+            order: [['name', 'ASC']],
+        });
+
+        return {
+            success: true,
+            habits: habits.map((h) => ({ id: h.id, name: h.name })),
         };
     }
 }

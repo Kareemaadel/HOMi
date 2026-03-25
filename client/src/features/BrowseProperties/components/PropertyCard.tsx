@@ -13,7 +13,7 @@ import './PropertyCard.css';
 
 interface PropertyCardProps {
     property: {
-        id: number;
+        id: string | number;
         title: string;
         address: string;
         price: number;
@@ -84,31 +84,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
                 
                 <h3 className="card-title">{property.title}</h3>
                 
-                <div className="specs-grid">
-                    <div className="spec-pill">
-                        <div className="pill-icon"><FaBed /></div>
-                        <div className="pill-info">
-                            <strong>{property.beds}</strong>
-                            <span>{property.beds === 1 ? 'Bed' : 'Beds'}</span>
-                        </div>
-                    </div>
-                    
-                    <div className="spec-pill">
-                        <div className="pill-icon"><FaBath /></div>
-                        <div className="pill-info">
-                            <strong>{property.baths}</strong>
-                            <span>{property.baths === 1 ? 'Bath' : 'Baths'}</span>
-                        </div>
-                    </div>
-                    
-                    <div className="spec-pill">
-                        <div className="pill-icon"><FaRulerCombined /></div>
-                        <div className="pill-info">
-                            <strong>{property.sqft.toLocaleString()}</strong>
-                            <span>sqft</span>
-                        </div>
-                    </div>
-                </div>
+
 
                 <div className="card-actions">
                     <button 

@@ -127,6 +127,21 @@ const options: Options = {
                             type: 'string',
                             example: 'SecurePass123',
                         },
+                        rememberMe: {
+                            type: 'boolean',
+                            description: 'If true, refresh token is set as httpOnly cookie `homi_refresh_token` (not returned in JSON).',
+                            example: true,
+                        },
+                    },
+                },
+                RefreshTokenRequest: {
+                    type: 'object',
+                    description: 'Optional when refresh JWT is sent via httpOnly cookie from Remember me.',
+                    properties: {
+                        refreshToken: {
+                            type: 'string',
+                            description: 'JWT refresh token (required if no refresh cookie)',
+                        },
                     },
                 },
                 CompleteVerificationRequest: {
@@ -198,9 +213,14 @@ const options: Options = {
                     type: 'object',
                     properties: {
                         accessToken: { type: 'string', description: 'JWT access token (15m expiry)' },
-                        refreshToken: { type: 'string', description: 'JWT refresh token (7d expiry)' },
+                        refreshToken: {
+                            type: 'string',
+                            description: 'JWT refresh token — omitted when stored in httpOnly cookie (Remember me)',
+                            nullable: true,
+                        },
                         user: { $ref: '#/components/schemas/User' },
                         profile: { $ref: '#/components/schemas/Profile' },
+                        isNewUser: { type: 'boolean', description: 'Google OAuth only — true when account was just created' },
                     },
                 },
                 UserProfileResponse: {
@@ -853,6 +873,316 @@ const options: Options = {
                     },
                 },
 
+                // ─── Rental Request Enums ─────────────────────────────────────────────────
+                RentalRequestDuration: {
+                    type: 'string',
+                    enum: ['6_MONTHS', '12_MONTHS', '24_MONTHS'],
+                    description: 'Desired lease duration',
+                    example: '12_MONTHS',
+                },
+                LivingSituation: {
+                    type: 'string',
+                    enum: ['SINGLE', 'FAMILY', 'MARRIED', 'STUDENTS'],
+                    description: 'Tenant living situation',
+                    example: 'MARRIED',
+                },
+                RentalRequestStatus: {
+                    type: 'string',
+                    enum: ['PENDING', 'APPROVED', 'DECLINED'],
+                    description: 'Rental request status. Starts as **PENDING**. Landlord can set to **APPROVED** or **DECLINED** (final).',
+                    example: 'PENDING',
+                },
+
+                // ─── Habits ───────────────────────────────────────────────────────────────
+                HabitName: {
+                    type: 'string',
+                    description: 'Available habit name — must exactly match one of the seeded values',
+                    enum: [
+                        'Non-smoker',
+                        'Early Riser',
+                        'Social',
+                        'Work from Home',
+                        'Vegan',
+                        'Musician',
+                        'Gamer',
+                        'Chef at Home',
+                        'Pet Owner',
+                        'Very Clean',
+                        'Night Owl',
+                    ],
+                    example: 'Non-smoker',
+                },
+                HabitResponse: {
+                    type: 'object',
+                    description: 'A habit record',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        name: { $ref: '#/components/schemas/HabitName' },
+                    },
+                },
+
+                // ─── Tenant Summary (for landlord view) ───────────────────────────────────
+                TenantSummary: {
+                    type: 'object',
+                    description: 'Summary of tenant info shown to landlord when reviewing applications',
+                    properties: {
+                        id: { type: 'string', format: 'uuid', description: 'Tenant user ID' },
+                        firstName: { type: 'string', example: 'Ahmed' },
+                        lastName: { type: 'string', example: 'Hassan' },
+                        avatarUrl: { type: 'string', format: 'uri', nullable: true, example: 'https://example.com/avatar.jpg' },
+                        bio: { type: 'string', nullable: true, example: 'Software developer looking for a quiet place' },
+                    },
+                },
+
+                // ─── Property Summary (in rental request) ─────────────────────────────────
+                PropertySummary: {
+                    type: 'object',
+                    description: 'Minimal property info included in rental request responses',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        title: { type: 'string', example: 'Beautiful 2BR Apartment' },
+                        address: { type: 'string', example: 'Tahrir Street, Downtown, Cairo' },
+                    },
+                },
+
+                // ─── Rental Request Bodies ─────────────────────────────────────────────────
+                CreateRentalRequestBody: {
+                    type: 'object',
+                    required: ['property_id', 'move_in_date', 'duration', 'occupants', 'living_situation'],
+                    description: 'Payload to submit a rental request on a published property',
+                    properties: {
+                        property_id: {
+                            type: 'string',
+                            format: 'uuid',
+                            description: 'UUID of the property to request',
+                            example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+                        },
+                        move_in_date: {
+                            type: 'string',
+                            format: 'date',
+                            pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+                            description: 'Desired move-in date (YYYY-MM-DD)',
+                            example: '2026-04-01',
+                        },
+                        duration: {
+                            $ref: '#/components/schemas/RentalRequestDuration',
+                        },
+                        occupants: {
+                            type: 'integer',
+                            minimum: 1,
+                            description: 'Number of people who will live in the property',
+                            example: 2,
+                        },
+                        living_situation: {
+                            $ref: '#/components/schemas/LivingSituation',
+                        },
+                        message: {
+                            type: 'string',
+                            maxLength: 2000,
+                            description: 'Optional message to the landlord',
+                            example: 'We are a quiet couple looking for a long-term stay.',
+                        },
+                    },
+                },
+                UpdateRentalRequestStatusBody: {
+                    type: 'object',
+                    required: ['status'],
+                    description: 'Payload to approve or decline a rental request',
+                    properties: {
+                        status: {
+                            type: 'string',
+                            enum: ['APPROVED', 'DECLINED'],
+                            description: 'New status (only APPROVED or DECLINED allowed)',
+                            example: 'APPROVED',
+                        },
+                    },
+                },
+
+                // ─── Rental Request Responses ─────────────────────────────────────────────
+                RentalRequestResponse: {
+                    type: 'object',
+                    description: 'Rental request object (without tenant details)',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        tenantId: { type: 'string', format: 'uuid' },
+                        propertyId: { type: 'string', format: 'uuid' },
+                        moveInDate: { type: 'string', format: 'date', example: '2026-04-01' },
+                        duration: { $ref: '#/components/schemas/RentalRequestDuration' },
+                        occupants: { type: 'integer', example: 2 },
+                        livingSituation: { $ref: '#/components/schemas/LivingSituation' },
+                        message: { type: 'string', nullable: true },
+                        status: { $ref: '#/components/schemas/RentalRequestStatus' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        property: {
+                            allOf: [{ $ref: '#/components/schemas/PropertySummary' }],
+                            nullable: true,
+                        },
+                    },
+                },
+                RentalRequestWithTenantResponse: {
+                    type: 'object',
+                    description: 'Rental request object with tenant profile summary and property info',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        tenantId: { type: 'string', format: 'uuid' },
+                        propertyId: { type: 'string', format: 'uuid' },
+                        moveInDate: { type: 'string', format: 'date', example: '2026-04-01' },
+                        duration: { $ref: '#/components/schemas/RentalRequestDuration' },
+                        occupants: { type: 'integer', example: 2 },
+                        livingSituation: { $ref: '#/components/schemas/LivingSituation' },
+                        message: { type: 'string', nullable: true },
+                        status: { $ref: '#/components/schemas/RentalRequestStatus' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        tenant: { $ref: '#/components/schemas/TenantSummary' },
+                        property: { $ref: '#/components/schemas/PropertySummary' },
+                    },
+                },
+                PaginationResponse: {
+                    type: 'object',
+                    description: 'Pagination metadata',
+                    properties: {
+                        total: { type: 'integer', example: 50 },
+                        page: { type: 'integer', example: 1 },
+                        limit: { type: 'integer', example: 10 },
+                        totalPages: { type: 'integer', example: 5 },
+                    },
+                },
+
+                // ─── Set User Habits ──────────────────────────────────────────────────────
+                SetUserHabitsRequest: {
+                    type: 'object',
+                    required: ['habit_names'],
+                    description: 'Payload to set (replace) the authenticated user\'s habits',
+                    properties: {
+                        habit_names: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/HabitName' },
+                            description: 'List of habit names. Pass `[]` to clear all habits.',
+                            example: ['Non-smoker', 'Early Riser', 'Work from Home'],
+                        },
+                    },
+                },
+
+                // ─── Contract Enums ──────────────────────────────────────────────────────
+                ContractStatusEnum: {
+                    type: 'string',
+                    enum: ['PENDING_LANDLORD', 'PENDING_TENANT', 'ACTIVE', 'TERMINATED', 'EXPIRED'],
+                    description: 'Contract lifecycle status',
+                    example: 'PENDING_LANDLORD',
+                },
+                RentDueDateEnum: {
+                    type: 'string',
+                    enum: ['1ST_OF_MONTH', '5TH_OF_MONTH', 'LAST_DAY_OF_MONTH'],
+                    description: 'Day of month when rent is due',
+                    example: '1ST_OF_MONTH',
+                },
+                ResponsiblePartyEnum: {
+                    type: 'string',
+                    enum: ['LANDLORD', 'TENANT'],
+                    description: 'Party responsible for a maintenance area',
+                },
+                MaintenanceAreaEnum: {
+                    type: 'string',
+                    description: 'Predefined maintenance area options (selectable in frontend)',
+                    enum: [
+                        'Structural Repairs',
+                        'Interior Appliances',
+                        'Utility Bills',
+                        'Plumbing',
+                        'Electrical',
+                        'HVAC / Air Conditioning',
+                        'Pest Control',
+                        'Exterior Maintenance',
+                        'Common Areas',
+                        'Security Systems',
+                    ],
+                    example: 'Structural Repairs',
+                },
+
+                // ─── Contract Responses ──────────────────────────────────────────────────
+                ContractResponse: {
+                    type: 'object',
+                    description: 'Full contract object returned by the API',
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        contractId: { type: 'string', example: 'HOMI-8821' },
+                        leaseId: { type: 'string', example: 'L-8829-Z', nullable: true },
+                        rentalRequestId: { type: 'string', format: 'uuid' },
+                        propertyId: { type: 'string', format: 'uuid' },
+                        landlordId: { type: 'string', format: 'uuid' },
+                        tenantId: { type: 'string', format: 'uuid' },
+                        status: { $ref: '#/components/schemas/ContractStatusEnum' },
+                        rentAmount: { type: 'number', nullable: true, example: 2400 },
+                        securityDeposit: { type: 'number', nullable: true, example: 3000 },
+                        serviceFee: { type: 'number', example: 10 },
+                        paymentSchedule: { type: 'string', enum: ['MONTHLY', 'QUARTERLY', 'ANNUALLY'] },
+                        rentDueDate: { $ref: '#/components/schemas/RentDueDateEnum', nullable: true },
+                        lateFeeAmount: { type: 'number', nullable: true, example: 50 },
+                        maxOccupants: { type: 'integer', nullable: true, example: 4 },
+                        moveInDate: { type: 'string', format: 'date' },
+                        leaseDurationMonths: { type: 'integer', example: 12 },
+                        propertyRegistrationNumber: { type: 'string', nullable: true },
+                        landlordSignedAt: { type: 'string', format: 'date-time', nullable: true },
+                        tenantSignedAt: { type: 'string', format: 'date-time', nullable: true },
+                        tenantAgreedTerms: { type: 'boolean' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        maintenanceResponsibilities: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string', format: 'uuid' },
+                                    area: { $ref: '#/components/schemas/MaintenanceAreaEnum' },
+                                    responsibleParty: { $ref: '#/components/schemas/ResponsiblePartyEnum' },
+                                },
+                            },
+                        },
+                    },
+                },
+                VerificationSummaryResponse: {
+                    type: 'object',
+                    description: 'Auto-generated platform verification summary',
+                    properties: {
+                        platformMetadata: {
+                            type: 'object',
+                            properties: {
+                                contractId: { type: 'string', example: 'HOMI-8821' },
+                                created: { type: 'string', format: 'date-time' },
+                                leaseId: { type: 'string', example: 'L-8829-Z', nullable: true },
+                            },
+                        },
+                        verifiedPropertyInfo: {
+                            type: 'object',
+                            properties: {
+                                title: { type: 'string' },
+                                type: { type: 'string', nullable: true },
+                                rooms: { type: 'string', example: '2 Bedrooms' },
+                                furnishing: { type: 'string', nullable: true },
+                                address: { type: 'string' },
+                            },
+                        },
+                        paymentTerms: {
+                            type: 'object',
+                            properties: {
+                                rent: { type: 'number', nullable: true },
+                                securityDeposit: { type: 'number', nullable: true },
+                                serviceFee: { type: 'number' },
+                                schedule: { type: 'string' },
+                            },
+                        },
+                        leaseDuration: {
+                            type: 'object',
+                            properties: {
+                                moveIn: { type: 'string', format: 'date' },
+                                durationMonths: { type: 'integer' },
+                            },
+                        },
+                    },
+                },
+
             },
         },
         tags: [
@@ -867,6 +1197,14 @@ const options: Options = {
             {
                 name: 'Properties',
                 description: 'Property listing management endpoints — create, read, update, delete.',
+            },
+            {
+                name: 'Rental Requests',
+                description: 'Tenant rental request submission and landlord review / approve / decline.',
+            },
+            {
+                name: 'Contracts',
+                description: 'Contract lifecycle management — multi-step landlord and tenant signing workflow.',
             },
         ],
     },

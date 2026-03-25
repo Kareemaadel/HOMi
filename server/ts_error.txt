@@ -1,0 +1,9 @@
+﻿tests/modules/auth/auth.integration.spec.ts(1,53): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+tests/modules/auth/auth.integration.spec.ts(2,21): error TS2307: Cannot find module 'supertest' or its corresponding type declarations.
+tests/modules/auth/auth.integration.spec.ts(10,70): error TS7006: Parameter 'importOriginal' implicitly has an 'any' type.
+tests/modules/auth/auth.integration.spec.ts(11,26): error TS2347: Untyped function calls may not accept type arguments.
+tests/modules/auth/services/auth.service.spec.ts(1,54): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+tests/modules/properties/services/property.service.spec.ts(1,54): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+tests/shared/utils/encryption.util.spec.ts(1,42): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+tests/shared/utils/jwt.util.spec.ts(1,42): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+vitest.config.ts(1,30): error TS2307: Cannot find module 'vitest/config' or its corresponding type declarations.

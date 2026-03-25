@@ -64,7 +64,7 @@ export const LoginPage = () => {
                             ala allah insha'allah 
             
                         </p>
-                        <br></br>
+                        <br />
                     </div>
 
                     {/* Google Sign In Button - FUNCTIONAL */}

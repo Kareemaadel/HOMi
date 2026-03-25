@@ -11,6 +11,8 @@ import {
     GoogleLoginSchema,
     UpdateProfileSchema,
     ChangePasswordSchema,
+    UpdateRoleSchema,
+    RefreshTokenBodySchema,
 } from '../schemas/auth.schemas.js';
 
 const router = Router();
@@ -63,6 +65,11 @@ router.post(
  *       Login with email or phone number and password to receive JWT tokens.
  *       The system automatically detects whether you're using an email or phone number.
  *       Unverified users can login but should complete verification.
+ *
+ *       **Remember me:** When `rememberMe` is `true`, the refresh token is stored in an
+ *       httpOnly cookie (`homi_refresh_token`) instead of the JSON body. Send requests with
+ *       credentials (cookies) enabled. When `rememberMe` is `false` or omitted, any existing
+ *       refresh cookie is cleared and the refresh token is returned in the response body.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -81,9 +88,21 @@ router.post(
  *               value:
  *                 identifier: "+201234567890"
  *                 password: "Password123"
+ *             rememberMe:
+ *               summary: Remember me (refresh in httpOnly cookie)
+ *               value:
+ *                 identifier: "user@example.com"
+ *                 password: "Password123"
+ *                 rememberMe: true
  *     responses:
  *       200:
  *         description: Login successful
+ *         headers:
+ *           Set-Cookie:
+ *             description: Present when rememberMe is true — httpOnly refresh JWT
+ *             schema:
+ *               type: string
+ *               example: homi_refresh_token=...; Path=/; HttpOnly; SameSite=Lax
  *         content:
  *           application/json:
  *             schema:
@@ -99,6 +118,64 @@ router.post(
     '/login',
     validate(LoginSchema),
     authController.login.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: |
+ *       Returns a new access JWT using the refresh token from the JSON body **or**
+ *       from the httpOnly `homi_refresh_token` cookie (Remember me). At least one must be present.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: New access token issued
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *       401:
+ *         description: Missing or invalid refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post(
+    '/refresh',
+    validate(RefreshTokenBodySchema),
+    authController.refresh.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Log out (clear refresh cookie)
+ *     description: Clears the httpOnly refresh cookie set by Remember me. Clients should also clear local session storage.
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthSuccessResponse'
+ */
+router.post(
+    '/logout',
+    authController.logout.bind(authController)
 );
 
 /**
@@ -271,6 +348,9 @@ router.post(
  *       - Profile populated with Google's first name, last name, and avatar
  *       - Phone number and national ID are left empty (must be collected later)
  *       - Password is set to placeholder "GOOGLE_OAUTH_USER" (they can't use password login)
+ *
+ *       **Remember me:** Same as password login — when `rememberMe` is true, refresh token is
+ *       set in httpOnly cookie `homi_refresh_token` instead of the JSON body.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -285,6 +365,10 @@ router.post(
  *                 type: string
  *                 description: Google access token obtained from Google Sign-In on frontend
  *                 example: "ya29.a0AfH6SMBx..."
+ *               rememberMe:
+ *                 type: boolean
+ *                 description: Store refresh token in httpOnly cookie for persistent sessions
+ *                 example: true
  *     responses:
  *       200:
  *         description: Login/registration successful
@@ -448,6 +532,54 @@ router.put(
     protect,
     validate(UpdateProfileSchema),
     authController.updateProfile.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/role:
+ *   put:
+ *     summary: Update user role
+ *     description: |
+ *       Update the authenticated user's role (LANDLORD or TENANT).
+ *       Returns new JWT tokens embedded with the updated role.
+ *       
+ *       **Authentication Required**: This endpoint requires a valid JWT access token.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateRoleRequest'
+ *           example:
+ *             role: "LANDLORD"
+ *     responses:
+ *       200:
+ *         description: Role updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put(
+    '/role',
+    protect,
+    validate(UpdateRoleSchema),
+    authController.updateRole.bind(authController)
 );
 
 /**
@@ -654,6 +786,105 @@ router.put(
     protect,
     validate(ChangePasswordSchema),
     authController.changePassword.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/habits:
+ *   put:
+ *     summary: Set user habits
+ *     description: |
+ *       Replace the authenticated user's habits with the provided list.
+ *       Pass an empty array `[]` to clear all habits.
+ *
+ *       Habit names must exactly match the seeded values (e.g. "Non-smoker", "Early Riser").
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SetUserHabitsRequest'
+ *           example:
+ *             habit_names: ["Non-smoker", "Early Riser", "Work from Home"]
+ *     responses:
+ *       200:
+ *         description: Habits updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Habits updated successfully"
+ *                 habits:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/HabitResponse'
+ *       400:
+ *         description: Unknown habit name(s)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Unknown habit(s): Skydiver"
+ *               code: "INVALID_HABIT_NAMES"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put(
+    '/habits',
+    protect,
+    authController.setUserHabits.bind(authController)
+);
+
+/**
+ * @swagger
+ * /auth/habits:
+ *   get:
+ *     summary: Get user habits
+ *     description: Retrieve the authenticated user's selected habits.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User habits retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 habits:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/HabitResponse'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get(
+    '/habits',
+    protect,
+    authController.getUserHabits.bind(authController)
 );
 
 export default router;

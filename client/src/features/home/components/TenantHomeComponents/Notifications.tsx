@@ -33,7 +33,7 @@ const Notifications: React.FC = () => {
 
   const handleNotificationClick = (alert: Alert) => {
     if (alert.type === 'payment') {
-      navigate('/tenant-payment', { state: { tab: 'pending' } });
+      navigate('/tenant-contracts', { state: { tab: 'pending' } });
     }
   };
 

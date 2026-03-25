@@ -144,8 +144,6 @@
     .payment-hub { padding: 20px; }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
-
 :root {
     --bg: #ffffff;
     --fg: #000000;
@@ -848,4 +846,100 @@
         width: 100%;
         max-width: 380px;
     }
+}
+/* --- EMPTY STATES & MUTED TEXT --- */
+.text-muted {
+    color: #94a3b8; /* Slate 400 */
+}
+
+.opacity-70 {
+    opacity: 0.7;
+}
+
+/* Base styling for all empty tabs (Upcoming, History, Refunds, Requests) */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    background: #ffffff;
+    border: 1px dashed #e2e8f0;
+    border-radius: 16px;
+    margin-top: 20px;
+}
+
+.empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f1f5f9; /* Slate 100 */
+    color: #64748b; /* Slate 500 */
+    margin-bottom: 16px;
+}
+
+.empty-state h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.125rem;
+    color: #0f172a;
+}
+
+.empty-state p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.875rem;
+    max-width: 300px;
+}
+
+/* --- DISABLED BUTTON STATE --- */
+.btn-vercel-black:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    border: 1px solid #cbd5e1;
+    transform: none; /* Prevents hover jump */
+    box-shadow: none;
+}
+
+/* --- EMPTY METHODS CARD VISUAL --- */
+.card-visual.empty-card {
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+    color: #94a3b8;
+}
+
+.empty-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.empty-card-icon {
+    color: #cbd5e1;
+}
+
+.empty-card-content span {
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.empty-method-text {
+    margin-bottom: 24px;
+}
+
+.empty-method-text p {
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }

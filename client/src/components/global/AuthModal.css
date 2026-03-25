@@ -1,0 +1,194 @@
+/* shared AuthModal styles */
+
+.auth-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeInOverlay 0.25s ease;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.auth-modal-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 40px 40px 32px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 32px 80px -12px rgba(0, 0, 0, 0.35);
+    animation: slideUpCard 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+@keyframes slideUpCard {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.auth-modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: #f1f5f9;
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 16px;
+    transition: background 0.2s, color 0.2s;
+}
+.auth-modal-close:hover { background: #e2e8f0; color: #0f172a; }
+
+.auth-modal-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+.auth-modal-logo img {
+    height: 48px;
+    object-fit: contain;
+}
+
+.auth-modal-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+}
+
+.auth-modal-subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 28px;
+    font-weight: 500;
+}
+
+.auth-modal-field {
+    margin-bottom: 14px;
+}
+
+.auth-modal-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.auth-modal-field input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.auth-modal-field input:focus {
+    border-color: #6366f1;
+    background: #ffffff;
+}
+
+.auth-modal-error {
+    padding: 10px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 14px;
+}
+
+.auth-modal-submit {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.2s, transform 0.15s;
+    margin-top: 6px;
+}
+.auth-modal-submit:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.auth-modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auth-modal-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0;
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 600;
+}
+.auth-modal-divider::before,
+.auth-modal-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.auth-modal-google {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 11px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: border-color 0.2s, background 0.2s;
+}
+.auth-modal-google:hover { border-color: #6366f1; background: #f8f8ff; }
+.auth-modal-google:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auth-modal-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #64748b;
+}
+.auth-modal-footer button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6366f1;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 0;
+}
+.auth-modal-footer button:hover { text-decoration: underline; }
