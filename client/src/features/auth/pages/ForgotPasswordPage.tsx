@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/auth.service';
+import axios from 'axios';
 
 const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();

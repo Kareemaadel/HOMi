@@ -370,12 +370,18 @@ export class AuthService {
             reset_token_expires: tokenExpires,
         });
 
-        // Send password reset email using email service
-        const emailSent = await emailService.sendPasswordResetEmail(user.email, token);
-
-        if (!emailSent) {
-            console.warn('Failed to send password reset email, but token was generated');
-        }
+        // Send password reset email without blocking the HTTP response.
+        // SMTP can occasionally take >10s; the client has a 10s Axios timeout.
+        void emailService
+            .sendPasswordResetEmail(user.email, token)
+            .then((emailSent) => {
+                if (!emailSent) {
+                    console.warn('Failed to send password reset email, but token was generated');
+                }
+            })
+            .catch((error) => {
+                console.error('Password reset email send failed:', error);
+            });
 
         return {
             success: true,
