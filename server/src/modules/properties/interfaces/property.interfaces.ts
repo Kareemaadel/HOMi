@@ -141,6 +141,16 @@ export interface PropertyImageResponse {
 }
 
 /**
+ * Landlord summary for property cards/details
+ */
+export interface PropertyLandlordResponse {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+}
+
+/**
  * Property Response DTO
  */
 export interface PropertyResponse {
@@ -162,6 +172,7 @@ export interface PropertyResponse {
     houseRules: HouseRuleResponse[];
     specifications: PropertySpecificationsResponse | null;
     detailedLocation: PropertyDetailedLocationResponse | null;
+    landlord: PropertyLandlordResponse | null;
 }
 
 /**

@@ -241,11 +241,11 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
 
                             <div className="owner-profile">
                                 <div className="avatar-wrapper">
-                                    <img src="https://i.pravatar.cc/150?u=sarah" alt="Agent" />
+                                    <img src={property.ownerImage || 'https://i.pravatar.cc/150?u=owner-fallback'} alt={property.ownerName || 'Owner'} />
                                     <span className="online-indicator"></span>
                                 </div>
                                 <div className="owner-details">
-                                    <span className="name">Sarah Jenkins</span>
+                                    <span className="name">{property.ownerName || 'Owner'}</span>
                                     <span className="role">Verified Owner • 4.9★</span>
                                 </div>
                                 <button className="chat-btn" onClick={() => {
