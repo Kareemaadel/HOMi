@@ -17,6 +17,7 @@ import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
 
 // CSS Import
 import './AddPropertyModal.css';
+import { propertyService } from '../../../../services/property.service';
 
 // Fix for Leaflet default marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -85,6 +86,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Form States
   const [title, setTitle] = useState('');
@@ -125,6 +127,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
 
   const amenitiesList = ["Pet Friendly", "Fitness Center", "Swimming Pool", "WiFi Included", "Air Conditioning", "Smart Lock", "Balcony", "Laundry in Unit"];
   const houseRules = ["No Smoking", "Pets Allowed", "Families Only", "Students Allowed", "No Parties", "Couple Friendly", "Work Professionals", "Quiet Hours (10PM-6AM)"];
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [selectedHouseRules, setSelectedHouseRules] = useState<string[]>([]);
 
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
@@ -156,6 +160,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
     setMaintenance(prev => ({ ...prev, [type]: role }));
   };
 
+  const toggleChip = (
+    value: string,
+    selected: string[],
+    setter: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    setter((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
+  };
+
   const handleLocationSelect = async (lat: number, lng: number) => {
     setPosition({ lat, lng });
     try {
@@ -169,9 +181,51 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
     }
   };
 
-  const handlePublish = () => {
+  const mapPropertyType = (value: string): 'APARTMENT' | 'VILLA' | 'STUDIO' | 'CHALET' => {
+    if (value === 'Villa') return 'VILLA';
+    if (value === 'Student Room') return 'STUDIO';
+    return 'APARTMENT';
+  };
+
+  const mapFurnishing = (value: string): 'Fully' | 'Semi' | 'Unfurnished' => {
+    if (value === 'Semi-Furnished') return 'Semi';
+    if (value === 'Unfurnished') return 'Unfurnished';
+    return 'Fully';
+  };
+
+  const handlePublish = async () => {
+    setSubmitError(null);
+
     if (uploadedImages.length === 0) {
       alert('Please upload at least one property image from your device.');
+      return;
+    }
+
+    if (!title.trim() || !aboutProperty.trim()) {
+      setSubmitError('Please provide both property title and description.');
+      return;
+    }
+
+    if (!position || !city.trim() || !area.trim() || !streetName.trim() || !buildingNumber.trim() || !unitApt.trim()) {
+      setSubmitError('Please complete location details and pin the map location.');
+      return;
+    }
+
+    const parsedMonthlyPrice = Number(monthlyPrice);
+    const parsedSecurityDeposit = Number(securityDeposit);
+    const parsedBeds = Number(beds);
+    const parsedBaths = Number(baths);
+    const parsedSqft = Number(sqft);
+    const parsedFloor = Number(floor || 0);
+
+    if (
+      Number.isNaN(parsedMonthlyPrice) ||
+      Number.isNaN(parsedSecurityDeposit) ||
+      Number.isNaN(parsedBeds) ||
+      Number.isNaN(parsedBaths) ||
+      Number.isNaN(parsedSqft)
+    ) {
+      setSubmitError('Please enter valid numeric values for price, deposit, bedrooms, bathrooms, and area.');
       return;
     }
 
@@ -179,14 +233,47 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
       image_url: image,
       is_main: index === 0,
     }));
-    console.log('Prepared images payload for backend:', imagesPayload);
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const address = `${streetName}, ${area}, ${city}, Egypt`;
+
+      const createResult = await propertyService.createProperty({
+        title: title.trim(),
+        description: aboutProperty.trim(),
+        monthly_price: parsedMonthlyPrice,
+        security_deposit: parsedSecurityDeposit,
+        address,
+        type: mapPropertyType(propertyType),
+        furnishing: mapFurnishing(furnishing),
+        target_tenant: 'ANY',
+        availability_date: availabilityDate || new Date().toISOString().slice(0, 10),
+        images: imagesPayload,
+        specifications: {
+          bedrooms: parsedBeds,
+          bathrooms: parsedBaths,
+          area_sqft: parsedSqft,
+        },
+        detailed_location: {
+          floor: parsedFloor,
+          city: city.trim(),
+          area: area.trim(),
+          street_name: streetName.trim(),
+          building_number: buildingNumber.trim(),
+          unit_apt: unitApt.trim(),
+          location_lat: position.lat,
+          location_long: position.lng,
+        },
+      });
+
+      await propertyService.publishProperty(createResult.data.id);
       setLoading(false);
       setIsSuccess(true);
       triggerConfetti();
-    }, 1500);
+    } catch (error: any) {
+      setLoading(false);
+      setSubmitError(error?.response?.data?.message || 'Failed to publish property. Please try again.');
+    }
   };
 
   const loadExampleProperty = () => {
@@ -433,7 +520,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
                         <div className="chip-container">
                           {amenitiesList.map(item => (
                             <label key={item} className="amenity-chip mini">
-                              <input type="checkbox" /> <span>{item}</span>
+                              <input
+                                type="checkbox"
+                                checked={selectedAmenities.includes(item)}
+                                onChange={() => toggleChip(item, selectedAmenities, setSelectedAmenities)}
+                              /> <span>{item}</span>
                             </label>
                           ))}
                         </div>
@@ -443,7 +534,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
                         <div className="chip-container">
                           {houseRules.map(rule => (
                             <label key={rule} className="amenity-chip mini rule">
-                              <input type="checkbox" /> <span>{rule}</span>
+                              <input
+                                type="checkbox"
+                                checked={selectedHouseRules.includes(rule)}
+                                onChange={() => toggleChip(rule, selectedHouseRules, setSelectedHouseRules)}
+                              /> <span>{rule}</span>
                             </label>
                           ))}
                         </div>
@@ -466,6 +561,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
                 </button>
               )}
             </div>
+            {submitError && (
+              <div style={{ padding: '0 40px 20px', color: '#dc2626', fontWeight: 700, fontSize: '0.9rem' }}>
+                {submitError}
+              </div>
+            )}
           </>
         ) : (
           <div className="success-animation-view">

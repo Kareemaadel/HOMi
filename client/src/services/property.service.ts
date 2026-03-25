@@ -74,9 +74,58 @@ interface GetPropertiesApiResponse {
     };
 }
 
+export interface CreatePropertyPayload {
+    title: string;
+    description: string;
+    monthly_price: number;
+    security_deposit: number;
+    address: string;
+    type: 'APARTMENT' | 'VILLA' | 'STUDIO' | 'CHALET';
+    furnishing: 'Fully' | 'Semi' | 'Unfurnished';
+    target_tenant: 'ANY' | 'STUDENTS' | 'FAMILIES' | 'TOURISTS';
+    availability_date: string;
+    images: Array<{
+        image_url: string;
+        is_main: boolean;
+    }>;
+    specifications: {
+        bedrooms: number;
+        bathrooms: number;
+        area_sqft: number;
+    };
+    detailed_location: {
+        floor: number;
+        city: string;
+        area: string;
+        street_name: string;
+        building_number: string;
+        unit_apt: string;
+        location_lat: number;
+        location_long: number;
+    };
+}
+
+interface PropertyMutationResponse {
+    success: boolean;
+    message: string;
+    data: PropertyResponse;
+}
+
 class PropertyService {
     async getAllProperties(params?: PropertyQueryParams): Promise<GetPropertiesApiResponse> {
         const response = await apiClient.get<GetPropertiesApiResponse>('/properties', { params });
+        return response.data;
+    }
+
+    async createProperty(payload: CreatePropertyPayload): Promise<PropertyMutationResponse> {
+        const response = await apiClient.post<PropertyMutationResponse>('/properties', payload);
+        return response.data;
+    }
+
+    async publishProperty(propertyId: string): Promise<PropertyMutationResponse> {
+        const response = await apiClient.put<PropertyMutationResponse>(`/properties/${propertyId}`, {
+            status: 'Published',
+        });
         return response.data;
     }
 }
