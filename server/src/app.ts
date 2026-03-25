@@ -27,10 +27,16 @@ const app = express();
 // ======================
 // Security Middleware
 // ======================
+const helmetOptions = {
+    crossOriginOpenerPolicy: {
+        policy: 'same-origin-allow-popups' as const,
+    },
+};
+
 if (env.NODE_ENV === 'production') {
-    app.use(helmet());
+    app.use(helmet(helmetOptions));
 } else {
-    app.use(helmet({ contentSecurityPolicy: false }));
+    app.use(helmet({ ...helmetOptions, contentSecurityPolicy: false }));
 }
 app.use(cors({
     origin: env.NODE_ENV === 'production'
