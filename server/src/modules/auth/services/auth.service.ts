@@ -432,7 +432,9 @@ export class AuthService {
         });
 
         // 3. If user doesn't exist, auto-register them
+        let isNewUser = false;
         if (!user) {
+            isNewUser = true;
             const transaction = await sequelize.transaction();
 
             try {
@@ -519,6 +521,7 @@ export class AuthService {
             refreshToken: tokens.refreshToken,
             user: userResponse,
             profile: profileResponse,
+            isNewUser,
         };
     }
 

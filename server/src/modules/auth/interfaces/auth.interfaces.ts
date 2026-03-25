@@ -109,6 +109,7 @@ export interface LoginResponse {
     refreshToken: string;
     user: UserResponse;
     profile: ProfileResponse;
+    isNewUser?: boolean;
 }
 
 /**
