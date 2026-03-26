@@ -1,0 +1,53 @@
+.coming-soon-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.coming-soon-card {
+  width: min(520px, 100%);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+  padding: 36px 28px;
+  text-align: center;
+}
+
+.coming-soon-icon-wrap {
+  width: 84px;
+  height: 84px;
+  border-radius: 999px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.coming-soon-card h1 {
+  margin: 0 0 10px;
+  font-size: 1.8rem;
+  color: #0f172a;
+}
+
+.coming-soon-card p {
+  margin: 0 0 24px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.coming-soon-btn {
+  border: none;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 11px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}

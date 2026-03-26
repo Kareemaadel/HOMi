@@ -23,6 +23,7 @@ import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
+import ComingSoon from "./features/ComingSoon/pages/ComingSoon";
 
 
 
@@ -51,6 +52,14 @@ function App() {
         <Route path="/tenant-payment" element={<AuthGuard allowedRoles={['TENANT']}><TenantPayment /></AuthGuard>} />
         <Route path="/tenant-contracts" element={<AuthGuard allowedRoles={['TENANT']}><Contract /></AuthGuard>} />
         <Route path="/sent-requests" element={<AuthGuard allowedRoles={['TENANT']}><SentRequests /></AuthGuard>} />
+        <Route
+          path="/roommate-matching"
+          element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Roommate Matching" description="Roommate matching is coming soon." /></AuthGuard>}
+        />
+        <Route
+          path="/matching"
+          element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Roommate Matching" description="Roommate matching is coming soon." /></AuthGuard>}
+        />
 
         {/* Landlord Routes — protected */}
         <Route path="/landlord-home" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordHome /></AuthGuard>} />
@@ -58,6 +67,10 @@ function App() {
         <Route path="/rental-requests" element={<AuthGuard allowedRoles={['LANDLORD']}><RentalRequests /></AuthGuard>} />
         <Route path="/landlord-payment" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordPayment /></AuthGuard>} />
         <Route path="/landlord-contracts" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordContract /></AuthGuard>} />
+        <Route
+          path="/maintenance-requests"
+          element={<AuthGuard><ComingSoon title="Maintenance Requests" description="Maintenance requests management is coming soon." /></AuthGuard>}
+        />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
