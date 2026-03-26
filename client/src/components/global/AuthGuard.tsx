@@ -30,6 +30,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
     const isAuthenticated = sessionReady && !!localStorage.getItem('accessToken');
     const cached = authService.getCurrentUser();
     const role = cached?.user?.role;
+    const hasAppRole = role === 'LANDLORD' || role === 'TENANT';
 
     if (!sessionReady) {
         return (
@@ -51,6 +52,10 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
     if (isAuthenticated && allowedRoles && role && !allowedRoles.includes(role)) {
         const redirectPath = role === 'LANDLORD' ? '/landlord-home' : '/tenant-home';
         return <Navigate to={redirectPath} replace />;
+    }
+
+    if (isAuthenticated && !hasAppRole) {
+        return <Navigate to="/complete-profile" replace />;
     }
 
     return (

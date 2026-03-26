@@ -25,15 +25,8 @@ export const GoogleLoginBtn = ({ rememberMe = false }: GoogleLoginBtnProps) => {
 
                 console.log('✅ Google Login successful!', response);
 
-                if (response.isNewUser) {
-                    navigate('/complete-profile');
-                } else if (response.user.role === 'TENANT') {
-                    navigate('/', { state: { next: '/tenant-home', force: true } });
-                } else if (response.user.role === 'LANDLORD') {
-                    navigate('/', { state: { next: '/landlord-home', force: true } });
-                } else {
-                    navigate('/');
-                }
+                const nextPath = authService.resolvePostAuthRoute(response);
+                navigate('/', { state: { next: nextPath, force: true } });
             } catch (err) {
                 console.error('❌ Google Login failed:', err);
                 const errorMessage = axios.isAxiosError(err)

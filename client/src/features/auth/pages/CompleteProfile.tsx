@@ -21,7 +21,8 @@ interface SignUpFormData {
 }
 
 const CompleteProfile: React.FC = () => {
-    const [step, setStep] = useState(1);
+    // Role selection is the only mandatory onboarding step.
+    const [step, setStep] = useState(2);
     const [role, setRole] = useState<UserRole>(null);
     const [signupData, setSignupData] = useState<SignUpFormData | null>(null);
     const [loading, setLoading] = useState(false);
@@ -72,8 +73,9 @@ const CompleteProfile: React.FC = () => {
                 // User is already registered — no need to call register again.
                 // Update their role in the backend
                 await authService.updateRole({ role: role.toUpperCase() });
-                // Just advance to the next step (role-specific preferences).
-                nextStep();
+                // Role is the only required step; optional profile data can be completed later.
+                const nextPath = role === 'landlord' ? '/landlord-home' : '/tenant-home';
+                navigate('/', { state: { next: nextPath, force: true }, replace: true });
                 return;
             }
 
@@ -260,7 +262,7 @@ const CompleteProfile: React.FC = () => {
                                 disabled={!role || loading} 
                                 onClick={handleRoleSelection}
                             >
-                                {loading ? 'Creating Account...' : 'Continue'} <ArrowRight size={18} />
+                                {loading ? 'Saving...' : 'Continue'} <ArrowRight size={18} />
                             </button>
                         </div>
                         {/* Skip link */}

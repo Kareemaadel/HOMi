@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fa';
 import './sidebar.css';
 import { authService } from '../../../services/auth.service';
+import ConfirmModal from '../ConfirmModal';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ const Sidebar = () => {
   const [avatarSrc, setAvatarSrc] = useState(
     'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=80'
   );
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const load = () => {
@@ -39,9 +41,14 @@ const Sidebar = () => {
     return () => window.removeEventListener('storage', load);
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false);
     await authService.logout();
-    navigate('/auth');
+    navigate('/guest-home', { replace: true });
   };
 
   const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6366f1&color=fff&size=80`;
@@ -89,6 +96,16 @@ const Sidebar = () => {
           <FaSignOutAlt />
         </button>
       </div>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Sign out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign out"
+        cancelText="Cancel"
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </aside>
   );
 };

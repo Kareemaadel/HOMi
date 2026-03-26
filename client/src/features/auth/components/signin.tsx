@@ -37,15 +37,9 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
       const response = await authService.login({ ...formData, rememberMe });
       
       console.log('✅ Login successful!', response);
-      
-      // Navigate based on user role
-      if (response.user.role === 'TENANT') {
-        navigate('/', { state: { next: '/tenant-home', force: true } });
-      } else if (response.user.role === 'LANDLORD') {
-        navigate('/', { state: { next: '/landlord-home', force: true } });
-      } else {
-        navigate('/');
-      }
+
+      const nextPath = authService.resolvePostAuthRoute(response);
+      navigate('/', { state: { next: nextPath, force: true } });
     } catch (err) {
       console.error('❌ Login failed:', err);
       const errorMessage = axios.isAxiosError(err)

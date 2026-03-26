@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaSearch, FaSignOutAlt } from 'react-icons/fa';
 import { authService } from '../../services/auth.service';
+import ConfirmModal from './ConfirmModal';
 import './header.css';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
@@ -53,9 +55,15 @@ const Header = () => {
 
   const mobileRoleLinks = signedInRole === 'LANDLORD' ? landlordMobileLinks : tenantMobileLinks;
 
-  const handleMobileLogout = async () => {
+  const handleMobileLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmMobileLogout = async () => {
+    setShowLogoutConfirm(false);
+    setIsMobileMenuOpen(false);
     await authService.logout();
-    navigate('/auth');
+    navigate('/guest-home', { replace: true });
   };
 
   // Add a nice shadow effect on scroll
@@ -227,6 +235,16 @@ const Header = () => {
 
         </nav>
       )}
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Sign out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign out"
+        cancelText="Cancel"
+        onConfirm={confirmMobileLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </header>
   );
 };

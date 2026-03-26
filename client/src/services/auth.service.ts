@@ -63,6 +63,26 @@ function persistLoginSession(data: LoginResponse, rememberMe: boolean): void {
  */
 class AuthService {
     /**
+     * Decide where a user should land after auth/restore.
+     * Incomplete profiles must finish onboarding before any dashboard.
+     */
+    resolvePostAuthRoute(source?: {
+        user?: { role?: string | null };
+        profile?: { isVerificationComplete?: boolean | null };
+    }): string {
+        const cached = source ?? this.getCurrentUser() ?? undefined;
+        const role = cached?.user?.role;
+        const hasAppRole = role === 'LANDLORD' || role === 'TENANT';
+
+        // Onboarding gate should enforce selecting a role, not forcing every optional profile field.
+        if (!hasAppRole) return '/complete-profile';
+        if (role === 'LANDLORD') return '/landlord-home';
+        if (role === 'TENANT') return '/tenant-home';
+
+        return '/complete-profile';
+    }
+
+    /**
      * Register a new user
      */
     async register(data: RegisterRequest): Promise<AuthSuccessResponse> {

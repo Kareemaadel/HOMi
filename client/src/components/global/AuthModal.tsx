@@ -38,12 +38,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
                 password,
                 rememberMe,
             });
-            // Navigate to the correct home for the role
-            if (res.user.role === 'LANDLORD') {
-                navigate('/landlord-home', { replace: true });
-            } else {
-                navigate('/tenant-home', { replace: true });
-            }
+            const nextPath = authService.resolvePostAuthRoute(res);
+            navigate(nextPath, { replace: true });
         } catch (err) {
             let msg = 'Sign in failed. Please check your credentials.';
             if (axios.isAxiosError(err)) {
@@ -67,11 +63,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
             setError(null);
             try {
                 const res = await authService.loginWithGoogle(tokenResponse.access_token, rememberMe);
-                if (res.user.role === 'LANDLORD') {
-                    navigate('/landlord-home', { replace: true });
-                } else {
-                    navigate('/tenant-home', { replace: true });
-                }
+                const nextPath = authService.resolvePostAuthRoute(res);
+                navigate(nextPath, { replace: true });
             } catch {
                 setError('Google sign-in failed. Please try again.');
             } finally {

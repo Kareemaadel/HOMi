@@ -26,8 +26,7 @@ const LoadingPage: React.FC = () => {
       const restored = await authService.tryRestoreSession();
       if (!restored) return '/guest-home';
 
-      const role = authService.getCurrentUser()?.user?.role;
-      return role === 'LANDLORD' ? '/landlord-home' : '/tenant-home';
+      return authService.resolvePostAuthRoute();
     };
 
     const run = async () => {

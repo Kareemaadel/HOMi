@@ -21,14 +21,8 @@ const AuthPage = () => {
       const ok = await authService.tryRestoreSession();
       if (cancelled) return;
       if (ok) {
-        const cached = authService.getCurrentUser();
-        if (cached?.user?.role === 'TENANT') {
-          navigate('/', { state: { next: '/tenant-home', force: true }, replace: true });
-        } else if (cached?.user?.role === 'LANDLORD') {
-          navigate('/', { state: { next: '/landlord-home', force: true }, replace: true });
-        } else {
-          navigate('/', { replace: true });
-        }
+        const nextPath = authService.resolvePostAuthRoute();
+        navigate('/', { state: { next: nextPath, force: true }, replace: true });
         return;
       }
       setSessionResolved(true);
