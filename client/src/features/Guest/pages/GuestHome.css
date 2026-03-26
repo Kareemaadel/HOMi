@@ -515,6 +515,10 @@
 .btn-primary-pill:hover { background: #000; }
 .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; color: var(--neutral-900); }
 
+.mobile-nav-panel {
+  display: none;
+}
+
 /* --- Advanced Hero Section --- */
 .hero-section {
   padding: 180px 24px 120px;
@@ -545,7 +549,7 @@
 .text-amber { color: var(--amber-500); }
 
 .hero-title { font-size: 72px; font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin-bottom: 24px; color:#2563eb; }
-.hero-subtitle { font-size: 20px; color: var(--neutral-500); line-height: 1.6; font-weight: 500; margin: 0 auto 56px; max-width: 650px; }
+.hero-subtitle { font-size: 20px; color: #0f172a; line-height: 1.6; font-weight: 500; margin: 0 auto 56px; max-width: 650px; }
 
 /* Enhanced Search Pill */
 .hero-search-wrapper { display: flex; justify-content: center; width: 100%; position: relative; z-index: 20; }
@@ -577,7 +581,7 @@
 /* Floating Elements */
 .floating-card { position: absolute; background: white; padding: 16px 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-stripe); display: flex; align-items: center; gap: 16px; animation: floatAnim 6s ease-in-out infinite; z-index: 0; border: 1px solid var(--neutral-100); }
 .float-left { top: 20%; left: -100px; animation-delay: 0s; }
-.float-right { bottom: 30%; right: -80px; animation-delay: 3s; }
+.float-right { bottom: 30%; right: -150px; animation-delay: 3s; }
 
 .float-icon { width: 48px; height: 48px; padding: 12px; border-radius: 12px; }
 .float-icon.green { background: #dcfce7; color: var(--success-green); }
@@ -600,7 +604,7 @@
 .featured-section { padding: 120px 0; background: white; }
 .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px; }
 .section-header h2 { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
-.section-desc { font-size: 18px; color: var(--neutral-500); }
+.section-desc { font-size: 18px; color: var(--neutral-500); max-width: 760px; margin: 0 auto; }
 .view-all-link { display: flex; align-items: center; gap: 8px; color: var(--brand-blue); font-weight: 700; text-decoration: none; padding: 10px 20px; background: var(--brand-blue-light); border-radius: var(--radius-pill); transition: 0.2s;}
 .view-all-link:hover { background: #dbeafe; }
 
@@ -639,7 +643,7 @@
 .how-it-works-section { padding: 120px 0; background: var(--neutral-50); border-top: 1px solid var(--neutral-200); }
 .section-title { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 16px; }
 
-.modern-steps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 32px; position: relative; width: 1400px; margin-left: -70px; }
+.modern-steps-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; position: relative; width: 100%; margin-left: 0; }
 /* Decorative line behind steps */
 .modern-steps-grid::before { content: ''; position: absolute; top: 40px; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--neutral-300), transparent); z-index: 0; }
 
@@ -719,16 +723,58 @@
 
 /* --- Responsive --- */
 @media (max-width: 1024px) {
+  .section-container { padding: 0 16px; }
+  .nav-container { padding: 14px 16px; }
+
+  .mobile-nav-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    border-top: 1px solid var(--neutral-200);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+  }
+
+  .mobile-nav-panel a {
+    text-decoration: none;
+    color: var(--neutral-900);
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .mobile-nav-login {
+    justify-content: flex-start;
+    padding: 0;
+    text-align: left;
+  }
+
+  .mobile-nav-signup {
+    width: 100%;
+    margin-top: 4px;
+  }
+
   .hero-title { font-size: 56px; }
+  .hero-subtitle { font-size: 18px; margin-bottom: 32px; }
+  .hero-section { height: auto; min-height: 560px; padding: 140px 16px 80px; }
   .floating-card { display: none; }
   .hero-search-pill { flex-direction: column; padding: 16px; border-radius: 24px; align-items: stretch; gap: 8px;}
   .search-divider { display: none; }
   .search-block { padding: 8px; border-bottom: 1px solid var(--neutral-100); }
   .search-block:last-of-type { border-bottom: none; }
-  .search-submit-btn { margin-top: 16px; justify-content: center; }
+  .search-submit-btn { margin-top: 16px; justify-content: center; width: 100%; }
   
   .property-grid, .modern-steps-grid, .personas-grid, .test-grid { grid-template-columns: 1fr; gap: 32px; }
   .modern-steps-grid::before { display: none; }
+  .section-header { flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+  .section-desc { font-size: 17px; }
+  .view-all-link { align-self: center; }
+  .prop-meta-top { flex-wrap: wrap; gap: 8px; }
+  .prop-specs { flex-wrap: wrap; gap: 12px; }
+  .prop-footer-split { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .m-step-card { padding: 24px 18px; }
+  .persona-card { min-height: auto; padding: 32px 24px; }
+  .premium-gradient-bg { padding: 48px 24px; }
   
   .cta-banner { flex-direction: column; text-align: center; gap: 40px; padding: 48px 24px; }
   .desktop-only { display: none; }
@@ -736,10 +782,17 @@
 }
 
 @media (max-width: 640px) {
-  .hero-title { font-size: 40px; }
-  .hero-section { padding-top: 140px; min-height: auto; }
-  .section-title { font-size: 32px; }
+  .hero-title { font-size: 34px; }
+  .hero-subtitle { font-size: 16px; line-height: 1.55; }
+  .hero-section { padding-top: 126px; min-height: auto; }
+  .section-title { font-size: 30px; }
+  .section-desc { font-size: 16px; }
   .ticker-logos { gap: 32px; }
+  .search-submit-btn { padding: 14px 24px; }
+  .test-card { padding: 28px 20px; }
+  .test-card p { font-size: 16px; }
+  .persona-card h2 { font-size: 30px; }
+  .btn-white-massive { width: 100%; padding: 16px 24px; font-size: 16px; }
 }
 .text-gradient-opposite {
   background: linear-gradient(-135deg, var(--brand-blue), #8b5cf6);
@@ -752,4 +805,118 @@
     height: 60px;
     margin-top: 9px;
     
+}
+
+/* Keep hero subtitle readable even if duplicate blocks or delayed animation rules conflict. */
+.hero-content .hero-subtitle,
+.hero-content .hero-subtitle.animate-slide-up-delayed {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* Final layout guards against legacy duplicate rules causing right-side gaps. */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.guest-layout {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.section-container {
+  width: min(1280px, calc(100% - 32px));
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.featured-section .section-header {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.featured-section .section-header > div {
+  width: 100%;
+}
+
+.featured-section .section-desc {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.featured-section .view-all-link {
+  align-self: center;
+}
+
+.how-it-works-section .text-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.how-it-works-section .section-title,
+.how-it-works-section .section-desc {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.how-it-works-section .section-title {
+  max-width: 860px;
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+
+.how-it-works-section .section-desc {
+  max-width: 820px;
+  line-height: 1.45;
+}
+
+.how-it-works-section .modern-steps-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.how-it-works-section .m-step-card {
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+@media (max-width: 1200px) {
+  .how-it-works-section .modern-steps-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .how-it-works-section .modern-steps-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .how-it-works-section .m-step-card {
+    min-height: 0;
+  }
 }

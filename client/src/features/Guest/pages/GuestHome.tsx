@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, ShieldCheck, CreditCard, FileSignature, 
-  Key, Star, ArrowRight, Menu, X, CheckCircle,
+  Star, ArrowRight, Menu, X, CheckCircle,
   MapPin, Bed, Bath, Maximize, Zap, PlayCircle
 } from 'lucide-react';
 import './GuestHome.css';
@@ -120,6 +120,20 @@ const GuestHome: React.FC = () => {
             {mobileMenuOpen ? <X size={28}/> : <Menu size={28}/>}
           </button>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="mobile-nav-panel">
+            <Link to="/guest-search" onClick={() => setMobileMenuOpen(false)}>Browse Homes</Link>
+            <Link to={howItWorksTo} onClick={() => setMobileMenuOpen(false)}>How it Works</Link>
+            <Link to="/help" onClick={() => setMobileMenuOpen(false)}>Help Center</Link>
+            <button className="btn-text mobile-nav-login" onClick={() => { setMobileMenuOpen(false); navigate('/auth'); }}>
+              Log in
+            </button>
+            <button className="btn-primary-pill mobile-nav-signup" onClick={() => { setMobileMenuOpen(false); navigate('/auth'); }}>
+              Sign up
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* 2. Dynamic Hero Section */}
@@ -282,13 +296,8 @@ const GuestHome: React.FC = () => {
             </div>
             <div className="m-step-card">
               <div className="m-step-icon-box"><CreditCard size={24} /></div>
-              <h4>4. Pay </h4>
-              <p>Pay your deposit securely via HOMI and get your keys.</p>
-            </div>
-            <div className="m-step-card">
-              <div className="m-step-icon-box"><Key size={24} /></div>
-              <h4>5. Move In & Manage</h4>
-              <p>Get your keys and manage your property.</p>
+              <h4>4. Pay & Move In</h4>
+              <p>Pay securely via HOMI, receive confirmation, and move in with full digital records.</p>
             </div>
           </div>
         </div>
