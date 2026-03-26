@@ -1,143 +1,135 @@
-/* Layout & Grid Strategy */
+/* Settings page layout */
 .settings-layout {
-    display: flex;
-    background-color: #f8fafc;
-    height: 120vh;
+  display: flex;
+  min-height: 100vh;
+  background: #f8fafc;
 }
 
 .settings-viewport {
-    flex: 1;
-    margin-left: var(--sidebar-width); /* Respects your Sidebar.css variable */
-    display: flex;
-    flex-direction: column;
-    height: 900px
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--sidebar-width, 260px);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .settings-main-area {
-    padding: 2.5rem;
-    width: 1820px;
-    margin: 0 auto;
-    margin-left: -39px;
-    margin-top: 40px;
+  flex: 1;
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  padding-top: 96px;
 }
 
-.settings-page-header {
-    margin: 2rem 0;
-}
-
-.settings-page-header h1 {
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: var(--text-dark);
-    letter-spacing: -0.025em;
-}
-
-.settings-page-header p {
-    color: var(--text-light);
-    margin-top: 0.5rem;
-}
-
-/* The Main Container Card */
 .settings-glass-card {
-    background: #ffffff;
-    border-radius: px;
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.05);
-    border: 1px solid #eef2f6;
-    overflow: hidden;
-    height: 900px;
-    width: 1770px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  width: 100%;
+  min-height: 620px;
+  overflow: hidden;
 }
 
 .settings-view-panel {
-    padding: 3.5rem;
-    background: #ffffff;
-    border-left: 1px solid #f1f5f9;
-    height: 750px;
+  min-width: 0;
+  padding: 2rem;
+  border-left: 1px solid #f1f5f9;
+  overflow: auto;
 }
 
-/* Danger Zone Styling */
+/* Danger zone */
 .delete-zone-container {
-    text-align: center;
-    max-width: 500px;
-    margin: 4rem auto;
+  text-align: center;
+  max-width: 540px;
+  margin: 2rem auto;
 }
 
 .danger-icon-wrapper {
-    font-size: 3.5rem;
-    color: #ef4444;
-    margin-bottom: 1.5rem;
-    animation: pulse 2s infinite;
+  font-size: 3rem;
+  color: #ef4444;
+  margin-bottom: 1.25rem;
+  animation: pulse 2s infinite;
+}
+
+.delete-zone-container h2 {
+  margin: 0 0 0.75rem;
+  color: #111827;
+}
+
+.delete-zone-container p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.6;
 }
 
 .delete-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
 }
 
 .danger-confirm-btn {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.danger-confirm-btn:hover { background: #dc2626; transform: translateY(-2px); }
+.danger-confirm-btn:hover {
+  background: #dc2626;
+}
 
 .cancel-btn {
-    background: #f1f5f9;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    color: var(--text-dark);
-    cursor: pointer;
+  background: #f1f5f9;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 1200px) {
+  .settings-main-area {
+    padding: 1rem;
+    padding-top: 88px;
+  }
+
+  .settings-glass-card {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+
+  .settings-view-panel {
+    padding: 1.25rem;
+  }
 }
 
 @media (max-width: 1024px) {
-    .settings-glass-card { grid-template-columns: 1fr; }
-    .settings-viewport { margin-left: 0; }
-}
+  .settings-viewport {
+    margin-left: 0;
+  }
 
-/* The main wrapper of the settings card */
-.settings-glass-card {
-    display: grid;
-    grid-template-columns: 280px 1fr; /* Sidebar | Content */
-    height: 93vh; /* Or a fixed px height like 750px */
-    overflow: hidden; /* CRITICAL: Prevents children from growing the card */
-    background: #fff;
-    margin-bottom: -41px;
-}
+  .settings-glass-card {
+    grid-template-columns: 1fr;
+  }
 
-/* Ensure the sidebar stays exactly the height of the card */
-.internal-settings-sidebar {
-    display: flex;
-    flex-direction: column;
-    height: 100%; 
-    padding: 1.5rem;
-    border-right: 1px solid #eef2f6;
-}
-
-.settings-nav {
-    flex: 1; /* Pushes the delete button to the very bottom */
-    overflow-y: auto;
-}
-
-.delete-nav {
-    flex-shrink: 0; /* Prevents the delete button from disappearing */
-    margin-top: auto;
-    color: #ef4444 !important;
+  .settings-view-panel {
+    border-left: none;
+    border-top: 1px solid #f1f5f9;
+  }
 }

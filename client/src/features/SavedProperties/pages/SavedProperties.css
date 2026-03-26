@@ -1,9 +1,10 @@
 .saved-content {
-    padding: 2.5rem;
-    min-height: calc(100vh - 160px);
+    padding: 1rem 2.5rem 2rem;
+    min-height: auto;
     position: relative;
-    overflow: hidden;
-    margin-top: 133px;
+    overflow: visible;
+    margin-top: 0px;
+    padding-bottom: 2rem;
 }
 
 /* Background Decoration to prevent "Empty" feel */
@@ -237,7 +238,10 @@
 }
 
 @media (max-width: 768px) {
-    .saved-content { padding: 1.5rem; background: white;}
+    .saved-content {
+        padding: 0.75rem 1.5rem 1.5rem;
+        background: white;
+    }
     .saved-header-section { flex-direction: column; align-items: flex-start; gap: 1rem; }
     .market-insight-alert { flex-direction: column; align-items: flex-start; }
     .saved-properties-grid { grid-template-columns: 1fr; }

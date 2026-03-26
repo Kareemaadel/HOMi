@@ -440,9 +440,19 @@ border: none;
 color: #475569;
 font-size: 1.5rem;
 cursor: pointer;
+width: 52px;
+height: 52px;
 padding: 8px;
 border-radius: 8px;
 transition: all 0.2s ease;
+position: relative;
+z-index: 1101;
+pointer-events: auto;
+touch-action: manipulation;
+}
+
+.mobile-menu-toggle svg {
+   pointer-events: none;
 }
 
 .mobile-menu-toggle:hover {
@@ -480,6 +490,36 @@ display: none;
 .mobile-nav .nav-link.active {
 background: #eff6ff;
 color: #2563eb;
+}
+
+.mobile-nav-divider {
+   margin: 10px 0 6px;
+   padding: 8px 16px 0;
+   font-size: 0.72rem;
+   font-weight: 700;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: #94a3b8;
+}
+
+.mobile-logout-btn {
+   margin-top: 10px;
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   width: 100%;
+   padding: 12px 16px;
+   border: none;
+   border-radius: 8px;
+   background: #fff1f2;
+   color: #be123c;
+   font-size: 0.9rem;
+   font-weight: 700;
+   cursor: pointer;
+}
+
+.mobile-logout-btn:hover {
+   background: #ffe4e6;
 }
 
 @keyframes slideDown {

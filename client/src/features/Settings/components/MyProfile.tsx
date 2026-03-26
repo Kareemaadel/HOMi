@@ -19,6 +19,14 @@ const MyProfile: React.FC = () => {
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const originalFirstName = profile?.firstName ?? '';
+    const originalLastName = profile?.lastName ?? '';
+    const originalPhone = profile?.phoneNumber ?? '';
+    const hasChanges =
+        firstName !== originalFirstName ||
+        lastName !== originalLastName ||
+        phone !== originalPhone;
+
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -309,8 +317,8 @@ const MyProfile: React.FC = () => {
                 <button
                     className="prime-save-button"
                     onClick={handleSave}
-                    disabled={saving}
-                    style={{ opacity: saving ? 0.7 : 1 }}
+                    disabled={saving || !hasChanges}
+                    style={{ opacity: saving || !hasChanges ? 0.65 : 1 }}
                 >
                     {saving ? 'Saving…' : 'Save Changes'}
                 </button>

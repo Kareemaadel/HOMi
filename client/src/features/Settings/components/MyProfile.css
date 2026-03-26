@@ -3,6 +3,15 @@
     animation: fadeIn 0.4s ease-out;
 }
 
+.form-section-title {
+    margin: 0 0 1rem;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    color: #0f172a;
+}
+
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
@@ -70,7 +79,7 @@
     border: 1px solid #e2e8f0;
     margin-bottom: 1.25rem;
     transition: 0.2s;
-    height: 80px;
+    min-height: 80px;
 }
 
 .modern-field:focus-within {
@@ -79,8 +88,35 @@
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.05);
 }
 
-.field-content label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
-.field-content input { border: none; background: transparent; width: 100%; font-size: 1rem; color: var(--text-dark); font-weight: 600; outline: none; }
+.field-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.field-content label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.field-content input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-size: 1rem;
+    color: var(--text-dark);
+    font-weight: 600;
+    outline: none;
+    text-overflow: clip;
+}
+
+.field-content input[type="email"] {
+    font-size: 0.96rem;
+    font-weight: 500;
+}
 
 .prime-save-button {
     margin-top: 2rem;
@@ -96,3 +132,9 @@
 }
 
 .prime-save-button:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4); }
+
+.prime-save-button:disabled {
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}

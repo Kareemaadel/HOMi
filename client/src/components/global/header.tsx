@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBars, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSearch, FaSignOutAlt } from 'react-icons/fa';
+import { authService } from '../../services/auth.service';
 import './header.css';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const mobileMenuRef = useRef<HTMLElement | null>(null);
+  const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -23,6 +26,37 @@ const Header = () => {
   const signedInRole = getSignedInRole();
   const isSignedIn = Boolean(localStorage.getItem('accessToken')) && signedInRole !== null;
   const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
+  const dashboardPath = signedInRole === 'LANDLORD' ? '/landlord-home' : '/tenant-home';
+
+  const tenantMobileLinks = [
+    { to: '/tenant-home', label: 'Dashboard' },
+    { to: '/actives', label: 'Active Properties' },
+    { to: '/browse-properties', label: 'Browse Properties' },
+    { to: '/roommate-matching', label: 'Matching' },
+    { to: '/maintenance-requests', label: 'Maintenance' },
+    { to: '/tenant-payment', label: 'Payments' },
+    { to: '/messages', label: 'Messages' },
+    { to: '/rewards', label: 'Rewards' },
+    { to: '/settings', label: 'Settings' },
+  ];
+
+  const landlordMobileLinks = [
+    { to: '/landlord-home', label: 'Dashboard' },
+    { to: '/my-properties', label: 'My Properties' },
+    { to: '/rental-requests', label: 'Rental Requests' },
+    { to: '/maintenance-requests', label: 'Maintenance' },
+    { to: '/landlord-payment', label: 'Payments' },
+    { to: '/messages', label: 'Messages' },
+    { to: '/balance', label: 'Balance' },
+    { to: '/settings', label: 'Settings' },
+  ];
+
+  const mobileRoleLinks = signedInRole === 'LANDLORD' ? landlordMobileLinks : tenantMobileLinks;
+
+  const handleMobileLogout = async () => {
+    await authService.logout();
+    navigate('/auth');
+  };
 
   // Add a nice shadow effect on scroll
   useEffect(() => {
@@ -54,8 +88,10 @@ const Header = () => {
   // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (isMobileMenuOpen && !target.closest('.header-nav') && !target.closest('.mobile-menu-toggle')) {
+      const target = e.target as Node | null;
+      const clickedInsideMenu = !!(target && mobileMenuRef.current?.contains(target));
+      const clickedToggle = !!(target && mobileToggleRef.current?.contains(target));
+      if (isMobileMenuOpen && !clickedInsideMenu && !clickedToggle) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -116,7 +152,10 @@ const Header = () => {
 
         {/* Mobile Menu Toggle */}
         <button 
+          type="button"
+          ref={mobileToggleRef}
           className="mobile-menu-toggle"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label="Toggle navigation menu"
           aria-expanded={isMobileMenuOpen}
@@ -127,7 +166,7 @@ const Header = () => {
 
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
-        <nav className="header-nav mobile-nav" aria-label="Mobile navigation">
+        <nav ref={mobileMenuRef} className="header-nav mobile-nav" aria-label="Mobile navigation" onPointerDown={(e) => e.stopPropagation()}>
           {/* Mobile Search */}
           <div className="header-search mobile-search">
             <div className="search-wrapper">
@@ -140,6 +179,50 @@ const Header = () => {
               />
             </div>
           </div>
+
+          <Link to={isSignedIn ? dashboardPath : '/'} className={`nav-link ${location.pathname === dashboardPath || (!isSignedIn && location.pathname === '/') ? 'active' : ''}`}>
+            Home
+          </Link>
+          <Link
+            to={howItWorksPath}
+            className={`nav-link ${location.pathname === howItWorksPath ? 'active' : ''}`}
+            onClick={(e) => {
+              if (!isSignedIn) return;
+              e.preventDefault();
+              navigate(howItWorksPath, { state: { fromAppNavbar: true } });
+            }}
+          >
+            How It Works
+          </Link>
+          <Link to="/saved-properties" className={`nav-link ${location.pathname === '/saved-properties' ? 'active' : ''}`}>
+            Saved Properties
+          </Link>
+          <Link to="/get-help" className={`nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
+            Get Help
+          </Link>
+          <Link to="/about-us" className={`nav-link ${location.pathname === '/about-us' ? 'active' : ''}`}>
+            About Us
+          </Link>
+
+          {isSignedIn && (
+            <>
+              <div className="mobile-nav-divider">Dashboard</div>
+              {mobileRoleLinks.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`nav-link ${location.pathname === item.to ? 'active' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              <button type="button" className="mobile-logout-btn" onClick={handleMobileLogout}>
+                <FaSignOutAlt />
+                Sign Out
+              </button>
+            </>
+          )}
 
 
         </nav>

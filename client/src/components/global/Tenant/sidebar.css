@@ -174,3 +174,13 @@
   background: #fee2e2;
   color: #ef4444;
 }
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+}
