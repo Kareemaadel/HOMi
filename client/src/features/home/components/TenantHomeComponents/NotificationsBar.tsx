@@ -40,6 +40,19 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onClose]);
 
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isOpen]);
+
     return (
         <div className={`notif-bar-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
             <div 
