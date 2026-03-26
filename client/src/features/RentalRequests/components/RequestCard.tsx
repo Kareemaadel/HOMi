@@ -1,6 +1,5 @@
-// client\src\features\RentalRequests\components\RequestCard.tsx
 import React, { useState } from 'react';
-import { FaCheckCircle, FaBriefcase, FaCalendarAlt, FaPaw, FaEnvelope } from 'react-icons/fa';
+import { FaCheckCircle, FaBuilding, FaCalendarAlt, FaPaw, FaEnvelope } from 'react-icons/fa';
 import DetailedRequestModal from './DetailedRequestModal';
 import './RequestCard.css';
 
@@ -10,62 +9,55 @@ const RequestCard = ({ data }: any) => {
 
     return (
         <>
-            <div className="request-card">
-                <div className="request-card-left">
-                    <div className="applicant-profile">
-                        <div className="avatar-wrapper">
-                            <img src={applicant.image} alt={applicant.name} />
-                            <div className="match-badge">{applicant.matchScore}% Match</div>
-                        </div>
-                        <div className="applicant-info">
-                            <h3>{applicant.name} <FaCheckCircle className="verified-icon" /></h3>
-                            <p className="occupation"><FaBriefcase /> {applicant.occupation} at {applicant.company}</p>
-                        </div>
+            <article className="rc-compact">
+                <div className="rc-header">
+                    <div className="rc-avatar-box">
+                        <img src={applicant.image} alt={applicant.name} />
+                        <span className="rc-match-badge">{applicant.matchScore}% Match</span>
                     </div>
-
-                    <div className="application-details">
-                        <div className="detail-pill">
-                            <label>Monthly Income</label>
-                            <span>{applicant.income}</span>
-                        </div>
-                        <div className="detail-pill">
-                            <label>Credit Score</label>
-                            <span className={applicant.creditScore > 700 ? 'score-high' : 'score-mid'}>
-                                {applicant.creditScore}
-                            </span>
-                        </div>
-                        <div className="detail-pill">
-                            <label>Property</label>
-                            <span>{property.name} ({property.unit})</span>
-                        </div>
-                    </div>
-
-                    <div className="message-box">
-                        <p>"{message}"</p>
+                    <div className="rc-user-info">
+                        <h3>{applicant.name} <FaCheckCircle className="icon-blue" /></h3>
+                        <p>{applicant.occupation}</p>
                     </div>
                 </div>
 
-                <div className="request-card-right">
-                    <div className="quick-specs">
-                        <div className="spec-item">
-                            <FaCalendarAlt /> <span>Move-in: <strong>{moveInDate}</strong></span>
-                        </div>
-                        <div className="spec-item">
-                            <FaPaw /> <span>Pets: <strong>{pets}</strong></span>
-                        </div>
-                    </div>
+                <div className="rc-property">
+                    <FaBuilding className="icon-gray" />
+                    <span><strong>{property.name}</strong> - Unit {property.unit}</span>
+                </div>
 
-                    <div className="action-stack">
-                        <button className="approve-btn" onClick={() => setIsModalOpen(true)}>
-                            Review Application
-                        </button>
-                        <div className="secondary-actions">
-                            <button className="chat-btn"><FaEnvelope /> Chat</button>
-                            <button className="decline-btn">Decline</button>
-                        </div>
+                <div className="rc-stats-grid">
+                    <div className="rc-stat">
+                        <label>Income</label>
+                        <span>{applicant.income}</span>
+                    </div>
+                    <div className="rc-stat">
+                        <label>Credit</label>
+                        <span className={applicant.creditScore >= 700 ? 'text-green' : 'text-orange'}>
+                            {applicant.creditScore}
+                        </span>
                     </div>
                 </div>
-            </div>
+
+                <div className="rc-specs">
+                    <span><FaCalendarAlt className="icon-gray"/> {moveInDate}</span>
+                    <span><FaPaw className="icon-gray"/> {pets}</span>
+                </div>
+
+                <div className="rc-message">
+                    <p>"{message}"</p>
+                </div>
+
+                <div className="rc-actions">
+                    <button className="rc-btn-primary" onClick={() => setIsModalOpen(true)}>
+                        Review Application
+                    </button>
+                    <div className="rc-action-row">
+                        <button className="rc-btn-secondary"><FaEnvelope /> Chat</button>
+                        <button className="rc-btn-decline">Decline</button>
+                    </div>
+                </div>
+            </article>
 
             {isModalOpen && (
                 <DetailedRequestModal 

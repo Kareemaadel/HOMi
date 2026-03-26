@@ -105,13 +105,13 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                                         <p>{occupants || "1"} Person(s)</p>
                                     </div>
                                 </div>
-                                <div className="lease-item">
+                                {/* <div className="lease-item">
                                     <FaPaw />
                                     <div>
                                         <label>Pets</label>
                                         <p>{pets === "yes" ? "Has Pets" : "No Pets"}</p>
                                     </div>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
 

@@ -1,6 +1,7 @@
 .my-properties-container {
   padding: 100px 40px 40px;
-  width: 1660px; /* Centered slightly more for readability */
+  width: 1760px; /* Centered slightly more for readability */
+  width: 100%;
   margin: 46px auto 0;
   background-color: #ffffff;
   min-height: 100vh;
@@ -74,10 +75,11 @@
   transform: rotate(90deg);
 }
 
-.btn-text {
+.new-prop-btn-text {
   font-weight: 700;
   font-size: 0.95rem;
   letter-spacing: 0.3px;
+  color: #ffffff;
 }
 
 .detailed-list-wrapper {

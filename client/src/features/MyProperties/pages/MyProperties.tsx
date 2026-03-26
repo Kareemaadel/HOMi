@@ -34,7 +34,7 @@ const MyProperties = () => {
               <div className="btn-icon-circle">
                 <FiPlus />
               </div>
-              <span className="btn-text">Add New Property</span>
+              <span className="new-prop-btn-text">Add New Property</span>
             </button>
           </div>
 
