@@ -178,3 +178,50 @@
     from { opacity: 0; transform: translateY(40px); }
     to { opacity: 1; transform: translateY(0); }
 }
+.success-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #ecfdf5; /* Light green background */
+    color: #059669; /* Dark green text */
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid #a7f3d0;
+    animation: slideDownFade 0.3s ease-out forwards;
+}
+
+@keyframes slideDownFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Optional: slightly dim the button when in success/saving state */
+.submit-card-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Ensure your dual row looks good */
+.form-row-dual {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row-dual .form-group {
+    flex: 1;
+}
+
+.flex-align {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}

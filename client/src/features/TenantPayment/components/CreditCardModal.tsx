@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, CreditCard, Lock, Info } from 'lucide-react';
+import { X, ShieldCheck, CreditCard, Lock, Info, CheckCircle } from 'lucide-react';
 import './CreditCardModal.css';
 
 interface ModalProps {
@@ -14,12 +14,50 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         expiry: '',
         cvv: ''
     });
+    const [isSuccess, setIsSuccess] = useState(false);
 
     if (!isOpen) return null;
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+
+        // Auto-format Card Number: Add space after every 4 digits
+        if (name === 'number') {
+            value = value
+                .replace(/\D/g, '') // Remove all non-digit characters
+                .replace(/(\d{4})(?=\d)/g, '$1 ') // Add a space after every 4 digits
+                .trim();
+        }
+
+        // Auto-format Expiry Date: Add " / " after the first 2 digits (MM)
+        if (name === 'expiry') {
+            value = value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length > 2) {
+                value = `${value.slice(0, 2)} / ${value.slice(2, 4)}`;
+            }
+        }
+
+        // CVV should only be numbers
+        if (name === 'cvv') {
+            value = value.replace(/\D/g, '');
+        }
+
         setCardData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        // Trigger success message
+        setIsSuccess(true);
+
+        // Optional: Close modal automatically after 2.5 seconds
+        setTimeout(() => {
+            setIsSuccess(false);
+            onClose();
+            // Reset form if needed
+            setCardData({ number: '', holder: '', expiry: '', cvv: '' });
+        }, 2500);
     };
 
     return (
@@ -57,16 +95,26 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
+                    {/* Success Message Banner */}
+                    {isSuccess && (
+                        <div className="success-banner">
+                            <CheckCircle size={18} />
+                            <span>Payment method added successfully!</span>
+                        </div>
+                    )}
+
                     {/* Input Form */}
-                    <form className="card-form" onSubmit={e => e.preventDefault()}>
+                    <form className="card-form" onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label>Cardholder Name</label>
                             <input 
                                 type="text" 
                                 name="holder"
+                                value={cardData.holder}
                                 placeholder="e.g. John Doe"
                                 onChange={handleInputChange}
                                 maxLength={26}
+                                required
                             />
                         </div>
 
@@ -77,9 +125,11 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                                 <input 
                                     type="text" 
                                     name="number"
+                                    value={cardData.number}
                                     placeholder="0000 0000 0000 0000"
                                     onChange={handleInputChange}
                                     maxLength={19}
+                                    required
                                 />
                             </div>
                         </div>
@@ -90,9 +140,11 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                                 <input 
                                     type="text" 
                                     name="expiry"
+                                    value={cardData.expiry}
                                     placeholder="MM / YY"
                                     onChange={handleInputChange}
-                                    maxLength={5}
+                                    maxLength={7} // 4 digits + 3 spaces/slashes
+                                    required
                                 />
                             </div>
                             <div className="form-group">
@@ -102,9 +154,11 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                                 <input 
                                     type="password" 
                                     name="cvv"
+                                    value={cardData.cvv}
                                     placeholder="•••"
                                     onChange={handleInputChange}
-                                    maxLength={3}
+                                    maxLength={4} // Some AMEX cards have 4
+                                    required
                                 />
                             </div>
                         </div>
@@ -114,8 +168,8 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                             <p>Your payment information is processed securely and is never stored on our local servers.</p>
                         </div>
 
-                        <button className="submit-card-btn">
-                            Save Payment Method
+                        <button type="submit" className="submit-card-btn" disabled={isSuccess}>
+                            {isSuccess ? 'Saving...' : 'Save Payment Method'}
                         </button>
                     </form>
                 </div>
