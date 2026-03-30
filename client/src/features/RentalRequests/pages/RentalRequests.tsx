@@ -5,10 +5,14 @@ import Footer from '../../../components/global/footer';
 import RequestCard from '../components/RequestCard';
 import StatsOverview from '../components/StatsOverview';
 import FilterTabs from '../components/FilterTabs';
+import { FaInbox } from 'react-icons/fa'; // Added for the empty state
 import './RentalRequests.css';
 
 const RentalRequests: React.FC = () => {
     const [activeTab, setActiveTab] = useState('pending');
+    
+    // TOGGLE THIS TO TEST THE EMPTY STATE
+    const hasData = true; 
 
     const requests = [
         {
@@ -115,6 +119,9 @@ const RentalRequests: React.FC = () => {
         }
     ];
 
+    // Determine what to display based on the toggle
+    const currentRequests = hasData ? requests : [];
+
     return (
         <div className="layout-wrapper">
             <Sidebar />
@@ -131,11 +138,23 @@ const RentalRequests: React.FC = () => {
 
                     <FilterTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                    <div className="rental-requests-grid">
-                        {requests.map(req => (
-                            <RequestCard key={req.id} data={req} />
-                        ))}
-                    </div>
+                    {/* Conditional Rendering for Empty State vs Grid */}
+                    {currentRequests.length > 0 ? (
+                        <div className="rental-requests-grid">
+                            {currentRequests.map(req => (
+                                <RequestCard key={req.id} data={req} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="empty-state-container">
+                            <div className="empty-state-icon">
+                                <FaInbox />
+                            </div>
+                            <h3>No rental applications yet</h3>
+                            <p>We'll notify you as soon as someone applies.</p>
+                        </div>
+                    )}
+
                 </main>
                 <Footer />
             </div>

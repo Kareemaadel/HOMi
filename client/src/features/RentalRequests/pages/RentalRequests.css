@@ -67,6 +67,7 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 24px; /* Slightly wider gap to match wider cards */
     width: 100%;
+    margin-top: -20px;
 }
 
 /* Responsive: Drop to 2 columns on medium screens/tablets */
@@ -90,4 +91,48 @@
     .rental-requests-page {
         padding: 20px;
     }
+}
+.empty-state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 2px dashed #cbd5e1; /* Dashed border gives a "drop zone" or "empty" vibe */
+    border-radius: 16px;
+    padding: 80px 20px;
+    margin-top: 10px;
+    text-align: center;
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.empty-state-icon {
+    background: #f1f5f9;
+    color: #94a3b8;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.empty-state-container h3 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+}
+
+.empty-state-container p {
+    font-size: 1rem;
+    color: #64748b;
+    margin: 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
