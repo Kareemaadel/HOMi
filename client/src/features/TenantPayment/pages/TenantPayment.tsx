@@ -8,7 +8,7 @@ import {
     CreditCard, FileSearch, Download, Plus, CheckCircle2, 
     Clock, ArrowUpRight, Wallet, Receipt, ShieldCheck,
     TrendingUp, ExternalLink, MoreVertical, MapPin, Loader2, X,
-    Landmark, ToggleLeft, ToggleRight, SearchX, CalendarX
+    Landmark, SearchX, CalendarX
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
@@ -22,7 +22,7 @@ interface CheckoutInfo {
 }
 
 const TenantPayment: React.FC = () => {
-    // --- STATE ---
+    // --- UI STATE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [checkoutData, setCheckoutData] = useState<CheckoutInfo | null>(null);
@@ -30,8 +30,22 @@ const TenantPayment: React.FC = () => {
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const location = useLocation();
 
-    // DEV TOGGLE: Switch between empty and populated states
-    const [hasData, setHasData] = useState(true);
+    // --- ENTITY DATA STATES ---
+    // Overview Tab
+    const [hasCurrentBalance, setHasCurrentBalance] = useState(false);
+    const [hasNextRent, setHasNextRent] = useState(true);
+    const [hasAnnualSpend, setHasAnnualSpend] = useState(true);
+    const [hasActiveProtection, setHasActiveProtection] = useState(true);
+    
+    // Checkout
+    const [hasSavedMethods, setHasSavedMethods] = useState(true);
+    
+    // Other Tabs
+    const [hasUpcomingPayments, setHasUpcomingPayments] = useState(true);
+    const [hasPaymentHistory, setHasPaymentHistory] = useState(true);
+    const [hasRefunds, setHasRefunds] = useState(true);
+    const [hasPaymentMethods, setHasPaymentMethods] = useState(true);
+    const [hasPendingRequests, setHasPendingRequests] = useState(true);
 
     // --- EFFECTS ---
     useEffect(() => {
@@ -48,7 +62,11 @@ const TenantPayment: React.FC = () => {
             setIsProcessing(false);
             setCheckoutData(null); // Return to dashboard
             setShowSuccessToast(true);
-            setHasData(true); // Automatically switch to "populated" state on successful payment!
+            
+            // Automatically switch necessary states to "populated" on successful payment
+            setHasPaymentHistory(true); 
+            setHasAnnualSpend(true);
+            
             setActiveTab('history'); // Move them to history to see the record
             
             // Auto-hide toast after 5 seconds
@@ -75,7 +93,7 @@ const TenantPayment: React.FC = () => {
                         <section className="checkout-section">
                             <h3>1. Select Payment Method</h3>
                             <div className="method-selector-mini">
-                                {hasData ? (
+                                {hasSavedMethods ? (
                                     <div className="mini-card selected">
                                         <div className="card-brand-info">
                                             <CreditCard size={18} />
@@ -153,16 +171,16 @@ const TenantPayment: React.FC = () => {
         <div className="tab-viewport animate-fade-up">
             <div className="stats-mosaic">
                 <div className="stat-card-featured">
-                    {hasData && <div className="card-glass-overlay"></div>}
+                    {hasCurrentBalance && <div className="card-glass-overlay"></div>}
                     <div className="card-content">
                         <div className="icon-wrap-blur"><Wallet size={20} /></div>
                         <label>Current Balance</label>
                         <div className="amount-row">
-                            <h2>{hasData ? "$120.00" : "$0.00"}</h2>
-                            {hasData && <span className="mini-badge">Utilities</span>}
+                            <h2>{hasCurrentBalance ? "$120.00" : "$0.00"}</h2>
+                            {hasCurrentBalance && <span className="mini-badge">Utilities</span>}
                         </div>
-                        <p className={`card-footer-text ${!hasData ? 'opacity-70' : ''}`}>
-                            {hasData ? "Auto-pay scheduled for April 15" : "No outstanding balances"}
+                        <p className={`card-footer-text ${!hasCurrentBalance ? 'opacity-70' : ''}`}>
+                            {hasCurrentBalance ? "Auto-pay scheduled for April 15" : "No outstanding balances"}
                         </p>
                     </div>
                 </div>
@@ -170,16 +188,16 @@ const TenantPayment: React.FC = () => {
                 <div className="stat-card-white">
                     <div className="card-header-row">
                         <label>Next Rent</label>
-                        <TrendingUp size={16} className={hasData ? "text-success" : "text-muted"} />
+                        <TrendingUp size={16} className={hasNextRent ? "text-success" : "text-muted"} />
                     </div>
                     <div className="flex-baseline">
-                        <h3 className={!hasData ? "text-muted" : ""}>{hasData ? "$800.00" : "$0.00"}</h3>
+                        <h3 className={!hasNextRent ? "text-muted" : ""}>{hasNextRent ? "$800.00" : "$0.00"}</h3>
                         <span className="sub-label">/mo</span>
                     </div>
                     <div className="due-indicator">
-                        {hasData && <div className="pulse-dot"></div>}
-                        <span className={!hasData ? "text-muted" : ""}>
-                            {hasData ? "Due in 12 days (May 01)" : "No active lease"}
+                        {hasNextRent && <div className="pulse-dot"></div>}
+                        <span className={!hasNextRent ? "text-muted" : ""}>
+                            {hasNextRent ? "Due in 12 days (May 01)" : "No active lease"}
                         </span>
                     </div>
                 </div>
@@ -189,25 +207,25 @@ const TenantPayment: React.FC = () => {
                         <label>Annual Spend</label>
                         <Receipt size={16} className="text-slate" />
                     </div>
-                    <h3 className={!hasData ? "text-muted" : ""}>{hasData ? "$3,200.00" : "$0.00"}</h3>
-                    <p className="sub-label-sm">{hasData ? "4 successful payments in 2024" : "No payments made yet"}</p>
+                    <h3 className={!hasAnnualSpend ? "text-muted" : ""}>{hasAnnualSpend ? "$3,200.00" : "$0.00"}</h3>
+                    <p className="sub-label-sm">{hasAnnualSpend ? "4 successful payments in 2024" : "No payments made yet"}</p>
                 </div>
             </div>
 
-            <div className={`stripe-style-banner ${!hasData ? 'inactive-banner' : ''}`}>
+            <div className={`stripe-style-banner ${!hasActiveProtection ? 'inactive-banner' : ''}`}>
                 <div className="banner-left">
                     <div className="banner-icon">
-                        {hasData ? <ShieldCheck size={24} /> : <FileSearch size={24} />}
+                        {hasActiveProtection ? <ShieldCheck size={24} /> : <FileSearch size={24} />}
                     </div>
                     <div className="banner-copy">
-                        <h4>{hasData ? "Payment protection is active" : "Looking for a place?"}</h4>
-                        <p>{hasData 
+                        <h4>{hasActiveProtection ? "Payment protection is active" : "Looking for a place?"}</h4>
+                        <p>{hasActiveProtection 
                             ? "Your transactions are encrypted and monitored for your security." 
                             : "Browse properties and submit applications to get started."}
                         </p>
                     </div>
                 </div>
-                {hasData ? (
+                {hasActiveProtection ? (
                     <button className="btn-vercel-black" onClick={() => setActiveTab('upcoming')}>
                         Pay Now! <ArrowUpRight size={16} />
                     </button>
@@ -222,7 +240,7 @@ const TenantPayment: React.FC = () => {
 
     const renderUpcoming = () => (
         <div className="tab-viewport animate-fade-up">
-            {hasData ? (
+            {hasUpcomingPayments ? (
                 <div className="list-container">
                     {[
                         { title: 'May 2024 Rent', date: 'May 01', amount: 800, status: 'Active' },
@@ -268,7 +286,7 @@ const TenantPayment: React.FC = () => {
 
     const renderHistory = () => (
         <div className="tab-viewport animate-fade-up">
-            {hasData ? (
+            {hasPaymentHistory ? (
                 <div className="table-wrapper">
                     <table className="modern-table">
                         <thead>
@@ -310,7 +328,7 @@ const TenantPayment: React.FC = () => {
 
     const renderPending = () => (
         <div className="tab-viewport animate-fade-up">
-            {hasData ? (
+            {hasPendingRequests ? (
                 <div className="grid-responsive">
                     {[
                         { property: 'Azure Horizon Suite', status: 'Accepted', price: 1200, loc: 'Miami, FL' },
@@ -362,7 +380,7 @@ const TenantPayment: React.FC = () => {
         <div className="tab-viewport animate-fade-in">
             <div className="methods-viewport">
                 {/* Visual Card Section */}
-                {hasData ? (
+                {hasPaymentMethods ? (
                     <div className="card-visual bank-account">
                         <div className="card-top-row">
                             <span className="bank-logo">CHASE BUSINESS</span>
@@ -387,7 +405,7 @@ const TenantPayment: React.FC = () => {
 
                 {/* List Section */}
                 <div className="methods-list-side">
-                    {hasData ? (
+                    {hasPaymentMethods ? (
                         <div className="method-entry active">
                             <div className="method-icon-wrap"><Landmark size={20}/></div>
                             <div className="method-info-text">
@@ -412,7 +430,7 @@ const TenantPayment: React.FC = () => {
 
     const renderRefunds = () => (
         <div className="tab-viewport animate-fade-up">
-            {hasData ? (
+            {hasRefunds ? (
                 <div className="list-container">
                     <div className="list-row" style={{ borderLeft: '4px solid #f59e0b' }}>
                         <div className="row-main">
@@ -452,15 +470,6 @@ const TenantPayment: React.FC = () => {
                         </div>
                         <div className="header-buttons" style={{ display: 'flex', gap: '12px' }}>
                             <button className="btn-ghost"><ExternalLink size={16}/> View Contracts</button>
-                            
-                            {/* DEV TOGGLE BUTTON
-                            <button 
-                                onClick={() => setHasData(!hasData)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#334155' }}
-                            >
-                                {hasData ? <ToggleRight size={20} className="text-success" /> : <ToggleLeft size={20} className="text-muted" />}
-                                Toggle Data State
-                            </button> */}
                         </div>
                     </header>
 

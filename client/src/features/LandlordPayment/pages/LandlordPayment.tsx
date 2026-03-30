@@ -5,8 +5,8 @@ import Footer from '../../../components/global/footer';
 import { 
     Wallet, TrendingUp, Calendar, Clock, 
     ArrowUpRight, Building2, User, Landmark, 
-    Plus, Download, CheckCircle2, ChevronRight,
-    Search, Filter, MoreHorizontal, CreditCard
+    Plus, Download, CheckCircle2, Search, 
+    Filter, CreditCard
 } from 'lucide-react';
 import './LandlordPayment.css';
 import CreditCardModal from '../../TenantPayment/components/CreditCardModal';
@@ -22,12 +22,25 @@ interface StatCardProps {
 }
 
 const LandlordPayment: React.FC = () => {
-    // DEV TOGGLE: Change this to true to see the populated data, or false for the empty states.
-    // Later, this will be set by your backend (e.g., user.payments.length > 0)
-    const [hasData, setHasData] = useState(true); 
-    
     const [activeTab, setActiveTab] = useState<LandlordTab>('earnings');
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // --- DEV TOGGLES: INDIVIDUAL ENTITY STATES ---
+    // Change any of these to false to see its specific empty state.
+    
+    // Earnings Tab
+    const [hasAvailableBalance, setHasAvailableBalance] = useState(false);
+    const [hasPendingPayouts, setHasPendingPayouts] = useState(true);
+    const [hasTotalEarnings, setHasTotalEarnings] = useState(true);
+    const [hasNextPayoutDate, setHasNextPayoutDate] = useState(false);
+    const [hasRecentGrowth, setHasRecentGrowth] = useState(true);
+
+    // Other Tabs
+    const [hasReceivedPayments, setHasReceivedPayments] = useState(false);
+    const [hasPayoutsHistory, setHasPayoutsHistory] = useState(false);
+    const [hasPayoutMethods, setHasPayoutMethods] = useState(false);
+    const [hasUpcomingPayments, setHasUpcomingPayments] = useState(true);
+
 
     // --- SUB-COMPONENTS ---
 
@@ -63,26 +76,26 @@ const LandlordPayment: React.FC = () => {
                 <StatCard 
                     variant="featured"
                     label="Available Balance" 
-                    amount={hasData ? "$12,450.00" : "$0.00"} 
-                    subtext={hasData ? "Ready for withdrawal" : "No funds available"} 
+                    amount={hasAvailableBalance ? "$12,450.00" : "$0.00"} 
+                    subtext={hasAvailableBalance ? "Ready for withdrawal" : "No funds available"} 
                     icon={<Wallet size={20} />} 
                 />
                 <StatCard 
                     label="Pending Payouts" 
-                    amount={hasData ? "$3,200.00" : "$0.00"} 
-                    subtext={hasData ? "Processing by bank" : "No pending transfers"} 
+                    amount={hasPendingPayouts ? "$3,200.00" : "$0.00"} 
+                    subtext={hasPendingPayouts ? "Processing by bank" : "No pending transfers"} 
                     icon={<Clock size={20} />} 
                 />
                 <StatCard 
                     label="Total Earnings (YTD)" 
-                    amount={hasData ? "$54,800.00" : "$0.00"} 
-                    subtext={hasData ? "+12.5% from last year" : "No earnings yet"} 
+                    amount={hasTotalEarnings ? "$54,800.00" : "$0.00"} 
+                    subtext={hasTotalEarnings ? "+12.5% from last year" : "No earnings yet"} 
                     icon={<TrendingUp size={20} />} 
                 />
                 <StatCard 
                     label="Next Payout Date" 
-                    amount={hasData ? "April 15" : "N/A"} 
-                    subtext={hasData ? "Automatic transfer" : "No scheduled payouts"} 
+                    amount={hasNextPayoutDate ? "April 15" : "N/A"} 
+                    subtext={hasNextPayoutDate ? "Automatic transfer" : "No scheduled payouts"} 
                     icon={<Calendar size={20} />} 
                 />
             </div>
@@ -90,10 +103,10 @@ const LandlordPayment: React.FC = () => {
             <div className="recent-activity-section">
                 <div className="section-header">
                     <h3>Recent Growth</h3>
-                    {hasData && <button className="btn-text">View Full Report</button>}
+                    {hasRecentGrowth && <button className="btn-text">View Full Report</button>}
                 </div>
                 <div className="placeholder-chart-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    {hasData ? (
+                    {hasRecentGrowth ? (
                         <>
                             <div className="chart-bar-mock"></div>
                             <p>Payouts are performing 15% better than Q1 2024.</p>
@@ -107,7 +120,7 @@ const LandlordPayment: React.FC = () => {
     );
 
     const renderReceived = () => {
-        if (!hasData) {
+        if (!hasReceivedPayments) {
             return (
                 <div className="tab-viewport animate-fade-in">
                     <EmptyState 
@@ -166,7 +179,7 @@ const LandlordPayment: React.FC = () => {
     };
 
     const renderPayouts = () => {
-        if (!hasData) {
+        if (!hasPayoutsHistory) {
             return (
                 <div className="tab-viewport animate-fade-in">
                     <EmptyState 
@@ -208,7 +221,7 @@ const LandlordPayment: React.FC = () => {
     };
 
     const renderMethods = () => {
-        if (!hasData) {
+        if (!hasPayoutMethods) {
             return (
                 <div className="tab-viewport animate-fade-in">
                     <EmptyState 
@@ -264,7 +277,7 @@ const LandlordPayment: React.FC = () => {
     };
 
     const renderUpcoming = () => {
-        if (!hasData) {
+        if (!hasUpcomingPayments) {
             return (
                 <div className="tab-viewport animate-fade-in">
                     <EmptyState 

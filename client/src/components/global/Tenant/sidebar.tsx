@@ -4,7 +4,7 @@ import {
   FaHome, FaBuilding, FaSearch, FaUserFriends,
   FaTools, FaCreditCard, FaEnvelope, FaStar,
   FaSignOutAlt,
-  FaCog
+  FaCog, FaSignature
 } from 'react-icons/fa';
 import './sidebar.css';
 import { authService } from '../../../services/auth.service';
@@ -72,6 +72,7 @@ const Sidebar = () => {
 
           <li><a href="/maintenance-requests" className={location.pathname === "/maintenance-requests" ? "active" : ""}><FaTools /> <span>Maintenance</span></a></li>
           <li><a href="/tenant-payment" className={location.pathname === "/tenant-payment" ? "active" : ""}><FaCreditCard /> <span>Payments</span></a></li>
+          <li><a href="/tenant-contracts" className={location.pathname === "/tenant-contracts" ? "active" : ""}><FaSignature/> <span>Contracts</span></a></li>
           <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages <em className="notif-dot"></em></span></a></li>
           <li><a href="/rewards" className={location.pathname === "/rewards" ? "active" : ""}><FaStar /> <span>Rewards</span></a></li>
           <li><a href="/settings" className={location.pathname === "/settings" ? "active" : ""}><FaCog /> <span>Settings</span></a></li>

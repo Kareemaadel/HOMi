@@ -32,7 +32,7 @@ const TenantHome: React.FC = () => {
       <div className="main-wrapper">
         <Header />
         
-        <main className="content-area">
+        <main className="tenanthome-content-area">
           <header className="welcome-section">
             <div className="welcome-text">
               <h1>{greeting}, <span className="highlight">{firstName}!</span></h1>
