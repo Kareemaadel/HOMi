@@ -138,13 +138,13 @@ const LandlordHome = () => {
                         <div className="lh-onboarding-card">
                           <div className="lh-card-icon bg-green"><FiCreditCard /></div>
                           <span className="lh-step-badge">Step 3</span>
-                          <h4>Setup Payout</h4>
+                          <h4>Setup Payments</h4>
                           <p>Connect your bank account to receive rent securely.</p>
                         </div>
                         <div className="lh-onboarding-card">
                           <div className="lh-card-icon bg-orange"><FiBookOpen /></div>
                           <span className="lh-step-badge">Step 4</span>
-                          <h4>Learn HOMI</h4>
+                          <h4>About HOMI</h4>
                           <p>Read our quick guide on managing requests and contracts.</p>
                         </div>
                       </div>

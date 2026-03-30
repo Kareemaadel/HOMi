@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import { 
-    Plus, Building2, Clock, ChevronRight 
+    Plus, Building2, Clock, ChevronRight, FileText
 } from 'lucide-react';
 import ContractDetailView from '../components/ContractDetailView';
 import ActiveLeaseContract from '../components/ActiveLeaseContract';
@@ -24,6 +25,11 @@ export interface LeaseContract {
 }
 
 const LandlordContract: React.FC = () => {
+    const navigate = useNavigate();
+    
+    // Toggle this to false to see the empty state!
+    const hasContracts = true; 
+
     const [selectedContract, setSelectedContract] = useState<LeaseContract | null>(null);
     const [contracts] = useState<LeaseContract[]>([
         { 
@@ -37,7 +43,6 @@ const LandlordContract: React.FC = () => {
             startDate: 'May 01, 2026',
             duration: '12 Months'
         },
-        // Here is your Active Lease mock data!
         { 
             id: 'HOMI-4410', 
             property: 'Sunset Loft', 
@@ -73,45 +78,63 @@ const LandlordContract: React.FC = () => {
                             <h1>Property Management</h1>
                             <p>Manage legal agreements for your rental portfolio.</p>
                         </div>
-                        <button className="btn-primary"><Plus size={18}/> New Agreement</button>
+                        {hasContracts && (
+                            <button className="btn-primary"><Plus size={18}/> New Agreement</button>
+                        )}
                     </div>
 
-                    <div className="contract-list-grid">
-                        {contracts.map(contract => (
-                            <div key={contract.id} className="contract-card">
-                                {/* The data-status attribute hooks into your CSS to color the top bar green */}
-                                <div className="card-status-bar" data-status={contract.status.toLowerCase()}></div>
-                                <div className="card-body">
-                                    <div className="card-top">
-                                        <span className="contract-id">{contract.id}</span>
-                                        {/* The status-tag class hooks into your CSS to make the pill green */}
-                                        <span className={`status-tag ${contract.status.toLowerCase()}`}>
-                                            {getStatusInfo(contract.status).label}
-                                        </span>
+                    {hasContracts ? (
+                        <div className="contract-list-grid">
+                            {contracts.map(contract => (
+                                <div key={contract.id} className="contract-card">
+                                    <div className="card-status-bar" data-status={contract.status.toLowerCase()}></div>
+                                    <div className="card-body">
+                                        <div className="card-top">
+                                            <span className="contract-id">{contract.id}</span>
+                                            <span className={`status-tag ${contract.status.toLowerCase()}`}>
+                                                {getStatusInfo(contract.status).label}
+                                            </span>
+                                        </div>
+                                        <h3>{contract.property}</h3>
+                                        <div className="card-meta">
+                                            <div className="meta-item"><Building2 size={14}/> {contract.duration}</div>
+                                            <div className="meta-item"><Clock size={14}/> Starts {contract.startDate}</div>
+                                        </div>
                                     </div>
-                                    <h3>{contract.property}</h3>
-                                    <div className="card-meta">
-                                        <div className="meta-item"><Building2 size={14}/> {contract.duration}</div>
-                                        <div className="meta-item"><Clock size={14}/> Starts {contract.startDate}</div>
+                                    <div className="card-footer">
+                                        <div className="price-info">
+                                            <span className="label">Monthly Revenue</span>
+                                            <span className="value">${contract.amount}</span>
+                                        </div>
+                                        <button className="btn-view-contract" onClick={() => setSelectedContract(contract)}>
+                                            Manage <ChevronRight size={16}/>
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="card-footer">
-                                    <div className="price-info">
-                                        <span className="label">Monthly Revenue</span>
-                                        <span className="value">${contract.amount}</span>
-                                    </div>
-                                    <button className="btn-view-contract" onClick={() => setSelectedContract(contract)}>
-                                        Manage <ChevronRight size={16}/>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="empty-state-container" style={{ 
+                            textAlign: 'center', padding: '80px 20px', 
+                            backgroundColor: 'var(--saas-card-bg)', 
+                            borderRadius: '14px', border: '1px dashed var(--saas-border-hover)' 
+                        }}>
+                            <FileText size={48} color="var(--saas-text-muted)" style={{ margin: '0 auto 16px' }} />
+                            <h2 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--saas-text-main)' }}>No Active Agreements</h2>
+                            <p style={{ color: 'var(--saas-text-muted)', marginBottom: '24px' }}>You don't have any lease contracts in your portfolio yet.</p>
+                            <button 
+                                className="btn-primary" 
+                                style={{ margin: '0 auto' }} 
+                                onClick={() => navigate('/rental-requests')}
+                            >
+                                View Rental Requests
+                            </button>
+                        </div>
+                    )}
                 </main>
                 <Footer />
             </div>
 
-            {/* If it's NOT active, open the standard detail view */}
             {selectedContract && selectedContract.status !== 'ACTIVE' && (
                 <ContractDetailView 
                     contract={selectedContract} 
@@ -119,7 +142,6 @@ const LandlordContract: React.FC = () => {
                 />
             )}
 
-            {/* If it IS active, open the ActiveLeaseContract component */}
             {selectedContract && selectedContract.status === 'ACTIVE' && (
                 <ActiveLeaseContract 
                     contract={selectedContract} 

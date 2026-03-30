@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
@@ -26,6 +27,11 @@ export interface LeaseContract {
 }
 
 const Contract: React.FC = () => {
+    const navigate = useNavigate();
+
+    // Toggle this to false to see the empty state!
+    const hasContracts = true;
+
     const [selectedContract, setSelectedContract] = useState<LeaseContract | null>(null);
     const [contracts] = useState<LeaseContract[]>([
         { 
@@ -74,46 +80,66 @@ const Contract: React.FC = () => {
                             <h1>Lease Agreements</h1>
                             <p>Track, sign, and manage your property contracts.</p>
                         </div>
-                        <button className="btn-primary"><Plus size={18}/> Draft New Lease</button>
+                        {hasContracts && (
+                            <button className="btn-primary"><Plus size={18}/> Draft New Lease</button>
+                        )}
                     </div>
 
-                    <div className="contract-list-grid">
-                        {contracts.map(contract => (
-                            <div key={contract.id} className="contract-card">
-                                <div className="card-status-bar" data-status={contract.status.toLowerCase()}></div>
-                                <div className="card-body">
-                                    <div className="card-top">
-                                        <span className="contract-id">{contract.id}</span>
-                                        <span className={`status-tag ${contract.status.toLowerCase()}`}>
-                                            {getStatusInfo(contract.status).label}
-                                        </span>
-                                    </div>
-                                    <h3>{contract.property}</h3>
-                                    <div className="card-meta">
-                                        <div className="meta-item"><Building2 size={14}/> {contract.duration}</div>
-                                        <div className="meta-item"><Clock size={14}/> Starts {contract.startDate}</div>
-                                    </div>
-                                    <div className="card-footer">
-                                        <div className="price-info">
-                                            <span className="label">Monthly Rent</span>
-                                            <span className="value">${contract.amount}</span>
+                    {hasContracts ? (
+                        <div className="contract-list-grid">
+                            {contracts.map(contract => (
+                                <div key={contract.id} className="contract-card">
+                                    <div className="card-status-bar" data-status={contract.status.toLowerCase()}></div>
+                                    <div className="card-body">
+                                        <div className="card-top">
+                                            <span className="contract-id">{contract.id}</span>
+                                            <span className={`status-tag ${contract.status.toLowerCase()}`}>
+                                                {getStatusInfo(contract.status).label}
+                                            </span>
                                         </div>
-                                        <button 
-                                            className="btn-view-contract"
-                                            onClick={() => setSelectedContract(contract)}
-                                        >
-                                            View Details <ChevronRight size={16}/>
-                                        </button>
+                                        <h3>{contract.property}</h3>
+                                        <div className="card-meta">
+                                            <div className="meta-item"><Building2 size={14}/> {contract.duration}</div>
+                                            <div className="meta-item"><Clock size={14}/> Starts {contract.startDate}</div>
+                                        </div>
+                                        <div className="card-footer">
+                                            <div className="price-info">
+                                                <span className="label">Monthly Rent</span>
+                                                <span className="value">${contract.amount}</span>
+                                            </div>
+                                            <button 
+                                                className="btn-view-contract"
+                                                onClick={() => setSelectedContract(contract)}
+                                            >
+                                                View Details <ChevronRight size={16}/>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="empty-state-container" style={{ 
+                            textAlign: 'center', padding: '80px 20px', 
+                            backgroundColor: 'var(--saas-card-bg)', 
+                            borderRadius: '14px', border: '1px dashed var(--saas-border-hover)' 
+                        }}>
+                            <FileText size={48} color="var(--saas-text-muted)" style={{ margin: '0 auto 16px' }} />
+                            <h2 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--saas-text-main)' }}>No Lease Agreements Yet</h2>
+                            <p style={{ color: 'var(--saas-text-muted)', marginBottom: '24px' }}>It looks like you don't have any active contracts. Let's check your sent requests!</p>
+                            <button 
+                                className="btn-primary" 
+                                style={{ margin: '0 auto' }} 
+                                onClick={() => navigate('/sent-requests')}
+                            >
+                                View Sent Requests
+                            </button>
+                        </div>
+                    )}
                 </main>
                 <Footer />
             </div>
 
-            {/* Slide-over Detail View */}
             {selectedContract && selectedContract.status !== 'ACTIVE' && (
                 <ContractDetailView 
                     contract={selectedContract} 

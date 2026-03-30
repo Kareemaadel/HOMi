@@ -14,7 +14,7 @@ const RentalRequests: React.FC = () => {
     // TOGGLE THIS TO TEST THE EMPTY STATE
     const hasData = true; 
 
-    const requests = [
+const requests = [
         {
             id: 1,
             applicant: {
@@ -30,7 +30,7 @@ const RentalRequests: React.FC = () => {
             status: "pending",
             message: "I'm looking for a quiet space close to the tech hub. I have a 5-year rental history with no late payments.",
             moveInDate: "Oct 12, 2026",
-            pets: "1 Cat"
+            livingSituation: "Single"
         },
         {
             id: 2,
@@ -47,7 +47,7 @@ const RentalRequests: React.FC = () => {
             status: "pending",
             message: "Relocating for my residency. Stable income, but my credit score is recovering from student loans.",
             moveInDate: "Nov 01, 2026",
-            pets: "No Pets"
+            livingSituation: "Single"
         },
         {
             id: 3,
@@ -64,7 +64,7 @@ const RentalRequests: React.FC = () => {
             status: "pending",
             message: "Very interested in the unit. I travel often for work so I appreciate a secure building.",
             moveInDate: "Nov 15, 2026",
-            pets: "No Pets"
+            livingSituation: "Single"
         },
         {
             id: 4,
@@ -81,7 +81,7 @@ const RentalRequests: React.FC = () => {
             status: "pending",
             message: "Looking for a long-term lease. I work from home 3 days a week, so a good internet connection is my main priority.",
             moveInDate: "Dec 01, 2026",
-            pets: "1 Dog (Golden Retriever)"
+            livingSituation: "Single"
         },
         {
             id: 5,
@@ -98,7 +98,7 @@ const RentalRequests: React.FC = () => {
             status: "pending",
             message: "I love the coach house layout. I can provide 2 years of tax returns to verify my self-employment income.",
             moveInDate: "Oct 20, 2026",
-            pets: "No Pets"
+            livingSituation: "Single"
         },
         {
             id: 6,
@@ -115,10 +115,10 @@ const RentalRequests: React.FC = () => {
             status: "pending",
             message: "We are getting married next month and looking for our first place together! We have great references from our current landlord.",
             moveInDate: "Nov 01, 2026",
-            pets: "No Pets"
+            livingSituation: "Couple"
         }
     ];
-
+    
     // Determine what to display based on the toggle
     const currentRequests = hasData ? requests : [];
 

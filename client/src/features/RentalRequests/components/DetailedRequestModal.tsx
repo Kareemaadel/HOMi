@@ -1,9 +1,11 @@
 // client\src\features\RentalRequests\components\DetailedRequestModal.tsx
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-    FaTimes, FaBriefcase, FaWallet, FaChartLine, 
+    FaTimes, FaWallet, FaChartLine, 
     FaCalendarCheck, FaHourglassHalf, FaUsers, FaPaw, 
-    FaQuoteLeft, FaCheckCircle, FaStar, FaUserFriends, FaCommentDots 
+    FaQuoteLeft, FaCheckCircle, FaUserFriends, FaCommentDots,
+    FaExclamationTriangle, FaCheck
 } from 'react-icons/fa';
 import './DetailedRequestModal.css';
 
@@ -13,24 +15,88 @@ interface DetailedRequestModalProps {
 }
 
 const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClose }) => {
+    const navigate = useNavigate();
+    
+    // States for our new confirmation and success flows
+    const [confirmAction, setConfirmAction] = useState<'approve' | 'decline' | null>(null);
+    const [applicationState, setApplicationState] = useState<'pending' | 'approved' | 'declined'>('pending');
+
     const { 
         applicant, property, moveInDate, duration, occupants, 
         pets, message, habits, livingSituation, appliedOnDate 
     } = data;
 
     // --- MOCK STATE FOR TESTING ---
-    // Toggle this boolean to true/false to test the populated vs. empty state
     const hasHabits = true; 
     const mockHabits = ["Early Riser", "Non-smoker", "Plant Parent", "Quiet Lifestyle"];
-    
-    // Determine which habits to show based on the toggle and actual data
     const displayedHabits = hasHabits ? (habits && habits.length > 0 ? habits : mockHabits) : [];
     // ------------------------------
+
+    // Safely parse pets to ensure no numbers are displayed
+    const hasPets = pets === "yes" || pets === true || Number(pets) > 0;
 
     return (
         <div className="detailed-modal-overlay" onClick={onClose}>
             <div className="detailed-modal-container" onClick={e => e.stopPropagation()}>
+                
+                {/* Close Button is hidden if we are on a final success/declined screen to force navigation/acknowledgment, or keep it if you prefer! */}
                 <button className="detailed-close-btn" onClick={onClose}><FaTimes /></button>
+
+                {/* --- INNER OVERLAYS FOR CONFIRMATION & SUCCESS --- */}
+                {confirmAction === 'approve' && applicationState === 'pending' && (
+                    <div className="action-overlay">
+                        <div className="action-card">
+                            <FaExclamationTriangle size={40} color="#f59e0b" style={{ marginBottom: '16px' }} />
+                            <h3>Review Confirmation</h3>
+                            <p>Have you thoroughly reviewed <strong>{applicant?.name || "this applicant"}'s</strong> background, financials, and lifestyle fit?</p>
+                            <div className="action-buttons">
+                                <button className="btn-cancel" onClick={() => setConfirmAction(null)}>Go Back</button>
+                                <button className="btn-approve-main" onClick={() => setApplicationState('approved')}>Yes, Approve Application</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {confirmAction === 'decline' && applicationState === 'pending' && (
+                    <div className="action-overlay">
+                        <div className="action-card">
+                            <FaExclamationTriangle size={40} color="#ef4444" style={{ marginBottom: '16px' }} />
+                            <h3>Decline Application</h3>
+                            <p>Are you sure you want to decline this application? This action cannot be easily undone.</p>
+                            <div className="action-buttons">
+                                <button className="btn-cancel" onClick={() => setConfirmAction(null)}>Cancel</button>
+                                <button className="btn-decline-main" style={{ background: '#ef4444', color: '#fff' }} onClick={() => setApplicationState('declined')}>Yes, Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {applicationState === 'approved' && (
+                    <div className="action-overlay success">
+                        <div className="action-card">
+                            <div className="success-circle"><FaCheck size={32} color="#10b981" /></div>
+                            <h3>Application Approved!</h3>
+                            <p>Great news! The next step is to draft and send the official lease agreement to the tenant.</p>
+                            <button className="btn-approve-main" style={{ width: '100%' }} onClick={() => navigate('/landlord-contracts')}>
+                                Go to Contracts Hub
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {applicationState === 'declined' && (
+                    <div className="action-overlay declined">
+                        <div className="action-card">
+                            <FaTimes size={40} color="#ef4444" style={{ marginBottom: '16px' }} />
+                            <h3>Application Declined</h3>
+                            <p>The applicant will be notified safely. You can now focus on other prospective tenants.</p>
+                            <button className="btn-cancel" style={{ width: '100%', border: '1px solid #cbd5e1' }} onClick={onClose}>
+                                Close Window
+                            </button>
+                        </div>
+                    </div>
+                )}
+                {/* --- END OVERLAYS --- */}
 
                 <div className="detailed-modal-body">
                     {/* LEFT COLUMN: Profile & Message */}
@@ -47,7 +113,6 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                             <p className="hero-subtext">
                                 {applicant?.occupation || "Professional"} at {applicant?.company || "Company"}
                             </p>
-                            {/* NEW: Application Timestamp */}
                             <p className="hero-subtext" style={{ fontSize: '12px', marginTop: '4px', color: '#94a3b8' }}>
                                 Applied on {appliedOnDate || "Oct 24, 2023"}
                             </p>
@@ -75,7 +140,6 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                                         </div>
                                     ))
                                 ) : (
-                                    // NEW: Empty State Management
                                     <div className="empty-text">
                                         <p style={{ margin: '0 0 4px 0', color: '#64748b', fontWeight: 600 }}>No lifestyle habits provided.</p>
                                         <span style={{ fontSize: '12px', color: '#94a3b8' }}>The applicant opted to skip this optional section.</span>
@@ -127,7 +191,6 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                                         <p>{occupants || "1"} Person(s)</p>
                                     </div>
                                 </div>
-                                {/* NEW: Living Situation Mapping */}
                                 <div className="lease-item">
                                     <FaUserFriends />
                                     <div>
@@ -135,45 +198,48 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                                         <p style={{ textTransform: 'capitalize' }}>{livingSituation || "Single"}</p>
                                     </div>
                                 </div>
-                                {/* UNCOMMENTED & FIXED: Pets */}
-                                <div className="lease-item">
-                                    <FaPaw />
-                                    <div>
-                                        <label>Pets</label>
-                                        <p>{pets === "yes" ? "Has Pets" : (pets === "no" ? "No Pets" : "Not specified")}</p>
-                                    </div>
-                                </div>
+ 
                             </div>
                         </div>
 
                         <div className="property-context">
                             <label>Applying For</label>
-                            <h4>{property?.name || "Select a Property"}</h4>
+                            {/* Uses title first, falls back to name */}
+                            <h4>{property?.title || property?.name || "Property Title"}</h4>
                             <p>{property?.unit || "Unit details unavailable"}</p>
                         </div>
 
-                        <div className="sticky-actions">
-                            <button className="btn-approve-main">Approve Application</button>
+<div className="sticky-actions">
+                            <button className="btn-approve-main" onClick={() => setConfirmAction('approve')}>Accept Application</button>
                             
-                            {/* NEW: Message Applicant Button */}
-                            <button className="btn-secondary-main" style={{
-                                background: '#eff6ff', 
-                                color: '#3b82f6', 
-                                border: 'none', 
-                                padding: '16px', 
-                                borderRadius: '12px', 
-                                fontWeight: '600', 
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px',
-                                transition: '0.2s'
-                            }}>
-                                <FaCommentDots size={18} /> Message Applicant
-                            </button>
-                            
-                            <button className="btn-decline-main">Decline</button>
+                            {/* Wrapper to put Message and Decline on the same row */}
+                            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                                <button className="btn-secondary-main" onClick={() => navigate('/messages')} style={{
+                                    background: '#eff6ff', 
+                                    color: '#3b82f6', 
+                                    border: 'none', 
+                                    padding: '16px', 
+                                    borderRadius: '12px', 
+                                    fontWeight: '600', 
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    transition: '0.2s',
+                                    flex: 1 // Takes up half the row
+                                }}>
+                                    <FaCommentDots size={18} /> Message
+                                </button>
+                                
+                                <button 
+                                    className="btn-decline-main" 
+                                    style={{ flex: 1 }} // Takes up the other half
+                                    onClick={() => setConfirmAction('decline')}
+                                >
+                                    Decline
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

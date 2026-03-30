@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { FaCheckCircle, FaBuilding, FaCalendarAlt, FaPaw, FaEnvelope } from 'react-icons/fa';
+import { FaCheckCircle, FaBuilding, FaCalendarAlt, FaUserFriends, FaEnvelope } from 'react-icons/fa';
 import DetailedRequestModal from './DetailedRequestModal';
 import './RequestCard.css';
 
 const RequestCard = ({ data }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const { applicant, property, moveInDate, pets, message } = data;
+    // Destructured livingSituation instead of pets
+    const { applicant, property, moveInDate, livingSituation, message } = data;
 
     return (
         <>
@@ -41,7 +42,10 @@ const RequestCard = ({ data }: any) => {
 
                 <div className="rc-specs">
                     <span><FaCalendarAlt className="icon-gray"/> {moveInDate}</span>
-                    <span><FaPaw className="icon-gray"/> {pets}</span>
+                    {/* Replaced Pets with Living Situation */}
+                    <span style={{ textTransform: 'capitalize' }}>
+                        <FaUserFriends className="icon-gray"/> {livingSituation || "Single"}
+                    </span>
                 </div>
 
                 <div className="rc-message">
