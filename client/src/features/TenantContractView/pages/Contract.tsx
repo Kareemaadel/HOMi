@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import Header from '../../../components/global/header';
-import Sidebar from '../../../components/global/Landlord/sidebar';
+import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
+import ActiveLeaseContract from '../components/ActiveLeaseContract';
+
 import { 
     FileText, CheckCircle2, Clock, AlertCircle, 
     Plus, Search, Filter, Building2, Eye, Download, ChevronRight 
@@ -112,8 +114,15 @@ const Contract: React.FC = () => {
             </div>
 
             {/* Slide-over Detail View */}
-            {selectedContract && (
+            {selectedContract && selectedContract.status !== 'ACTIVE' && (
                 <ContractDetailView 
+                    contract={selectedContract} 
+                    onClose={() => setSelectedContract(null)} 
+                />
+            )}
+
+            {selectedContract && selectedContract.status === 'ACTIVE' && (
+                <ActiveLeaseContract 
                     contract={selectedContract} 
                     onClose={() => setSelectedContract(null)} 
                 />
