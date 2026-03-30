@@ -9,6 +9,9 @@ import './MyProperties.css';
 
 const MyProperties = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // TOGGLE THIS to test empty vs populated states!
+  const hasData = false; 
 
   const myProperties = [
     { id: 1, name: "Skyline Apartments", address: "Downtown, Unit 402", status: "rented", price: "$2,400", beds: 2, baths: 2, sqft: "1,100", tenantName: "John Doe", leaseEnd: "Dec 2026", yield: "6.4" },
@@ -27,22 +30,41 @@ const MyProperties = () => {
           <div className="my-props-header">
             <div className="header-left">
               <h1>Portfolio</h1>
-              <p>Managing {myProperties.length} total units</p>
+              <p>Managing {hasData ? myProperties.length : 0} total units</p>
             </div>
             
-            <button className="add-prop-primary-btn" onClick={() => setIsModalOpen(true)}>
-              <div className="btn-icon-circle">
-                <FiPlus />
-              </div>
-              <span className="new-prop-btn-text">Add New Property</span>
-            </button>
+            {/* Only show the top-right button if there IS data */}
+            {hasData && (
+              <button className="add-prop-primary-btn" onClick={() => setIsModalOpen(true)}>
+                <div className="btn-icon-circle">
+                  <FiPlus />
+                </div>
+                <span className="new-prop-btn-text">Add New Property</span>
+              </button>
+            )}
           </div>
 
-          <div className="detailed-list-wrapper">
-            {myProperties.map(prop => (
-              <DetailedPropertyCard key={prop.id} property={prop} />
-            ))}
-          </div>
+          {/* Conditional Rendering based on hasData */}
+          {hasData ? (
+            <div className="detailed-list-wrapper">
+              {myProperties.map(prop => (
+                <DetailedPropertyCard key={prop.id} property={prop} />
+              ))}
+            </div>
+          ) : (
+            <div className="my-properties-empty-state-wrapper">
+              <div className="my-properties-empty-state-icon-bg">
+                <FiHome size={48} className="my-properties-empty-state-icon" />
+              </div>
+              <h2>No Properties Found</h2>
+              <p className="my-properties-empty-state-text">You have no properties yet. Start building your portfolio by adding your first unit.</p>
+              <button className="my-properties-empty-state-btn" onClick={() => setIsModalOpen(true)}>
+                <FiPlus size={20} />
+                Add Your First Property
+              </button>
+            </div>
+          )}
+
         </main>
         <Footer />
       </div>

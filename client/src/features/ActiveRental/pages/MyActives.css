@@ -87,6 +87,7 @@
     border: 1px dashed #e2e8f0;
     margin-top: 2rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    width: 1550px;
 }
 
 .empty-state-icon-wrapper {
@@ -127,6 +128,7 @@
     font-size: 1rem;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
     transition: all 0.2s ease;
+    margin-top: 30px;
 }
 
 .btn-empty-state:hover {

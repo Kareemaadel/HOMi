@@ -86,4 +86,73 @@
   display: flex;
   flex-direction: column;
   gap: 20px; /* Space between the long property cards */
+  
+}.my-properties-empty-state-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    background-color: #fafafa;
+    border: 2px dashed #e5e7eb;
+    border-radius: 16px;
+    margin-top: 24px;
+    text-align: center;
+}
+
+.my-properties-empty-state-icon-bg {
+    background-color: #f3f4f6;
+    padding: 24px;
+    border-radius: 50%;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.my-properties-empty-state-icon {
+    color: #9ca3af;
+}
+
+.my-properties-empty-state-wrapper h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.my-properties-empty-state-text {
+    color: #6b7280;
+    font-size: 16px;
+    max-width: 420px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+}
+
+.my-properties-empty-state-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #2563eb; 
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.1);
+}
+
+.my-properties-empty-state-btn:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3), 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
+.my-properties-empty-state-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px -1px rgba(37, 99, 235, 0.2);
 }
