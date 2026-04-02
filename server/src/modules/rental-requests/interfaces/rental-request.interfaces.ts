@@ -50,6 +50,19 @@ export interface RentalRequestResponse {
         id: string;
         title: string;
         address: string;
+        monthlyPrice?: number;
+        securityDeposit?: number;
+        images?: { imageUrl: string; isMain: boolean }[];
+        landlord?: {
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        };
+        specifications?: {
+            bedrooms: number;
+            bathrooms: number;
+            areaSqft: number;
+        };
     };
 }
 

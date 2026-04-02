@@ -85,7 +85,8 @@ const SentRequests: React.FC = () => {
 
     const landlordName = (req: MyRentalRequest) => {
         const l = req.property.landlord;
-        return l ? `${l.firstName} ${l.lastName}`.trim() : 'Property Owner';
+        const name = l ? `${l.firstName} ${l.lastName}`.trim() : '';
+        return name || 'Property Owner';
     };
 
     return (
@@ -205,6 +206,11 @@ const SentRequests: React.FC = () => {
                                                     ${(req.property.monthlyPrice ?? 0).toLocaleString()}
                                                     <span>/mo</span>
                                                 </span>
+                                                {(req.property.securityDeposit ?? 0) > 0 && (
+                                                    <span className="request-security-deposit" style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                                        Dep: ${(req.property.securityDeposit ?? 0).toLocaleString()}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
