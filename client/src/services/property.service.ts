@@ -64,6 +64,7 @@ export interface PropertyQueryParams {
     radiusKm?: number;
     page?: number;
     limit?: number;
+    landlordId?: string;
 }
 
 interface GetPropertiesApiResponse {
