@@ -1,72 +1,155 @@
 /* client/src/features/SentRequests/pages/SentRequests.css */
 
-/* Layout wrapper */
+/* ── Layout ── */
 .sent-requests-layout {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: #f8fafc; /* Light gray background for the dashboard */
+    background-color: #f8fafc;
 }
 
-/* Main content area containing sidebar and page content */
 .sent-requests-main {
     display: flex;
     flex: 1;
     overflow: hidden;
 }
 
-/* Specific content wrapper to the right of the sidebar */
 .sent-requests-content {
     flex: 1;
     padding: 2rem 3rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
     margin-left: 250px;
     margin-top: 70px;
 }
 
+/* ── Page header ── */
+.sent-requests-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
 .sent-requests-header h1 {
     font-size: 2rem;
+    font-weight: 800;
     color: #0f172a;
-    margin-bottom: 0.5rem;
+    margin: 0 0 0.25rem;
 }
 
 .sent-requests-header p {
     color: #64748b;
     font-size: 1rem;
+    margin: 0;
 }
 
-/* Grid for the application cards */
+.btn-refresh {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+}
+
+.btn-refresh:hover {
+    background: #f1f5f9;
+    color: #2563eb;
+    border-color: #2563eb;
+}
+
+/* ── Filter tabs ── */
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-tab {
+    padding: 8px 20px;
+    border-radius: 100px;
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-tab:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+.filter-tab.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+/* ── Grid ── */
 .requests-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
 }
 
-/* Individual Request Card */
+/* ── Base card ── */
 .request-card {
     background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    border: 1.5px solid #e2e8f0;
     overflow: hidden;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    cursor: default;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .request-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border-color: #cbd5e1;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
 }
 
+/* ── Status-tinted card borders & accents ── */
+.card-pending {
+    border-color: #fbbf24;
+    border-top: 4px solid #f59e0b;
+}
+
+.card-pending:hover {
+    box-shadow: 0 12px 24px rgba(245, 158, 11, 0.12);
+}
+
+.card-approved {
+    border-color: #86efac;
+    border-top: 4px solid #22c55e;
+}
+
+.card-approved:hover {
+    box-shadow: 0 12px 24px rgba(34, 197, 94, 0.12);
+}
+
+.card-declined {
+    border-color: #fca5a5;
+    border-top: 4px solid #ef4444;
+}
+
+.card-declined:hover {
+    box-shadow: 0 12px 24px rgba(239, 68, 68, 0.12);
+}
+
+/* ── Card image ── */
 .request-card-image-wrapper {
     position: relative;
-    height: 200px;
+    height: 190px;
     width: 100%;
 }
 
@@ -76,96 +159,174 @@
     object-fit: cover;
 }
 
-/* Status Badges positioned over the image */
+/* ── Status badges ── */
 .status-badge {
     position: absolute;
     top: 12px;
     right: 12px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    backdrop-filter: blur(4px);
+    letter-spacing: 0.06em;
+    backdrop-filter: blur(6px);
 }
 
-.status-badge.pending {
-    background-color: rgba(245, 158, 11, 0.9); /* Amber */
-    color: white;
+.badge-pending {
+    background: rgba(245, 158, 11, 0.92);
+    color: #fff;
 }
 
-.status-badge.reviewed {
-    background-color: rgba(56, 189, 248, 0.9); /* Light Blue */
-    color: white;
+.badge-approved {
+    background: rgba(22, 163, 74, 0.92);
+    color: #fff;
 }
 
-/* Info section of the card */
+.badge-declined {
+    background: rgba(220, 38, 38, 0.92);
+    color: #fff;
+}
+
+/* ── Card body ── */
 .request-card-info {
     padding: 1.25rem;
     display: flex;
     flex-direction: column;
     flex: 1;
+    gap: 0.75rem;
 }
 
 .request-card-info h3 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.15rem;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: #1e293b;
+    line-height: 1.3;
 }
 
 .request-address {
     color: #64748b;
-    font-size: 0.85rem;
-    margin-bottom: 1.25rem;
+    font-size: 0.82rem;
+    margin: -0.25rem 0 0;
 }
 
+/* ── Specs row ── */
+.request-specs {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+.request-specs span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ── Meta info ── */
+.request-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+}
+
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.meta-row svg {
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.meta-row strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.landlord-meta { border-top: 1px solid #f1f5f9; padding-top: 5px; margin-top: 2px; }
+.submitted-meta { color: #94a3b8; font-size: 0.75rem; }
+
+/* ── Card footer ── */
 .request-card-footer {
     margin-top: auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-top: 1px solid #f1f5f9;
-    padding-top: 1rem;
+    padding-top: 0.875rem;
 }
 
 .request-price {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.2rem;
+    font-weight: 800;
     color: #0f172a;
 }
 
 .request-price span {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 400;
     color: #64748b;
 }
 
-.view-details-btn {
-    background: transparent;
-    color: #3b82f6;
-    border: none;
+/* ── Loading ── */
+.sent-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 16px;
+    color: #64748b;
+}
+
+.sent-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Error ── */
+.sent-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: #ef4444;
     font-weight: 600;
-    font-size: 0.9rem;
+}
+
+.sent-error button {
+    padding: 8px 20px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    transition: color 0.2s ease;
+    font-weight: 600;
 }
 
-.request-card:hover .view-details-btn {
-    color: #2563eb;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .sent-requests-main {
-        flex-direction: column; /* Stacks sidebar and content on small screens if Sidebar doesn't have its own mobile menu logic */
-    }
-    
-    .sent-requests-content {
-        padding: 1.5rem;
-    }
-}
-/* --- Empty State Styles --- */
+/* ── Empty state ── */
 .sent-empty-state-container {
     display: flex;
     flex-direction: column;
@@ -176,8 +337,7 @@
     background: #ffffff;
     border-radius: 16px;
     border: 1px dashed #e2e8f0;
-    margin-top: 2rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
 .sent-empty-icon-wrapper {
@@ -187,26 +347,23 @@
     margin-bottom: 24px;
 }
 
-.sent-empty-icon {
-    color: #64748b;
-}
+.sent-empty-icon { color: #64748b; }
 
 .sent-empty-title {
-    margin: 0 0 12px 0;
+    margin: 0 0 12px;
     color: #1e293b;
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .sent-empty-text {
-    margin: 0 0 32px 0;
+    margin: 0 0 32px;
     color: #64748b;
     max-width: 450px;
     line-height: 1.6;
     font-size: 1rem;
 }
 
-/* Premium Button Styling */
 .btn-browse-action {
     padding: 12px 28px;
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
@@ -216,16 +373,17 @@
     border: none;
     font-weight: 600;
     font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.2);
     transition: all 0.2s ease;
 }
 
 .btn-browse-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 0 6px 16px rgba(37,99,235,0.3);
 }
 
-.btn-browse-action:active {
-    transform: translateY(0);
+@media (max-width: 768px) {
+    .sent-requests-content {
+        padding: 1.5rem;
+    }
 }

@@ -29,9 +29,60 @@ export interface RentalRequestResponse {
     };
 }
 
+export type RentalRequestStatus = 'PENDING' | 'APPROVED' | 'DECLINED';
+
+export interface MyRentalRequest {
+    id: string;
+    status: RentalRequestStatus;
+    moveInDate: string;
+    duration: RentalDuration;
+    occupants: number;
+    livingSituation: LivingSituation;
+    message: string;
+    createdAt: string;
+    property: {
+        id: string;
+        title: string;
+        address: string;
+        monthlyPrice: number;
+        securityDeposit: number;
+        images: { imageUrl: string; isMain: boolean }[];
+        landlord: {
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        } | null;
+        specifications: {
+            bedrooms: number;
+            bathrooms: number;
+            areaSqft: number;
+        } | null;
+    };
+}
+
+export interface MyRentalRequestsResponse {
+    success: boolean;
+    data: MyRentalRequest[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
 class RentalRequestService {
     async submitRentalRequest(payload: SubmitRentalRequestPayload): Promise<RentalRequestResponse> {
         const response = await apiClient.post<RentalRequestResponse>('/rental-requests', payload);
+        return response.data;
+    }
+
+    async getMyRequests(params?: {
+        status?: RentalRequestStatus;
+        page?: number;
+        limit?: number;
+    }): Promise<MyRentalRequestsResponse> {
+        const response = await apiClient.get<MyRentalRequestsResponse>('/rental-requests/my-requests', { params });
         return response.data;
     }
 }
