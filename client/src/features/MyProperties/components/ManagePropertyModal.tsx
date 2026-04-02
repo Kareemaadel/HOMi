@@ -24,7 +24,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     name: property.name || '',
     price: property.price?.toString().replace(/[^0-9]/g, '') || '',
     address: property.address || '',
-    status: property.status || 'available',
+    status: property.status === 'published' ? 'available' : property.status === 'rented' ? 'rented' : 'maintenance',
     beds: property.beds || 0,
     baths: property.baths || 0,
     sqft: property.sqft || 0,
@@ -62,8 +62,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     return Object.keys(newErrors).length === 0;
   };
 
-  // 5. Submit Handler
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!validate()) {
       if (errors.name || errors.address) setActiveTab('general');
       else if (errors.price) setActiveTab('financials');
@@ -71,14 +70,41 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      import('../../../services/property.service').then(async ({ propertyService }) => {
+        let backendStatus = 'Draft';
+        if (formData.status === 'available') backendStatus = 'Published';
+        if (formData.status === 'rented') backendStatus = 'Rented';
+
+        const payload = {
+          title: formData.name,
+          address: formData.address,
+          monthly_price: Number(formData.price),
+          status: backendStatus,
+          specifications: {
+            bedrooms: formData.beds,
+            bathrooms: formData.baths,
+            area_sqft: formData.sqft
+          }
+        };
+
+        const res = await propertyService.updateProperty(property.id, payload);
+        if (res.success) {
+          setShowToast(true);
+          setTimeout(() => {
+            setShowToast(false);
+            if (property.onUpdate) {
+              property.onUpdate();
+            }
+            onClose();
+          }, 2000);
+        }
+      }).catch(err => console.error("Error loading service", err));
+    } catch (e) {
+      console.error(e);
+    } finally {
       setLoading(false);
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-        onClose();
-      }, 2000);
-    }, 1200);
+    }
   };
 
   // Helper dictionary for clean display names
@@ -271,10 +297,19 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                       <span>{property.images?.length || 1} / 10 Photos</span>
                    </div>
                    <div className="media-manager-grid">
-                      <div className="media-card">
-                        <img src="/rentblue.jpg" alt="Property" />
-                        <div className="remove-overlay"><FaTrashAlt /></div>
-                      </div>
+                      {property.images && property.images.length > 0 ? (
+                        property.images.map((img: any, idx: number) => (
+                           <div className="media-card" key={img.id || idx}>
+                             <img src={img.image_url || img.imageUrl} alt="Property" />
+                             <div className="remove-overlay"><FaTrashAlt /></div>
+                           </div>
+                        ))
+                      ) : (
+                        <div className="media-card">
+                          <img src="/rentblue.jpg" alt="Property" />
+                          <div className="remove-overlay"><FaTrashAlt /></div>
+                        </div>
+                      )}
                       <div className="add-media-btn">
                         <FaImages size={24} />
                         <span>Upload New</span>

@@ -14,12 +14,12 @@ const DetailedPropertyCard = ({ property }: any) => {
     <>
       <div className="detailed-card">
         <div className="detailed-image-section">
-          <img src="/rentblue.jpg" alt={property.name} />
+            <img src={property.images && property.images.length > 0 ? (property.images[0].image_url || property.images[0].imageUrl) : "/rentblue.jpg"} alt={property.name} />
           <div className="image-overlay-tags">
             <span className={`detailed-badge ${property.status}`}>
-              {property.status}
+              {property.status === 'draft' ? 'maintenance' : property.status}
             </span>
-            {property.maintenance && (
+            {property.status === 'draft' && (
               <span className="maintenance-tag"><FaTools /> Maintenance</span>
             )}
           </div>

@@ -14,9 +14,12 @@ const MyProperties = () => {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const [refreshKey, setRefreshKey] = useState(0);
+
   useEffect(() => {
     const fetchProperties = async () => {
       try {
+        setLoading(true);
         const currentUser = authService.getCurrentUser();
         if (!currentUser?.user?.id) {
           setLoading(false);
@@ -40,7 +43,9 @@ const MyProperties = () => {
               tenantName: null,
               leaseEnd: null,
               yield: "5.0", // Placeholder for now
-              occupancyRate: prop.status === 'Rented' ? 100 : 0
+              occupancyRate: prop.status === 'Rented' ? 100 : 0,
+              images: prop.images || [],
+              onUpdate: () => setRefreshKey(prev => prev + 1)
            }));
            setProperties(mappedProperties);
         }
@@ -52,7 +57,7 @@ const MyProperties = () => {
     };
     
     fetchProperties();
-  }, []);
+  }, [refreshKey]);
 
   const hasData = properties.length > 0;
 
