@@ -10,6 +10,7 @@ import {
     type RentalDuration,
     type LivingSituation,
 } from '../../../services/rental-request.service';
+import { authService } from '../../../services/auth.service';
 import './ApplicationModal.css';
 
 const PRESET_HABITS = [
@@ -20,15 +21,15 @@ const PRESET_HABITS = [
 ];
 
 const durationOptions: { label: string; value: RentalDuration }[] = [
-    { label: '6 Months', value: '6_MONTHS' },
+    { label: '6 Months',  value: '6_MONTHS'  },
     { label: '12 Months', value: '12_MONTHS' },
     { label: '24 Months', value: '24_MONTHS' },
 ];
 
 const livingSituationOptions: { label: string; value: LivingSituation }[] = [
-    { label: 'Single', value: 'SINGLE' },
-    { label: 'Married', value: 'MARRIED' },
-    { label: 'Family', value: 'FAMILY' },
+    { label: 'Single',   value: 'SINGLE'   },
+    { label: 'Married',  value: 'MARRIED'  },
+    { label: 'Family',   value: 'FAMILY'   },
     { label: 'Students', value: 'STUDENTS' },
 ];
 
@@ -38,35 +39,50 @@ interface ApplicationModalProps {
         title: string;
         price: number;
         image: string;
-        landlordName?: string;
+        /** Landlord full name — sourced from BrowsePropertyUI.ownerName */
+        ownerName?: string;
+        ownerImage?: string;
     };
     onClose: () => void;
-    onBack: () => void;
+    onBack:  () => void;
     isReadOnly?: boolean;
 }
 
 const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: ApplicationModalProps) => {
-    const [step, setStep] = useState(1);
+    const [step, setStep]             = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading]       = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [habitsLoading, setHabitsLoading] = useState(true);
 
-    // Step 1 form state
-    const [moveInDate, setMoveInDate] = useState('');
-    const [duration, setDuration] = useState<RentalDuration | ''>('');
-    const [occupants, setOccupants] = useState<number | ''>('');
+    // Step 1 — form state
+    const [moveInDate,      setMoveInDate]      = useState('');
+    const [duration,        setDuration]        = useState<RentalDuration | ''>('');
+    const [occupants,       setOccupants]       = useState<number | ''>('');
     const [livingSituation, setLivingSituation] = useState<LivingSituation | ''>('');
-    const [message, setMessage] = useState('');
+    const [message,         setMessage]         = useState('');
 
-    // Step 2 habits state
+    // Step 2 — habits state
     const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
-    const [customHabit, setCustomHabit] = useState('');
+    const [customHabit,    setCustomHabit]    = useState('');
 
+    // Pre-load the user's existing habits from the backend
     useEffect(() => {
-        if (isReadOnly) {
-            setSelectedHabits(['Early Riser', 'Non-smoker', 'Very Clean']);
-        }
-    }, [isReadOnly]);
+        const loadHabits = async () => {
+            setHabitsLoading(true);
+            try {
+                const res = await authService.getUserHabits();
+                setSelectedHabits(res.habit_names ?? []);
+            } catch {
+                // If the endpoint fails or user has no habits yet, start empty
+                setSelectedHabits([]);
+            } finally {
+                setHabitsLoading(false);
+            }
+        };
+
+        void loadHabits();
+    }, []);
 
     const handleNext = (e: React.FormEvent) => {
         e.preventDefault();
@@ -95,26 +111,34 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
         setSubmitError(null);
 
         try {
-            await rentalRequestService.submitRentalRequest({
-                property_id: property.id,
-                move_in_date: moveInDate,
-                duration: duration as RentalDuration,
-                occupants: Number(occupants),
-                living_situation: livingSituation as LivingSituation,
-                message: message.trim(),
-            });
+            // Fire both calls concurrently — the rental request and the tenant's habit profile
+            await Promise.all([
+                rentalRequestService.submitRentalRequest({
+                    property_id:      property.id,
+                    move_in_date:     moveInDate,
+                    duration:         duration as RentalDuration,
+                    occupants:        Number(occupants),
+                    living_situation: livingSituation as LivingSituation,
+                    message:          message.trim(),
+                }),
+                authService.setHabits(selectedHabits),
+            ]);
 
             setIsSubmitted(true);
         } catch (err: any) {
             const apiMessage: string =
                 err?.response?.data?.message ||
-                err?.response?.data?.error ||
+                err?.response?.data?.error   ||
                 'Something went wrong. Please try again.';
             setSubmitError(apiMessage);
         } finally {
             setLoading(false);
         }
     };
+
+    // Derive landlord display name & avatar from the property object
+    const landlordName   = property.ownerName  || 'Property Owner';
+    const landlordAvatar = property.ownerImage || null;
 
     return (
         <div className="modal-overlay">
@@ -125,6 +149,7 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
 
                 {!isSubmitted ? (
                     <div className="app-layout">
+                        {/* ── SIDEBAR ── */}
                         <div className="app-sidebar">
                             <button className="back-to-property" onClick={step === 1 ? onBack : () => setStep(1)}>
                                 <FaArrowLeft /> {step === 1 ? 'Back to Details' : 'Back to Preferences'}
@@ -147,23 +172,36 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
                                 <div className={`step-dot ${step === 2 ? 'active' : ''}`}><span>2</span> Habits</div>
                             </div>
 
+                            {/* ── Landlord card with real data ── */}
                             <div className="landlord-card">
                                 <div className="landlord-header">
-                                    <FaUserTie className="landlord-icon" />
+                                    {landlordAvatar ? (
+                                        <img
+                                            src={landlordAvatar}
+                                            alt={landlordName}
+                                            className="landlord-avatar"
+                                        />
+                                    ) : (
+                                        <FaUserTie className="landlord-icon" />
+                                    )}
                                     <div>
-                                        <h5>Landlord Info</h5>
-                                        <p>{property.landlordName || 'Property Owner'}</p>
+                                        <h5>Landlord</h5>
+                                        <p>{landlordName}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* ── MAIN FORM AREA ── */}
                         <div className="app-form-section">
                             {step === 1 ? (
                                 <>
                                     <div className="form-header">
                                         <h1>{isReadOnly ? 'Your Application' : 'Rental Application'}</h1>
-                                        <p>{isReadOnly ? 'This form is currently locked for editing.' : 'Provide your rental preferences to start the process.'}</p>
+                                        <p>{isReadOnly
+                                            ? 'This form is currently locked for editing.'
+                                            : 'Provide your rental preferences to start the process.'
+                                        }</p>
                                     </div>
 
                                     <form onSubmit={handleNext} className="premium-form">
@@ -244,36 +282,63 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
                                     </form>
                                 </>
                             ) : (
+                                /* ── STEP 2: HABITS ── */
                                 <div className="habits-selection-view">
                                     <div className="form-header">
                                         <h1>Your Habits</h1>
-                                        <p>{isReadOnly ? 'Habits submitted with your application.' : 'Let the landlord know a bit more about your lifestyle.'}</p>
+                                        <p>{isReadOnly
+                                            ? 'Habits submitted with your application.'
+                                            : 'Let the landlord know about your lifestyle. These will also update your profile.'
+                                        }</p>
                                     </div>
 
-                                    <div className="habits-grid">
-                                        {PRESET_HABITS.map(habit => (
-                                            <div
-                                                key={habit}
-                                                className={`habit-chip ${selectedHabits.includes(habit) ? 'selected' : ''}`}
-                                                onClick={() => toggleHabit(habit)}
-                                                style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
-                                            >
-                                                {habit}
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {!isReadOnly && (
-                                        <div className="custom-habit-input">
-                                            <input
-                                                type="text"
-                                                value={customHabit}
-                                                onChange={e => setCustomHabit(e.target.value)}
-                                                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomHabit())}
-                                                placeholder="Add a custom habit..."
-                                            />
-                                            <button type="button" onClick={addCustomHabit}><FaPlus /></button>
+                                    {habitsLoading ? (
+                                        <div className="habits-loading">
+                                            <div className="spinner" style={{ borderTopColor: '#2563eb', margin: '0 auto 12px' }}></div>
+                                            <p style={{ color: '#94a3b8', textAlign: 'center' }}>Loading your habits…</p>
                                         </div>
+                                    ) : (
+                                        <>
+                                            <div className="habits-grid">
+                                                {PRESET_HABITS.map(habit => (
+                                                    <div
+                                                        key={habit}
+                                                        className={`habit-chip ${selectedHabits.includes(habit) ? 'selected' : ''}`}
+                                                        onClick={() => toggleHabit(habit)}
+                                                        style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
+                                                    >
+                                                        {habit}
+                                                    </div>
+                                                ))}
+                                                {/* Render any custom (non-preset) habits already saved */}
+                                                {selectedHabits
+                                                    .filter(h => !PRESET_HABITS.includes(h))
+                                                    .map(habit => (
+                                                        <div
+                                                            key={habit}
+                                                            className="habit-chip selected"
+                                                            onClick={() => toggleHabit(habit)}
+                                                            style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
+                                                        >
+                                                            {habit}
+                                                        </div>
+                                                    ))
+                                                }
+                                            </div>
+
+                                            {!isReadOnly && (
+                                                <div className="custom-habit-input">
+                                                    <input
+                                                        type="text"
+                                                        value={customHabit}
+                                                        onChange={e => setCustomHabit(e.target.value)}
+                                                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomHabit())}
+                                                        placeholder="Add a custom habit…"
+                                                    />
+                                                    <button type="button" onClick={addCustomHabit}><FaPlus /></button>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {submitError && (
@@ -287,9 +352,12 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
                                         <button
                                             onClick={handleSubmit}
                                             className={`submit-btn ${loading ? 'loading' : ''}`}
-                                            disabled={loading}
+                                            disabled={loading || habitsLoading}
                                         >
-                                            {loading ? <div className="spinner"></div> : <><FaPaperPlane /> Submit Application</>}
+                                            {loading
+                                                ? <div className="spinner"></div>
+                                                : <><FaPaperPlane /> Submit Application</>
+                                            }
                                         </button>
                                     ) : (
                                         <button onClick={onClose} className="submit-btn" style={{ marginTop: '20px' }}>
@@ -301,10 +369,11 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
                         </div>
                     </div>
                 ) : (
+                    /* ── SUCCESS SCREEN ── */
                     <div className="success-screen">
                         <FaCheckCircle className="check-icon-anim" />
                         <h2>Application Sent!</h2>
-                        <p>Your request has been forwarded to the landlord. You'll be notified once they review it.</p>
+                        <p>Your request has been forwarded to {landlordName}. You'll be notified once they review it.</p>
                         <button className="final-btn" onClick={onClose}>Return to Properties</button>
                     </div>
                 )}
