@@ -266,6 +266,18 @@ export const PropertyQuerySchema = z.object({
         .string()
         .regex(/^\d{4}-\d{2}-\d{2}$/, 'Availability date must be in YYYY-MM-DD format')
         .optional(),
+    lat: z
+        .string()
+        .transform(Number)
+        .optional(),
+    lng: z
+        .string()
+        .transform(Number)
+        .optional(),
+    radiusKm: z
+        .string()
+        .transform(Number)
+        .optional(),
     page: z
         .string()
         .regex(/^\d+$/, 'Page must be a positive integer')

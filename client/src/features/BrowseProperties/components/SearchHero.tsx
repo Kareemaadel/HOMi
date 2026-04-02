@@ -1,6 +1,80 @@
-import React, { useState } from 'react';
-import { FaSearch, FaHome, FaDollarSign, FaSlidersH, FaCalendarAlt, FaUserFriends, FaCouch } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaSearch, FaHome, FaDollarSign, FaSlidersH, FaCalendarAlt, FaUserFriends, FaCouch, FaMapMarkedAlt } from 'react-icons/fa';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Circle } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-control-geocoder';
+import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
 import './SearchHero.css';
+
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+const EGYPT_BOUNDS = L.latLngBounds(
+  L.latLng(21.9, 24.6), 
+  L.latLng(31.7, 36.9)
+);
+
+const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
+  const map = useMap();
+  useEffect(() => {
+    // @ts-ignore
+    const geocoder = L.Control.Geocoder.nominatim();
+    // @ts-ignore
+    const control = L.Control.geocoder({
+      geocoder,
+      defaultMarkGeocode: false,
+      placeholder: "Search in Egypt...",
+    })
+      .on('markgeocode', (e: any) => {
+        const { center } = e.geocode;
+        if (EGYPT_BOUNDS.contains(center)) {
+          map.setView(center, 12);
+          onLocationSelect(center.lat, center.lng);
+        } else {
+          alert("Please select a location within Egypt.");
+        }
+      })
+      .addTo(map);
+    return () => { map.removeControl(control); };
+  }, [map, onLocationSelect]);
+  return null;
+};
+
+const MapEventsHandler = ({ position, onLocationSelect, radiusKm }: any) => {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    map.setMaxBounds(EGYPT_BOUNDS);
+  }, [map]);
+  useMapEvents({
+    click(e) {
+      if (EGYPT_BOUNDS.contains(e.latlng)) {
+        onLocationSelect(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  
+  if (!position) return null;
+  return (
+    <>
+      <Marker position={[position.lat, position.lng]} />
+      <Circle 
+        center={[position.lat, position.lng]} 
+        radius={radiusKm * 1000} // Convert km to meters
+        pathOptions={{ fillColor: '#3b82f6', color: '#1d4ed8', weight: 2 }}
+      />
+    </>
+  );
+};
 
 export interface FilterParams {
     type?: string;
@@ -9,6 +83,9 @@ export interface FilterParams {
     minPrice?: number | '';
     maxPrice?: number | '';
     availabilityDate?: string;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
 }
 
 interface SearchHeroProps {
@@ -25,6 +102,9 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
         maxPrice: '',
         availabilityDate: '',
     });
+    const [position, setPosition] = useState<{lat: number, lng: number} | null>(null);
+    const [radiusKm, setRadiusKm] = useState<number>(5);
+    const [isMapActive, setIsMapActive] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -43,6 +123,12 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
         if (filters.maxPrice !== '') cleanedFilters.maxPrice = filters.maxPrice;
         if (filters.availabilityDate) cleanedFilters.availabilityDate = filters.availabilityDate;
         
+        if (position) {
+            cleanedFilters.lat = position.lat;
+            cleanedFilters.lng = position.lng;
+            cleanedFilters.radiusKm = radiusKm;
+        }
+
         onSearch(cleanedFilters);
     };
 
@@ -132,6 +218,51 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
                                 <div className="adv-filter-item">
                                     <label><FaCalendarAlt /> Availability Date</label>
                                     <input type="date" name="availabilityDate" value={filters.availabilityDate} onChange={handleChange} />
+                                </div>
+                            </div>
+                            
+                            <div className="adv-map-section">
+                                <label><FaMapMarkedAlt /> Where do you want to live?</label>
+                                <div className="map-radius-control">
+                                    <span>Search Radius: <strong>{radiusKm} km</strong></span>
+                                    <input 
+                                        type="range" 
+                                        min="1" max="50" step="1" 
+                                        value={radiusKm} 
+                                        onChange={(e) => setRadiusKm(Number(e.target.value))} 
+                                    />
+                                </div>
+                                <div className="map-picker-container">
+                                    {!isMapActive ? (
+                                        <div className="map-placeholder" onClick={() => setIsMapActive(true)}>
+                                            <FaMapMarkedAlt size={40} />
+                                            {position ? (
+                                              <div className="coord-badge">
+                                                Location Selected. Radius: {radiusKm}km
+                                              </div>
+                                            ) : (
+                                              <p>Click to open interactive map</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="leaflet-wrapper" style={{ height: '300px', width: '100%', position: 'relative', borderRadius: '15px', overflow: 'hidden' }}>
+                                            <MapContainer 
+                                              center={position ? [position.lat, position.lng] : [30.0444, 31.2357]} 
+                                              zoom={position ? 12 : 6} 
+                                              maxBounds={EGYPT_BOUNDS}
+                                              style={{ height: '100%', width: '100%' }}
+                                            >
+                                              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                              <SearchField onLocationSelect={(lat, lng) => setPosition({lat, lng})} />
+                                              <MapEventsHandler position={position} onLocationSelect={(lat: number, lng: number) => setPosition({lat, lng})} radiusKm={radiusKm} />
+                                            </MapContainer>
+                                        </div>
+                                    )}
+                                    {position && (
+                                        <button className="clear-location-btn" onClick={() => { setPosition(null); setIsMapActive(false); }}>
+                                            Clear Location
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -59,6 +59,9 @@ export interface PropertyQueryParams {
     target_tenant?: 'ANY' | 'STUDENTS' | 'FAMILIES' | 'TOURISTS';
     minPrice?: number;
     maxPrice?: number;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
     page?: number;
     limit?: number;
 }
