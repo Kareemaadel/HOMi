@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import {
     Property,
     PropertyImage,
@@ -213,6 +213,9 @@ class PropertyService {
             maxPrice,
             landlordId,
             availabilityDate,
+            lat,
+            lng,
+            radiusKm,
             page = 1,
             limit = 10,
         } = filters;
@@ -222,7 +225,11 @@ class PropertyService {
         if (status) where.status = status;
         if (type) where.type = type;
         if (furnishing) where.furnishing = furnishing;
-        if (target_tenant) where.target_tenant = target_tenant;
+        if (target_tenant) {
+            where.target_tenant = {
+                [Op.in]: [target_tenant, 'ANY']
+            };
+        }
         if (landlordId) where.landlord_id = landlordId;
         if (availabilityDate) where.availability_date = availabilityDate;
 
@@ -230,6 +237,17 @@ class PropertyService {
             where.monthly_price = {};
             if (minPrice !== undefined) where.monthly_price[Op.gte] = minPrice;
             if (maxPrice !== undefined) where.monthly_price[Op.lte] = maxPrice;
+        }
+
+        let detailedLocationInclude: any = {
+            model: PropertyDetailedLocation,
+            as: 'detailedLocation',
+        };
+
+        if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+             const haversine = `(6371 * acos(cos(radians(${lat})) * cos(radians("detailedLocation"."location_lat")) * cos(radians("detailedLocation"."location_long") - radians(${lng})) + sin(radians(${lat})) * sin(radians("detailedLocation"."location_lat"))))`;
+             detailedLocationInclude.where = Sequelize.where(Sequelize.literal(haversine), '<=', radiusKm);
+             detailedLocationInclude.required = true;
         }
 
         const offset = (page - 1) * limit;
@@ -270,10 +288,7 @@ class PropertyService {
                     model: PropertySpecifications,
                     as: 'specifications',
                 },
-                {
-                    model: PropertyDetailedLocation,
-                    as: 'detailedLocation',
-                },
+                detailedLocationInclude,
             ],
             limit,
             offset,

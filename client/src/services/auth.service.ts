@@ -316,6 +316,26 @@ class AuthService {
 
         return response.data;
     }
+
+    /**
+     * Get the authenticated tenant's current habits
+     */
+    async getUserHabits(): Promise<{ habit_names: string[] }> {
+        const response = await apiClient.get<{ habit_names: string[] }>('/auth/habits');
+        return response.data;
+    }
+
+    /**
+     * Replace the authenticated user's habits with the provided list.
+     * Pass an empty array to clear all habits.
+     * Habit names must exactly match the seeded values (e.g. "Non-smoker", "Early Riser").
+     */
+    async setHabits(habitNames: string[]): Promise<{ success: boolean; message: string }> {
+        const response = await apiClient.put<{ success: boolean; message: string }>('/auth/habits', {
+            habit_names: habitNames,
+        });
+        return response.data;
+    }
 }
 
 export const authService = new AuthService();

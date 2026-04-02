@@ -1,125 +1,252 @@
 // client/src/features/SentRequests/pages/SentRequests.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Inbox } from 'lucide-react';
+import { Inbox, Clock, CheckCircle, XCircle, RefreshCw, BedDouble, Bath, Ruler, Calendar } from 'lucide-react';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
-import PropertyDetailModal from '../../BrowseProperties/components/PropertyDetailedModal';
+import { rentalRequestService, type MyRentalRequest, type RentalRequestStatus } from '../../../services/rental-request.service';
 import './SentRequests.css';
 
-const MOCK_SENT_REQUESTS = [
-    {
-        id: 'LXP-101',
-        title: 'Modern Loft in Downtown',
-        address: '123 Main St, City Center',
-        price: 2400,
-        securityDeposit: 2400,
-        beds: 2,
-        baths: 2,
-        sqft: 1200,
-        image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800',
-        availableDate: 'Sept 1st, 2024',
-        furnishing: 'Fully Furnished',
-        landlordName: 'Marcus Wright',
-        status: 'Pending'
+const STATUS_CONFIG: Record<RentalRequestStatus, {
+    label: string;
+    icon: React.ReactNode;
+    badgeClass: string;
+    cardClass: string;
+}> = {
+    PENDING: {
+        label: 'Pending',
+        icon: <Clock size={13} />,
+        badgeClass: 'badge-pending',
+        cardClass: 'card-pending',
     },
-    {
-        id: 'LXP-204',
-        title: 'Sunny Minimalist Studio',
-        address: '45 Arts District, Westside',
-        price: 1800,
-        securityDeposit: 1800,
-        beds: 1,
-        baths: 1,
-        sqft: 650,
-        image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800',
-        availableDate: 'Oct 15th, 2024',
-        furnishing: 'Unfurnished',
-        landlordName: 'Elena Rodriguez',
-        status: 'Reviewed'
-    }
+    APPROVED: {
+        label: 'Approved',
+        icon: <CheckCircle size={13} />,
+        badgeClass: 'badge-approved',
+        cardClass: 'card-approved',
+    },
+    DECLINED: {
+        label: 'Declined',
+        icon: <XCircle size={13} />,
+        badgeClass: 'badge-declined',
+        cardClass: 'card-declined',
+    },
+};
+
+const DURATION_LABELS: Record<string, string> = {
+    '6_MONTHS':  '6 months',
+    '12_MONTHS': '12 months',
+    '24_MONTHS': '24 months',
+};
+
+const FILTERS: { label: string; value: RentalRequestStatus | 'ALL' }[] = [
+    { label: 'All',      value: 'ALL'      },
+    { label: 'Pending',  value: 'PENDING'  },
+    { label: 'Approved', value: 'APPROVED' },
+    { label: 'Declined', value: 'DECLINED' },
 ];
 
-const SentRequests = () => {
-    // Hooks for routing and state
-    const navigate = useNavigate();
-    
-    // DEV TOGGLE: Set to true to see mock requests, or false to see the empty state.
-    const [hasData, setHasData] = useState(false);
-    
-    const [selectedProperty, setSelectedProperty] = useState<any>(null);
+const getPropertyImage = (req: MyRentalRequest): string => {
+    const images = req.property.images ?? [];
+    const main = images.find(i => i.isMain)?.imageUrl;
+    return main || images[0]?.imageUrl
+        || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800';
+};
 
-    // Conditionally load requests based on hasData state
-    const currentRequests = hasData ? MOCK_SENT_REQUESTS : [];
+const SentRequests: React.FC = () => {
+    const navigate = useNavigate();
+
+    const [requests,    setRequests]    = useState<MyRentalRequest[]>([]);
+    const [loading,     setLoading]     = useState(true);
+    const [error,       setError]       = useState<string | null>(null);
+    const [activeFilter, setActiveFilter] = useState<RentalRequestStatus | 'ALL'>('ALL');
+
+    const fetchRequests = async (status?: RentalRequestStatus) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await rentalRequestService.getMyRequests({
+                status,
+                page: 1,
+                limit: 50,
+            });
+            setRequests(res.data);
+        } catch {
+            setError('Failed to load your requests. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void fetchRequests(activeFilter === 'ALL' ? undefined : activeFilter);
+    }, [activeFilter]);
+
+    const landlordName = (req: MyRentalRequest) => {
+        const l = req.property.landlord;
+        const name = l ? `${l.firstName} ${l.lastName}`.trim() : '';
+        return name || 'Property Owner';
+    };
 
     return (
         <div className="sent-requests-layout">
             <Header />
-            
+
             <div className="sent-requests-main">
                 <Sidebar />
-                
+
                 <div className="sent-requests-content">
+                    {/* ── Page header ── */}
                     <div className="sent-requests-header">
-                        <h1>Sent Requests</h1>
-                        <p>Track and manage the status of your rental applications.</p>
+                        <div>
+                            <h1>Sent Requests</h1>
+                            <p>Track and manage the status of your rental applications.</p>
+                        </div>
+                        <button
+                            className="btn-refresh"
+                            onClick={() => fetchRequests(activeFilter === 'ALL' ? undefined : activeFilter)}
+                            title="Refresh"
+                        >
+                            <RefreshCw size={16} />
+                        </button>
                     </div>
 
-                    {hasData ? (
+                    {/* ── Filter tabs ── */}
+                    <div className="filter-tabs">
+                        {FILTERS.map(f => (
+                            <button
+                                key={f.value}
+                                className={`filter-tab ${activeFilter === f.value ? 'active' : ''}`}
+                                onClick={() => setActiveFilter(f.value)}
+                            >
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* ── Loading ── */}
+                    {loading && (
+                        <div className="sent-loading">
+                            <div className="sent-spinner" />
+                            <p>Loading your requests…</p>
+                        </div>
+                    )}
+
+                    {/* ── Error ── */}
+                    {!loading && error && (
+                        <div className="sent-error">
+                            <p>{error}</p>
+                            <button onClick={() => fetchRequests()}>Retry</button>
+                        </div>
+                    )}
+
+                    {/* ── Requests grid ── */}
+                    {!loading && !error && requests.length > 0 && (
                         <div className="requests-grid">
-                            {currentRequests.map(property => (
-                                <div 
-                                    key={property.id} 
-                                    className="request-card" 
-                                    onClick={() => setSelectedProperty(property)}
-                                >
-                                    <div className="request-card-image-wrapper">
-                                        <img src={property.image} alt={property.title} />
-                                        <span className={`status-badge ${property.status.toLowerCase()}`}>
-                                            {property.status}
-                                        </span>
-                                    </div>
-                                    <div className="request-card-info">
-                                        <h3>{property.title}</h3>
-                                        <p className="request-address">{property.address}</p>
-                                        <div className="request-card-footer">
-                                            <span className="request-price">${property.price.toLocaleString()}<span>/mo</span></span>
-                                            <button className="view-details-btn">View Request</button>
+                            {requests.map(req => {
+                                const cfg   = STATUS_CONFIG[req.status];
+                                const img   = getPropertyImage(req);
+                                const beds  = req.property.specifications?.bedrooms ?? '—';
+                                const baths = req.property.specifications?.bathrooms ?? '—';
+                                const sqft  = req.property.specifications?.areaSqft ?? '—';
+                                const movedIn = req.moveInDate
+                                    ? new Date(req.moveInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                    : 'TBD';
+                                const submittedOn = req.createdAt
+                                    ? new Date(req.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                    : 'Unknown';
+
+                                return (
+                                    <div
+                                        key={req.id}
+                                        className={`request-card ${cfg.cardClass}`}
+                                    >
+                                        {/* Image */}
+                                        <div className="request-card-image-wrapper">
+                                            <img src={img} alt={req.property.title} />
+                                            <span className={`status-badge ${cfg.badgeClass}`}>
+                                                {cfg.icon} {cfg.label}
+                                            </span>
+                                        </div>
+
+                                        {/* Body */}
+                                        <div className="request-card-info">
+                                            <h3>{req.property.title}</h3>
+                                            <p className="request-address">{req.property.address}</p>
+
+                                            {/* Specs row */}
+                                            <div className="request-specs">
+                                                <span><BedDouble size={13} /> {beds} bed</span>
+                                                <span><Bath size={13} /> {baths} bath</span>
+                                                <span><Ruler size={13} /> {sqft} sqft</span>
+                                            </div>
+
+                                            {/* Meta info */}
+                                            <div className="request-meta">
+                                                <div className="meta-row">
+                                                    <Calendar size={13} />
+                                                    <span>Move-in: <strong>{movedIn}</strong></span>
+                                                </div>
+                                                <div className="meta-row">
+                                                    <Clock size={13} />
+                                                    <span>Duration: <strong>{DURATION_LABELS[req.duration] ?? req.duration}</strong></span>
+                                                </div>
+                                                <div className="meta-row landlord-meta">
+                                                    <span>Landlord: <strong>{landlordName(req)}</strong></span>
+                                                </div>
+                                                <div className="meta-row submitted-meta">
+                                                    <span>Submitted: <strong>{submittedOn}</strong></span>
+                                                </div>
+                                            </div>
+
+                                            {/* Footer */}
+                                            <div className="request-card-footer">
+                                                <span className="request-price">
+                                                    ${(req.property.monthlyPrice ?? 0).toLocaleString()}
+                                                    <span>/mo</span>
+                                                </span>
+                                                {(req.property.securityDeposit ?? 0) > 0 && (
+                                                    <span className="request-security-deposit" style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                                        Dep: ${(req.property.securityDeposit ?? 0).toLocaleString()}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
-                    ) : (
+                    )}
+
+                    {/* ── Empty state ── */}
+                    {!loading && !error && requests.length === 0 && (
                         <div className="sent-empty-state-container">
                             <div className="sent-empty-icon-wrapper">
                                 <Inbox size={56} className="sent-empty-icon" />
                             </div>
-                            <h3 className="sent-empty-title">No Requests Sent Yet</h3>
+                            <h3 className="sent-empty-title">
+                                {activeFilter === 'ALL' ? 'No Requests Sent Yet' : `No ${activeFilter.charAt(0) + activeFilter.slice(1).toLowerCase()} Requests`}
+                            </h3>
                             <p className="sent-empty-text">
-                                You haven't applied to any properties. Start exploring available rentals and find your perfect home today!
+                                {activeFilter === 'ALL'
+                                    ? "You haven't applied to any properties yet. Start exploring available rentals and find your perfect home!"
+                                    : `You have no ${activeFilter.toLowerCase()} rental requests.`}
                             </p>
-                            <button 
-                                className="btn-browse-action"
-                                onClick={() => navigate('/browse-properties')}
-                            >
-                                Browse Properties
-                            </button>
+                            {activeFilter === 'ALL' && (
+                                <button
+                                    className="btn-browse-action"
+                                    onClick={() => navigate('/browse-properties')}
+                                >
+                                    Browse Properties
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
 
             <Footer />
-
-            {selectedProperty && (
-                <PropertyDetailModal 
-                    property={selectedProperty} 
-                    onClose={() => setSelectedProperty(null)} 
-                    isSentRequestView={true} 
-                />
-            )}
         </div>
     );
 };

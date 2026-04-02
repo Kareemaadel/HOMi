@@ -126,6 +126,9 @@ export interface PropertyQuery {
     maxPrice?: number;
     landlordId?: string;
     availabilityDate?: string;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
     page?: number;
     limit?: number;
 }

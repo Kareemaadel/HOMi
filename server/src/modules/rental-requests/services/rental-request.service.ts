@@ -16,6 +16,7 @@ import type {
     RentalRequestSuccessResponse,
 } from '../interfaces/rental-request.interfaces.js';
 import { PropertyImage } from '../../properties/models/PropertyImage.js';
+import { PropertySpecifications } from '../../properties/models/PropertySpecifications.js';
 
 /**
  * Custom error class for rental request errors
@@ -202,7 +203,31 @@ class RentalRequestService {
                 {
                     model: Property,
                     as: 'property',
-                    attributes: ['id', 'title', 'address'],
+                    attributes: ['id', 'title', 'address', 'monthly_price', 'security_deposit'],
+                    include: [
+                        {
+                            model: User,
+                            as: 'landlord',
+                            attributes: ['id'],
+                            include: [
+                                {
+                                    model: Profile,
+                                    as: 'profile',
+                                    attributes: ['first_name', 'last_name', 'avatar_url']
+                                }
+                            ]
+                        },
+                        {
+                            model: PropertyImage,
+                            as: 'images',
+                            attributes: ['id', 'image_url', 'is_main']
+                        },
+                        {
+                            model: PropertySpecifications,
+                            as: 'specifications',
+                            attributes: ['bedrooms', 'bathrooms', 'area_sqft']
+                        }
+                    ]
                 },
             ],
             limit,
@@ -379,7 +404,35 @@ class RentalRequestService {
                 id: request.property.id,
                 title: request.property.title,
                 address: request.property.address,
+                monthlyPrice: Number((request.property as any).monthly_price) || 0,
+                securityDeposit: Number((request.property as any).security_deposit) || 0,
             };
+
+            const images = (request.property as any).images;
+            if (images) {
+                response.property.images = images.map((img: any) => ({
+                    imageUrl: img.image_url ?? img.imageUrl,
+                    isMain: img.is_main ?? img.isMain
+                }));
+            }
+
+            const pLandlord = (request.property as any).landlord;
+            if (pLandlord && pLandlord.profile) {
+                response.property.landlord = {
+                    firstName: pLandlord.profile.first_name ?? '',
+                    lastName: pLandlord.profile.last_name ?? '',
+                    avatarUrl: pLandlord.profile.avatar_url ?? null
+                };
+            }
+
+            const specs = (request.property as any).specifications;
+            if (specs) {
+                response.property.specifications = {
+                    bedrooms: specs.bedrooms,
+                    bathrooms: specs.bathrooms,
+                    areaSqft: specs.area_sqft ?? 0
+                };
+            }
         }
 
         return response;
