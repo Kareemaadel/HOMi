@@ -17,6 +17,15 @@ const HABITS = [
     'Pet Owner',
     'Very Clean',
     'Night Owl',
+    'Quiet Lifestyle',
+    'Fitness Enthusiast',
+    'Student',
+    'Minimalist',
+    'Plant Parent',
+    'Frequent Traveler',
+    'Organized',
+    'Eco-friendly',
+    'Introverted',
 ];
 
 /**

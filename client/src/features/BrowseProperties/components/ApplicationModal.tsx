@@ -21,15 +21,15 @@ const PRESET_HABITS = [
 ];
 
 const durationOptions: { label: string; value: RentalDuration }[] = [
-    { label: '6 Months',  value: '6_MONTHS'  },
+    { label: '6 Months', value: '6_MONTHS' },
     { label: '12 Months', value: '12_MONTHS' },
     { label: '24 Months', value: '24_MONTHS' },
 ];
 
 const livingSituationOptions: { label: string; value: LivingSituation }[] = [
-    { label: 'Single',   value: 'SINGLE'   },
-    { label: 'Married',  value: 'MARRIED'  },
-    { label: 'Family',   value: 'FAMILY'   },
+    { label: 'Single', value: 'SINGLE' },
+    { label: 'Married', value: 'MARRIED' },
+    { label: 'Family', value: 'FAMILY' },
     { label: 'Students', value: 'STUDENTS' },
 ];
 
@@ -44,27 +44,27 @@ interface ApplicationModalProps {
         ownerImage?: string;
     };
     onClose: () => void;
-    onBack:  () => void;
+    onBack: () => void;
     isReadOnly?: boolean;
 }
 
 const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: ApplicationModalProps) => {
-    const [step, setStep]             = useState(1);
+    const [step, setStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [loading, setLoading]       = useState(false);
+    const [loading, setLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [habitsLoading, setHabitsLoading] = useState(true);
 
     // Step 1 — form state
-    const [moveInDate,      setMoveInDate]      = useState('');
-    const [duration,        setDuration]        = useState<RentalDuration | ''>('');
-    const [occupants,       setOccupants]       = useState<number | ''>('');
+    const [moveInDate, setMoveInDate] = useState('');
+    const [duration, setDuration] = useState<RentalDuration | ''>('');
+    const [occupants, setOccupants] = useState<number | ''>('');
     const [livingSituation, setLivingSituation] = useState<LivingSituation | ''>('');
-    const [message,         setMessage]         = useState('');
+    const [message, setMessage] = useState('');
 
     // Step 2 — habits state
     const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
-    const [customHabit,    setCustomHabit]    = useState('');
+    const [customHabit, setCustomHabit] = useState('');
 
     // Pre-load the user's existing habits from the backend
     useEffect(() => {
@@ -114,12 +114,12 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
             // Fire both calls concurrently — the rental request and the tenant's habit profile
             await Promise.all([
                 rentalRequestService.submitRentalRequest({
-                    property_id:      property.id,
-                    move_in_date:     moveInDate,
-                    duration:         duration as RentalDuration,
-                    occupants:        Number(occupants),
+                    property_id: property.id,
+                    move_in_date: moveInDate,
+                    duration: duration as RentalDuration,
+                    occupants: Number(occupants),
                     living_situation: livingSituation as LivingSituation,
-                    message:          message.trim(),
+                    message: message.trim(),
                 }),
                 authService.setHabits(selectedHabits),
             ]);
@@ -128,7 +128,7 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
         } catch (err: any) {
             const apiMessage: string =
                 err?.response?.data?.message ||
-                err?.response?.data?.error   ||
+                err?.response?.data?.error ||
                 'Something went wrong. Please try again.';
             setSubmitError(apiMessage);
         } finally {
@@ -137,7 +137,7 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
     };
 
     // Derive landlord display name & avatar from the property object
-    const landlordName   = property.ownerName  || 'Property Owner';
+    const landlordName = property.ownerName || 'Property Owner';
     const landlordAvatar = property.ownerImage || null;
 
     return (
