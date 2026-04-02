@@ -127,7 +127,29 @@ const BrowseProperties: React.FC = () => {
             <div className="main-content">
                 <Header />
                 <div className="browse-properties-page">
-                    <SearchHero />
+                    <SearchHero onSearch={(filters) => {
+                        const fetchProperties = async () => {
+                            setLoading(true);
+                            setError(null);
+                            try {
+                                const response = await propertyService.getAllProperties({
+                                    status: 'Published',
+                                    page: 1,
+                                    limit: 60,
+                                    ...filters
+                                } as any);
+                
+                                const mapped = response.data.map(mapPropertyToUI);
+                                setProperties(mapped);
+                            } catch (fetchError) {
+                                console.error('Failed to fetch properties:', fetchError);
+                                setError('Failed to load properties. Please try again.');
+                            } finally {
+                                setLoading(false);
+                            }
+                        };
+                        void fetchProperties();
+                    }} />
 
                     {loading && (
                         <section className="property-scroll-section">
