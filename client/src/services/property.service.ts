@@ -64,6 +64,7 @@ export interface PropertyQueryParams {
     radiusKm?: number;
     page?: number;
     limit?: number;
+    landlordId?: string;
 }
 
 interface GetPropertiesApiResponse {
@@ -129,6 +130,11 @@ class PropertyService {
         const response = await apiClient.put<PropertyMutationResponse>(`/properties/${propertyId}`, {
             status: 'Published',
         });
+        return response.data;
+    }
+
+    async updateProperty(propertyId: string, payload: any): Promise<PropertyMutationResponse> {
+        const response = await apiClient.put<PropertyMutationResponse>(`/properties/${propertyId}`, payload);
         return response.data;
     }
 }
