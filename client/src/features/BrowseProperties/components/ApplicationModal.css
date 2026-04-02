@@ -378,3 +378,24 @@
     background: #1d4ed8;
     transform: rotate(90deg);
 }
+
+/* Error Banner */
+.submit-error-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    color: #dc2626;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    animation: fadeIn 0.3s ease;
+}
+
+.submit-error-banner svg {
+    flex-shrink: 0;
+    font-size: 1rem;
+}
