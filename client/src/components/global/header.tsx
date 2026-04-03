@@ -39,7 +39,6 @@ const Header = () => {
     { to: '/tenant-payment', label: 'Payments' },
     { to: '/messages', label: 'Messages' },
     { to: '/rewards', label: 'Rewards' },
-    { to: '/settings', label: 'Settings' },
   ];
 
   const landlordMobileLinks = [
@@ -50,7 +49,6 @@ const Header = () => {
     { to: '/landlord-payment', label: 'Payments' },
     { to: '/messages', label: 'Messages' },
     { to: '/balance', label: 'Balance' },
-    { to: '/settings', label: 'Settings' },
   ];
 
   const mobileRoleLinks = signedInRole === 'LANDLORD' ? landlordMobileLinks : tenantMobileLinks;
@@ -147,8 +145,8 @@ const Header = () => {
           >
             How It Works
           </Link>
-          <Link to="/saved-properties" className={`nav-link ${location.pathname === '/saved-properties' ? 'active' : ''}`}>
-            Saved Properties
+          <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
+            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>PRO</span>
           </Link>
           <Link to="/get-help" className={`nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
             Get Help
@@ -156,6 +154,11 @@ const Header = () => {
           <Link to="/about-us" className={`nav-link ${location.pathname === '/about-us' ? 'active' : ''}`}>
             About Us
           </Link>
+          {isSignedIn && (
+            <Link to="/settings" className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
+              Settings
+            </Link>
+          )}
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -202,8 +205,8 @@ const Header = () => {
           >
             How It Works
           </Link>
-          <Link to="/saved-properties" className={`nav-link ${location.pathname === '/saved-properties' ? 'active' : ''}`}>
-            Saved Properties
+          <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
+            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Plus</span>
           </Link>
           <Link to="/get-help" className={`nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
             Get Help
@@ -211,6 +214,11 @@ const Header = () => {
           <Link to="/about-us" className={`nav-link ${location.pathname === '/about-us' ? 'active' : ''}`}>
             About Us
           </Link>
+          {isSignedIn && (
+            <Link to="/settings" className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
+              Settings
+            </Link>
+          )}
 
           {isSignedIn && (
             <>
@@ -231,8 +239,6 @@ const Header = () => {
               </button>
             </>
           )}
-
-
         </nav>
       )}
 

@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome, FaBuilding, FaSearch, FaUserFriends,
   FaTools, FaCreditCard, FaEnvelope, FaStar,
-  FaSignOutAlt,
-  FaCog, FaSignature
+  FaSignOutAlt, FaSignature, FaIdCard, FaHeart
 } from 'react-icons/fa';
 import './sidebar.css';
 import { authService } from '../../../services/auth.service';
@@ -67,6 +66,8 @@ const Sidebar = () => {
           <li><a href="/actives" className={location.pathname === "/actives" ? "active" : ""}><FaBuilding /> <span>Active Properties</span></a></li>
           <li><a href="/browse-properties" className={location.pathname === "/browse-properties" ? "active" : ""}><FaSearch /> <span>Browse Properties</span></a></li>
           <li><a href="/roommate-matching" className={location.pathname === "/roommate-matching" ? "active" : ""}><FaUserFriends /> <span>Matching</span></a></li>
+          <li><a href="/saved-properties" className={location.pathname === "/saved-properties" ? "active" : ""}><FaHeart /> <span>Saved Properties</span></a></li>
+          <li><a href="/sent-requests" className={location.pathname === "/sent-requests" ? "active" : ""}><FaIdCard /> <span>Sent Requests</span></a></li>
 
           <div className="nav-divider">Management</div>
 
@@ -75,7 +76,6 @@ const Sidebar = () => {
           <li><a href="/tenant-contracts" className={location.pathname === "/tenant-contracts" ? "active" : ""}><FaSignature/> <span>Contracts</span></a></li>
           <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages <em className="notif-dot"></em></span></a></li>
           <li><a href="/rewards" className={location.pathname === "/rewards" ? "active" : ""}><FaStar /> <span>Rewards</span></a></li>
-          <li><a href="/settings" className={location.pathname === "/settings" ? "active" : ""}><FaCog /> <span>Settings</span></a></li>
         </ul>
       </nav>
 

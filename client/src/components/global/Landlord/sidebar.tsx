@@ -76,7 +76,6 @@ const Sidebar = () => {
           <li><a href="/landlord-contracts" className={location.pathname === "/landlord-contracts" ? "active" : ""}><FaSignature /> <span>Contracts</span></a></li>
           <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages <em className="notif-dot"></em></span></a></li>
           
-          <li><a href="/settings" className={location.pathname === "/settings" ? "active" : ""}><FaCog /> <span>Settings</span></a></li>
         </ul>
       </nav>
 
