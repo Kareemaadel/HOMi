@@ -42,6 +42,7 @@ export interface LandlordContract {
     maxOccupants: number | null;
     moveInDate: string;
     leaseDurationMonths: number;
+    landlordNationalId: string | null;
     propertyRegistrationNumber: string | null;
     landlordSignedAt: string | null;
     createdAt: string;

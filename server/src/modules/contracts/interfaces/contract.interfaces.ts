@@ -78,6 +78,7 @@ export interface ContractResponse {
     maxOccupants: number | null;
     moveInDate: Date | string;
     leaseDurationMonths: number;
+    landlordNationalId: string | null;
     propertyRegistrationNumber: string | null;
     landlordSignedAt: Date | null;
     tenantSignedAt: Date | null;

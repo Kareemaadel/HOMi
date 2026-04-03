@@ -30,6 +30,8 @@ export interface LeaseContract {
     propertyFurnishing: string;
     tenantEmail: string;
     landlordEmail: string;
+    landlordNationalId?: string;
+    certifyOwnership?: boolean;
     propertyRegistrationNumber: string;
     createdAt: string;
     maintenanceResponsibilities: Array<{
@@ -49,7 +51,12 @@ const LandlordContract: React.FC = () => {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
-    const mapContract = (contract: LandlordContractApi): LeaseContract => ({
+    const mapContract = (contract: LandlordContractApi): LeaseContract => {
+        const apiContract = contract as LandlordContractApi & {
+            certifyOwnership?: boolean;
+            certify_ownership?: boolean;
+        };
+        return ({
         id: contract.contractId,
         internalId: contract.id,
         property: contract.property?.title || 'Property',
@@ -68,10 +75,13 @@ const LandlordContract: React.FC = () => {
         propertyFurnishing: contract.property?.furnishing || 'N/A',
         tenantEmail: contract.tenant?.email || '',
         landlordEmail: contract.landlord?.email || '',
+        landlordNationalId: contract.landlordNationalId || '',
+        certifyOwnership: apiContract.certifyOwnership ?? apiContract.certify_ownership ?? false,
         propertyRegistrationNumber: contract.propertyRegistrationNumber || '',
         createdAt: contract.createdAt,
         maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
     });
+    };
 
     const fetchContracts = useCallback(async () => {
         try {

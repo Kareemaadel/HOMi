@@ -10,7 +10,7 @@ import {
     PropertySpecifications,
     sequelize,
 } from '../models/index.js';
-import { encrypt } from '../../../shared/utils/encryption.util.js';
+import { decrypt, encrypt } from '../../../shared/utils/encryption.util.js';
 import { PropertyImage } from '../../properties/models/PropertyImage.js';
 import type {
     ContractResponse,
@@ -44,6 +44,16 @@ function generateLeaseId(): string {
     const num = Math.floor(1000 + Math.random() * 9000);
     const letter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
     return `L-${num}-${letter}`;
+}
+
+function safeDecrypt(value: string | null): string | null {
+    if (!value) return null;
+    try {
+        return decrypt(value);
+    } catch {
+        // Keep backward compatibility for rows that may contain plaintext.
+        return value;
+    }
 }
 
 /**
@@ -654,6 +664,7 @@ class ContractService {
             maxOccupants: contract.max_occupants ?? null,
             moveInDate: contract.move_in_date,
             leaseDurationMonths: contract.lease_duration_months,
+            landlordNationalId: safeDecrypt(contract.landlord_national_id),
             propertyRegistrationNumber: contract.property_registration_number ?? null,
             landlordSignedAt: contract.landlord_signed_at ?? null,
             tenantSignedAt: contract.tenant_signed_at ?? null,

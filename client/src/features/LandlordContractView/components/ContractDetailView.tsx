@@ -29,13 +29,13 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
     
     // Landlord Specific State
     const [landlordData, setLandlordData] = useState({
-        idNumber: '', 
+        idNumber: contract.landlordNationalId || '', 
         ownershipRef: contract.propertyRegistrationNumber || '',
         rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
         lateFee: String(contract.lateFeeAmount || 25),
         occupants: String(contract.maxOccupants || 2),
         smoking: 'No',
-        confirmed: false
+        confirmed: Boolean(contract.certifyOwnership) || isReadOnly
     });
     const toDueDateEnum = (value: string): '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH' => {
         if (value === '5TH_OF_MONTH') return '5TH_OF_MONTH';
