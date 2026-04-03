@@ -18,6 +18,7 @@ const LandlordHome = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
   const [properties, setProperties] = useState<PropertyResponse[]>([]);
+  const [landlordName, setLandlordName] = useState('Landlord');
 
   const fetchProperties = useCallback(async () => {
     try {
@@ -26,6 +27,12 @@ const LandlordHome = () => {
         setProperties([]);
         return;
       }
+
+      setLandlordName(
+        currentUser.profile?.firstName ||
+        currentUser.user?.email?.split('@')[0] ||
+        'Landlord'
+      );
 
       const response = await propertyService.getAllProperties({ landlordId: currentUser.user.id });
       setProperties(response?.data ?? []);
@@ -45,6 +52,28 @@ const LandlordHome = () => {
     address: prop.address,
     status: (prop.status || '').toLowerCase(),
     price: String(prop.monthlyPrice ?? ''),
+    imageUrl:
+      prop.images?.find((img) => img.isMain)?.imageUrl ||
+      prop.images?.[0]?.imageUrl ||
+      '/rentblue.jpg',
+    beds: prop.specifications?.bedrooms ?? 0,
+    baths: prop.specifications?.bathrooms ?? 0,
+    sqft: prop.specifications?.areaSqft ?? '—',
+    tenantName:
+      (
+        ((prop as unknown as {
+          currentTenant?: { firstName?: string; lastName?: string };
+          activeContract?: { tenant?: { firstName?: string; lastName?: string } };
+          tenant?: { firstName?: string; lastName?: string };
+        }).currentTenant &&
+          `${(prop as unknown as { currentTenant?: { firstName?: string; lastName?: string } }).currentTenant?.firstName || ''} ${(prop as unknown as { currentTenant?: { firstName?: string; lastName?: string } }).currentTenant?.lastName || ''}`.trim()) ||
+        ((prop as unknown as { activeContract?: { tenant?: { firstName?: string; lastName?: string } } }).activeContract?.tenant &&
+          `${(prop as unknown as { activeContract?: { tenant?: { firstName?: string; lastName?: string } } }).activeContract?.tenant?.firstName || ''} ${(prop as unknown as { activeContract?: { tenant?: { firstName?: string; lastName?: string } } }).activeContract?.tenant?.lastName || ''}`.trim()) ||
+        ((prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant &&
+          `${(prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant?.firstName || ''} ${(prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant?.lastName || ''}`.trim())
+      ) ||
+      'No current tenant',
+    paymentStatus: prop.status?.toLowerCase() === 'rented' ? 'Paid' : 'Pending',
   }));
 
   return (
@@ -63,7 +92,7 @@ const LandlordHome = () => {
                 
                 <header className="welcome-section">
                   <div className="welcome-text">
-                    <h1>Welcome Back, <span className="highlight-gradient">Mohy!</span></h1>
+                    <h1>Welcome Back, <span className="highlight-gradient">{landlordName}!</span></h1>
                     <p>Manage your properties, track occupancy, and review incoming requests.</p>
                   </div>
                 </header>
@@ -105,6 +134,12 @@ const LandlordHome = () => {
                         status={prop.status}
                         price={prop.price}
                         id={prop.id}
+                        imageUrl={prop.imageUrl}
+                        beds={prop.beds}
+                        baths={prop.baths}
+                        sqft={prop.sqft}
+                        tenantName={prop.tenantName}
+                        paymentStatus={prop.paymentStatus}
                       />
                     ))}
                   </div>
