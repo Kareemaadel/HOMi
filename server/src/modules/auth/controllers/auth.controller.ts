@@ -401,6 +401,25 @@ export class AuthController {
             next(error);
         }
     }
+
+    /**
+     * DELETE /auth/account
+     * Permanently delete user and profile when no properties, rental requests, or contracts exist.
+     */
+    async deleteAccount(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+
+            const result = await authService.deleteAccount(userId);
+            clearRefreshCookie(res);
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 // Export singleton instance
