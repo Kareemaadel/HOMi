@@ -151,10 +151,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                             <section className="description-box">
                                 <h3 className="section-h3"><FaInfoCircle /> Property Overview</h3>
                                 <p className="description-p">
-                                    This sophisticated {property.title} defines modern urban living. 
-                                    Every detail has been curated for comfort and style, from the 
-                                    floor-to-ceiling soundproof windows to the custom-integrated 
-                                    smart home systems. 
+                                    {property.description?.trim() || `No description has been provided for ${property.title}.`}
                                 </p>
                             </section>
 
