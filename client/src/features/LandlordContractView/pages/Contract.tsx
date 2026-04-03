@@ -32,6 +32,10 @@ export interface LeaseContract {
     landlordEmail: string;
     propertyRegistrationNumber: string;
     createdAt: string;
+    maintenanceResponsibilities: Array<{
+        area: string;
+        responsible_party: 'LANDLORD' | 'TENANT';
+    }>;
 }
 
 const LandlordContract: React.FC = () => {
@@ -66,6 +70,7 @@ const LandlordContract: React.FC = () => {
         landlordEmail: contract.landlord?.email || '',
         propertyRegistrationNumber: contract.propertyRegistrationNumber || '',
         createdAt: contract.createdAt,
+        maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
     });
 
     const fetchContracts = useCallback(async () => {

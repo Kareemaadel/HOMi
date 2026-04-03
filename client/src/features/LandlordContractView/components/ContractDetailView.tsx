@@ -24,6 +24,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [summary, setSummary] = useState<VerificationSummary | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const maintenanceResponsibilities = contract.maintenanceResponsibilities ?? [];
     
     // Landlord Specific State
     const [landlordData, setLandlordData] = useState({
@@ -71,6 +72,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
 
             setStep((s) => s + 1);
             onUpdated?.();
+        } catch (error) {
+            console.error('Failed to submit contract step', error);
         } finally {
             setSubmitting(false);
         }
@@ -91,6 +94,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
             });
             setIsFinalized(true);
             onUpdated?.();
+        } catch (error) {
+            console.error('Failed to sign contract', error);
         } finally {
             setSubmitting(false);
         }
@@ -205,7 +210,18 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                             <section className="info-section">
                                 <div className="section-title"><Zap size={16}/> <h4>Maintenance Responsibilities</h4></div>
                                 <div className="responsibility-box scrollable">
-                                    <div className="resp-row"><span>Maintenance responsibilities are pulled from property details.</span><span className="owner-badge landlord">Auto</span></div>
+                                    {maintenanceResponsibilities.length > 0 ? (
+                                        maintenanceResponsibilities.map((item, idx) => (
+                                            <div key={`${item.area}-${idx}`} className="resp-row">
+                                                <span>{item.area}</span>
+                                                <span className={`owner-badge ${item.responsible_party === 'LANDLORD' ? 'landlord' : 'tenant'}`}>
+                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="resp-row"><span>No maintenance responsibilities found on this property.</span><span className="owner-badge tenant">N/A</span></div>
+                                    )}
                                 </div>
                             </section>
                         </div>

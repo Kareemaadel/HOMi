@@ -42,6 +42,16 @@ export const PropertySpecificationsSchema = z.object({
 
 export type PropertySpecificationsInput = z.infer<typeof PropertySpecificationsSchema>;
 
+export const PropertyMaintenanceResponsibilitySchema = z.object({
+    area: z
+        .string()
+        .min(1, 'Maintenance area is required')
+        .max(100, 'Maintenance area must be at most 100 characters'),
+    responsible_party: z.enum(['LANDLORD', 'TENANT'], {
+        message: 'Responsible party must be LANDLORD or TENANT',
+    }),
+});
+
 /**
  * Property Detailed Location Schema
  */
@@ -148,6 +158,10 @@ export const CreatePropertySchema = z.object({
         .array(z.string().min(1, 'House rule name cannot be empty'))
         .optional()
         .default([]),
+    maintenance_responsibilities: z
+        .array(PropertyMaintenanceResponsibilitySchema)
+        .optional()
+        .default([]),
     specifications: PropertySpecificationsSchema,
     detailed_location: PropertyDetailedLocationSchema,
 });
@@ -223,6 +237,9 @@ export const UpdatePropertySchema = z.object({
         .optional(),
     house_rule_names: z
         .array(z.string().min(1, 'House rule name cannot be empty'))
+        .optional(),
+    maintenance_responsibilities: z
+        .array(PropertyMaintenanceResponsibilitySchema)
         .optional(),
     specifications: PropertySpecificationsSchema.partial().optional(),
     detailed_location: PropertyDetailedLocationSchema.partial().optional(),

@@ -105,6 +105,10 @@ export interface ContractResponse {
         furnishing: string | null;
         monthlyPrice: number | null;
         securityDeposit: number | null;
+        maintenanceResponsibilities?: Array<{
+            area: string;
+            responsible_party: 'LANDLORD' | 'TENANT';
+        }>;
     };
     propertySpecifications?: {
         bedrooms: number;

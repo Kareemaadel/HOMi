@@ -555,7 +555,7 @@ class ContractService {
             {
                 model: Property,
                 as: 'property',
-                attributes: ['id', 'title', 'address'],
+                attributes: ['id', 'title', 'address', 'maintenance_responsibilities'],
             },
             {
                 model: User,
@@ -592,7 +592,7 @@ class ContractService {
             {
                 model: Property,
                 as: 'property',
-                attributes: ['id', 'title', 'address', 'type', 'furnishing', 'monthly_price', 'security_deposit'],
+                attributes: ['id', 'title', 'address', 'type', 'furnishing', 'monthly_price', 'security_deposit', 'maintenance_responsibilities'],
                 include: [
                     {
                         model: PropertySpecifications,
@@ -693,6 +693,10 @@ class ContractService {
                     furnishing: prop.furnishing ?? null,
                     monthlyPrice: prop.monthly_price ? Number(prop.monthly_price) : null,
                     securityDeposit: prop.security_deposit ? Number(prop.security_deposit) : null,
+                    maintenanceResponsibilities: (prop.maintenance_responsibilities ?? []).map((item: any) => ({
+                        area: item.area,
+                        responsible_party: item.responsible_party,
+                    })),
                 };
 
                 if (prop.specifications) {

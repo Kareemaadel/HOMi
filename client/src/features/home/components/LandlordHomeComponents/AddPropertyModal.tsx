@@ -255,6 +255,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
           bathrooms: parsedBaths,
           area_sqft: parsedSqft,
         },
+        maintenance_responsibilities: Object.entries(maintenance).map(([areaName, assigned]) => ({
+          area: areaName,
+          responsible_party: assigned === 'landlord' ? 'LANDLORD' : 'TENANT',
+        })),
         detailed_location: {
           floor: parsedFloor,
           city: city.trim(),
