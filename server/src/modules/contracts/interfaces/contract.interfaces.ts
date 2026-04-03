@@ -49,6 +49,8 @@ export interface LandlordSignInput {
 
 export interface TenantIdentityInput {
     national_id: string;
+    emergency_contact_name: string;
+    emergency_phone: string;
 }
 
 // ─── Tenant Step 4: Sign ──────────────────────────────────────────────────────
@@ -83,6 +85,9 @@ export interface ContractResponse {
     landlordSignedAt: Date | null;
     tenantSignedAt: Date | null;
     tenantAgreedTerms: boolean;
+    tenantNationalId: string | null;
+    tenantEmergencyContactName: string | null;
+    tenantEmergencyPhone: string | null;
     createdAt: Date;
     updatedAt: Date;
     maintenanceResponsibilities?: MaintenanceResponsibilityResponse[];

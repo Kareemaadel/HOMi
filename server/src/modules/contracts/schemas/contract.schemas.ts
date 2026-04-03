@@ -59,6 +59,14 @@ export const TenantIdentitySchema = z.object({
         .string({ error: 'National ID is required' })
         .min(1, 'National ID cannot be empty')
         .max(50, 'National ID must be at most 50 characters'),
+    emergency_contact_name: z
+        .string({ error: 'Emergency contact name is required' })
+        .min(1, 'Emergency contact name cannot be empty')
+        .max(200, 'Emergency contact name must be at most 200 characters'),
+    emergency_phone: z
+        .string({ error: 'Emergency phone is required' })
+        .min(1, 'Emergency phone cannot be empty')
+        .max(50, 'Emergency phone must be at most 50 characters'),
 });
 
 /**

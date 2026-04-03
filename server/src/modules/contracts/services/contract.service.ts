@@ -457,6 +457,8 @@ class ContractService {
 
         await contract.update({
             tenant_national_id: encrypt(input.national_id),
+            tenant_emergency_contact_name: input.emergency_contact_name,
+            tenant_emergency_phone: input.emergency_phone,
         });
 
         return this.formatContractResponse(contract);
@@ -669,6 +671,9 @@ class ContractService {
             landlordSignedAt: contract.landlord_signed_at ?? null,
             tenantSignedAt: contract.tenant_signed_at ?? null,
             tenantAgreedTerms: contract.tenant_agreed_terms,
+            tenantNationalId: safeDecrypt(contract.tenant_national_id),
+            tenantEmergencyContactName: contract.tenant_emergency_contact_name ?? null,
+            tenantEmergencyPhone: contract.tenant_emergency_phone ?? null,
             createdAt: contract.created_at,
             updatedAt: contract.updated_at,
         };
