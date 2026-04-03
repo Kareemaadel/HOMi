@@ -197,3 +197,22 @@
 
 .rc-btn-secondary:hover { background: #f8fafc; color: #0f172a; }
 .rc-btn-decline:hover { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+
+.rc-approved-card {
+    border-color: #86efac;
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 70%);
+}
+
+.rc-approved-banner {
+    margin-top: auto;
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 700;
+}

@@ -5,12 +5,12 @@ import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import { 
     FaWallet, FaArrowUp, FaArrowDown, FaPlus, 
-    FaFileInvoiceDollar, FaChartLine, FaShieldAlt, FaEllipsisV 
+    FaFileInvoiceDollar, FaShieldAlt
 } from 'react-icons/fa';
 import './Balance.css';
 
 const Balance: React.FC = () => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen] = useState(true);
 
     return (
         <div className="balance-page-wrapper">

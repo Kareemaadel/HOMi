@@ -1,6 +1,5 @@
-import React from 'react';
 import './UpcomingPayment.css';
-import { FaArrowRight, FaCreditCard } from 'react-icons/fa';
+import { FaArrowRight } from 'react-icons/fa';
 
 const UpcomingPayment = ({ amount, dueDate }: { amount: number, dueDate: string }) => {
     return (

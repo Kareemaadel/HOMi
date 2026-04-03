@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
@@ -9,20 +9,72 @@ import PaymentState from '../components/LandlordHomeComponents/PaymentState';
 import AddPropertyModal from '../components/LandlordHomeComponents/AddPropertyModal';
 import OptimizeListingModal from '../components/LandlordHomeComponents/optimizeListingModal';
 import { FiPlus, FiHome, FiCamera, FiBookOpen, FiCreditCard, FiStar, FiZap, FiMessageSquare } from 'react-icons/fi';
+import authService from '../../../services/auth.service';
+import propertyService from '../../../services/property.service';
+import type { PropertyResponse } from '../../../services/property.service';
 import './landlordHome.css';
 
 const LandlordHome = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
+  const [properties, setProperties] = useState<PropertyResponse[]>([]);
+  const [landlordName, setLandlordName] = useState('Landlord');
 
-  // 🎯 SET TO TRUE to view the newly redesigned premium data state
-  const hasData = false;
+  const fetchProperties = useCallback(async () => {
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser?.user?.id) {
+        setProperties([]);
+        return;
+      }
 
-  const properties = [
-    { id: 1, name: "Skyline Apartments", address: "Downtown, Unit 402", status: "rented", price: "2,400" },
-    { id: 2, name: "Oak Ridge Villa", address: "Suburban St. 12", status: "available", price: "1,850" },
-    { id: 3, name: "Sunset Loft", address: "Beachside Ave 5", status: "pending", price: "3,100" },
-  ];
+      setLandlordName(
+        currentUser.profile?.firstName ||
+        currentUser.user?.email?.split('@')[0] ||
+        'Landlord'
+      );
+
+      const response = await propertyService.getAllProperties({ landlordId: currentUser.user.id });
+      setProperties(response?.data ?? []);
+    } catch {
+      setProperties([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchProperties();
+  }, [fetchProperties]);
+
+  const hasData = properties.length > 0;
+  const mappedProperties = properties.map((prop, index) => ({
+    id: prop.id || String(index),
+    name: prop.title,
+    address: prop.address,
+    status: (prop.status || '').toLowerCase(),
+    price: String(prop.monthlyPrice ?? ''),
+    imageUrl:
+      prop.images?.find((img) => img.isMain)?.imageUrl ||
+      prop.images?.[0]?.imageUrl ||
+      '/rentblue.jpg',
+    beds: prop.specifications?.bedrooms ?? 0,
+    baths: prop.specifications?.bathrooms ?? 0,
+    sqft: prop.specifications?.areaSqft ?? '—',
+    tenantName:
+      (
+        ((prop as unknown as {
+          currentTenant?: { firstName?: string; lastName?: string };
+          activeContract?: { tenant?: { firstName?: string; lastName?: string } };
+          tenant?: { firstName?: string; lastName?: string };
+        }).currentTenant &&
+          `${(prop as unknown as { currentTenant?: { firstName?: string; lastName?: string } }).currentTenant?.firstName || ''} ${(prop as unknown as { currentTenant?: { firstName?: string; lastName?: string } }).currentTenant?.lastName || ''}`.trim()) ||
+        ((prop as unknown as { activeContract?: { tenant?: { firstName?: string; lastName?: string } } }).activeContract?.tenant &&
+          `${(prop as unknown as { activeContract?: { tenant?: { firstName?: string; lastName?: string } } }).activeContract?.tenant?.firstName || ''} ${(prop as unknown as { activeContract?: { tenant?: { firstName?: string; lastName?: string } } }).activeContract?.tenant?.lastName || ''}`.trim()) ||
+        ((prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant &&
+          `${(prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant?.firstName || ''} ${(prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant?.lastName || ''}`.trim())
+      ) ||
+      'No current tenant',
+    paymentStatus: prop.status?.toLowerCase() === 'rented' ? 'Paid' : 'Pending',
+  }));
 
   return (
     <>
@@ -40,7 +92,7 @@ const LandlordHome = () => {
                 
                 <header className="welcome-section">
                   <div className="welcome-text">
-                    <h1>Welcome Back, <span className="highlight-gradient">Mohy!</span></h1>
+                    <h1>Welcome Back, <span className="highlight-gradient">{landlordName}!</span></h1>
                     <p>Manage your properties, track occupancy, and review incoming requests.</p>
                   </div>
                 </header>
@@ -66,7 +118,7 @@ const LandlordHome = () => {
                     <div className="header-title-group">
                       <div className="header-icon"><FiHome size={20} /></div>
                       <h2>Your Portfolio</h2>
-                      <span className="status-badge">{properties.length} Active Listings</span>
+                      <span className="status-badge">{mappedProperties.length} Active Listings</span>
                     </div>
                     <button className="btn-text-primary" onClick={() => setIsModalOpen(true)}>
                       <FiPlus size={18} /> Add New
@@ -74,7 +126,7 @@ const LandlordHome = () => {
                   </div>
 
                   <div className="properties-grid">
-                    {properties.map(prop => (
+                    {mappedProperties.map(prop => (
                       <PropertyCard 
                         key={prop.id} 
                         name={prop.name}
@@ -82,6 +134,12 @@ const LandlordHome = () => {
                         status={prop.status}
                         price={prop.price}
                         id={prop.id}
+                        imageUrl={prop.imageUrl}
+                        beds={prop.beds}
+                        baths={prop.baths}
+                        sqft={prop.sqft}
+                        tenantName={prop.tenantName}
+                        paymentStatus={prop.paymentStatus}
                       />
                     ))}
                   </div>
@@ -211,7 +269,12 @@ const LandlordHome = () => {
           MODALS WRAPPED OUTSIDE THE MAIN LAYOUT CONTAINER 
           ================================================== */}
       {isModalOpen && (
-        <AddPropertyModal onClose={() => setIsModalOpen(false)} />
+        <AddPropertyModal
+          onClose={() => setIsModalOpen(false)}
+          onPropertyAdded={() => {
+            void fetchProperties();
+          }}
+        />
       )}
 
       {isOptimizeModalOpen && (

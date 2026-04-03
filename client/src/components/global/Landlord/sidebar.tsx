@@ -6,7 +6,6 @@ import {
   FaSignOutAlt,
   FaCog,
   FaInbox,
-  FaWallet,
   FaSignature
 } from 'react-icons/fa';
 import './sidebar.css';

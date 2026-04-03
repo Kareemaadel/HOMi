@@ -36,7 +36,6 @@ export interface LandlordIdentityInput {
 
 export interface LandlordPropertyConfirmationInput {
     property_registration_number: string;
-    maintenance_responsibilities: MaintenanceResponsibilityInput[];
 }
 
 // ─── Landlord Step 5: Sign ────────────────────────────────────────────────────
@@ -50,6 +49,8 @@ export interface LandlordSignInput {
 
 export interface TenantIdentityInput {
     national_id: string;
+    emergency_contact_name: string;
+    emergency_phone: string;
 }
 
 // ─── Tenant Step 4: Sign ──────────────────────────────────────────────────────
@@ -79,10 +80,14 @@ export interface ContractResponse {
     maxOccupants: number | null;
     moveInDate: Date | string;
     leaseDurationMonths: number;
+    landlordNationalId: string | null;
     propertyRegistrationNumber: string | null;
     landlordSignedAt: Date | null;
     tenantSignedAt: Date | null;
     tenantAgreedTerms: boolean;
+    tenantNationalId: string | null;
+    tenantEmergencyContactName: string | null;
+    tenantEmergencyPhone: string | null;
     createdAt: Date;
     updatedAt: Date;
     maintenanceResponsibilities?: MaintenanceResponsibilityResponse[];
@@ -106,6 +111,10 @@ export interface ContractResponse {
         furnishing: string | null;
         monthlyPrice: number | null;
         securityDeposit: number | null;
+        maintenanceResponsibilities?: Array<{
+            area: string;
+            responsible_party: 'LANDLORD' | 'TENANT';
+        }>;
     };
     propertySpecifications?: {
         bedrooms: number;

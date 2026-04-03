@@ -2,7 +2,11 @@ import React from 'react';
 import { FaUsers, FaChartLine, FaClock } from 'react-icons/fa';
 import './StatsOverview.css';
 
-const StatsOverview: React.FC = () => {
+interface StatsOverviewProps {
+    totalApplicants: number;
+}
+
+const StatsOverview: React.FC<StatsOverviewProps> = ({ totalApplicants }) => {
     return (
         <div className="stats-container">
             <div className="stat-card">
@@ -12,7 +16,7 @@ const StatsOverview: React.FC = () => {
                 <div className="stat-content">
                     <label>Total Applicants</label>
                     <div className="stat-value-group">
-                        <h2>24</h2>
+                        <h2>{totalApplicants}</h2>
                         <span className="trend positive">+12%</span>
                     </div>
                 </div>

@@ -1,9 +1,6 @@
 // client\src\features\BrowseProperties\components\PropertyCard.tsx
 import React, { useState } from 'react';
 import { 
-    FaBed, 
-    FaBath, 
-    FaRulerCombined, 
     FaHeart, 
     FaMapMarkerAlt, 
     FaStar, 

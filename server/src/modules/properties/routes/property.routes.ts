@@ -84,6 +84,13 @@ const router = Router();
  *             house_rule_names:
  *               - "No Smoking"
  *               - "Pets Allowed"
+ *             maintenance_responsibilities:
+ *               - area: "Structural Repairs"
+ *                 responsible_party: "LANDLORD"
+ *               - area: "Interior Appliances"
+ *                 responsible_party: "TENANT"
+ *               - area: "Utility Bills"
+ *                 responsible_party: "TENANT"
  *             specifications:
  *               bedrooms: 2
  *               bathrooms: 2
@@ -394,6 +401,11 @@ router.get(
  *             house_rule_names:
  *               - "No Smoking"
  *               - "Quiet Hours (10 PM - 8 AM)"
+ *             maintenance_responsibilities:
+ *               - area: "Structural Repairs"
+ *                 responsible_party: "LANDLORD"
+ *               - area: "Interior Appliances"
+ *                 responsible_party: "TENANT"
  *             specifications:
  *               bedrooms: 3
  *               area_sqft: 1350

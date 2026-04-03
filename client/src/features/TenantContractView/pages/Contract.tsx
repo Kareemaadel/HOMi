@@ -1,70 +1,113 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import ActiveLeaseContract from '../components/ActiveLeaseContract';
 
-import { 
-    FileText, CheckCircle2, Clock, AlertCircle, 
-    Plus, Search, Filter, Building2, Eye, Download, ChevronRight 
-} from 'lucide-react';
+import { FileText, Clock, Plus, Building2, ChevronRight } from 'lucide-react';
 import ContractDetailView from '../components/ContractDetailView';
+import contractService, { type LandlordContract as ContractApi } from '../../../services/contract.service';
 import './Contract.css';
 
-export type ContractStatus = 'REQUEST' | 'DRAFT' | 'SIGNING' | 'PAYMENT' | 'ACTIVE';
+export type ContractStatus = 'PENDING_TENANT' | 'ACTIVE' | 'EXPIRED';
 
 export interface LeaseContract {
     id: string;
+    internalId: string;
     property: string;
     tenant: string;
     landlord: string;
+    landlordEmail: string;
+    tenantEmail: string;
     amount: number;
     deposit: number;
     status: ContractStatus;
     startDate: string;
     duration: string;
+    createdAt: string;
+    leaseId: string;
+    rentDueDate: string;
+    lateFeeAmount: number;
+    maxOccupants: number;
+    propertyAddress: string;
+    propertyType: string;
+    propertyFurnishing: string;
+    tenantNationalId: string;
+    tenantEmergencyContactName: string;
+    tenantEmergencyPhone: string;
+    maintenanceResponsibilities: Array<{
+        area: string;
+        responsible_party: 'LANDLORD' | 'TENANT';
+    }>;
 }
 
 const Contract: React.FC = () => {
     const navigate = useNavigate();
-
-    // Toggle this to false to see the empty state!
-    const hasContracts = true;
-
     const [selectedContract, setSelectedContract] = useState<LeaseContract | null>(null);
-    const [contracts] = useState<LeaseContract[]>([
-        { 
-            id: 'HOMI-8821', 
-            property: 'Skyline Penthouse, #12', 
-            tenant: 'Emily Blunt', 
-            landlord: 'Alex Sterling',
-            amount: 2400, 
-            deposit: 3000,
-            status: 'SIGNING', 
-            startDate: 'May 01, 2026',
-            duration: '12 Months'
-        },
-        { 
-            id: 'HOMI-4410', 
-            property: 'Sunset Loft', 
-            tenant: 'John Doe', 
-            landlord: 'Alex Sterling',
-            amount: 1200, 
-            deposit: 1200,
-            status: 'ACTIVE', 
-            startDate: 'Jan 15, 2026',
-            duration: '6 Months'
+    const [contracts, setContracts] = useState<LeaseContract[]>([]);
+
+    const formatDate = (dateStr?: string) => {
+        if (!dateStr) return '—';
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    };
+
+    const mapStatus = (status: ContractApi['status']): ContractStatus => {
+        if (status === 'ACTIVE') return 'ACTIVE';
+        if (status === 'TERMINATED' || status === 'EXPIRED') return 'EXPIRED';
+        return 'PENDING_TENANT';
+    };
+
+    const mapContract = (contract: ContractApi): LeaseContract => ({
+        id: contract.contractId,
+        internalId: contract.id,
+        property: contract.property?.title || 'Property',
+        tenant: `${contract.tenant?.firstName || ''} ${contract.tenant?.lastName || ''}`.trim() || 'Tenant',
+        landlord: `${contract.landlord?.firstName || ''} ${contract.landlord?.lastName || ''}`.trim() || 'Landlord',
+        landlordEmail: contract.landlord?.email || '',
+        tenantEmail: contract.tenant?.email || '',
+        amount: contract.rentAmount || 0,
+        deposit: contract.securityDeposit || 0,
+        status: mapStatus(contract.status),
+        startDate: formatDate(contract.moveInDate),
+        duration: `${contract.leaseDurationMonths} Months`,
+        createdAt: contract.createdAt,
+        leaseId: contract.leaseId || '—',
+        rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
+        lateFeeAmount: contract.lateFeeAmount || 0,
+        maxOccupants: contract.maxOccupants || 1,
+        propertyAddress: contract.property?.address || '—',
+        propertyType: contract.property?.type || 'Residential',
+        propertyFurnishing: contract.property?.furnishing || 'N/A',
+        tenantNationalId: contract.tenantNationalId || '',
+        tenantEmergencyContactName: contract.tenantEmergencyContactName || '',
+        tenantEmergencyPhone: contract.tenantEmergencyPhone || '',
+        maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
+    });
+
+    const fetchContracts = useCallback(async () => {
+        try {
+            const response = await contractService.getTenantContracts({ page: 1, limit: 50 });
+            const mapped = (response.data || [])
+                .map(mapContract)
+                .filter((c) => c.status === 'PENDING_TENANT' || c.status === 'ACTIVE');
+            setContracts(mapped);
+        } catch {
+            setContracts([]);
         }
-    ]);
+    }, []);
+
+    useEffect(() => {
+        void fetchContracts();
+    }, [fetchContracts]);
+
+    const hasContracts = contracts.length > 0;
 
     const getStatusInfo = (status: ContractStatus) => {
         const map = {
-            REQUEST: { label: 'New Request', color: 'orange' },
-            DRAFT: { label: 'In Review', color: 'gray' },
-            SIGNING: { label: 'Pending Signature', color: 'blue' },
-            PAYMENT: { label: 'Pending Payment', color: 'yellow' },
-            ACTIVE: { label: 'Active Lease', color: 'green' }
+            PENDING_TENANT: { label: 'Pending Signature', color: 'blue' },
+            ACTIVE: { label: 'Active Lease', color: 'green' },
+            EXPIRED: { label: 'Expired', color: 'gray' },
         };
         return map[status];
     };
@@ -81,7 +124,7 @@ const Contract: React.FC = () => {
                             <p>Track, sign, and manage your property contracts.</p>
                         </div>
                         {hasContracts && (
-                            <button className="btn-primary"><Plus size={18}/> Draft New Lease</button>
+                            <button className="btn-primary"><Plus size={18}/> Browse Properties</button>
                         )}
                     </div>
 
@@ -89,11 +132,11 @@ const Contract: React.FC = () => {
                         <div className="contract-list-grid">
                             {contracts.map(contract => (
                                 <div key={contract.id} className="contract-card">
-                                    <div className="card-status-bar" data-status={contract.status.toLowerCase()}></div>
+                                    <div className="card-status-bar" data-status={contract.status === 'PENDING_TENANT' ? 'signing' : contract.status.toLowerCase()}></div>
                                     <div className="card-body">
                                         <div className="card-top">
                                             <span className="contract-id">{contract.id}</span>
-                                            <span className={`status-tag ${contract.status.toLowerCase()}`}>
+                                            <span className={`status-tag ${contract.status === 'PENDING_TENANT' ? 'signing' : contract.status.toLowerCase()}`}>
                                                 {getStatusInfo(contract.status).label}
                                             </span>
                                         </div>
@@ -140,9 +183,10 @@ const Contract: React.FC = () => {
                 <Footer />
             </div>
 
-            {selectedContract && selectedContract.status !== 'ACTIVE' && (
+            {selectedContract && selectedContract.status === 'PENDING_TENANT' && (
                 <ContractDetailView 
                     contract={selectedContract} 
+                    onUpdated={fetchContracts}
                     onClose={() => setSelectedContract(null)} 
                 />
             )}

@@ -6,19 +6,33 @@ import {
 import ManagePropertyModal from '../../../MyProperties/components/ManagePropertyModal';
 import './PropertyCard.css';
 
-// Added specific landlord-relevant props
-const PropertyCard = ({ 
-  name = "Skyline Apartments", 
-  address = "Downtown, Dubai", 
-  status = "Occupied", 
-  price = "2,500", 
-  tenantName = "Sarah Jenkins",
-  paymentStatus = "Paid",
-  beds = 3, 
-  baths = 2, 
-  sqft = "1,200", 
-  id 
-}: any) => {
+interface PropertyCardProps {
+  name?: string;
+  address?: string;
+  status?: string;
+  price?: string;
+  tenantName?: string;
+  paymentStatus?: string;
+  beds?: number;
+  baths?: number;
+  sqft?: string | number;
+  imageUrl?: string;
+  id: string | number;
+}
+
+const PropertyCard = ({
+  name = "Skyline Apartments",
+  address = "Downtown, Dubai",
+  status = "Occupied",
+  price = "2,500",
+  tenantName = "No current tenant",
+  paymentStatus = "Pending",
+  beds = 3,
+  baths = 2,
+  sqft = "1,200",
+  imageUrl = "/rentblue.jpg",
+  id
+}: PropertyCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const propertyData = { id, name, address, status, price, beds, baths, sqft, tenantName };
@@ -27,7 +41,7 @@ const PropertyCard = ({
     <>
       <div className="prop-card-container" onClick={() => setIsModalOpen(true)}>
         <div className="prop-card-media">
-          <img src="/rentblue.jpg" alt={name} className="prop-main-img" />
+          <img src={imageUrl || "/rentblue.jpg"} alt={name} className="prop-main-img" />
           
           <div className="prop-floating-badges">
             <div className={`status-pill ${status.toLowerCase()}`}>
@@ -61,7 +75,7 @@ const PropertyCard = ({
               <div className="tenant-avatar">{tenantName.charAt(0)}</div>
               <div className="tenant-details">
                 <span className="label">Current Tenant</span>
-                <span className="name">{tenantName}</span>
+                <span className="name">{tenantName || 'No current tenant'}</span>
               </div>
             </div>
             <div className={`payment-status ${paymentStatus.toLowerCase()}`}>

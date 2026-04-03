@@ -29,6 +29,10 @@ interface BrowsePropertyUI {
     description: string;
     ownerName: string;
     ownerImage: string;
+    maintenanceResponsibilities: Array<{
+        area: string;
+        responsible_party: 'LANDLORD' | 'TENANT';
+    }>;
 }
 
 const mapTargetTenant = (targetTenant: string) => {
@@ -77,7 +81,14 @@ const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
         ownerName: property.landlord
             ? `${property.landlord.firstName} ${property.landlord.lastName}`.trim()
             : 'Owner',
-        ownerImage: property.landlord?.avatarUrl || 'https://i.pravatar.cc/150?u=owner-fallback',
+        ownerImage:
+            property.landlord?.avatarUrl ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                property.landlord
+                    ? `${property.landlord.firstName} ${property.landlord.lastName}`.trim() || 'Owner'
+                    : 'Owner'
+            )}&background=0f172a&color=ffffff&size=128`,
+        maintenanceResponsibilities: property.maintenanceResponsibilities ?? [],
     };
 };
 

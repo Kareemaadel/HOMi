@@ -48,6 +48,10 @@ export interface PropertyResponse {
     images: PropertyImageResponse[];
     amenities: AmenityResponse[];
     houseRules: HouseRuleResponse[];
+    maintenanceResponsibilities?: Array<{
+        area: string;
+        responsible_party: 'LANDLORD' | 'TENANT';
+    }>;
     specifications: PropertySpecificationsResponse | null;
     landlord: PropertyLandlordResponse | null;
 }
@@ -97,6 +101,10 @@ export interface CreatePropertyPayload {
         bathrooms: number;
         area_sqft: number;
     };
+    maintenance_responsibilities?: Array<{
+        area: string;
+        responsible_party: 'LANDLORD' | 'TENANT';
+    }>;
     detailed_location: {
         floor: number;
         city: string;

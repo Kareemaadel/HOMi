@@ -133,6 +133,7 @@ class PropertyService {
                     furnishing: input.furnishing,
                     target_tenant: input.target_tenant ?? 'ANY',
                     availability_date: new Date(input.availability_date),
+                    maintenance_responsibilities: input.maintenance_responsibilities ?? [],
                     status: 'Draft',
                 },
                 { transaction }
@@ -417,6 +418,8 @@ class PropertyService {
             if (input.target_tenant !== undefined) updateData.target_tenant = input.target_tenant;
             if (input.availability_date !== undefined)
                 updateData.availability_date = new Date(input.availability_date);
+            if (input.maintenance_responsibilities !== undefined)
+                updateData.maintenance_responsibilities = input.maintenance_responsibilities;
 
             await property.update(updateData, { transaction });
 
@@ -622,6 +625,10 @@ class PropertyService {
             images: formattedImages,
             amenities: formattedAmenities,
             houseRules: formattedHouseRules,
+            maintenanceResponsibilities: (property.maintenance_responsibilities ?? []).map((item: any) => ({
+                area: item.area,
+                responsible_party: item.responsible_party,
+            })),
             specifications: formattedSpec,
             detailedLocation: formattedLocation,
             landlord: formattedLandlord,

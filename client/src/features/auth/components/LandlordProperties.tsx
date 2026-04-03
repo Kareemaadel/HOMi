@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Home, DollarSign, FileText, Bed, Bath, Zap } from 'lucide-react';
 
 export default function LandlordProperties({ onNext }: { onNext:()=>void }) {
   const [property, setProperty] = useState({
