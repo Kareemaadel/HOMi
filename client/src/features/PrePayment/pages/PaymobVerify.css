@@ -1,0 +1,67 @@
+.paymob-verify-wrapper {
+    min-height: 100vh;
+    background: radial-gradient(circle at top right, #e2e8f0, #f8fafc);
+}
+
+.paymob-verify-container {
+    display: flex;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 30px;
+    gap: 30px;
+    margin-top: 75px;
+}
+
+.paymob-verify-main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.verify-card {
+    width: min(640px, 100%);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 20px 60px -35px rgba(15, 23, 42, 0.45);
+}
+
+.verify-card h1 {
+    margin: 0;
+    color: #0f172a;
+}
+
+.verify-card p {
+    margin-top: 10px;
+    color: #334155;
+}
+
+.verify-card.loading {
+    border-color: #bfdbfe;
+}
+
+.verify-card.success {
+    border-color: #86efac;
+}
+
+.verify-card.failed {
+    border-color: #fca5a5;
+}
+
+.verify-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.verify-actions button {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 10px 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
