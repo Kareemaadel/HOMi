@@ -32,8 +32,8 @@ const RentalRequests: React.FC = () => {
         void refreshRequests();
     }, [refreshRequests]);
 
-    const currentRequests = useMemo(() => {
-        const mapped = requests.map((req) => ({
+    const mappedRequests = useMemo(() => {
+        return requests.map((req) => ({
             id: req.id,
             applicant: {
                 name: `${req.tenant.firstName} ${req.tenant.lastName}`.trim(),
@@ -59,12 +59,22 @@ const RentalRequests: React.FC = () => {
             habits: req.tenant.habits || [],
             appliedOnDate: formatDate(req.createdAt),
         }));
+    }, [requests]);
 
-        if (activeTab === 'pending') return mapped.filter((req) => req.status === 'pending');
-        if (activeTab === 'approved') return mapped.filter((req) => req.status === 'approved');
-        if (activeTab === 'declined') return mapped.filter((req) => req.status === 'declined');
-        return mapped;
-    }, [activeTab, requests]);
+    const tabCounts = useMemo(() => ({
+        pending: mappedRequests.filter((req) => req.status === 'pending').length,
+        review: mappedRequests.filter((req) => req.status === 'review' || req.status === 'under_review').length,
+        approved: mappedRequests.filter((req) => req.status === 'approved').length,
+        declined: mappedRequests.filter((req) => req.status === 'declined').length,
+    }), [mappedRequests]);
+
+    const currentRequests = useMemo(() => {
+        if (activeTab === 'pending') return mappedRequests.filter((req) => req.status === 'pending');
+        if (activeTab === 'review') return mappedRequests.filter((req) => req.status === 'review' || req.status === 'under_review');
+        if (activeTab === 'approved') return mappedRequests.filter((req) => req.status === 'approved');
+        if (activeTab === 'declined') return mappedRequests.filter((req) => req.status === 'declined');
+        return mappedRequests;
+    }, [activeTab, mappedRequests]);
 
     return (
         <div className="layout-wrapper">
@@ -77,10 +87,10 @@ const RentalRequests: React.FC = () => {
                             <h1>Rental Requests</h1>
                             <p>Screen applicants and manage your property pipeline.</p>
                         </div>
-                        <StatsOverview />
+                        <StatsOverview totalApplicants={mappedRequests.length} />
                     </header>
 
-                    <FilterTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                    <FilterTabs activeTab={activeTab} setActiveTab={setActiveTab} counts={tabCounts} />
 
                     {/* Conditional Rendering for Empty State vs Grid */}
                     {currentRequests.length > 0 ? (

@@ -7,7 +7,8 @@ import './RequestCard.css';
 const RequestCard = ({ data, onStatusChange }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     // Destructured livingSituation instead of pets
-    const { applicant, property, moveInDate, livingSituation, message } = data;
+    const { applicant, property, moveInDate, livingSituation, message, status } = data;
+    const isApproved = status === 'approved';
 
     const handleDecline = async () => {
         try {
@@ -20,7 +21,7 @@ const RequestCard = ({ data, onStatusChange }: any) => {
 
     return (
         <>
-            <article className="rc-compact">
+            <article className={`rc-compact ${isApproved ? 'rc-approved-card' : ''}`}>
                 <div className="rc-header">
                     <div className="rc-avatar-box">
                         <img src={applicant.image} alt={applicant.name} />
@@ -62,15 +63,22 @@ const RequestCard = ({ data, onStatusChange }: any) => {
                     <p>"{message}"</p>
                 </div>
 
-                <div className="rc-actions">
-                    <button className="rc-btn-primary" onClick={() => setIsModalOpen(true)}>
-                        Review Application
-                    </button>
-                    <div className="rc-action-row">
-                        <button className="rc-btn-secondary"><FaEnvelope /> Chat</button>
-                        <button className="rc-btn-decline" onClick={handleDecline}>Decline</button>
+                {isApproved ? (
+                    <div className="rc-approved-banner">
+                        <FaCheckCircle />
+                        <span>Application Approved</span>
                     </div>
-                </div>
+                ) : (
+                    <div className="rc-actions">
+                        <button className="rc-btn-primary" onClick={() => setIsModalOpen(true)}>
+                            Review Application
+                        </button>
+                        <div className="rc-action-row">
+                            <button className="rc-btn-secondary"><FaEnvelope /> Chat</button>
+                            <button className="rc-btn-decline" onClick={handleDecline}>Decline</button>
+                        </div>
+                    </div>
+                )}
             </article>
 
             {isModalOpen && (

@@ -4,14 +4,20 @@ import './FilterTabs.css';
 interface Props {
     activeTab: string;
     setActiveTab: (tab: string) => void;
+    counts: {
+        pending: number;
+        review: number;
+        approved: number;
+        declined: number;
+    };
 }
 
-const FilterTabs: React.FC<Props> = ({ activeTab, setActiveTab }) => {
+const FilterTabs: React.FC<Props> = ({ activeTab, setActiveTab, counts }) => {
     const tabs = [
-        { id: 'pending', label: 'Pending', count: 12 },
-        { id: 'review', label: 'Under Review', count: 5 },
-        { id: 'approved', label: 'Approved', count: 3 },
-        { id: 'declined', label: 'Declined', count: 0 }
+        { id: 'pending', label: 'Pending', count: counts.pending },
+        { id: 'review', label: 'Under Review', count: counts.review },
+        { id: 'approved', label: 'Approved', count: counts.approved },
+        { id: 'declined', label: 'Declined', count: counts.declined }
     ];
 
     return (
