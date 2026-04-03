@@ -36,7 +36,6 @@ export interface LandlordIdentityInput {
 
 export interface LandlordPropertyConfirmationInput {
     property_registration_number: string;
-    maintenance_responsibilities: MaintenanceResponsibilityInput[];
 }
 
 // ─── Landlord Step 5: Sign ────────────────────────────────────────────────────

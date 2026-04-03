@@ -83,8 +83,9 @@
 
 /* --- Status Colors (Green for Active) --- */
 .card-status-bar[data-status='active'] { background: #10b981; } /* Emerald Green */
-.card-status-bar[data-status='signing'] { background: var(--saas-accent-blue); }
-.card-status-bar[data-status='payment'] { background: #f59e0b; }
+.card-status-bar[data-status='pending_landlord'] { background: var(--saas-accent-blue); }
+.card-status-bar[data-status='pending_tenant'] { background: #f59e0b; }
+.card-status-bar[data-status='expired'] { background: #94a3b8; }
 
 .card-body {
   padding: 32px;
@@ -119,8 +120,9 @@
 
 /* --- Tag Colors (Green for Active) --- */
 .status-tag.active { background: #e6fcf5; color: #0ca678; } /* Mint background, dark green text */
-.status-tag.signing { background: #e7f5ff; color: #1c7ed6; }
-.status-tag.payment { background: #fff9db; color: #f08c00; }
+.status-tag.pending_landlord { background: #e7f5ff; color: #1c7ed6; }
+.status-tag.pending_tenant { background: #fff9db; color: #f08c00; }
+.status-tag.expired { background: #f1f5f9; color: #475569; }
 
 .contract-card h3 {
   font-size: 22px;

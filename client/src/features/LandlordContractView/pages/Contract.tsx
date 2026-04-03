@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
@@ -8,61 +8,87 @@ import {
 } from 'lucide-react';
 import ContractDetailView from '../components/ContractDetailView';
 import ActiveLeaseContract from '../components/ActiveLeaseContract';
+import contractService, { type LandlordContract as LandlordContractApi } from '../../../services/contract.service';
 import './Contract.css';
-
-export type ContractStatus = 'REQUEST' | 'DRAFT' | 'SIGNING' | 'PAYMENT' | 'ACTIVE';
 
 export interface LeaseContract {
     id: string;
+    internalId: string;
     property: string;
     tenant: string;
     landlord: string;
     amount: number;
     deposit: number;
-    status: ContractStatus;
+    status: 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'ACTIVE' | 'EXPIRED';
     startDate: string;
     duration: string;
+    rentDueDate: string;
+    lateFeeAmount: number;
+    maxOccupants: number;
+    propertyAddress: string;
+    propertyType: string;
+    propertyFurnishing: string;
+    tenantEmail: string;
+    landlordEmail: string;
+    propertyRegistrationNumber: string;
+    createdAt: string;
 }
 
 const LandlordContract: React.FC = () => {
     const navigate = useNavigate();
-    
-    // Toggle this to false to see the empty state!
-    const hasContracts = true; 
 
     const [selectedContract, setSelectedContract] = useState<LeaseContract | null>(null);
-    const [contracts] = useState<LeaseContract[]>([
-        { 
-            id: 'HOMI-8821', 
-            property: 'Skyline Penthouse, #12', 
-            tenant: 'Emily Blunt', 
-            landlord: 'Alex Sterling',
-            amount: 2400, 
-            deposit: 3000,
-            status: 'SIGNING', 
-            startDate: 'May 01, 2026',
-            duration: '12 Months'
-        },
-        { 
-            id: 'HOMI-4410', 
-            property: 'Sunset Loft', 
-            tenant: 'John Doe', 
-            landlord: 'Alex Sterling',
-            amount: 1850, 
-            deposit: 1850,
-            status: 'ACTIVE', 
-            startDate: 'Jan 15, 2026',
-            duration: '12 Months'
-        }
-    ]);
+    const [contracts, setContracts] = useState<LeaseContract[]>([]);
 
-    const getStatusInfo = (status: ContractStatus) => {
+    const formatDate = (dateStr?: string) => {
+        if (!dateStr) return '—';
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    };
+
+    const mapContract = (contract: LandlordContractApi): LeaseContract => ({
+        id: contract.contractId,
+        internalId: contract.id,
+        property: contract.property?.title || 'Property',
+        tenant: `${contract.tenant?.firstName || ''} ${contract.tenant?.lastName || ''}`.trim() || 'Tenant',
+        landlord: `${contract.landlord?.firstName || ''} ${contract.landlord?.lastName || ''}`.trim() || 'Landlord',
+        amount: contract.rentAmount || 0,
+        deposit: contract.securityDeposit || 0,
+        status: contract.status === 'TERMINATED' ? 'EXPIRED' : contract.status,
+        startDate: formatDate(contract.moveInDate),
+        duration: `${contract.leaseDurationMonths} Months`,
+        rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
+        lateFeeAmount: contract.lateFeeAmount || 0,
+        maxOccupants: contract.maxOccupants || 1,
+        propertyAddress: contract.property?.address || '—',
+        propertyType: contract.property?.type || 'Residential',
+        propertyFurnishing: contract.property?.furnishing || 'N/A',
+        tenantEmail: contract.tenant?.email || '',
+        landlordEmail: contract.landlord?.email || '',
+        propertyRegistrationNumber: contract.propertyRegistrationNumber || '',
+        createdAt: contract.createdAt,
+    });
+
+    const fetchContracts = useCallback(async () => {
+        try {
+            const response = await contractService.getLandlordContracts({ page: 1, limit: 50 });
+            setContracts((response.data || []).map(mapContract));
+        } catch {
+            setContracts([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        void fetchContracts();
+    }, [fetchContracts]);
+
+    const hasContracts = contracts.length > 0;
+
+    const getStatusInfo = (status: LeaseContract['status']) => {
         const map = {
-            REQUEST: { label: 'New Request', color: 'orange' },
-            DRAFT: { label: 'In Review', color: 'gray' },
-            SIGNING: { label: 'Pending Signature', color: 'blue' },
-            PAYMENT: { label: 'Waiting for Tenant', color: 'yellow' },
-            ACTIVE: { label: 'Active Lease', color: 'green' }
+            PENDING_LANDLORD: { label: 'Pending Signature', color: 'blue' },
+            PENDING_TENANT: { label: 'Pending Tenant', color: 'yellow' },
+            ACTIVE: { label: 'Active Lease', color: 'green' },
+            EXPIRED: { label: 'Expired', color: 'gray' },
         };
         return map[status];
     };
@@ -138,6 +164,7 @@ const LandlordContract: React.FC = () => {
             {selectedContract && selectedContract.status !== 'ACTIVE' && (
                 <ContractDetailView 
                     contract={selectedContract} 
+                    onUpdated={fetchContracts}
                     onClose={() => setSelectedContract(null)} 
                 />
             )}

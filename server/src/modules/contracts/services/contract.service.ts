@@ -379,42 +379,15 @@ class ContractService {
     ): Promise<ContractResponse> {
         const contract = await this.findAndValidateLandlordContract(contractId, landlordId);
 
-        await sequelize.transaction(async (t) => {
-            // Update property registration number
-            await contract.update(
-                { property_registration_number: input.property_registration_number },
-                { transaction: t }
-            );
-
-            // Remove old maintenance responsibilities and create new ones
-            await ContractMaintenanceResponsibility.destroy({
-                where: { contract_id: contract.id },
-                transaction: t,
-            });
-
-            if (input.maintenance_responsibilities.length > 0) {
-                await ContractMaintenanceResponsibility.bulkCreate(
-                    input.maintenance_responsibilities.map((mr) => ({
-                        contract_id: contract.id,
-                        area: mr.area as import('../models/ContractMaintenanceResponsibility.js').MaintenanceAreaType,
-                        responsible_party: mr.responsible_party,
-                    })),
-                    { transaction: t }
-                );
-            }
+        await contract.update({
+            property_registration_number: input.property_registration_number,
         });
 
-        // Reload with maintenance responsibilities
         const updated = await Contract.findByPk(contract.id, {
-            include: [
-                {
-                    model: ContractMaintenanceResponsibility,
-                    as: 'maintenanceResponsibilities',
-                },
-            ],
+            include: this.getContractDetailIncludes(),
         });
 
-        return this.formatContractResponse(updated!, false, true);
+        return this.formatContractResponse(updated ?? contract, true, true);
     }
 
     /**
