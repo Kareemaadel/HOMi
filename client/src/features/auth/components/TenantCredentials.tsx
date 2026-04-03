@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { DollarSign, MapPin, Home, Users } from 'lucide-react';
 
 export default function TenantCredentials({ onNext }: { onNext:()=>void }) {
   const [preferences, setPreferences] = useState({

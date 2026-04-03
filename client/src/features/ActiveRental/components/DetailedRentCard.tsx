@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './DetailedRentCard.css';
 import { 
-  FaCalendarAlt, FaUserCircle, FaRulerCombined, 
+  FaCalendarAlt, FaUserCircle, 
   FaFileDownload, FaMapMarkerAlt, FaGavel, FaTimes, FaHome 
 } from 'react-icons/fa';
 

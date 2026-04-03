@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Heart } from 'lucide-react';
 
 const options = [
   { label: 'Non-smoker', icon: '🚭' },

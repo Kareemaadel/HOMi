@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FaCheckCircle, FaBuilding, FaCalendarAlt, FaUserFriends, FaEnvelope } from 'react-icons/fa';
 import DetailedRequestModal from './DetailedRequestModal';
 import rentalRequestService from '../../../services/rental-request.service';

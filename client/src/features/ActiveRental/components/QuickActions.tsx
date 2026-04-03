@@ -1,4 +1,3 @@
-import React from 'react';
 import './QuickActions.css';
 import { FaWrench, FaShieldAlt, FaFileInvoice, FaKey } from 'react-icons/fa';
 

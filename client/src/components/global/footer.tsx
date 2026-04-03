@@ -48,7 +48,6 @@
 
 // new edits :
 
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaFacebookF, FaLinkedinIn, FaInstagram } from 'react-icons/fa';
 import './footer.css';
