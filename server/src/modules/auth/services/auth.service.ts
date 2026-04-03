@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { Op } from 'sequelize';
-import { User, Profile, Habit, UserHabit, sequelize } from '../models/index.js';
+import { User, Profile, Habit, UserHabit, sequelize, UserRole } from '../models/index.js';
+import { Property } from '../../properties/models/Property.js';
+import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
+import { Contract } from '../../contracts/models/Contract.js';
 import {
     generateTokenPair,
     generateAccessToken,
@@ -28,6 +31,13 @@ import type {
     UpdateRoleRequest,
 } from '../interfaces/auth.interfaces.js';
 
+/** Returned with 409 when DELETE /auth/account is blocked by related records */
+export type AccountDeleteBlockers = {
+    propertyCount: number;
+    rentalRequestCount: number;
+    contractCount: number;
+};
+
 /**
  * Custom error class for authentication errors
  */
@@ -35,7 +45,8 @@ export class AuthError extends Error {
     constructor(
         message: string,
         public statusCode: number = 400,
-        public code: string = 'AUTH_ERROR'
+        public code: string = 'AUTH_ERROR',
+        public details?: AccountDeleteBlockers
     ) {
         super(message);
         this.name = 'AuthError';
@@ -990,6 +1001,86 @@ export class AuthService {
             success: true,
             habits: habits.map((h) => ({ id: h.id, name: h.name })),
         };
+    }
+
+    /**
+     * Permanently delete the authenticated user and profile when there are no
+     * properties, rental requests, or contracts tied to the account.
+     */
+    async deleteAccount(userId: string): Promise<AuthSuccessResponse> {
+        const user = await User.findByPk(userId);
+
+        if (!user) {
+            throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+        }
+
+        if (user.role === UserRole.ADMIN) {
+            throw new AuthError(
+                'Administrator accounts cannot be deleted here.',
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        const [propertyCount, rentalRequestCount, contractCount] = await Promise.all([
+            Property.count({ where: { landlord_id: userId } }),
+            RentalRequest.count({ where: { tenant_id: userId } }),
+            Contract.count({
+                where: {
+                    [Op.or]: [{ landlord_id: userId }, { tenant_id: userId }],
+                },
+            }),
+        ]);
+
+        if (propertyCount > 0 || rentalRequestCount > 0 || contractCount > 0) {
+            const blockers: AccountDeleteBlockers = {
+                propertyCount,
+                rentalRequestCount,
+                contractCount,
+            };
+            const parts: string[] = [];
+            if (propertyCount > 0) {
+                parts.push(
+                    `${propertyCount} propert${propertyCount === 1 ? 'y' : 'ies'} (as landlord)`
+                );
+            }
+            if (rentalRequestCount > 0) {
+                parts.push(
+                    `${rentalRequestCount} rental request${rentalRequestCount === 1 ? '' : 's'}`
+                );
+            }
+            if (contractCount > 0) {
+                parts.push(`${contractCount} contract${contractCount === 1 ? '' : 's'}`);
+            }
+            throw new AuthError(
+                `Your account cannot be deleted while it still has: ${parts.join(', ')}. Remove or resolve these first, then try again.`,
+                409,
+                'ACCOUNT_HAS_DEPENDENCIES',
+                blockers
+            );
+        }
+
+        const transaction = await sequelize.transaction();
+
+        try {
+            await UserHabit.destroy({ where: { user_id: userId }, transaction });
+            await Profile.destroy({ where: { user_id: userId }, transaction });
+            await user.destroy({ force: true, transaction });
+
+            await transaction.commit();
+
+            console.log('✅ Account permanently deleted for user id:', userId);
+
+            return {
+                success: true,
+                message: 'Your account has been permanently deleted.',
+            };
+        } catch (error) {
+            await transaction.rollback();
+            if (error instanceof AuthError) throw error;
+            console.error('Delete account error:', error);
+            throw new AuthError('Failed to delete account', 500, 'DELETE_ACCOUNT_FAILED');
+        }
     }
 }
 
