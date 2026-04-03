@@ -41,6 +41,13 @@ interface EnvConfig {
 
     // Client URL (for verification links)
     CLIENT_URL: string;
+
+    // Paymob
+    PAYMOB_BASE_URL: string;
+    PAYMOB_API_KEY: string;
+    PAYMOB_INTEGRATION_ID: number;
+    PAYMOB_IFRAME_ID: number;
+    PAYMOB_HMAC_SECRET: string;
 }
 
 function getEnvString(key: string, defaultValue?: string): string {
@@ -108,6 +115,13 @@ export const env: EnvConfig = {
 
     // Client URL (for verification links)
     CLIENT_URL: getEnvString('CLIENT_URL', 'http://localhost:5173'),
+
+    // Paymob
+    PAYMOB_BASE_URL: getEnvString('PAYMOB_BASE_URL', 'https://accept.paymob.com'),
+    PAYMOB_API_KEY: getEnvString('PAYMOB_API_KEY', ''),
+    PAYMOB_INTEGRATION_ID: getEnvNumber('PAYMOB_INTEGRATION_ID', 0),
+    PAYMOB_IFRAME_ID: getEnvNumber('PAYMOB_IFRAME_ID', 0),
+    PAYMOB_HMAC_SECRET: getEnvString('PAYMOB_HMAC_SECRET', ''),
 };
 
 export default env;
