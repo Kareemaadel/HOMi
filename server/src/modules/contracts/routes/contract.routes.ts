@@ -302,11 +302,11 @@ router.put(
  * @swagger
  * /contracts/{id}/landlord/property-confirmation:
  *   put:
- *     summary: "Landlord Step 3: Property Ownership & Maintenance"
+ *     summary: "Landlord Step 3: Property Ownership Confirmation"
  *     description: |
- *       Confirm property ownership and set maintenance responsibilities.
- *       Previous maintenance entries are replaced with the new list.
- *       Each maintenance area must be one of the predefined options.
+ *       Confirm property ownership for the selected contract property.
+ *       Maintenance responsibilities are now sourced from the property model
+ *       (configured during property creation/update), not from this endpoint.
  *     tags: [Contracts]
  *     security:
  *       - bearerAuth: []
@@ -323,100 +323,17 @@ router.put(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [property_registration_number, maintenance_responsibilities]
+ *             required: [property_registration_number]
  *             properties:
  *               property_registration_number:
  *                 type: string
  *                 description: Property deed or registration reference number
  *                 example: "REG-99210-XB"
- *               maintenance_responsibilities:
- *                 type: array
- *                 description: List of maintenance areas and who is responsible
- *                 minItems: 1
- *                 items:
- *                   type: object
- *                   required: [area, responsible_party]
- *                   properties:
- *                     area:
- *                       type: string
- *                       description: Predefined maintenance area (selectable option)
- *                       enum:
- *                         - Structural Repairs
- *                         - Interior Appliances
- *                         - Utility Bills
- *                         - Plumbing
- *                         - Electrical
- *                         - HVAC / Air Conditioning
- *                         - Pest Control
- *                         - Exterior Maintenance
- *                         - Common Areas
- *                         - Security Systems
- *                     responsible_party:
- *                       type: string
- *                       description: Party responsible for this area
- *                       enum: [LANDLORD, TENANT]
  *           examples:
- *             full_split:
- *               summary: Full split — landlord handles structure, tenant handles interior
+ *             ownership_only:
+ *               summary: Property registration number only
  *               value:
  *                 property_registration_number: "REG-99210-XB"
- *                 maintenance_responsibilities:
- *                   - area: "Structural Repairs"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Interior Appliances"
- *                     responsible_party: "TENANT"
- *                   - area: "Utility Bills"
- *                     responsible_party: "TENANT"
- *                   - area: "Plumbing"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Electrical"
- *                     responsible_party: "LANDLORD"
- *                   - area: "HVAC / Air Conditioning"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Pest Control"
- *                     responsible_party: "TENANT"
- *                   - area: "Exterior Maintenance"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Common Areas"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Security Systems"
- *                     responsible_party: "LANDLORD"
- *             landlord_covers_all:
- *               summary: Landlord covers everything
- *               value:
- *                 property_registration_number: "DEED-2024-44521"
- *                 maintenance_responsibilities:
- *                   - area: "Structural Repairs"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Interior Appliances"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Utility Bills"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Plumbing"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Electrical"
- *                     responsible_party: "LANDLORD"
- *                   - area: "HVAC / Air Conditioning"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Pest Control"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Exterior Maintenance"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Common Areas"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Security Systems"
- *                     responsible_party: "LANDLORD"
- *             minimal:
- *               summary: Only key areas specified
- *               value:
- *                 property_registration_number: "P-88012"
- *                 maintenance_responsibilities:
- *                   - area: "Structural Repairs"
- *                     responsible_party: "LANDLORD"
- *                   - area: "Utility Bills"
- *                     responsible_party: "TENANT"
- *                   - area: "Plumbing"
- *                     responsible_party: "LANDLORD"
  *     responses:
  *       200:
  *         description: Property confirmation submitted
