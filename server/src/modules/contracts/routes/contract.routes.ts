@@ -9,6 +9,7 @@ import {
     LandlordSignSchema,
     TenantIdentitySchema,
     TenantSignSchema,
+    VerifyPaymobPaymentSchema,
     ContractQuerySchema,
 } from '../schemas/contract.schemas.js';
 
@@ -84,7 +85,7 @@ router.get(
  *         name: status
  *         schema:
  *           type: string
- *           enum: [PENDING_TENANT, ACTIVE, TERMINATED, EXPIRED]
+ *           enum: [PENDING_TENANT, PENDING_PAYMENT, ACTIVE, TERMINATED, EXPIRED]
  *         description: Filter by contract status
  *       - in: query
  *         name: page
@@ -523,7 +524,7 @@ router.put(
  *     summary: "Tenant Step 4: Sign Contract"
  *     description: |
  *       Sign the contract as tenant. Identity verification (Step 2) must be
- *       completed first. Moves the contract from PENDING_TENANT to ACTIVE.
+ *       completed first. Moves the contract from PENDING_TENANT to PENDING_PAYMENT.
  *     tags: [Contracts]
  *     security:
  *       - bearerAuth: []
@@ -552,7 +553,7 @@ router.put(
  *                 example: true
  *     responses:
  *       200:
- *         description: Contract signed by tenant, contract is now ACTIVE
+ *         description: Contract signed by tenant, now awaiting payment verification
  *       400:
  *         description: Identity verification not completed
  */
@@ -561,6 +562,68 @@ router.put(
     protect,
     validate(TenantSignSchema),
     contractController.signContractTenant.bind(contractController)
+);
+
+/**
+ * @swagger
+ * /contracts/{id}/payments/paymob/initiate:
+ *   post:
+ *     summary: "Tenant Payment: Initiate Paymob checkout"
+ *     tags: [Contracts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Checkout session created and iframe URL returned
+ */
+router.post(
+    '/:id/payments/paymob/initiate',
+    protect,
+    contractController.initiatePaymobPayment.bind(contractController)
+);
+
+/**
+ * @swagger
+ * /contracts/{id}/payments/paymob/verify:
+ *   post:
+ *     summary: "Tenant Payment: Verify Paymob transaction"
+ *     tags: [Contracts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [transaction_id]
+ *             properties:
+ *               transaction_id:
+ *                 type: integer
+ *                 example: 987654321
+ *     responses:
+ *       200:
+ *         description: Payment verified and contract activated
+ */
+router.post(
+    '/:id/payments/paymob/verify',
+    protect,
+    validate(VerifyPaymobPaymentSchema),
+    contractController.verifyPaymobPayment.bind(contractController)
 );
 
 export default router;
