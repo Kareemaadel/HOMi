@@ -441,6 +441,11 @@
 }
 
 .input-group input:focus { border-color: #000; outline: none; }
+.input-group input:disabled,
+.input-group select:disabled,
+.readonly-field:disabled {
+    cursor: not-allowed;
+}
 
 .section-divider { margin: 32px 0 16px; font-size: 14px; text-transform: uppercase; color: #888; }
 
@@ -455,6 +460,11 @@
 }
 
 .confirmation-check label { font-size: 13px; line-height: 1.4; cursor: pointer; }
+.confirmation-check input:disabled,
+.confirmation-check label.readonly-label,
+.readonly-checkbox:disabled {
+    cursor: not-allowed;
+}
 
 /* Footer Navigation */
 .panel-footer-nav {

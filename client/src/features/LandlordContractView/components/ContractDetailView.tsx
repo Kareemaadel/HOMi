@@ -12,11 +12,12 @@ import './ContractDetailView.css';
 
 interface Props {
     contract: LeaseContract;
+    isReadOnly?: boolean;
     onUpdated?: () => void;
     onClose: () => void;
 }
 
-const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) => {
+const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onUpdated, onClose }) => {
     const [step, setStep] = useState(1);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(null);
@@ -43,6 +44,21 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
     };
 
     const handleNext = async () => {
+        if (isReadOnly) {
+            if (step === 3 && !summary) {
+                try {
+                    setSubmitting(true);
+                    const response = await contractService.getVerificationSummary(contract.internalId);
+                    setSummary(response.data);
+                } catch (error) {
+                    console.error('Failed to load verification summary', error);
+                } finally {
+                    setSubmitting(false);
+                }
+            }
+            setStep((s) => Math.min(s + 1, 5));
+            return;
+        }
         try {
             setSubmitting(true);
             if (step === 1) {
@@ -81,6 +97,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
     const handleBack = () => setStep(s => s - 1);
 
     const handleSign = async () => {
+        if (isReadOnly) return;
         if (!savedSignature || !landlordData.confirmed) return;
         setSubmitting(true);
         try {
@@ -150,7 +167,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                 <div className="input-grid">
                                     <div className="input-group">
                                         <label>Rent Due Date</label>
-                                        <select value={landlordData.rentDueDate} onChange={e => setLandlordData({...landlordData, rentDueDate: e.target.value})}>
+                                        <select className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} value={landlordData.rentDueDate} onChange={e => setLandlordData({...landlordData, rentDueDate: e.target.value})}>
                                             <option value="1ST_OF_MONTH">1st of month</option>
                                             <option value="5TH_OF_MONTH">5th of month</option>
                                             <option value="LAST_DAY_OF_MONTH">Last day of month</option>
@@ -158,14 +175,14 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                     </div>
                                     <div className="input-group">
                                         <label>Late Fee Amount ($)</label>
-                                        <input type="number" value={landlordData.lateFee} onChange={e => setLandlordData({...landlordData, lateFee: e.target.value})} />
+                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="number" value={landlordData.lateFee} onChange={e => setLandlordData({...landlordData, lateFee: e.target.value})} />
                                     </div>
                                 </div>
                             </section>
                             <section className="info-section">
                                 <div className="section-title"><Ban size={16}/> <h4>Occupancy Rules</h4></div>
                                 <div className="input-grid">
-                                    <div className="input-group"><label>Max Occupants</label><input type="text" value={landlordData.occupants} onChange={e => setLandlordData({...landlordData, occupants: e.target.value})} /></div>
+                                    <div className="input-group"><label>Max Occupants</label><input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" value={landlordData.occupants} onChange={e => setLandlordData({...landlordData, occupants: e.target.value})} /></div>
                                 </div>
                             </section>
                         </div>
@@ -186,7 +203,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                 <div className="section-title"><Fingerprint size={16}/> <h4>Verification</h4></div>
                                 <div className="input-group">
                                     <label>National ID / Business Registration Number</label>
-                                    <input type="text" placeholder="Enter ID number" value={landlordData.idNumber} onChange={e => setLandlordData({...landlordData, idNumber: e.target.value})} />
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Enter ID number" value={landlordData.idNumber} onChange={e => setLandlordData({...landlordData, idNumber: e.target.value})} />
                                 </div>
                             </section>
                         </div>
@@ -200,7 +217,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                 <div className="section-title"><Landmark size={16}/> <h4>Ownership Records</h4></div>
                                 <div className="input-group">
                                     <label>Property Registration Number / Deed Ref</label>
-                                    <input type="text" placeholder="e.g. REG-99210-XB" value={landlordData.ownershipRef} onChange={e => setLandlordData({...landlordData, ownershipRef: e.target.value})} />
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="e.g. REG-99210-XB" value={landlordData.ownershipRef} onChange={e => setLandlordData({...landlordData, ownershipRef: e.target.value})} />
                                 </div>
                                 <div className="ownership-notice">
                                     <ShieldCheck size={20} />
@@ -274,7 +291,12 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {step === 5 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Finalize & Sign</h3>
-                            {!savedSignature ? (
+                            {isReadOnly ? (
+                                <div className="ownership-notice">
+                                    <ShieldCheck size={20} />
+                                    <p>This contract is not in pending landlord status and is view-only.</p>
+                                </div>
+                            ) : !savedSignature ? (
                                 <div className="signature-trigger" onClick={() => setIsSignModalOpen(true)}>
                                     <Pencil size={24} />
                                     <p>Draw or upload Landlord signature</p>
@@ -287,8 +309,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                 </div>
                             )}
                             <div className="confirmation-check">
-                                <input type="checkbox" id="landlord-final" checked={landlordData.confirmed} onChange={(e) => setLandlordData({...landlordData, confirmed: e.target.checked})} />
-                                <label htmlFor="landlord-final">I certify that I am the legal owner of this property and agree to these terms.</label>
+                                <input className={isReadOnly ? 'readonly-checkbox' : ''} disabled={isReadOnly} type="checkbox" id="landlord-final" checked={landlordData.confirmed} onChange={(e) => setLandlordData({...landlordData, confirmed: e.target.checked})} />
+                                <label className={isReadOnly ? 'readonly-label' : ''} htmlFor="landlord-final">I certify that I am the legal owner of this property and agree to these terms.</label>
                             </div>
                         </div>
                     )}
@@ -298,15 +320,20 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {step > 1 && <button className="btn-nav-secondary" onClick={handleBack}><ChevronLeft size={18} /> Back</button>}
                     <button 
                         className="btn-nav-primary"
-                        disabled={(step === 2 && !landlordData.idNumber) || (step === 3 && !landlordData.ownershipRef) || (step === 5 && (!savedSignature || !landlordData.confirmed))}
-                        onClick={step === 5 ? handleSign : handleNext}
+                        disabled={
+                            (!isReadOnly && ((step === 2 && !landlordData.idNumber) || (step === 3 && !landlordData.ownershipRef) || (step === 5 && (!savedSignature || !landlordData.confirmed)))) ||
+                            submitting
+                        }
+                        onClick={step === 5 ? (isReadOnly ? onClose : handleSign) : handleNext}
                     >
-                        {submitting ? 'Saving...' : step === 5 ? 'Sign Agreement' : 'Continue'} <ChevronRight size={18} />
+                        {submitting ? 'Saving...' : step === 5 ? (isReadOnly ? 'Close' : 'Sign Agreement') : 'Continue'} <ChevronRight size={18} />
                     </button>
                 </footer>
             </div>
 
-            <SignatureModal isOpen={isSignModalOpen} onClose={() => setIsSignModalOpen(false)} onSave={(sig) => {setSavedSignature(sig); setIsSignModalOpen(false);}} />
+            {!isReadOnly && (
+                <SignatureModal isOpen={isSignModalOpen} onClose={() => setIsSignModalOpen(false)} onSave={(sig) => {setSavedSignature(sig); setIsSignModalOpen(false);}} />
+            )}
         </div>
     );
 };

@@ -138,7 +138,7 @@ const LandlordContract: React.FC = () => {
                                             <span className="value">${contract.amount}</span>
                                         </div>
                                         <button className="btn-view-contract" onClick={() => setSelectedContract(contract)}>
-                                            Manage <ChevronRight size={16}/>
+                                            {contract.status === 'PENDING_LANDLORD' ? 'Manage' : 'View'} <ChevronRight size={16}/>
                                         </button>
                                     </div>
                                 </div>
@@ -169,6 +169,7 @@ const LandlordContract: React.FC = () => {
             {selectedContract && selectedContract.status !== 'ACTIVE' && (
                 <ContractDetailView 
                     contract={selectedContract} 
+                    isReadOnly={selectedContract.status !== 'PENDING_LANDLORD'}
                     onUpdated={fetchContracts}
                     onClose={() => setSelectedContract(null)} 
                 />
