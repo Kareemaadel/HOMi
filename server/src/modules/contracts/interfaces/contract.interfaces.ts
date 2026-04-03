@@ -1,4 +1,5 @@
 import type {
+    ContractPaymentStatusType,
     ContractStatusType,
     PaymentScheduleType,
     RentDueDateType,
@@ -59,6 +60,17 @@ export interface TenantSignInput {
     agree_to_terms: boolean;
 }
 
+export interface VerifyPaymobPaymentInput {
+    transaction_id: number;
+}
+
+export interface PaymobCheckoutResponse {
+    checkoutUrl: string;
+    amountCents: number;
+    orderId: number;
+    currency: string;
+}
+
 // ─── Contract Response ────────────────────────────────────────────────────────
 
 export interface ContractResponse {
@@ -83,6 +95,10 @@ export interface ContractResponse {
     landlordSignedAt: Date | null;
     tenantSignedAt: Date | null;
     tenantAgreedTerms: boolean;
+    paymentStatus: ContractPaymentStatusType;
+    paymentVerifiedAt: Date | null;
+    paymobOrderId: number | null;
+    paymobTransactionId: number | null;
     createdAt: Date;
     updatedAt: Date;
     maintenanceResponsibilities?: MaintenanceResponsibilityResponse[];

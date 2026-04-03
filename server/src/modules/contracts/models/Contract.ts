@@ -15,6 +15,7 @@ import sequelize from '../../../config/database.js';
 export const ContractStatus = {
     PENDING_LANDLORD: 'PENDING_LANDLORD',
     PENDING_TENANT: 'PENDING_TENANT',
+    PENDING_PAYMENT: 'PENDING_PAYMENT',
     ACTIVE: 'ACTIVE',
     TERMINATED: 'TERMINATED',
     EXPIRED: 'EXPIRED',
@@ -29,6 +30,14 @@ export const PaymentSchedule = {
 } as const;
 
 export type PaymentScheduleType = (typeof PaymentSchedule)[keyof typeof PaymentSchedule];
+
+export const ContractPaymentStatus = {
+    PENDING: 'PENDING',
+    PAID: 'PAID',
+    FAILED: 'FAILED',
+} as const;
+
+export type ContractPaymentStatusType = (typeof ContractPaymentStatus)[keyof typeof ContractPaymentStatus];
 
 export const RentDueDate = {
     FIRST_OF_MONTH: '1ST_OF_MONTH',
@@ -96,6 +105,12 @@ export class Contract extends Model<
     declare tenant_signature_url: CreationOptional<string | null>;
     declare tenant_signed_at: CreationOptional<Date | null>;
     declare tenant_agreed_terms: CreationOptional<boolean>;
+
+    // Payment state
+    declare payment_status: CreationOptional<ContractPaymentStatusType>;
+    declare payment_verified_at: CreationOptional<Date | null>;
+    declare paymob_order_id: CreationOptional<number | null>;
+    declare paymob_transaction_id: CreationOptional<number | null>;
 
     // Timestamps
     declare created_at: CreationOptional<Date>;
@@ -241,6 +256,23 @@ Contract.init(
             allowNull: false,
             defaultValue: false,
         },
+        payment_status: {
+            type: DataTypes.ENUM(...Object.values(ContractPaymentStatus)),
+            allowNull: false,
+            defaultValue: ContractPaymentStatus.PENDING,
+        },
+        payment_verified_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        paymob_order_id: {
+            type: DataTypes.BIGINT,
+            allowNull: true,
+        },
+        paymob_transaction_id: {
+            type: DataTypes.BIGINT,
+            allowNull: true,
+        },
         created_at: {
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW,
@@ -264,6 +296,7 @@ Contract.init(
             { fields: ['landlord_id'] },
             { fields: ['tenant_id'] },
             { fields: ['status'] },
+            { fields: ['payment_status'] },
             {
                 unique: true,
                 fields: ['contract_id'],
