@@ -38,19 +38,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
         { icon: <FaUsers />, text: property.targetTenant || 'Any Tenant', active: true },
     ];
 
-    const maintenance = property.maintenance || {
-        structural: 'Landlord', appliances: 'Tenant', utilities: 'Tenant',
-        plumbing: 'Landlord', electrical: 'Landlord', hvac: 'Landlord',
-        pest: 'Tenant', exterior: 'Landlord', common: 'Landlord', security: 'Landlord'
-    };
-
-    const maintenanceDisplayNames: Record<string, string> = {
-        structural: 'Structural Repairs', appliances: 'Interior Appliances', 
-        utilities: 'Utility Bills', plumbing: 'Plumbing', 
-        electrical: 'Electrical', hvac: 'HVAC / Air', 
-        pest: 'Pest Control', exterior: 'Exterior Maintenance', 
-        common: 'Common Areas', security: 'Security Systems'
-    };
+    const maintenanceResponsibilities = property.maintenanceResponsibilities || [];
 
     const nextImg = () => setCurrentImgIdx((prev) => (prev + 1) % images.length);
     const prevImg = () => setCurrentImgIdx((prev) => (prev - 1 + images.length) % images.length);
@@ -186,14 +174,23 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                                     <FaWrench style={{ color: '#64748b'}} /> Maintenance Responsibilities
                                 </h3>
                                 <div className="responsibility-box scrollable">
-                                    {Object.entries(maintenance).map(([key, value]) => (
-                                        <div className="resp-row" key={key}>
-                                            <span>{maintenanceDisplayNames[key]}</span>
-                                            <span className={`owner-badge ${String(value).toLowerCase()}`}>
-                                                {String(value)}
+                                    {maintenanceResponsibilities.length > 0 ? (
+                                        maintenanceResponsibilities.map((item: any, index: number) => (
+                                            <div className="resp-row" key={`${item.area}-${index}`}>
+                                                <span>{item.area}</span>
+                                                <span className={`owner-badge ${(item.responsible_party || '').toLowerCase()}`}>
+                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="resp-row">
+                                            <span>No maintenance responsibilities configured for this property.</span>
+                                            <span className="owner-badge tenant">
+                                                N/A
                                             </span>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </section>
                         </div>
@@ -248,7 +245,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
 
                             <div className="owner-profile">
                                 <div className="avatar-wrapper">
-                                    <img src={property.ownerImage || 'https://i.pravatar.cc/150?u=owner-fallback'} alt={property.ownerName || 'Owner'} />
+                                    <img src={property.ownerImage} alt={property.ownerName || 'Owner'} />
                                     <span className="online-indicator"></span>
                                 </div>
                                 <div className="owner-details">
