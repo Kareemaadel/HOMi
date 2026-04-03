@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import { FaCheckCircle, FaBuilding, FaCalendarAlt, FaUserFriends, FaEnvelope } from 'react-icons/fa';
 import DetailedRequestModal from './DetailedRequestModal';
+import rentalRequestService from '../../../services/rental-request.service';
 import './RequestCard.css';
 
-const RequestCard = ({ data }: any) => {
+const RequestCard = ({ data, onStatusChange }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     // Destructured livingSituation instead of pets
     const { applicant, property, moveInDate, livingSituation, message } = data;
+
+    const handleDecline = async () => {
+        try {
+            await rentalRequestService.updateRequestStatus(String(data.id), 'DECLINED');
+            onStatusChange?.();
+        } catch (error) {
+            console.error('Failed to decline rental request', error);
+        }
+    };
 
     return (
         <>
@@ -58,7 +68,7 @@ const RequestCard = ({ data }: any) => {
                     </button>
                     <div className="rc-action-row">
                         <button className="rc-btn-secondary"><FaEnvelope /> Chat</button>
-                        <button className="rc-btn-decline">Decline</button>
+                        <button className="rc-btn-decline" onClick={handleDecline}>Decline</button>
                     </div>
                 </div>
             </article>
@@ -66,6 +76,8 @@ const RequestCard = ({ data }: any) => {
             {isModalOpen && (
                 <DetailedRequestModal 
                     data={data} 
+                    requestId={String(data.id)}
+                    onStatusChange={onStatusChange}
                     onClose={() => setIsModalOpen(false)} 
                 />
             )}

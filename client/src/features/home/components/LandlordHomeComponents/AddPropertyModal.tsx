@@ -38,6 +38,7 @@ const EGYPT_BOUNDS = L.latLngBounds(
 
 interface AddPropertyModalProps {
   onClose: () => void;
+  onPropertyAdded?: () => void;
 }
 
 const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
@@ -82,7 +83,7 @@ const MapEventsHandler = ({ setPosition, position, onLocationSelect }: any) => {
   return position === null ? null : <Marker position={[position.lat, position.lng]} />;
 };
 
-const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
+const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onPropertyAdded }) => {
   const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -578,7 +579,15 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose }) => {
               <div className="success-text-content">
                 <h2>Listing Live!</h2>
                 <p>Your property is now being shown to thousands of potential tenants.</p>
-                <button className="final-close-btn" onClick={onClose}>Done</button>
+                <button
+                  className="final-close-btn"
+                  onClick={() => {
+                    onPropertyAdded?.();
+                    onClose();
+                  }}
+                >
+                  Done
+                </button>
               </div>
           </div>
         )}

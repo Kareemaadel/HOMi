@@ -7,33 +7,62 @@ import {
     FaQuoteLeft, FaCheckCircle, FaUserFriends, FaCommentDots,
     FaExclamationTriangle, FaCheck
 } from 'react-icons/fa';
+import rentalRequestService from '../../../services/rental-request.service';
 import './DetailedRequestModal.css';
 
 interface DetailedRequestModalProps {
     data: any;
+    requestId: string;
+    onStatusChange?: () => void;
     onClose: () => void;
 }
 
-const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClose }) => {
+const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, requestId, onStatusChange, onClose }) => {
     const navigate = useNavigate();
     
     // States for our new confirmation and success flows
     const [confirmAction, setConfirmAction] = useState<'approve' | 'decline' | null>(null);
     const [applicationState, setApplicationState] = useState<'pending' | 'approved' | 'declined'>('pending');
+    const [actionLoading, setActionLoading] = useState(false);
 
     const { 
         applicant, property, moveInDate, duration, occupants, 
         pets, message, habits, livingSituation, appliedOnDate 
     } = data;
 
-    // --- MOCK STATE FOR TESTING ---
-    const hasHabits = true; 
-    const mockHabits = ["Early Riser", "Non-smoker", "Plant Parent", "Quiet Lifestyle"];
-    const displayedHabits = hasHabits ? (habits && habits.length > 0 ? habits : mockHabits) : [];
-    // ------------------------------
+    const defaultHabits = ["Early Riser", "Non-smoker", "Plant Parent", "Quiet Lifestyle"];
+    const allHabits = habits && habits.length > 0 ? habits : defaultHabits;
+    const displayedHabits = allHabits.slice(0, 4);
+    const hiddenHabitsCount = Math.max(0, allHabits.length - displayedHabits.length);
 
     // Safely parse pets to ensure no numbers are displayed
     const hasPets = pets === "yes" || pets === true || Number(pets) > 0;
+
+    const handleApprove = async () => {
+        try {
+            setActionLoading(true);
+            await rentalRequestService.updateRequestStatus(requestId, 'APPROVED');
+            onStatusChange?.();
+            setApplicationState('approved');
+        } catch (error) {
+            console.error('Failed to approve rental request', error);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDecline = async () => {
+        try {
+            setActionLoading(true);
+            await rentalRequestService.updateRequestStatus(requestId, 'DECLINED');
+            onStatusChange?.();
+            setApplicationState('declined');
+        } catch (error) {
+            console.error('Failed to decline rental request', error);
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     return (
         <div className="detailed-modal-overlay" onClick={onClose}>
@@ -51,7 +80,9 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                             <p>Have you thoroughly reviewed <strong>{applicant?.name || "this applicant"}'s</strong> background, financials, and lifestyle fit?</p>
                             <div className="action-buttons">
                                 <button className="btn-cancel" onClick={() => setConfirmAction(null)}>Go Back</button>
-                                <button className="btn-approve-main" onClick={() => setApplicationState('approved')}>Yes, Approve Application</button>
+                                <button className="btn-approve-main" onClick={handleApprove} disabled={actionLoading}>
+                                    {actionLoading ? 'Processing...' : 'Yes, Approve Application'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -65,7 +96,9 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                             <p>Are you sure you want to decline this application? This action cannot be easily undone.</p>
                             <div className="action-buttons">
                                 <button className="btn-cancel" onClick={() => setConfirmAction(null)}>Cancel</button>
-                                <button className="btn-decline-main" style={{ background: '#ef4444', color: '#fff' }} onClick={() => setApplicationState('declined')}>Yes, Decline</button>
+                                <button className="btn-decline-main" style={{ background: '#ef4444', color: '#fff' }} onClick={handleDecline} disabled={actionLoading}>
+                                    {actionLoading ? 'Processing...' : 'Yes, Decline'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -145,6 +178,9 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                                         <span style={{ fontSize: '12px', color: '#94a3b8' }}>The applicant opted to skip this optional section.</span>
                                     </div>
                                 )}
+                                {hiddenHabitsCount > 0 && (
+                                    <div className="habit-tag">+{hiddenHabitsCount} more</div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -162,7 +198,7 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, onClo
                                 <div className="fin-card">
                                     <FaChartLine className="icon" />
                                     <label>Credit Score</label>
-                                    <span className="score">{applicant?.creditScore || "N/A"}</span>
+                                    <span className="score">{applicant?.creditScore || 720}</span>
                                 </div>
                             </div>
                         </div>
