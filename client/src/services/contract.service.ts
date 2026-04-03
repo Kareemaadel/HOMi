@@ -43,6 +43,9 @@ export interface LandlordContract {
     moveInDate: string;
     leaseDurationMonths: number;
     landlordNationalId: string | null;
+    tenantNationalId?: string | null;
+    tenantEmergencyContactName?: string | null;
+    tenantEmergencyPhone?: string | null;
     propertyRegistrationNumber: string | null;
     landlordSignedAt: string | null;
     createdAt: string;
@@ -98,6 +101,15 @@ class ContractService {
         return response.data;
     }
 
+    async getTenantContracts(params?: {
+        status?: Exclude<LandlordContractStatus, 'PENDING_LANDLORD'>;
+        page?: number;
+        limit?: number;
+    }): Promise<ContractListResponse> {
+        const response = await apiClient.get<ContractListResponse>('/contracts/tenant', { params });
+        return response.data;
+    }
+
     async getContractById(id: string): Promise<{ success: boolean; data: LandlordContract }> {
         const response = await apiClient.get<{ success: boolean; data: LandlordContract }>(`/contracts/${id}`);
         return response.data;
@@ -148,6 +160,29 @@ class ContractService {
     }): Promise<{ success: boolean; data: LandlordContract }> {
         const response = await apiClient.put<{ success: boolean; data: LandlordContract }>(
             `/contracts/${id}/landlord/sign`,
+            payload
+        );
+        return response.data;
+    }
+
+    async updateTenantIdentity(id: string, payload: {
+        national_id: string;
+        emergency_contact_name: string;
+        emergency_phone: string;
+    }): Promise<{ success: boolean; data: LandlordContract }> {
+        const response = await apiClient.put<{ success: boolean; data: LandlordContract }>(
+            `/contracts/${id}/tenant/identity`,
+            payload
+        );
+        return response.data;
+    }
+
+    async signTenantContract(id: string, payload: {
+        signature_url: string;
+        agree_to_terms: boolean;
+    }): Promise<{ success: boolean; data: LandlordContract }> {
+        const response = await apiClient.put<{ success: boolean; data: LandlordContract }>(
+            `/contracts/${id}/tenant/sign`,
             payload
         );
         return response.data;

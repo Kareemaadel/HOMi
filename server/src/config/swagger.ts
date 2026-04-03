@@ -1167,6 +1167,10 @@ const options: Options = {
                         landlordSignedAt: { type: 'string', format: 'date-time', nullable: true },
                         tenantSignedAt: { type: 'string', format: 'date-time', nullable: true },
                         tenantAgreedTerms: { type: 'boolean' },
+                        landlordNationalId: { type: 'string', nullable: true },
+                        tenantNationalId: { type: 'string', nullable: true },
+                        tenantEmergencyContactName: { type: 'string', nullable: true },
+                        tenantEmergencyPhone: { type: 'string', nullable: true },
                         createdAt: { type: 'string', format: 'date-time' },
                         updatedAt: { type: 'string', format: 'date-time' },
                         maintenanceResponsibilities: {

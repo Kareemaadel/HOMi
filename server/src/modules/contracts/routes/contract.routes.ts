@@ -417,11 +417,17 @@ router.put(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [national_id]
+ *             required: [national_id, emergency_contact_name, emergency_phone]
  *             properties:
  *               national_id:
  *                 type: string
  *                 example: "29901011234567"
+ *               emergency_contact_name:
+ *                 type: string
+ *                 example: "Sarah Johnson"
+ *               emergency_phone:
+ *                 type: string
+ *                 example: "+20 100 123 4567"
  *     responses:
  *       200:
  *         description: Identity verification submitted
