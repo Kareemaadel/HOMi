@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import {
     Contract,
+    ContractPaymentStatus,
     ContractStatus,
     ContractMaintenanceResponsibility,
     User,
@@ -11,7 +12,8 @@ import {
     sequelize,
 } from '../models/index.js';
 import { encrypt } from '../../../shared/utils/encryption.util.js';
-import { PropertyImage } from '../../properties/models/PropertyImage.js';
+import { paymobService } from '../../../shared/services/paymob.service.js';
+import { env } from '../../../config/env.js';
 import type {
     ContractResponse,
     ContractListResponse,
@@ -23,6 +25,8 @@ import type {
     LandlordSignInput,
     TenantIdentityInput,
     TenantSignInput,
+    VerifyPaymobPaymentInput,
+    PaymobCheckoutResponse,
 } from '../interfaces/contract.interfaces.js';
 
 // ─── Duration map ─────────────────────────────────────────────────────────────
@@ -42,7 +46,7 @@ function generateContractId(): string {
 
 function generateLeaseId(): string {
     const num = Math.floor(1000 + Math.random() * 9000);
-    const letter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    const letter = String.fromCodePoint(65 + Math.floor(Math.random() * 26));
     return `L-${num}-${letter}`;
 }
 
@@ -115,7 +119,8 @@ class ContractService {
             status: ContractStatus.PENDING_LANDLORD,
             rent_amount: property.monthly_price,
             security_deposit: property.security_deposit,
-            service_fee: 10.00,
+            service_fee: 10,
+            payment_status: ContractPaymentStatus.PENDING,
             move_in_date: rentalRequest.move_in_date,
             lease_duration_months: durationMonths,
         });
@@ -187,6 +192,7 @@ class ContractService {
             status: {
                 [Op.in]: [
                     ContractStatus.PENDING_TENANT,
+                    ContractStatus.PENDING_PAYMENT,
                     ContractStatus.ACTIVE,
                     ContractStatus.TERMINATED,
                     ContractStatus.EXPIRED,
@@ -196,6 +202,7 @@ class ContractService {
         // If a specific status filter is provided and is valid for tenant view, use it
         if (status && [
             ContractStatus.PENDING_TENANT,
+            ContractStatus.PENDING_PAYMENT,
             ContractStatus.ACTIVE,
             ContractStatus.TERMINATED,
             ContractStatus.EXPIRED,
@@ -301,9 +308,11 @@ class ContractService {
         const property = contract.property as any;
         const specs = property?.specifications;
 
-        const roomsLabel = specs
-            ? `${specs.bedrooms} Bedroom${specs.bedrooms !== 1 ? 's' : ''}`
-            : 'N/A';
+        let roomsLabel = 'N/A';
+        if (specs) {
+            const bedroomSuffix = specs.bedrooms === 1 ? '' : 's';
+            roomsLabel = `${specs.bedrooms} Bedroom${bedroomSuffix}`;
+        }
 
         return {
             platformMetadata: {
@@ -481,7 +490,7 @@ class ContractService {
 
     /**
      * Tenant Step 4: Sign Contract
-     * Moves status from PENDING_TENANT to ACTIVE
+     * Moves status from PENDING_TENANT to PENDING_PAYMENT
      */
     async signContractTenant(
         contractId: string,
@@ -502,6 +511,92 @@ class ContractService {
             tenant_signature_url: input.signature_url,
             tenant_signed_at: new Date(),
             tenant_agreed_terms: true,
+            status: ContractStatus.PENDING_PAYMENT,
+        });
+
+        return this.formatContractResponse(contract);
+    }
+
+    /**
+     * Tenant payment step: create Paymob checkout URL
+     */
+    async initiatePaymobPayment(contractId: string, tenantId: string): Promise<PaymobCheckoutResponse> {
+        const contract = await this.findAndValidateTenantPaymentContract(contractId, tenantId);
+
+        if (contract.payment_status === ContractPaymentStatus.PAID) {
+            throw new ContractError('This contract payment is already verified', 400, 'PAYMENT_ALREADY_VERIFIED');
+        }
+
+        const amountCents = this.calculateContractTotalAmountCents(contract);
+        const tenantUser = await User.findByPk(tenantId, {
+            include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'phone_number'] }],
+            attributes: ['id', 'email'],
+        });
+
+        if (!tenantUser) {
+            throw new ContractError('Tenant user not found', 404, 'USER_NOT_FOUND');
+        }
+
+        const profile = (tenantUser as any).profile;
+        const callbackUrl = `${env.CLIENT_URL.replace(/\/$/, '')}/payment/verify?contractId=${contract.id}`;
+        const checkout = await paymobService.createCheckoutSession({
+            amountCents,
+            merchantOrderId: `${contract.contract_id}-${Date.now()}`,
+            billingData: {
+                email: tenantUser.email,
+                first_name: profile?.first_name || 'Tenant',
+                last_name: profile?.last_name || 'User',
+                phone_number: profile?.phone_number || '+201000000000',
+            },
+            callbackUrl,
+        });
+
+        await contract.update({
+            paymob_order_id: checkout.orderId,
+            payment_status: ContractPaymentStatus.PENDING,
+        });
+
+        return {
+            checkoutUrl: checkout.iframeUrl,
+            amountCents: checkout.amountCents,
+            orderId: checkout.orderId,
+            currency: 'EGP',
+        };
+    }
+
+    /**
+     * Tenant payment step: verify Paymob transaction and activate contract
+     */
+    async verifyPaymobPayment(
+        contractId: string,
+        tenantId: string,
+        input: VerifyPaymobPaymentInput
+    ): Promise<ContractResponse> {
+        const contract = await this.findAndValidateTenantPaymentContract(contractId, tenantId);
+
+        const verification = await paymobService.verifyTransaction(input.transaction_id);
+        const expectedAmountCents = this.calculateContractTotalAmountCents(contract);
+
+        const isOrderMatched = !!contract.paymob_order_id && verification.orderId === contract.paymob_order_id;
+        const isAmountMatched = verification.amountCents === expectedAmountCents;
+        const isSuccess = verification.success && !verification.pending && !verification.isVoided && !verification.isRefunded;
+
+        if (!isSuccess || !isOrderMatched || !isAmountMatched) {
+            await contract.update({
+                payment_status: ContractPaymentStatus.FAILED,
+            });
+
+            throw new ContractError(
+                'Payment verification failed. Please retry payment from the checkout page.',
+                400,
+                'PAYMENT_VERIFICATION_FAILED'
+            );
+        }
+
+        await contract.update({
+            payment_status: ContractPaymentStatus.PAID,
+            payment_verified_at: new Date(),
+            paymob_transaction_id: verification.transactionId,
             status: ContractStatus.ACTIVE,
         });
 
@@ -572,6 +667,47 @@ class ContractService {
         }
 
         return contract;
+    }
+
+    /**
+     * Find and validate a contract for tenant payment operations
+     */
+    private async findAndValidateTenantPaymentContract(
+        contractId: string,
+        tenantId: string
+    ): Promise<Contract> {
+        const contract = await Contract.findByPk(contractId);
+
+        if (!contract) {
+            throw new ContractError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
+        }
+
+        if (contract.tenant_id !== tenantId) {
+            throw new ContractError(
+                'You do not have permission to make payment for this contract',
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        if (contract.status !== ContractStatus.PENDING_PAYMENT && contract.status !== ContractStatus.ACTIVE) {
+            throw new ContractError(
+                'This contract is not currently in payment stage',
+                400,
+                'CONTRACT_NOT_PENDING_PAYMENT'
+            );
+        }
+
+        return contract;
+    }
+
+    private calculateContractTotalAmountCents(contract: Contract): number {
+        const rent = Number(contract.rent_amount ?? 0);
+        const deposit = Number(contract.security_deposit ?? 0);
+        const fee = Number(contract.service_fee ?? 0);
+        const total = rent + deposit + fee;
+
+        return Math.round(total * 100);
     }
 
     /**
@@ -685,6 +821,10 @@ class ContractService {
             landlordSignedAt: contract.landlord_signed_at ?? null,
             tenantSignedAt: contract.tenant_signed_at ?? null,
             tenantAgreedTerms: contract.tenant_agreed_terms,
+            paymentStatus: contract.payment_status,
+            paymentVerifiedAt: contract.payment_verified_at ?? null,
+            paymobOrderId: contract.paymob_order_id ?? null,
+            paymobTransactionId: contract.paymob_transaction_id ?? null,
             createdAt: contract.created_at,
             updatedAt: contract.updated_at,
         };
