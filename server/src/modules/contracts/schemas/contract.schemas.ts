@@ -83,6 +83,16 @@ export const TenantSignSchema = z.object({
 });
 
 /**
+ * Verify Paymob Payment
+ */
+export const VerifyPaymobPaymentSchema = z.object({
+    transaction_id: z
+        .number({ error: 'Transaction ID is required' })
+        .int('Transaction ID must be an integer')
+        .positive('Transaction ID must be positive'),
+});
+
+/**
  * Contract List Query Parameters
  */
 export const ContractQuerySchema = z.object({
@@ -90,6 +100,7 @@ export const ContractQuerySchema = z.object({
         .enum([
             ContractStatus.PENDING_LANDLORD,
             ContractStatus.PENDING_TENANT,
+            ContractStatus.PENDING_PAYMENT,
             ContractStatus.ACTIVE,
             ContractStatus.TERMINATED,
             ContractStatus.EXPIRED,
@@ -116,6 +127,7 @@ export type LandlordPropertyConfirmationInput = z.infer<typeof LandlordPropertyC
 export type LandlordSignInput = z.infer<typeof LandlordSignSchema>;
 export type TenantIdentityInput = z.infer<typeof TenantIdentitySchema>;
 export type TenantSignInput = z.infer<typeof TenantSignSchema>;
+export type VerifyPaymobPaymentInput = z.infer<typeof VerifyPaymobPaymentSchema>;
 export type ContractQueryInput = z.infer<typeof ContractQuerySchema>;
 
 export default {
@@ -125,5 +137,6 @@ export default {
     LandlordSignSchema,
     TenantIdentitySchema,
     TenantSignSchema,
+    VerifyPaymobPaymentSchema,
     ContractQuerySchema,
 };

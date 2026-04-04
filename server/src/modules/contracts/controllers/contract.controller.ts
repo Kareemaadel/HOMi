@@ -7,6 +7,7 @@ import type {
     LandlordSignInput,
     TenantIdentityInput,
     TenantSignInput,
+    VerifyPaymobPaymentInput,
 } from '../interfaces/contract.interfaces.js';
 
 /**
@@ -201,6 +202,44 @@ class ContractController {
             res.status(200).json({
                 success: true,
                 message: 'Contract signed by tenant successfully. Contract is now active!',
+                data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/contracts/:id/payments/paymob/initiate
+     */
+    async initiatePaymobPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const checkout = await contractService.initiatePaymobPayment(id as string, tenantId);
+
+            res.status(200).json({
+                success: true,
+                data: checkout,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/contracts/:id/payments/paymob/verify
+     */
+    async verifyPaymobPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const input: VerifyPaymobPaymentInput = req.body;
+            const contract = await contractService.verifyPaymobPayment(id as string, tenantId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Payment verified successfully. Contract is now active.',
                 data: contract,
             });
         } catch (error) {

@@ -15,6 +15,7 @@ import Settings from "./features/Settings/pages/Settings";
 import Messages from "./features/Messages/pages/Messages";
 import Balance from "./features/Balance/pages/Balance";
 import PrePayment from "./features/PrePayment/pages/PrePayment";
+import PaymobVerify from "./features/PrePayment/pages/PaymobVerify";
 import SavedProperties from "./features/SavedProperties/pages/SavedProperties";
 import AboutUs from "./features/AboutUs/pages/AboutUs";
 import GetHelp from "./features/GetHelp/pages/GetHelp";
@@ -47,6 +48,7 @@ function App() {
         <Route path="/browse-properties" element={<BrowseProperties />} /> {/* guests can browse; Apply Now button guards itself */}
         <Route path="/active-rental" element={<AuthGuard allowedRoles={['TENANT']}><ActiveRental /></AuthGuard>} />
         <Route path="/prepayment-page" element={<AuthGuard allowedRoles={['TENANT']}><PrePayment /></AuthGuard>} />
+        <Route path="/payment/verify" element={<AuthGuard allowedRoles={['TENANT']}><PaymobVerify /></AuthGuard>} />
         <Route path="/saved-properties" element={<AuthGuard allowedRoles={['TENANT']}><SavedProperties /></AuthGuard>} />
         <Route path="/actives"       element={<AuthGuard allowedRoles={['TENANT']}><MyActives /></AuthGuard>} />
         <Route path="/tenant-payment" element={<AuthGuard allowedRoles={['TENANT']}><TenantPayment /></AuthGuard>} />

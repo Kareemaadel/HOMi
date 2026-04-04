@@ -33,6 +33,33 @@
     flex: 1;
 }
 
+.prepayment-inline-state,
+.prepayment-inline-error,
+.prepayment-route-note {
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+}
+
+.prepayment-inline-state {
+    background: #eff6ff;
+    color: #1e3a8a;
+    border: 1px solid #bfdbfe;
+}
+
+.prepayment-inline-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.prepayment-route-note {
+    background: #f8fafc;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+}
+
 .prepayment-header-section {
     margin-bottom: 40px;
 }
@@ -91,6 +118,13 @@
 .proceed-btn:hover {
     transform: translateY(-5px) scale(1.02);
     box-shadow: 0 25px 50px rgba(37, 99, 235, 0.6);
+}
+
+.proceed-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
 }
 
 /* client\src\features\PrePayment\pages\PrePayment.css */
@@ -202,4 +236,18 @@
     0% { transform: scale(0.95); opacity: 0.7; }
     70% { transform: scale(1.1); opacity: 1; }
     100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.prepayment-nav-actions {
+    margin-top: 16px;
+}
+
+.prepayment-back-btn {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 10px 14px;
+    cursor: pointer;
 }

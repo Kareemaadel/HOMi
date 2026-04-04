@@ -7,9 +7,11 @@ import { PropertySpecifications } from '../../properties/models/PropertySpecific
 import {
     Contract,
     ContractStatus,
+    ContractPaymentStatus,
     PaymentSchedule,
     RentDueDate,
     type ContractStatusType,
+    type ContractPaymentStatusType,
     type PaymentScheduleType,
     type RentDueDateType,
 } from './Contract.js';
@@ -75,6 +77,7 @@ export {
     sequelize,
     Contract,
     ContractStatus,
+    ContractPaymentStatus,
     PaymentSchedule,
     RentDueDate,
     ContractMaintenanceResponsibility,
@@ -89,6 +92,7 @@ export {
 
 export type {
     ContractStatusType,
+    ContractPaymentStatusType,
     PaymentScheduleType,
     RentDueDateType,
     MaintenanceAreaType,
