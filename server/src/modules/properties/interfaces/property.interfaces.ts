@@ -33,6 +33,11 @@ export interface PropertySpecificationsInput {
     area_sqft: number;
 }
 
+export interface PropertyMaintenanceResponsibilityInput {
+    area: string;
+    responsible_party: 'LANDLORD' | 'TENANT';
+}
+
 /**
  * Property Specifications Response DTO
  */
@@ -88,6 +93,7 @@ export interface CreatePropertyRequest {
     images: PropertyImageInput[];
     amenity_names?: string[];
     house_rule_names?: string[];
+    maintenance_responsibilities?: PropertyMaintenanceResponsibilityInput[];
     specifications: PropertySpecificationsInput;
     detailed_location: PropertyDetailedLocationInput;
 }
@@ -110,6 +116,7 @@ export interface UpdatePropertyRequest {
     images?: PropertyImageInput[];
     amenity_names?: string[];
     house_rule_names?: string[];
+    maintenance_responsibilities?: PropertyMaintenanceResponsibilityInput[];
     specifications?: Partial<PropertySpecificationsInput>;
     detailed_location?: Partial<PropertyDetailedLocationInput>;
 }
@@ -173,6 +180,7 @@ export interface PropertyResponse {
     images: PropertyImageResponse[];
     amenities: AmenityResponse[];
     houseRules: HouseRuleResponse[];
+    maintenanceResponsibilities: PropertyMaintenanceResponsibilityInput[];
     specifications: PropertySpecificationsResponse | null;
     detailedLocation: PropertyDetailedLocationResponse | null;
     landlord: PropertyLandlordResponse | null;

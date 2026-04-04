@@ -12,7 +12,7 @@ const MyActives: React.FC = () => {
     const navigate = useNavigate();
     
     // DEV TOGGLE: Change to true or false to test both views.
-    const [hasData, setHasData] = useState(false);
+    const [hasData] = useState(false);
 
     // Mocking a list of properties
     const mockRentals = [

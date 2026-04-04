@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { ContractStatus, RentDueDate } from '../models/Contract.js';
-import { MaintenanceArea, ResponsibleParty } from '../models/ContractMaintenanceResponsibility.js';
 
 /**
  * Landlord Step 1: Lease Terms & Financials
@@ -30,20 +29,6 @@ export const LandlordIdentitySchema = z.object({
 });
 
 /**
- * Maintenance Responsibility Item
- */
-const MaintenanceResponsibilityItemSchema = z.object({
-    area: z.enum(
-        Object.values(MaintenanceArea) as [string, ...string[]],
-        { message: `Area must be one of: ${Object.values(MaintenanceArea).join(', ')}` }
-    ),
-    responsible_party: z.enum(
-        [ResponsibleParty.LANDLORD, ResponsibleParty.TENANT],
-        { message: 'Responsible party must be LANDLORD or TENANT' }
-    ),
-});
-
-/**
  * Landlord Step 3: Property Ownership Confirmation & Maintenance
  */
 export const LandlordPropertyConfirmationSchema = z.object({
@@ -51,9 +36,6 @@ export const LandlordPropertyConfirmationSchema = z.object({
         .string({ error: 'Property registration number is required' })
         .min(1, 'Property registration number cannot be empty')
         .max(100, 'Property registration number must be at most 100 characters'),
-    maintenance_responsibilities: z
-        .array(MaintenanceResponsibilityItemSchema)
-        .min(1, 'At least one maintenance responsibility is required'),
 });
 
 /**
@@ -77,6 +59,14 @@ export const TenantIdentitySchema = z.object({
         .string({ error: 'National ID is required' })
         .min(1, 'National ID cannot be empty')
         .max(50, 'National ID must be at most 50 characters'),
+    emergency_contact_name: z
+        .string({ error: 'Emergency contact name is required' })
+        .min(1, 'Emergency contact name cannot be empty')
+        .max(200, 'Emergency contact name must be at most 200 characters'),
+    emergency_phone: z
+        .string({ error: 'Emergency phone is required' })
+        .min(1, 'Emergency phone cannot be empty')
+        .max(50, 'Emergency phone must be at most 50 characters'),
 });
 
 /**

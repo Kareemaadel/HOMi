@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Building, Phone, Mail, MapPin } from 'lucide-react';
 
 export default function LandlordCredentials({ onNext }: { onNext:()=>void }) {
   const [formData, setFormData] = useState({

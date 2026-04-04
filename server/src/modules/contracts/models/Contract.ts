@@ -100,6 +100,8 @@ export class Contract extends Model<
 
     // Tenant identity (step 2)
     declare tenant_national_id: CreationOptional<string | null>;
+    declare tenant_emergency_contact_name: CreationOptional<string | null>;
+    declare tenant_emergency_phone: CreationOptional<string | null>;
 
     // Tenant signature (step 4)
     declare tenant_signature_url: CreationOptional<string | null>;
@@ -241,6 +243,14 @@ Contract.init(
         },
         tenant_national_id: {
             type: DataTypes.STRING(500),
+            allowNull: true,
+        },
+        tenant_emergency_contact_name: {
+            type: DataTypes.STRING(200),
+            allowNull: true,
+        },
+        tenant_emergency_phone: {
+            type: DataTypes.STRING(50),
             allowNull: true,
         },
         tenant_signature_url: {

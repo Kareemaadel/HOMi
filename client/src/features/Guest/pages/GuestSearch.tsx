@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, SlidersHorizontal, Search, ArrowRight } from 'lucide-react';
+import { Menu, X, SlidersHorizontal, Search, ArrowRight } from 'lucide-react';
 import PropCard, { type Property } from '../components/PropCard';
 import PropertyDetailedModal from '../../BrowseProperties/components/PropertyDetailedModal';
 import './GuestSearch.css';

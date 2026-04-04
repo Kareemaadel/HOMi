@@ -81,7 +81,7 @@ const ActiveLeaseContract: React.FC<Props> = ({ contract, onClose }) => {
                                 </div>
                                 <div className="data-row">
                                     <span className="label">Next Payment</span>
-                                    <span className="value">1st of Month</span>
+                                    <span className="value">{contract.rentDueDate.replaceAll('_', ' ')}</span>
                                 </div>
                             </div>
                         </section>
@@ -115,11 +115,11 @@ const ActiveLeaseContract: React.FC<Props> = ({ contract, onClose }) => {
                             <div className="card-content">
                                 <div className="data-row">
                                     <span className="label">Address</span>
-                                    <span className="value flex-value"><MapPin size={14}/> {contract.property}, Unit 12</span>
+                                    <span className="value flex-value"><MapPin size={14}/> {contract.propertyAddress}</span>
                                 </div>
                                 <div className="data-row">
                                     <span className="label">Usage</span>
-                                    <span className="value">Residential</span>
+                                    <span className="value">{contract.propertyType}</span>
                                 </div>
                             </div>
                         </section>

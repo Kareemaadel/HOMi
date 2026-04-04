@@ -1,5 +1,6 @@
 import { User, Building } from "lucide-react";
-import type { UserType } from "../../../features/auth/pages/CompleteProfile";
+
+type UserType = 'tenant' | 'landlord';
 
 export default function StepUserType({ setUserType, onNext }:{
   setUserType:(t:UserType)=>void; onNext:()=>void;

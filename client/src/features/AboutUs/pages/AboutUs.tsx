@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
-import { Users, Target, Shield, Rocket, Github, Linkedin, Mail, Quote, Calendar } from 'lucide-react';
+import { Shield, Rocket, Github, Linkedin, Quote, Calendar } from 'lucide-react';
 import './AboutUs.css';
 
 interface TeamMember {
@@ -15,8 +15,6 @@ interface TeamMember {
 }
 
 const AboutUs: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
 const devTeam: TeamMember[] = [
     {
       id: 1,

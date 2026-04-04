@@ -488,6 +488,22 @@ const options: Options = {
                         areaSqft: { type: 'number', format: 'double', example: 1200 },
                     },
                 },
+                PropertyMaintenanceResponsibility: {
+                    type: 'object',
+                    required: ['area', 'responsible_party'],
+                    description: 'Maintenance area ownership defined on the property',
+                    properties: {
+                        area: {
+                            type: 'string',
+                            example: 'Structural Repairs',
+                        },
+                        responsible_party: {
+                            type: 'string',
+                            enum: ['LANDLORD', 'TENANT'],
+                            example: 'LANDLORD',
+                        },
+                    },
+                },
                 PropertyDetailedLocationInput: {
                     type: 'object',
                     required: ['floor', 'city', 'area', 'street_name', 'building_number', 'unit_apt', 'location_lat', 'location_long'],
@@ -646,6 +662,11 @@ const options: Options = {
                             description: 'List of house rules that apply to this property',
                             items: { $ref: '#/components/schemas/HouseRuleResponse' },
                         },
+                        maintenanceResponsibilities: {
+                            type: 'array',
+                            description: 'Maintenance responsibilities configured on this property',
+                            items: { $ref: '#/components/schemas/PropertyMaintenanceResponsibility' },
+                        },
                         specifications: {
                             allOf: [{ $ref: '#/components/schemas/PropertySpecificationsResponse' }],
                             nullable: true,
@@ -749,6 +770,16 @@ const options: Options = {
                             example: ['No Smoking', 'Pets Allowed'],
                             default: [],
                         },
+                        maintenance_responsibilities: {
+                            type: 'array',
+                            description: 'Maintenance responsibilities for the property (used later in contract Step 3 display).',
+                            items: { $ref: '#/components/schemas/PropertyMaintenanceResponsibility' },
+                            example: [
+                                { area: 'Structural Repairs', responsible_party: 'LANDLORD' },
+                                { area: 'Interior Appliances', responsible_party: 'TENANT' },
+                            ],
+                            default: [],
+                        },
                         specifications: {
                             $ref: '#/components/schemas/PropertySpecificationsInput',
                         },
@@ -838,6 +869,15 @@ const options: Options = {
                             description: '**Replace all** house rules with this new list. Pass `[]` to remove all house rules. Omit to leave house rules unchanged.',
                             items: { $ref: '#/components/schemas/HouseRuleName' },
                             example: ['No Smoking', 'No Parties or Events'],
+                        },
+                        maintenance_responsibilities: {
+                            type: 'array',
+                            description: 'Replace all property maintenance responsibilities with this list. Omit to keep unchanged.',
+                            items: { $ref: '#/components/schemas/PropertyMaintenanceResponsibility' },
+                            example: [
+                                { area: 'Structural Repairs', responsible_party: 'LANDLORD' },
+                                { area: 'Utility Bills', responsible_party: 'TENANT' },
+                            ],
                         },
                         specifications: {
                             allOf: [
@@ -1127,6 +1167,10 @@ const options: Options = {
                         landlordSignedAt: { type: 'string', format: 'date-time', nullable: true },
                         tenantSignedAt: { type: 'string', format: 'date-time', nullable: true },
                         tenantAgreedTerms: { type: 'boolean' },
+                        landlordNationalId: { type: 'string', nullable: true },
+                        tenantNationalId: { type: 'string', nullable: true },
+                        tenantEmergencyContactName: { type: 'string', nullable: true },
+                        tenantEmergencyPhone: { type: 'string', nullable: true },
                         createdAt: { type: 'string', format: 'date-time' },
                         updatedAt: { type: 'string', format: 'date-time' },
                         maintenanceResponsibilities: {

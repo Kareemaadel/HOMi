@@ -1,34 +1,57 @@
 import React, { useState } from 'react';
 import { 
-    X, ChevronRight, ChevronLeft, ShieldCheck, Pencil, 
-    Landmark, Zap, Ban, User, DollarSign, Cpu, Clock, Globe, 
-    Fingerprint, CheckCircle2, CreditCard, MoreVertical,
-    Download, HelpCircle, FileText
+    X, ChevronRight, ChevronLeft, Pencil,
+    Landmark, Zap, Ban, User, DollarSign, Cpu, Clock, Globe,
+    Fingerprint, CheckCircle2, CreditCard
 } from 'lucide-react';
 import { type LeaseContract } from '../pages/Contract';
 import SignatureModal from './SignatureModal';
+import contractService, { type VerificationSummary } from '../../../services/contract.service';
 import './ContractDetailView.css';
 
 interface Props {
     contract: LeaseContract;
+    onUpdated?: () => void;
     onClose: () => void;
 }
 
-const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
+const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) => {
     const [step, setStep] = useState(1);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(null);
     const [isFinalized, setIsFinalized] = useState(false);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    
+    const [summary, setSummary] = useState<VerificationSummary | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const maintenanceResponsibilities = contract.maintenanceResponsibilities ?? [];
+
     const [tenantData, setTenantData] = useState({
-        idNumber: '',
-        emergencyName: '',
-        emergencyPhone: '',
+        idNumber: contract.tenantNationalId || '',
+        emergencyName: contract.tenantEmergencyContactName || '',
+        emergencyPhone: contract.tenantEmergencyPhone || '',
         confirmed: false
     });
 
-    const handleNext = () => setStep(s => s + 1);
+    const handleNext = async () => {
+        try {
+            setSubmitting(true);
+            if (step === 2) {
+                await contractService.updateTenantIdentity(contract.internalId, {
+                    national_id: tenantData.idNumber,
+                    emergency_contact_name: tenantData.emergencyName,
+                    emergency_phone: tenantData.emergencyPhone,
+                });
+                const summaryResponse = await contractService.getVerificationSummary(contract.internalId);
+                setSummary(summaryResponse.data);
+                onUpdated?.();
+            }
+            setStep((s) => Math.min(s + 1, 4));
+        } catch (error) {
+            console.error('Failed to process tenant step', error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const handleBack = () => setStep(s => s - 1);
 
     const handleSignatureSave = (signatureData: string) => {
@@ -36,8 +59,25 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
         setIsSignModalOpen(false);
     };
 
-    const handleFinalExecute = () => {
-        setIsFinalized(true);
+    const handleFinalExecute = async () => {
+        if (!savedSignature || !tenantData.confirmed) return;
+        setSubmitting(true);
+        try {
+            const signatureUrl =
+                savedSignature.length <= 500
+                    ? savedSignature
+                    : `https://storage.homi.com/signatures/${contract.internalId}-tenant.png`;
+            await contractService.signTenantContract(contract.internalId, {
+                signature_url: signatureUrl,
+                agree_to_terms: true,
+            });
+            setIsFinalized(true);
+            onUpdated?.();
+        } catch (error) {
+            console.error('Failed to sign tenant contract', error);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (isFinalized) {
@@ -49,7 +89,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                             <CheckCircle2 size={60} />
                         </div>
                         <h2>Agreement Executed</h2>
-                        <p>The contract for <strong>{contract.property}</strong> has been legally signed and timestamped.</p>
+                        <p>The contract for <strong>{contract.property}</strong> has been legally signed and activated.</p>
                         
                         <div className="success-actions">
                             <button className="btn-pay-action" onClick={() => window.location.href = `/prepayment-page?contractId=${contract.id}`}>
@@ -74,21 +114,6 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                         <span>{contract.id} • {contract.property}</span>
                     </div>
                     <div className="header-actions">
-                        <div className="action-menu-container">
-                            <button 
-                                className={`icon-btn-menu ${isMenuOpen ? 'active' : ''}`} 
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            >
-                                <MoreVertical size={20}/>
-                            </button>
-                            {isMenuOpen && (
-                                <div className="action-dropdown-menu animate-fade-in">
-                                    <button onClick={() => setIsMenuOpen(false)}><Download size={16}/> Save PDF Copy</button>
-                                    <button onClick={() => setIsMenuOpen(false)}><FileText size={16}/> Review Local Laws</button>
-                                    <button onClick={() => setIsMenuOpen(false)}><HelpCircle size={16}/> Contract Help</button>
-                                </div>
-                            )}
-                        </div>
                         <button className="close-btn" onClick={onClose}><X size={20}/></button>
                     </div>
                 </header>
@@ -111,32 +136,34 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 <div className="section-title"><User size={16}/> <h4>Landlord Profile</h4></div>
                                 <div className="autofill-grid">
                                     <div className="field"><label>Full Name</label><span>{contract.landlord}</span></div>
-                                    <div className="field"><label>Contact</label><span>landlord@homi.com</span></div>
+                                    <div className="field"><label>Contact</label><span>{contract.landlordEmail || '—'}</span></div>
                                     <div className="field"><label>Verified</label><span className="verified-tag">✓ ID Verified</span></div>
                                 </div>
                             </section>
                             <section className="info-section">
                                 <div className="section-title"><Ban size={16}/> <h4>Lease Rules</h4></div>
                                 <div className="policy-grid">
-                                    <div className="policy-item"><label>Occupants</label><p>Max 2</p></div>
-                                    <div className="policy-item"><label>Pets</label><p>Allowed</p></div>
-                                    <div className="policy-item"><label>Smoking</label><p>No</p></div>
-                                    <div className="policy-item"><label>Subletting</label><p>Prohibited</p></div>
+                                    <div className="policy-item"><label>Occupants</label><p>Max {contract.maxOccupants}</p></div>
+                                    <div className="policy-item"><label>Rent Due Date</label><p>{contract.rentDueDate.replaceAll('_', ' ')}</p></div>
+                                    <div className="policy-item"><label>Late Fee</label><p>${contract.lateFeeAmount}</p></div>
+                                    <div className="policy-item"><label>Status</label><p>Pending Signature</p></div>
                                 </div>
                             </section>
                             <section className="info-section">
                                 <div className="section-title"><Zap size={16}/> <h4>Responsibilities</h4></div>
                                 <div className="responsibility-box scrollable">
-                                    <div className="resp-row"><span>Structural Repairs</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Interior Appliances</span><span className="owner-badge tenant">Tenant</span></div>
-                                    <div className="resp-row"><span>Utility Bills</span><span className="owner-badge tenant">Tenant</span></div>
-                                    <div className="resp-row"><span>Plumbing</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Electrical</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>HVAC / Air Conditioning</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Pest Control</span><span className="owner-badge tenant">Tenant</span></div>
-                                    <div className="resp-row"><span>Exterior Maintenance</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Common Areas</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Security Systems</span><span className="owner-badge landlord">Landlord</span></div>
+                                    {maintenanceResponsibilities.length > 0 ? (
+                                        maintenanceResponsibilities.map((item, idx) => (
+                                            <div key={`${item.area}-${idx}`} className="resp-row">
+                                                <span>{item.area}</span>
+                                                <span className={`owner-badge ${item.responsible_party === 'LANDLORD' ? 'landlord' : 'tenant'}`}>
+                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="resp-row"><span>No maintenance responsibilities found on this property.</span><span className="owner-badge tenant">N/A</span></div>
+                                    )}
                                 </div>
                             </section>
                         </div>
@@ -150,7 +177,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 <div className="section-title"><User size={16}/> <h4>Personal Information</h4></div>
                                 <div className="autofill-grid">
                                     <div className="field"><label>Full Name</label><span>{contract.tenant}</span></div>
-                                    <div className="field"><label>Email</label><span>{contract.tenant.toLowerCase().replace(' ', '.')}@homi.com</span></div>
+                                    <div className="field"><label>Email</label><span>{contract.tenantEmail || '—'}</span></div>
                                 </div>
                             </section>
                             <section className="info-section">
@@ -161,7 +188,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                         type="text" 
                                         value={tenantData.idNumber} 
                                         onChange={(e) => setTenantData({...tenantData, idNumber: e.target.value})}
-                                        placeholder="Enter document ID"
+                                        placeholder="Enter ID number"
                                     />
                                 </div>
                                 <div className="input-grid">
@@ -186,35 +213,35 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 <section className="auto-section">
                                     <div className="section-title"><Cpu size={16}/> <h4>Platform Metadata</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Contract ID</label><span>{contract.id}</span></div>
-                                        <div className="item"><label>Created</label><span>March 07, 2026</span></div>
-                                        <div className="item"><label>Lease ID</label><span>L-8829-Z</span></div>
+                                        <div className="item"><label>Contract ID</label><span>{summary?.platformMetadata.contractId || contract.id}</span></div>
+                                        <div className="item"><label>Created</label><span>{summary?.platformMetadata.created ? new Date(summary.platformMetadata.created).toLocaleDateString() : new Date(contract.createdAt).toLocaleDateString()}</span></div>
+                                        <div className="item"><label>Lease ID</label><span>{summary?.platformMetadata.leaseId || contract.leaseId}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
                                     <div className="section-title"><Landmark size={16}/> <h4>Verified Property Information</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Title</label><span>{contract.property}</span></div>
-                                        <div className="item"><label>Type</label><span>Residential</span></div>
-                                        <div className="item"><label>Rooms</label><span>2 Bedrooms</span></div>
-                                        <div className="item"><label>Furnishing</label><span>Fully Furnished</span></div>
-                                        <div className="item full"><label>Address</label><span>123 Global Ave, Penthouse District</span></div>
+                                        <div className="item"><label>Title</label><span>{summary?.verifiedPropertyInfo.title || contract.property}</span></div>
+                                        <div className="item"><label>Type</label><span>{summary?.verifiedPropertyInfo.type || contract.propertyType}</span></div>
+                                        <div className="item"><label>Rooms</label><span>{summary?.verifiedPropertyInfo.rooms || 'N/A'}</span></div>
+                                        <div className="item"><label>Furnishing</label><span>{summary?.verifiedPropertyInfo.furnishing || contract.propertyFurnishing}</span></div>
+                                        <div className="item full"><label>Address</label><span>{summary?.verifiedPropertyInfo.address || contract.propertyAddress}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
                                     <div className="section-title"><DollarSign size={16}/> <h4>Payment Terms</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Rent</label><span>${contract.amount}</span></div>
-                                        <div className="item"><label>Security Deposit</label><span>${contract.deposit}</span></div>
-                                        <div className="item"><label>Service Fee</label><span>$10.00</span></div>
-                                        <div className="item"><label>Schedule</label><span>Monthly</span></div>
+                                        <div className="item"><label>Rent</label><span>${summary?.paymentTerms.rent ?? contract.amount}</span></div>
+                                        <div className="item"><label>Security Deposit</label><span>${summary?.paymentTerms.securityDeposit ?? contract.deposit}</span></div>
+                                        <div className="item"><label>Service Fee</label><span>${summary?.paymentTerms.serviceFee ?? 10}</span></div>
+                                        <div className="item"><label>Schedule</label><span>{summary?.paymentTerms.schedule || 'MONTHLY'}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
                                     <div className="section-title"><Clock size={16}/> <h4>Lease Duration</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Move-In</label><span>{contract.startDate}</span></div>
-                                        <div className="item"><label>Duration</label><span>{contract.duration}</span></div>
+                                        <div className="item"><label>Move-In</label><span>{summary?.leaseDuration.moveIn ? new Date(summary.leaseDuration.moveIn).toLocaleDateString() : contract.startDate}</span></div>
+                                        <div className="item"><label>Duration</label><span>{summary?.leaseDuration.durationMonths ? `${summary.leaseDuration.durationMonths} Months` : contract.duration}</span></div>
                                     </div>
                                 </section>
                             </div>
@@ -265,10 +292,14 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                     )}
                     <button 
                         className="btn-nav-primary"
-                        disabled={(step === 2 && !tenantData.idNumber) || (step === 4 && (!savedSignature || !tenantData.confirmed))}
+                        disabled={
+                            submitting ||
+                            (step === 2 && (!tenantData.idNumber || !tenantData.emergencyName || !tenantData.emergencyPhone)) ||
+                            (step === 4 && (!savedSignature || !tenantData.confirmed))
+                        }
                         onClick={step === 4 ? handleFinalExecute : handleNext}
                     >
-                        {step === 4 ? 'Confirm & Execute Agreement' : 'Continue'} <ChevronRight size={18} />
+                        {submitting ? 'Saving...' : step === 4 ? 'Confirm & Execute Agreement' : 'Continue'} <ChevronRight size={18} />
                     </button>
                 </footer>
             </div>

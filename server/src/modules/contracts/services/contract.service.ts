@@ -14,6 +14,8 @@ import {
 import { encrypt } from '../../../shared/utils/encryption.util.js';
 import { paymobService } from '../../../shared/services/paymob.service.js';
 import { env } from '../../../config/env.js';
+import { decrypt, encrypt } from '../../../shared/utils/encryption.util.js';
+import { PropertyImage } from '../../properties/models/PropertyImage.js';
 import type {
     ContractResponse,
     ContractListResponse,
@@ -48,6 +50,16 @@ function generateLeaseId(): string {
     const num = Math.floor(1000 + Math.random() * 9000);
     const letter = String.fromCodePoint(65 + Math.floor(Math.random() * 26));
     return `L-${num}-${letter}`;
+}
+
+function safeDecrypt(value: string | null): string | null {
+    if (!value) return null;
+    try {
+        return decrypt(value);
+    } catch {
+        // Keep backward compatibility for rows that may contain plaintext.
+        return value;
+    }
 }
 
 /**
@@ -388,42 +400,15 @@ class ContractService {
     ): Promise<ContractResponse> {
         const contract = await this.findAndValidateLandlordContract(contractId, landlordId);
 
-        await sequelize.transaction(async (t) => {
-            // Update property registration number
-            await contract.update(
-                { property_registration_number: input.property_registration_number },
-                { transaction: t }
-            );
-
-            // Remove old maintenance responsibilities and create new ones
-            await ContractMaintenanceResponsibility.destroy({
-                where: { contract_id: contract.id },
-                transaction: t,
-            });
-
-            if (input.maintenance_responsibilities.length > 0) {
-                await ContractMaintenanceResponsibility.bulkCreate(
-                    input.maintenance_responsibilities.map((mr) => ({
-                        contract_id: contract.id,
-                        area: mr.area as import('../models/ContractMaintenanceResponsibility.js').MaintenanceAreaType,
-                        responsible_party: mr.responsible_party,
-                    })),
-                    { transaction: t }
-                );
-            }
+        await contract.update({
+            property_registration_number: input.property_registration_number,
         });
 
-        // Reload with maintenance responsibilities
         const updated = await Contract.findByPk(contract.id, {
-            include: [
-                {
-                    model: ContractMaintenanceResponsibility,
-                    as: 'maintenanceResponsibilities',
-                },
-            ],
+            include: this.getContractDetailIncludes(),
         });
 
-        return this.formatContractResponse(updated!, false, true);
+        return this.formatContractResponse(updated ?? contract, true, true);
     }
 
     /**
@@ -483,6 +468,8 @@ class ContractService {
 
         await contract.update({
             tenant_national_id: encrypt(input.national_id),
+            tenant_emergency_contact_name: input.emergency_contact_name,
+            tenant_emergency_phone: input.emergency_phone,
         });
 
         return this.formatContractResponse(contract);
@@ -718,7 +705,7 @@ class ContractService {
             {
                 model: Property,
                 as: 'property',
-                attributes: ['id', 'title', 'address'],
+                attributes: ['id', 'title', 'address', 'maintenance_responsibilities'],
             },
             {
                 model: User,
@@ -755,7 +742,7 @@ class ContractService {
             {
                 model: Property,
                 as: 'property',
-                attributes: ['id', 'title', 'address', 'type', 'furnishing', 'monthly_price', 'security_deposit'],
+                attributes: ['id', 'title', 'address', 'type', 'furnishing', 'monthly_price', 'security_deposit', 'maintenance_responsibilities'],
                 include: [
                     {
                         model: PropertySpecifications,
@@ -817,6 +804,7 @@ class ContractService {
             maxOccupants: contract.max_occupants ?? null,
             moveInDate: contract.move_in_date,
             leaseDurationMonths: contract.lease_duration_months,
+            landlordNationalId: safeDecrypt(contract.landlord_national_id),
             propertyRegistrationNumber: contract.property_registration_number ?? null,
             landlordSignedAt: contract.landlord_signed_at ?? null,
             tenantSignedAt: contract.tenant_signed_at ?? null,
@@ -825,6 +813,9 @@ class ContractService {
             paymentVerifiedAt: contract.payment_verified_at ?? null,
             paymobOrderId: contract.paymob_order_id ?? null,
             paymobTransactionId: contract.paymob_transaction_id ?? null,
+            tenantNationalId: safeDecrypt(contract.tenant_national_id),
+            tenantEmergencyContactName: contract.tenant_emergency_contact_name ?? null,
+            tenantEmergencyPhone: contract.tenant_emergency_phone ?? null,
             createdAt: contract.created_at,
             updatedAt: contract.updated_at,
         };
@@ -860,6 +851,10 @@ class ContractService {
                     furnishing: prop.furnishing ?? null,
                     monthlyPrice: prop.monthly_price ? Number(prop.monthly_price) : null,
                     securityDeposit: prop.security_deposit ? Number(prop.security_deposit) : null,
+                    maintenanceResponsibilities: (prop.maintenance_responsibilities ?? []).map((item: any) => ({
+                        area: item.area,
+                        responsible_party: item.responsible_party,
+                    })),
                 };
 
                 if (prop.specifications) {

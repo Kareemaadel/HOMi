@@ -7,34 +7,116 @@ import {
 } from 'lucide-react';
 import { type LeaseContract } from '../pages/Contract';
 import SignatureModal from './SignatureModal';
+import contractService, { type VerificationSummary } from '../../../services/contract.service';
 import './ContractDetailView.css';
 
 interface Props {
     contract: LeaseContract;
+    isReadOnly?: boolean;
+    onUpdated?: () => void;
     onClose: () => void;
 }
 
-const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
+const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onUpdated, onClose }) => {
     const [step, setStep] = useState(1);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(null);
     const [isFinalized, setIsFinalized] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [summary, setSummary] = useState<VerificationSummary | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const maintenanceResponsibilities = contract.maintenanceResponsibilities ?? [];
     
     // Landlord Specific State
     const [landlordData, setLandlordData] = useState({
-        idNumber: '', 
-        ownershipRef: '', 
-        rentDueDate: '1st',
-        lateFee: '25',
-        occupants: '2',
-        pets: 'Allowed',
+        idNumber: contract.landlordNationalId || '', 
+        ownershipRef: contract.propertyRegistrationNumber || '',
+        rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
+        lateFee: String(contract.lateFeeAmount || 25),
+        occupants: String(contract.maxOccupants || 2),
         smoking: 'No',
-        confirmed: false
+        confirmed: Boolean(contract.certifyOwnership) || isReadOnly
     });
+    const toDueDateEnum = (value: string): '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH' => {
+        if (value === '5TH_OF_MONTH') return '5TH_OF_MONTH';
+        if (value === 'LAST_DAY_OF_MONTH') return 'LAST_DAY_OF_MONTH';
+        return '1ST_OF_MONTH';
+    };
 
-    const handleNext = () => setStep(s => s + 1);
+    const handleNext = async () => {
+        if (isReadOnly) {
+            if (step === 3 && !summary) {
+                try {
+                    setSubmitting(true);
+                    const response = await contractService.getVerificationSummary(contract.internalId);
+                    setSummary(response.data);
+                } catch (error) {
+                    console.error('Failed to load verification summary', error);
+                } finally {
+                    setSubmitting(false);
+                }
+            }
+            setStep((s) => Math.min(s + 1, 5));
+            return;
+        }
+        try {
+            setSubmitting(true);
+            if (step === 1) {
+                await contractService.updateLeaseTerms(contract.internalId, {
+                    rent_due_date: toDueDateEnum(landlordData.rentDueDate),
+                    late_fee_amount: Number(landlordData.lateFee),
+                    max_occupants: Number(landlordData.occupants),
+                });
+            }
+
+            if (step === 2) {
+                await contractService.updateLandlordIdentity(contract.internalId, {
+                    national_id: landlordData.idNumber,
+                });
+            }
+
+            if (step === 3) {
+                await contractService.updatePropertyConfirmation(contract.internalId, {
+                    property_registration_number: landlordData.ownershipRef,
+                });
+            }
+
+            if (step === 4) {
+                const response = await contractService.getVerificationSummary(contract.internalId);
+                setSummary(response.data);
+            }
+
+            setStep((s) => s + 1);
+            onUpdated?.();
+        } catch (error) {
+            console.error('Failed to submit contract step', error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
     const handleBack = () => setStep(s => s - 1);
+
+    const handleSign = async () => {
+        if (isReadOnly) return;
+        if (!savedSignature || !landlordData.confirmed) return;
+        setSubmitting(true);
+        try {
+            const signatureUrl =
+                savedSignature.length <= 500
+                    ? savedSignature
+                    : `https://storage.homi.com/signatures/${contract.internalId}-landlord.png`;
+            await contractService.signLandlordContract(contract.internalId, {
+                signature_url: signatureUrl,
+                certify_ownership: true,
+            });
+            setIsFinalized(true);
+            onUpdated?.();
+        } catch (error) {
+            console.error('Failed to sign contract', error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     if (isFinalized) {
         return (
@@ -85,23 +167,22 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 <div className="input-grid">
                                     <div className="input-group">
                                         <label>Rent Due Date</label>
-                                        <select value={landlordData.rentDueDate} onChange={e => setLandlordData({...landlordData, rentDueDate: e.target.value})}>
-                                            <option>1st of month</option>
-                                            <option>5th of month</option>
-                                            <option>Last day of month</option>
+                                        <select className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} value={landlordData.rentDueDate} onChange={e => setLandlordData({...landlordData, rentDueDate: e.target.value})}>
+                                            <option value="1ST_OF_MONTH">1st of month</option>
+                                            <option value="5TH_OF_MONTH">5th of month</option>
+                                            <option value="LAST_DAY_OF_MONTH">Last day of month</option>
                                         </select>
                                     </div>
                                     <div className="input-group">
                                         <label>Late Fee Amount ($)</label>
-                                        <input type="number" value={landlordData.lateFee} onChange={e => setLandlordData({...landlordData, lateFee: e.target.value})} />
+                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="number" value={landlordData.lateFee} onChange={e => setLandlordData({...landlordData, lateFee: e.target.value})} />
                                     </div>
                                 </div>
                             </section>
                             <section className="info-section">
                                 <div className="section-title"><Ban size={16}/> <h4>Occupancy Rules</h4></div>
                                 <div className="input-grid">
-                                    <div className="input-group"><label>Max Occupants</label><input type="text" value={landlordData.occupants} onChange={e => setLandlordData({...landlordData, occupants: e.target.value})} /></div>
-                                    <div className="input-group"><label>Pet Policy</label><select value={landlordData.pets} onChange={e => setLandlordData({...landlordData, pets: e.target.value})}><option>Allowed</option><option>Not Allowed</option></select></div>
+                                    <div className="input-group"><label>Max Occupants</label><input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" value={landlordData.occupants} onChange={e => setLandlordData({...landlordData, occupants: e.target.value})} /></div>
                                 </div>
                             </section>
                         </div>
@@ -115,14 +196,14 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 <div className="section-title"><User size={16}/> <h4>Profile Information</h4></div>
                                 <div className="autofill-grid">
                                     <div className="field"><label>Legal Name</label><span>{contract.landlord}</span></div>
-                                    <div className="field"><label>Email</label><span>landlord@homi.com</span></div>
+                                    <div className="field"><label>Email</label><span>{contract.landlordEmail || '—'}</span></div>
                                 </div>
                             </section>
                             <section className="info-section">
                                 <div className="section-title"><Fingerprint size={16}/> <h4>Verification</h4></div>
                                 <div className="input-group">
                                     <label>National ID / Business Registration Number</label>
-                                    <input type="text" placeholder="Enter ID number" value={landlordData.idNumber} onChange={e => setLandlordData({...landlordData, idNumber: e.target.value})} />
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Enter ID number" value={landlordData.idNumber} onChange={e => setLandlordData({...landlordData, idNumber: e.target.value})} />
                                 </div>
                             </section>
                         </div>
@@ -136,7 +217,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 <div className="section-title"><Landmark size={16}/> <h4>Ownership Records</h4></div>
                                 <div className="input-group">
                                     <label>Property Registration Number / Deed Ref</label>
-                                    <input type="text" placeholder="e.g. REG-99210-XB" value={landlordData.ownershipRef} onChange={e => setLandlordData({...landlordData, ownershipRef: e.target.value})} />
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="e.g. REG-99210-XB" value={landlordData.ownershipRef} onChange={e => setLandlordData({...landlordData, ownershipRef: e.target.value})} />
                                 </div>
                                 <div className="ownership-notice">
                                     <ShieldCheck size={20} />
@@ -146,16 +227,18 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                             <section className="info-section">
                                 <div className="section-title"><Zap size={16}/> <h4>Maintenance Responsibilities</h4></div>
                                 <div className="responsibility-box scrollable">
-                                    <div className="resp-row"><span>Structural Repairs</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Interior Appliances</span><span className="owner-badge tenant">Tenant</span></div>
-                                    <div className="resp-row"><span>Utility Bills</span><span className="owner-badge tenant">Tenant</span></div>
-                                    <div className="resp-row"><span>Plumbing</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Electrical</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>HVAC / Air Conditioning</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Pest Control</span><span className="owner-badge tenant">Tenant</span></div>
-                                    <div className="resp-row"><span>Exterior Maintenance</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Common Areas</span><span className="owner-badge landlord">Landlord</span></div>
-                                    <div className="resp-row"><span>Security Systems</span><span className="owner-badge landlord">Landlord</span></div>
+                                    {maintenanceResponsibilities.length > 0 ? (
+                                        maintenanceResponsibilities.map((item, idx) => (
+                                            <div key={`${item.area}-${idx}`} className="resp-row">
+                                                <span>{item.area}</span>
+                                                <span className={`owner-badge ${item.responsible_party === 'LANDLORD' ? 'landlord' : 'tenant'}`}>
+                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="resp-row"><span>No maintenance responsibilities found on this property.</span><span className="owner-badge tenant">N/A</span></div>
+                                    )}
                                 </div>
                             </section>
                         </div>
@@ -169,35 +252,35 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 <section className="auto-section">
                                     <div className="section-title"><Cpu size={16}/> <h4>Platform Metadata</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Contract ID</label><span>{contract.id}</span></div>
-                                        <div className="item"><label>Created</label><span>March 07, 2026</span></div>
-                                        <div className="item"><label>Lease ID</label><span>L-8829-Z</span></div>
+                                        <div className="item"><label>Contract ID</label><span>{summary?.platformMetadata.contractId || contract.id}</span></div>
+                                        <div className="item"><label>Created</label><span>{summary?.platformMetadata.created ? new Date(summary.platformMetadata.created).toLocaleDateString() : new Date(contract.createdAt).toLocaleDateString()}</span></div>
+                                        <div className="item"><label>Lease ID</label><span>{summary?.platformMetadata.leaseId || '—'}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
                                     <div className="section-title"><Landmark size={16}/> <h4>Verified Property Information</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Title</label><span>{contract.property}</span></div>
-                                        <div className="item"><label>Type</label><span>Residential</span></div>
-                                        <div className="item"><label>Rooms</label><span>2 Bedrooms</span></div>
-                                        <div className="item"><label>Furnishing</label><span>Fully Furnished</span></div>
-                                        <div className="item full"><label>Address</label><span>123 Global Ave, Penthouse District</span></div>
+                                        <div className="item"><label>Title</label><span>{summary?.verifiedPropertyInfo.title || contract.property}</span></div>
+                                        <div className="item"><label>Type</label><span>{summary?.verifiedPropertyInfo.type || contract.propertyType}</span></div>
+                                        <div className="item"><label>Rooms</label><span>{summary?.verifiedPropertyInfo.rooms || 'N/A'}</span></div>
+                                        <div className="item"><label>Furnishing</label><span>{summary?.verifiedPropertyInfo.furnishing || contract.propertyFurnishing}</span></div>
+                                        <div className="item full"><label>Address</label><span>{summary?.verifiedPropertyInfo.address || contract.propertyAddress}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
                                     <div className="section-title"><DollarSign size={16}/> <h4>Payment Terms</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Rent</label><span>${contract.amount}</span></div>
-                                        <div className="item"><label>Security Deposit</label><span>${contract.deposit}</span></div>
-                                        <div className="item"><label>Service Fee</label><span>$10.00</span></div>
-                                        <div className="item"><label>Schedule</label><span>Monthly</span></div>
+                                        <div className="item"><label>Rent</label><span>${summary?.paymentTerms.rent ?? contract.amount}</span></div>
+                                        <div className="item"><label>Security Deposit</label><span>${summary?.paymentTerms.securityDeposit ?? contract.deposit}</span></div>
+                                        <div className="item"><label>Service Fee</label><span>${summary?.paymentTerms.serviceFee ?? 10}</span></div>
+                                        <div className="item"><label>Schedule</label><span>{summary?.paymentTerms.schedule || 'MONTHLY'}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
                                     <div className="section-title"><Clock size={16}/> <h4>Lease Duration</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Move-In</label><span>{contract.startDate}</span></div>
-                                        <div className="item"><label>Duration</label><span>{contract.duration}</span></div>
+                                        <div className="item"><label>Move-In</label><span>{summary?.leaseDuration.moveIn ? new Date(summary.leaseDuration.moveIn).toLocaleDateString() : contract.startDate}</span></div>
+                                        <div className="item"><label>Duration</label><span>{summary?.leaseDuration.durationMonths ? `${summary.leaseDuration.durationMonths} Months` : contract.duration}</span></div>
                                     </div>
                                 </section>
                             </div>
@@ -208,7 +291,12 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                     {step === 5 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Finalize & Sign</h3>
-                            {!savedSignature ? (
+                            {isReadOnly ? (
+                                <div className="ownership-notice">
+                                    <ShieldCheck size={20} />
+                                    <p>This contract is not in pending landlord status and is view-only.</p>
+                                </div>
+                            ) : !savedSignature ? (
                                 <div className="signature-trigger" onClick={() => setIsSignModalOpen(true)}>
                                     <Pencil size={24} />
                                     <p>Draw or upload Landlord signature</p>
@@ -221,8 +309,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                                 </div>
                             )}
                             <div className="confirmation-check">
-                                <input type="checkbox" id="landlord-final" checked={landlordData.confirmed} onChange={(e) => setLandlordData({...landlordData, confirmed: e.target.checked})} />
-                                <label htmlFor="landlord-final">I certify that I am the legal owner of this property and agree to these terms.</label>
+                                <input className={isReadOnly ? 'readonly-checkbox' : ''} disabled={isReadOnly} type="checkbox" id="landlord-final" checked={landlordData.confirmed} onChange={(e) => setLandlordData({...landlordData, confirmed: e.target.checked})} />
+                                <label className={isReadOnly ? 'readonly-label' : ''} htmlFor="landlord-final">I certify that I am the legal owner of this property and agree to these terms.</label>
                             </div>
                         </div>
                     )}
@@ -232,15 +320,20 @@ const ContractDetailView: React.FC<Props> = ({ contract, onClose }) => {
                     {step > 1 && <button className="btn-nav-secondary" onClick={handleBack}><ChevronLeft size={18} /> Back</button>}
                     <button 
                         className="btn-nav-primary"
-                        disabled={(step === 2 && !landlordData.idNumber) || (step === 3 && !landlordData.ownershipRef) || (step === 5 && (!savedSignature || !landlordData.confirmed))}
-                        onClick={step === 5 ? () => setIsFinalized(true) : handleNext}
+                        disabled={
+                            (!isReadOnly && ((step === 2 && !landlordData.idNumber) || (step === 3 && !landlordData.ownershipRef) || (step === 5 && (!savedSignature || !landlordData.confirmed)))) ||
+                            submitting
+                        }
+                        onClick={step === 5 ? (isReadOnly ? onClose : handleSign) : handleNext}
                     >
-                        {step === 5 ? 'Sign Agreement' : 'Continue'} <ChevronRight size={18} />
+                        {submitting ? 'Saving...' : step === 5 ? (isReadOnly ? 'Close' : 'Sign Agreement') : 'Continue'} <ChevronRight size={18} />
                     </button>
                 </footer>
             </div>
 
-            <SignatureModal isOpen={isSignModalOpen} onClose={() => setIsSignModalOpen(false)} onSave={(sig) => {setSavedSignature(sig); setIsSignModalOpen(false);}} />
+            {!isReadOnly && (
+                <SignatureModal isOpen={isSignModalOpen} onClose={() => setIsSignModalOpen(false)} onSave={(sig) => {setSavedSignature(sig); setIsSignModalOpen(false);}} />
+            )}
         </div>
     );
 };

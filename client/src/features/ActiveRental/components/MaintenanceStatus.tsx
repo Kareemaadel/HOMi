@@ -1,4 +1,3 @@
-import React from 'react';
 import './MaintenanceStatus.css';
 import { FaTools } from 'react-icons/fa';
 

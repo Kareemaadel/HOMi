@@ -15,8 +15,9 @@ import About from '../components/About';
 import Notifications from '../components/Notifications';
 import Billing from '../components/Billing';
 import Privacy from '../components/Privacy';
+import DeleteAccountSection from '../components/DeleteAccountSection';
 
-import { FaExclamationTriangle, FaLock, FaUserCircle } from 'react-icons/fa';
+import { FaLock, FaUserCircle } from 'react-icons/fa';
 
 // ── Auth Guard Screen ──────────────────────────────────────────────────────────
 const SignInRequired: React.FC = () => {
@@ -127,22 +128,7 @@ const Settings: React.FC = () => {
         privacy: <Privacy />,
         preferences: <Preferences />,
         about: <About />,
-        delete: (
-            <div className="delete-zone-container animate-fade-in">
-                <div className="danger-icon-wrapper">
-                    <FaExclamationTriangle />
-                </div>
-                <h2>Delete Account</h2>
-                <p>
-                    This action is <strong>irreversible</strong>. Deleting your account will 
-                    permanently remove all your properties, rental history, and documents.
-                </p>
-                <div className="delete-actions">
-                    <button className="cancel-btn" onClick={() => setActiveTab('profile')}>Keep My Account</button>
-                    <button className="danger-confirm-btn">Permanently Delete</button>
-                </div>
-            </div>
-        )
+        delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />
     };
 
     return (

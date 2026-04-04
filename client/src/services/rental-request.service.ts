@@ -71,6 +71,42 @@ export interface MyRentalRequestsResponse {
     };
 }
 
+export interface LandlordRentalRequest {
+    id: string;
+    status: RentalRequestStatus;
+    moveInDate: string;
+    duration: RentalDuration;
+    occupants: number;
+    livingSituation: LivingSituation;
+    message: string;
+    createdAt: string;
+    tenant: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+        bio: string | null;
+        habits?: string[];
+    };
+    property: {
+        id: string;
+        title: string;
+        address: string;
+        monthlyPrice?: number;
+    };
+}
+
+export interface LandlordRentalRequestsResponse {
+    success: boolean;
+    data: LandlordRentalRequest[];
+    pagination?: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
 class RentalRequestService {
     async submitRentalRequest(payload: SubmitRentalRequestPayload): Promise<RentalRequestResponse> {
         const response = await apiClient.post<RentalRequestResponse>('/rental-requests', payload);
@@ -83,6 +119,20 @@ class RentalRequestService {
         limit?: number;
     }): Promise<MyRentalRequestsResponse> {
         const response = await apiClient.get<MyRentalRequestsResponse>('/rental-requests/my-requests', { params });
+        return response.data;
+    }
+
+    async getLandlordRequests(params?: {
+        status?: RentalRequestStatus;
+        page?: number;
+        limit?: number;
+    }): Promise<LandlordRentalRequestsResponse> {
+        const response = await apiClient.get<LandlordRentalRequestsResponse>('/rental-requests/landlord', { params });
+        return response.data;
+    }
+
+    async updateRequestStatus(id: string, status: 'APPROVED' | 'DECLINED'): Promise<{ success: boolean; message: string }> {
+        const response = await apiClient.put<{ success: boolean; message: string }>(`/rental-requests/${id}/status`, { status });
         return response.data;
     }
 }

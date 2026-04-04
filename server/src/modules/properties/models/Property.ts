@@ -74,6 +74,7 @@ export class Property extends Model<
     declare status: CreationOptional<PropertyStatusType>;
     declare target_tenant: CreationOptional<TargetTenantType>;
     declare availability_date: Date | null;
+    declare maintenance_responsibilities: CreationOptional<Array<{ area: string; responsible_party: 'LANDLORD' | 'TENANT' }>>;
 
     // Timestamps
     declare created_at: CreationOptional<Date>;
@@ -162,6 +163,11 @@ Property.init(
             type: DataTypes.DATEONLY,
             allowNull: true,
             defaultValue: null,
+        },
+        maintenance_responsibilities: {
+            type: DataTypes.JSONB,
+            allowNull: false,
+            defaultValue: [],
         },
         created_at: {
             type: DataTypes.DATE,

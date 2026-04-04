@@ -887,4 +887,31 @@ router.get(
     authController.getUserHabits.bind(authController)
 );
 
+/**
+ * @swagger
+ * /auth/account:
+ *   delete:
+ *     summary: Permanently delete account
+ *     description: |
+ *       Removes the user and profile when there are no properties (as landlord),
+ *       rental requests (as tenant), or contracts. Returns 409 with counts if blocked.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Forbidden (e.g. admin)
+ *       409:
+ *         description: Account has related records
+ */
+router.delete(
+    '/account',
+    protect,
+    authController.deleteAccount.bind(authController)
+);
+
 export default router;

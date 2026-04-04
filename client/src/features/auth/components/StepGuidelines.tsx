@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function StepGuidelines({ onNext }: { onNext: () => void }) {
   const [agreed, setAgreed] = useState(false);

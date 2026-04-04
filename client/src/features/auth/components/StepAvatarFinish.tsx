@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, Upload, Camera } from 'lucide-react';
+import { Upload, Camera } from 'lucide-react';
 
 export default function StepAvatarFinish() {
   const [avatar, setAvatar] = useState<string | null>(null);

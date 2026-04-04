@@ -336,6 +336,24 @@ class AuthService {
         });
         return response.data;
     }
+
+    /**
+     * Permanently delete the authenticated account (server enforces no properties / requests / contracts).
+     * Clears local session on success. Does not call logout — the user row is removed.
+     */
+    async deleteAccount(): Promise<AuthSuccessResponse> {
+        const response = await apiClient.delete<AuthSuccessResponse>('/auth/account');
+
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem(REFRESH_VIA_COOKIE);
+        sessionStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('profile');
+        localStorage.removeItem('authProvider');
+
+        return response.data;
+    }
 }
 
 export const authService = new AuthService();
