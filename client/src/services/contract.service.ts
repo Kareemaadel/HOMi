@@ -34,6 +34,9 @@ interface InitiatePaymobResponse {
         amountCents: number;
         orderId: number;
         currency: string;
+    };
+}
+
 export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
 export type RentDueDate = '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH';
 
@@ -126,7 +129,7 @@ interface ContractListResponse {
 }
 
 class ContractService {
-    async getContractById(contractId: string): Promise<ContractDetails> {
+    async getContractPaymentDetails(contractId: string): Promise<ContractDetails> {
         const response = await apiClient.get<ContractApiResponse>(`/contracts/${contractId}`);
         const c = response.data.data;
 
@@ -152,6 +155,8 @@ class ContractService {
         await apiClient.post(`/contracts/${contractId}/payments/paymob/verify`, {
             transaction_id: transactionId,
         });
+    }
+
     async getLandlordContracts(params?: {
         status?: LandlordContractStatus;
         page?: number;
