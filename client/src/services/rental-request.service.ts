@@ -1,3 +1,4 @@
+//client\src\services\rental-request.service.ts
 import apiClient from '../config/api';
 
 export type RentalDuration = '6_MONTHS' | '12_MONTHS' | '24_MONTHS';

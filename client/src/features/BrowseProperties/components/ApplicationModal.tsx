@@ -27,11 +27,19 @@ const durationOptions: { label: string; value: RentalDuration }[] = [
 ];
 
 const livingSituationOptions: { label: string; value: LivingSituation }[] = [
-    { label: 'Single', value: 'SINGLE' },
-    { label: 'Married', value: 'MARRIED' },
-    { label: 'Family', value: 'FAMILY' },
+    { label: 'Single',   value: 'SINGLE'   },
+    { label: 'Married',  value: 'MARRIED'  },
+    { label: 'Family',   value: 'FAMILY'   },
     { label: 'Students', value: 'STUDENTS' },
 ];
+
+interface PrefillData {
+    moveInDate:      string;
+    duration:        RentalDuration;
+    occupants:       number;
+    livingSituation: LivingSituation;
+    message:         string;
+}
 
 interface ApplicationModalProps {
     property: {
@@ -39,50 +47,62 @@ interface ApplicationModalProps {
         title: string;
         price: number;
         image: string;
-        /** Landlord full name — sourced from BrowsePropertyUI.ownerName */
-        ownerName?: string;
+        ownerName?:  string;
         ownerImage?: string;
     };
-    onClose: () => void;
-    onBack: () => void;
-    isReadOnly?: boolean;
+    onClose:      () => void;
+    onBack:       () => void;
+    isReadOnly?:  boolean;
+    prefillData?: PrefillData;
 }
 
-const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: ApplicationModalProps) => {
-    const [step, setStep] = useState(1);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [submitError, setSubmitError] = useState<string | null>(null);
+const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefillData }: ApplicationModalProps) => {
+    const [step,          setStep]          = useState(1);
+    const [isSubmitted,   setIsSubmitted]   = useState(false);
+    const [loading,       setLoading]       = useState(false);
+    const [submitError,   setSubmitError]   = useState<string | null>(null);
     const [habitsLoading, setHabitsLoading] = useState(true);
 
-    // Step 1 — form state
-    const [moveInDate, setMoveInDate] = useState('');
-    const [duration, setDuration] = useState<RentalDuration | ''>('');
-    const [occupants, setOccupants] = useState<number | ''>('');
-    const [livingSituation, setLivingSituation] = useState<LivingSituation | ''>('');
-    const [message, setMessage] = useState('');
+    // Step 1 — form state (initialised from prefillData when in read-only review)
+    const [moveInDate,      setMoveInDate]      = useState(prefillData?.moveInDate      ?? '');
+    const [duration,        setDuration]        = useState<RentalDuration | ''>(prefillData?.duration        ?? '');
+    const [occupants,       setOccupants]       = useState<number | ''>(prefillData?.occupants       ?? '');
+    const [livingSituation, setLivingSituation] = useState<LivingSituation | ''>(prefillData?.livingSituation ?? '');
+    const [message,         setMessage]         = useState(prefillData?.message         ?? '');
 
-    // Step 2 — habits state
+    // Step 2 — habits
     const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
-    const [customHabit, setCustomHabit] = useState('');
+    const [customHabit,    setCustomHabit]    = useState('');
 
-    // Pre-load the user's existing habits from the backend
+    // Load user's habits from backend — runs for both read-only and editable views.
+    // Uses a cancellation flag so a slow response after unmount won't setState on a dead component.
     useEffect(() => {
+        let cancelled = false;
         const loadHabits = async () => {
             setHabitsLoading(true);
             try {
                 const res = await authService.getUserHabits();
-                setSelectedHabits(res.habit_names ?? []);
+                if (!cancelled) setSelectedHabits(res.habit_names ?? []);
             } catch {
-                // If the endpoint fails or user has no habits yet, start empty
-                setSelectedHabits([]);
+                // If the call fails just show an empty list — don't stay stuck on loading
+                if (!cancelled) setSelectedHabits([]);
             } finally {
-                setHabitsLoading(false);
+                if (!cancelled) setHabitsLoading(false);
             }
         };
-
         void loadHabits();
+        return () => { cancelled = true; };
     }, []);
+
+    // Sync prefillData into state if it arrives after mount (edge case)
+    useEffect(() => {
+        if (!prefillData) return;
+        setMoveInDate(prefillData.moveInDate);
+        setDuration(prefillData.duration);
+        setOccupants(prefillData.occupants);
+        setLivingSituation(prefillData.livingSituation);
+        setMessage(prefillData.message);
+    }, [prefillData]);
 
     const handleNext = (e: React.FormEvent) => {
         e.preventDefault();
@@ -106,29 +126,25 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
 
     const handleSubmit = async () => {
         if (!duration || !livingSituation || !moveInDate || !occupants) return;
-
         setLoading(true);
         setSubmitError(null);
-
         try {
-            // Fire both calls concurrently — the rental request and the tenant's habit profile
             await Promise.all([
                 rentalRequestService.submitRentalRequest({
-                    property_id: property.id,
-                    move_in_date: moveInDate,
-                    duration: duration as RentalDuration,
-                    occupants: Number(occupants),
+                    property_id:      property.id,
+                    move_in_date:     moveInDate,
+                    duration:         duration as RentalDuration,
+                    occupants:        Number(occupants),
                     living_situation: livingSituation as LivingSituation,
-                    message: message.trim(),
+                    message:          message.trim(),
                 }),
                 authService.setHabits(selectedHabits),
             ]);
-
             setIsSubmitted(true);
         } catch (err: any) {
             const apiMessage: string =
                 err?.response?.data?.message ||
-                err?.response?.data?.error ||
+                err?.response?.data?.error   ||
                 'Something went wrong. Please try again.';
             setSubmitError(apiMessage);
         } finally {
@@ -136,9 +152,21 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
         }
     };
 
-    // Derive landlord display name & avatar from the property object
-    const landlordName = property.ownerName || 'Property Owner';
+    const landlordName   = property.ownerName  || 'Property Owner';
     const landlordAvatar = property.ownerImage || null;
+
+    const formatDate = (iso: string) => {
+        if (!iso) return '—';
+        try {
+            return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        } catch { return iso; }
+    };
+
+    const durationLabel     = (durationOptions.find(o => o.value === duration)?.label ?? String(duration)) || '—';
+    const livSituationLabel = (livingSituationOptions.find(o => o.value === livingSituation)?.label ?? String(livingSituation)) || '—';
+
+    // Custom habits that are saved but not in the preset list
+    const customSavedHabits = selectedHabits.filter(h => !PRESET_HABITS.includes(h));
 
     return (
         <div className="modal-overlay">
@@ -149,10 +177,11 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
 
                 {!isSubmitted ? (
                     <div className="app-layout">
+
                         {/* ── SIDEBAR ── */}
                         <div className="app-sidebar">
                             <button className="back-to-property" onClick={step === 1 ? onBack : () => setStep(1)}>
-                                <FaArrowLeft /> {step === 1 ? 'Back to Details' : 'Back to Preferences'}
+                                <FaArrowLeft /> {step === 1 ? 'Back to Details' : 'Back to Application'}
                             </button>
 
                             <div className="property-mini-card">
@@ -168,19 +197,14 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
 
                             <div className="app-steps-indicator">
                                 <div className={`step-dot ${step >= 1 ? 'active' : ''}`}><span>1</span> Form</div>
-                                <div className={`step-line ${step === 2 ? 'active' : ''}`}></div>
+                                <div className={`step-line ${step === 2 ? 'active' : ''}`} />
                                 <div className={`step-dot ${step === 2 ? 'active' : ''}`}><span>2</span> Habits</div>
                             </div>
 
-                            {/* ── Landlord card with real data ── */}
                             <div className="landlord-card">
                                 <div className="landlord-header">
                                     {landlordAvatar ? (
-                                        <img
-                                            src={landlordAvatar}
-                                            alt={landlordName}
-                                            className="landlord-avatar"
-                                        />
+                                        <img src={landlordAvatar} alt={landlordName} className="landlord-avatar" />
                                     ) : (
                                         <FaUserTie className="landlord-icon" />
                                     )}
@@ -192,94 +216,128 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
                             </div>
                         </div>
 
-                        {/* ── MAIN FORM AREA ── */}
+                        {/* ── MAIN AREA ── */}
                         <div className="app-form-section">
                             {step === 1 ? (
                                 <>
                                     <div className="form-header">
                                         <h1>{isReadOnly ? 'Your Application' : 'Rental Application'}</h1>
                                         <p>{isReadOnly
-                                            ? 'This form is currently locked for editing.'
+                                            ? 'This is a read-only view of your submitted application.'
                                             : 'Provide your rental preferences to start the process.'
                                         }</p>
                                     </div>
 
-                                    <form onSubmit={handleNext} className="premium-form">
-                                        <div className="form-row">
+                                    {isReadOnly ? (
+                                        /* ── READ-ONLY SUMMARY ── */
+                                        <div className="readonly-summary">
+                                            <div className="readonly-grid">
+                                                <div className="readonly-field">
+                                                    <label><FaCalendarAlt /> Move-in Date</label>
+                                                    <div className="readonly-value">{formatDate(moveInDate)}</div>
+                                                </div>
+                                                <div className="readonly-field">
+                                                    <label><FaHourglassHalf /> Duration</label>
+                                                    <div className="readonly-value">{durationLabel}</div>
+                                                </div>
+                                                <div className="readonly-field">
+                                                    <label><FaUsers /> Occupants</label>
+                                                    <div className="readonly-value">{occupants || '—'}</div>
+                                                </div>
+                                                <div className="readonly-field">
+                                                    <label><FaUserFriends /> Living Situation</label>
+                                                    <div className="readonly-value">{livSituationLabel}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="readonly-field" style={{ marginTop: '16px' }}>
+                                                <label><FaCommentDots /> Message to Landlord</label>
+                                                <div className="readonly-value readonly-message">
+                                                    {message
+                                                        ? message
+                                                        : <em style={{ color: '#94a3b8', fontWeight: 400 }}>No message provided.</em>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <button className="submit-btn" style={{ marginTop: '28px' }} onClick={() => setStep(2)}>
+                                                View Your Habits <FaChevronRight />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        /* ── EDITABLE FORM ── */
+                                        <form onSubmit={handleNext} className="premium-form">
+                                            <div className="form-row">
+                                                <div className="field-group">
+                                                    <label><FaCalendarAlt /> Move-in Date</label>
+                                                    <input
+                                                        type="date"
+                                                        required
+                                                        value={moveInDate}
+                                                        min={new Date().toISOString().split('T')[0]}
+                                                        onChange={e => setMoveInDate(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="field-group">
+                                                    <label><FaHourglassHalf /> Duration</label>
+                                                    <select
+                                                        required
+                                                        className="premium-select"
+                                                        value={duration}
+                                                        onChange={e => setDuration(e.target.value as RentalDuration)}
+                                                    >
+                                                        <option value="">Select duration</option>
+                                                        {durationOptions.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="form-row">
+                                                <div className="field-group">
+                                                    <label><FaUsers /> Occupants</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        placeholder="Number of people"
+                                                        required
+                                                        value={occupants}
+                                                        onChange={e => setOccupants(e.target.value === '' ? '' : Number(e.target.value))}
+                                                    />
+                                                </div>
+                                                <div className="field-group">
+                                                    <label><FaUserFriends /> Living Situation</label>
+                                                    <select
+                                                        required
+                                                        className="premium-select"
+                                                        value={livingSituation}
+                                                        onChange={e => setLivingSituation(e.target.value as LivingSituation)}
+                                                    >
+                                                        <option value="">Select situation</option>
+                                                        {livingSituationOptions.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
                                             <div className="field-group">
-                                                <label><FaCalendarAlt /> Move-in Date</label>
-                                                <input
-                                                    type="date"
-                                                    required
-                                                    disabled={isReadOnly}
-                                                    value={moveInDate}
-                                                    min={new Date().toISOString().split('T')[0]}
-                                                    onChange={e => setMoveInDate(e.target.value)}
+                                                <label><FaCommentDots /> Message to Landlord</label>
+                                                <textarea
+                                                    placeholder="Introduce yourself and tell the landlord why you're a great fit..."
+                                                    rows={3}
+                                                    className="premium-textarea"
+                                                    value={message}
+                                                    onChange={e => setMessage(e.target.value)}
                                                 />
                                             </div>
-                                            <div className="field-group">
-                                                <label><FaHourglassHalf /> Duration</label>
-                                                <select
-                                                    required
-                                                    className="premium-select"
-                                                    disabled={isReadOnly}
-                                                    value={duration}
-                                                    onChange={e => setDuration(e.target.value as RentalDuration)}
-                                                >
-                                                    <option value="">Select duration</option>
-                                                    {durationOptions.map(opt => (
-                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
 
-                                        <div className="form-row">
-                                            <div className="field-group">
-                                                <label><FaUsers /> Occupants</label>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    placeholder="Number of people"
-                                                    required
-                                                    disabled={isReadOnly}
-                                                    value={occupants}
-                                                    onChange={e => setOccupants(e.target.value === '' ? '' : Number(e.target.value))}
-                                                />
-                                            </div>
-                                            <div className="field-group">
-                                                <label><FaUserFriends /> Living Situation</label>
-                                                <select
-                                                    required
-                                                    className="premium-select"
-                                                    disabled={isReadOnly}
-                                                    value={livingSituation}
-                                                    onChange={e => setLivingSituation(e.target.value as LivingSituation)}
-                                                >
-                                                    <option value="">Select situation</option>
-                                                    {livingSituationOptions.map(opt => (
-                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div className="field-group">
-                                            <label><FaCommentDots /> Message to Landlord</label>
-                                            <textarea
-                                                placeholder="Introduce yourself and tell the landlord why you're a great fit..."
-                                                rows={3}
-                                                className="premium-textarea"
-                                                disabled={isReadOnly}
-                                                value={message}
-                                                onChange={e => setMessage(e.target.value)}
-                                            />
-                                        </div>
-
-                                        <button type="submit" className="submit-btn">
-                                            Next: Your Habits <FaChevronRight />
-                                        </button>
-                                    </form>
+                                            <button type="submit" className="submit-btn">
+                                                Next: Your Habits <FaChevronRight />
+                                            </button>
+                                        </form>
+                                    )}
                                 </>
                             ) : (
                                 /* ── STEP 2: HABITS ── */
@@ -287,44 +345,54 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
                                     <div className="form-header">
                                         <h1>Your Habits</h1>
                                         <p>{isReadOnly
-                                            ? 'Habits submitted with your application.'
+                                            ? 'Habits associated with your profile at the time of application.'
                                             : 'Let the landlord know about your lifestyle. These will also update your profile.'
                                         }</p>
                                     </div>
 
                                     {habitsLoading ? (
                                         <div className="habits-loading">
-                                            <div className="spinner" style={{ borderTopColor: '#2563eb', margin: '0 auto 12px' }}></div>
-                                            <p style={{ color: '#94a3b8', textAlign: 'center' }}>Loading your habits…</p>
+                                            <div className="spinner" style={{ borderTopColor: '#2563eb', margin: '0 auto 12px' }} />
+                                            <p style={{ color: '#94a3b8', textAlign: 'center' }}>Loading habits…</p>
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="habits-grid">
-                                                {PRESET_HABITS.map(habit => (
-                                                    <div
-                                                        key={habit}
-                                                        className={`habit-chip ${selectedHabits.includes(habit) ? 'selected' : ''}`}
-                                                        onClick={() => toggleHabit(habit)}
-                                                        style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
-                                                    >
-                                                        {habit}
-                                                    </div>
-                                                ))}
-                                                {/* Render any custom (non-preset) habits already saved */}
-                                                {selectedHabits
-                                                    .filter(h => !PRESET_HABITS.includes(h))
-                                                    .map(habit => (
+                                            {isReadOnly && selectedHabits.length === 0 ? (
+                                                <div className="no-habits-notice">
+                                                    No habits were on your profile at the time of this application.
+                                                </div>
+                                            ) : (
+                                                <div className="habits-grid">
+                                                    {/* Preset habits — selected ones highlighted, unselected faded in read-only */}
+                                                    {PRESET_HABITS.map(habit => {
+                                                        const isSelected = selectedHabits.includes(habit);
+                                                        return (
+                                                            <div
+                                                                key={habit}
+                                                                className={[
+                                                                    'habit-chip',
+                                                                    isSelected ? 'selected' : '',
+                                                                    isReadOnly ? 'readonly-chip' : '',
+                                                                ].filter(Boolean).join(' ')}
+                                                                onClick={() => toggleHabit(habit)}
+                                                            >
+                                                                {habit}
+                                                            </div>
+                                                        );
+                                                    })}
+
+                                                    {/* Custom habits saved by the user but not in the preset list */}
+                                                    {customSavedHabits.map(habit => (
                                                         <div
                                                             key={habit}
-                                                            className="habit-chip selected"
+                                                            className={['habit-chip selected', isReadOnly ? 'readonly-chip' : ''].filter(Boolean).join(' ')}
                                                             onClick={() => toggleHabit(habit)}
-                                                            style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
                                                         >
                                                             {habit}
                                                         </div>
-                                                    ))
-                                                }
-                                            </div>
+                                                    ))}
+                                                </div>
+                                            )}
 
                                             {!isReadOnly && (
                                                 <div className="custom-habit-input">
@@ -354,10 +422,7 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false }: App
                                             className={`submit-btn ${loading ? 'loading' : ''}`}
                                             disabled={loading || habitsLoading}
                                         >
-                                            {loading
-                                                ? <div className="spinner"></div>
-                                                : <><FaPaperPlane /> Submit Application</>
-                                            }
+                                            {loading ? <div className="spinner" /> : <><FaPaperPlane /> Submit Application</>}
                                         </button>
                                     ) : (
                                         <button onClick={onClose} className="submit-btn" style={{ marginTop: '20px' }}>
