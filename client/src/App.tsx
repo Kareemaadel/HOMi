@@ -34,7 +34,7 @@ import GuestSearch from "./features/Guest/pages/GuestSearch";
 import AuthGuard from "./components/global/AuthGuard";
 import SentRequests from "./features/SentRequests/pages/SentRequests";
 import PageNotFound from "./features/PageNotFound/pages/PageNotFound";
-
+import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
 function App() {
   return (
     <BrowserRouter>
@@ -103,6 +103,7 @@ function App() {
         <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
         <Route path="/reset-password"   element={<ResetPasswordPage />} />
         <Route path="/verify-email"     element={<EmailVerificationPage />} />
+        <Route path="/verify-email-callback" element={<VerifyEmailCallback />} />
       </Routes>
     </BrowserRouter>
   );

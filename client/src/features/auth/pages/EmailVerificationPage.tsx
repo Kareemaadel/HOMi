@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import './EmailVerificationPage.css';
@@ -10,22 +10,59 @@ const EmailVerificationPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Email comes via navigation state: navigate('/verify-email', { state: { email } })
-    const email: string = (location.state as { email?: string })?.email || '';
+    const locationState = location.state as { email?: string; role?: string } | null;
+    const email: string = locationState?.email || '';
+    const targetRole = locationState?.role;
 
     const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
     const [canResend, setCanResend] = useState(false);
     const [resending, setResending] = useState(false);
     const [resent, setResent] = useState(false);
+    const [resendError, setResendError] = useState<string | null>(null);
 
-    // Countdown timer
+    // --- AUTOMATIC REDIRECTION LOGIC ---
+    useEffect(() => {
+        const forceRouteToStep3 = () => {
+            console.log("Signal received! Routing to step 3...");
+            // Hardcoding the return URL and step to guarantee it goes to the right place
+            navigate('/complete-profile', { 
+                state: { step: 3, role: targetRole },
+                replace: true 
+            });
+        };
+
+        // 1. BroadcastChannel Listener (Using new secret channel name)
+        let bc: BroadcastChannel | null = null;
+        if ('BroadcastChannel' in window) {
+            bc = new BroadcastChannel('homi_secret_channel');
+            bc.onmessage = (event) => {
+                if (event.data === 'GO_TO_STEP_3') {
+                    forceRouteToStep3();
+                }
+            };
+        }
+
+        // 2. LocalStorage Listener (Using new secret key)
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'WAKE_UP_TAB_1_STEP_3' && e.newValue) {
+                localStorage.removeItem('WAKE_UP_TAB_1_STEP_3'); 
+                forceRouteToStep3();
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            if (bc) bc.close();
+        };
+    }, [navigate, targetRole]);
+    // -----------------------------------
+
     useEffect(() => {
         if (countdown <= 0) { setCanResend(true); return; }
         const t = setTimeout(() => setCountdown(c => c - 1), 1000);
         return () => clearTimeout(t);
     }, [countdown]);
-
-    const [resendError, setResendError] = useState<string | null>(null);
 
     const handleResend = async () => {
         if (!canResend) return;
@@ -44,23 +81,15 @@ const EmailVerificationPage: React.FC = () => {
         }
     };
 
-    const handleContinue = () => {
-        // Skip verification — navigate to the home page
-        // The backend allows unverified users to access most features
-        navigate('/');
-    };
-
     return (
         <div className="email-verify-wrapper">
             <div className="email-verify-card">
-                {/* Icon */}
                 <img src="/logo.png" alt="HOMi logo" className="ev-logo-image" />
 
                 <h1>Check your inbox</h1>
                 <p className="subtitle">We sent a verification link to</p>
                 <div className="ev-email-highlight">{email || 'your email address'}</div>
 
-                {/* Steps */}
                 <div className="ev-steps">
                     <div className="ev-step">
                         <div className="ev-step-num">1</div>
@@ -72,11 +101,10 @@ const EmailVerificationPage: React.FC = () => {
                     </div>
                     <div className="ev-step">
                         <div className="ev-step-num">3</div>
-                        <span>You'll be redirected back to HOMi automatically</span>
+                        <span>This page will automatically redirect you to the next step.</span>
                     </div>
                 </div>
 
-                {/* Resend button */}
                 {resent ? (
                     <div className="ev-success">
                         <div className="ev-success-icon"><CheckCircle size={32} /></div>
@@ -109,12 +137,7 @@ const EmailVerificationPage: React.FC = () => {
                     </>
                 )}
 
-                {/* Skip */}
-                <button className="ev-btn-secondary" onClick={handleContinue}>
-                    Skip for now, continue to HOMi
-                </button>
-
-                <p style={{ marginTop: 20, fontSize: 12, color: '#475569' }}>
+                <p style={{ marginTop: 24, fontSize: 12, color: '#475569' }}>
                     Didn't get the email? Check your spam folder or make sure you used the right address.
                 </p>
             </div>

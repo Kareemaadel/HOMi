@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import './CompleteProfile.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../../services/auth.service';
 import type { RegisterRequest } from '../../../types/auth.types';
 
@@ -21,18 +21,39 @@ interface SignUpFormData {
 }
 
 const CompleteProfile: React.FC = () => {
-    // Role selection is the only mandatory onboarding step.
-    const [step, setStep] = useState(2);
+    // Start at Step 1 for all users
+    const [step, setStep] = useState(1);
     const [role, setRole] = useState<UserRole>(null);
     const [signupData, setSignupData] = useState<SignUpFormData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
 
     useEffect(() => {
+        const cached = authService.getCurrentUser();
+
+        // Check if user is returning from Email Verification to complete Step 3
+        if (location.state?.step === 3) {
+            setStep(3);
+            setRole(location.state?.role || 'tenant');
+            if (cached) {
+                setAlreadyLoggedIn(true);
+                setSignupData({
+                    email: cached.user.email,
+                    password: '', 
+                    firstName: cached.profile?.firstName || '',
+                    lastName: cached.profile?.lastName || '',
+                    phone: cached.profile?.phoneNumber || '',
+                });
+            }
+            return;
+        }
+
         // Case 1: fresh registration — signupData stored right before navigating here
         const storedData = sessionStorage.getItem('signupData');
         if (storedData) {
@@ -40,27 +61,65 @@ const CompleteProfile: React.FC = () => {
             return;
         }
 
-        // Case 2: already-logged-in user coming from Settings > Complete Profile
-        const cached = authService.getCurrentUser();
+        // Case 2: already-logged-in user coming from Settings, OR fresh Google Auth login
         if (cached) {
             setAlreadyLoggedIn(true);
-            // Pre-populate signupData shape so role-selection validation passes
             setSignupData({
                 email: cached.user.email,
-                password: '',            // not needed — we won't re-register
-                firstName: cached.profile.firstName,
-                lastName: cached.profile.lastName,
-                phone: cached.profile.phoneNumber,
+                password: '',            
+                firstName: cached.profile?.firstName || '',
+                lastName: cached.profile?.lastName || '',
+                phone: cached.profile?.phoneNumber || '',
             });
             return;
         }
 
         // Neither — send back to sign-up
         navigate('/auth');
-    }, [navigate]);
+    }, [navigate, location]);
+
+    const handleSkip = async (fallbackRole?: 'tenant' | 'landlord') => {
+        // If they skip without a role, default to tenant. If they have one, use it.
+        const finalRole = fallbackRole || role || 'tenant';
+        
+        setLoading(true);
+        setError(null);
+
+        try {
+            if (alreadyLoggedIn) {
+                // User is already registered (e.g. Google auth or returned from Email Verify) — update role
+                await authService.updateRole({ role: finalRole.toUpperCase() });
+            } else if (signupData) {
+                // Fresh user — finish their registration with the fallback role
+                const registerData: RegisterRequest = {
+                    email: signupData.email,
+                    password: signupData.password,
+                    firstName: signupData.firstName,
+                    lastName: signupData.lastName,
+                    phone: signupData.phone,
+                    role: finalRole.toUpperCase() as 'TENANT' | 'LANDLORD',
+                };
+                await authService.register(registerData);
+                await authService.login({
+                    identifier: signupData.email,
+                    password: signupData.password,
+                });
+                sessionStorage.removeItem('signupData');
+            }
+
+            // Route to correct dashboard based on the finalized role
+            const nextPath = finalRole === 'landlord' ? '/landlord-home' : '/tenant-home';
+            navigate('/', { state: { next: nextPath, force: true }, replace: true });
+        } catch (err) {
+            console.error('❌ Skip failed:', err);
+            setError('An error occurred while skipping. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleRoleSelection = async () => {
-        if (!role || !signupData) {
+        if (!role) {
             setError('Please select a role');
             return;
         }
@@ -69,44 +128,48 @@ const CompleteProfile: React.FC = () => {
         setError(null);
 
         try {
+            let userEmail = signupData?.email;
+
             if (alreadyLoggedIn) {
-                // User is already registered — no need to call register again.
-                // Update their role in the backend
+                // Update role for existing user
                 await authService.updateRole({ role: role.toUpperCase() });
-                // Role is the only required step; optional profile data can be completed later.
-                const nextPath = role === 'landlord' ? '/landlord-home' : '/tenant-home';
-                navigate('/', { state: { next: nextPath, force: true }, replace: true });
-                return;
+                userEmail = signupData?.email || authService.getCurrentUser()?.user?.email;
+            } else if (signupData) {
+                // Register new user
+                const registerData: RegisterRequest = {
+                    email: signupData.email,
+                    password: signupData.password,
+                    firstName: signupData.firstName,
+                    lastName: signupData.lastName,
+                    phone: signupData.phone,
+                    role: role.toUpperCase() as 'TENANT' | 'LANDLORD',
+                };
+
+                await authService.register(registerData);
+                await authService.login({
+                    identifier: signupData.email,
+                    password: signupData.password,
+                });
+                sessionStorage.removeItem('signupData');
+                
+                userEmail = signupData.email;
+
+                try {
+                    await authService.sendVerificationEmail();
+                } catch {
+                    console.warn('Could not send verification email automatically');
+                }
             }
 
-            const registerData: RegisterRequest = {
-                email: signupData.email,
-                password: signupData.password,
-                firstName: signupData.firstName,
-                lastName: signupData.lastName,
-                phone: signupData.phone,
-                role: role.toUpperCase() as 'TENANT' | 'LANDLORD',
-            };
-
-            await authService.register(registerData);
-            console.log('✅ Registration successful!');
-
-            // Auto-login to get a JWT so we can call the send-verification-email endpoint
-            await authService.login({
-                identifier: signupData.email,
-                password: signupData.password,
+            // Go to email verification, passing state so VerifyEmail can route back to step 3
+            navigate('/verify-email', { 
+                state: { 
+                    email: userEmail,
+                    returnUrl: '/complete-profile',
+                    step: 3,
+                    role: role
+                } 
             });
-
-            sessionStorage.removeItem('signupData');
-
-            // Send verification email (requires the JWT from the login above)
-            try {
-                await authService.sendVerificationEmail();
-            } catch {
-                console.warn('Could not send verification email automatically');
-            }
-
-            navigate('/verify-email', { state: { email: signupData.email } });
         } catch (err) {
             console.error('❌ Registration failed:', err);
             let errorMessage = 'Registration failed. Please try again.';
@@ -127,7 +190,6 @@ const CompleteProfile: React.FC = () => {
     const nextStep = () => setStep(prev => prev + 1);
     const prevStep = () => setStep(prev => prev - 1);
 
-    // handlers split for clarity
     const completeAsTenant = () => {
         navigate('/', { state: { next: '/tenant-home', force: true } });
     };
@@ -229,6 +291,19 @@ const CompleteProfile: React.FC = () => {
                                 Next Step <ArrowRight size={18} />
                             </button>
                         </div>
+                        <div style={{ textAlign: 'center', marginTop: 16 }}>
+                            <button
+                                onClick={() => handleSkip('tenant')}
+                                disabled={loading}
+                                style={{
+                                    background: 'none', border: 'none', cursor: 'pointer',
+                                    color: '#94a3b8', fontSize: 13, fontWeight: 500,
+                                    textDecoration: 'underline', textUnderlineOffset: 3,
+                                }}
+                            >
+                                {loading ? 'Skipping...' : 'Skip for now'}
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -265,22 +340,17 @@ const CompleteProfile: React.FC = () => {
                                 {loading ? 'Saving...' : 'Continue'} <ArrowRight size={18} />
                             </button>
                         </div>
-                        {/* Skip link */}
                         <div style={{ textAlign: 'center', marginTop: 16 }}>
                             <button
-                                onClick={() => {
-                                    sessionStorage.removeItem('signupData');
-                                    // Logged-in users came from Settings — go back there
-                                    // New registrants have no session yet — go to sign-in
-                                    navigate(alreadyLoggedIn ? '/settings' : '/auth');
-                                }}
+                                onClick={() => handleSkip(role || 'tenant')}
+                                disabled={loading}
                                 style={{
                                     background: 'none', border: 'none', cursor: 'pointer',
                                     color: '#94a3b8', fontSize: 13, fontWeight: 500,
                                     textDecoration: 'underline', textUnderlineOffset: 3,
                                 }}
                             >
-                                Skip for now
+                                {loading ? 'Skipping...' : 'Skip for now'}
                             </button>
                         </div>
                     </div>
@@ -352,6 +422,21 @@ const CompleteProfile: React.FC = () => {
                             <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
                             <button className="btn-finish" onClick={completeAsTenant}>Complete Profile</button>
                         </div>
+                        
+                        {/* Tenant Step 3 Skip Option */}
+                        <div style={{ textAlign: 'center', marginTop: 16 }}>
+                            <button
+                                onClick={() => handleSkip('tenant')}
+                                disabled={loading}
+                                style={{
+                                    background: 'none', border: 'none', cursor: 'pointer',
+                                    color: '#94a3b8', fontSize: 13, fontWeight: 500,
+                                    textDecoration: 'underline', textUnderlineOffset: 3,
+                                }}
+                            >
+                                {loading ? 'Skipping...' : 'Skip for now'}
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -418,6 +503,21 @@ const CompleteProfile: React.FC = () => {
                         <div className="action-footer">
                             <button className="btn-back" onClick={prevStep}><ArrowLeft size={18} /> Back</button>
                             <button className="btn-finish" onClick={finishAsLandlord}>Finish Setup</button>
+                        </div>
+                        
+                        {/* Landlord Step 3 Skip Option */}
+                        <div style={{ textAlign: 'center', marginTop: 16 }}>
+                            <button
+                                onClick={() => handleSkip('landlord')}
+                                disabled={loading}
+                                style={{
+                                    background: 'none', border: 'none', cursor: 'pointer',
+                                    color: '#94a3b8', fontSize: 13, fontWeight: 500,
+                                    textDecoration: 'underline', textUnderlineOffset: 3,
+                                }}
+                            >
+                                {loading ? 'Skipping...' : 'Skip for now'}
+                            </button>
                         </div>
                     </div>
                 )}
