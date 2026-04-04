@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
@@ -13,6 +13,7 @@ const PaymobVerify: React.FC = () => {
     const [searchParams] = useSearchParams();
     const [state, setState] = useState<VerifyState>('loading');
     const [message, setMessage] = useState('Verifying your payment...');
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -43,7 +44,7 @@ const PaymobVerify: React.FC = () => {
                 setState('success');
                 setMessage('Payment verified successfully. Your contract is now active.');
 
-                setTimeout(() => {
+                timerRef.current = setTimeout(() => {
                     navigate('/tenant-payment', { replace: true, state: { tab: 'history' } });
                 }, 1800);
             } catch {
@@ -57,6 +58,9 @@ const PaymobVerify: React.FC = () => {
 
         return () => {
             mounted = false;
+            if (timerRef.current !== null) {
+                clearTimeout(timerRef.current);
+            }
         };
     }, [navigate, searchParams]);
 
@@ -76,7 +80,18 @@ const PaymobVerify: React.FC = () => {
 
                         {state !== 'loading' && (
                             <div className="verify-actions">
-                                <button type="button" onClick={() => navigate('/prepayment-page')}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const contractId = searchParams.get('contractId');
+                                        if (contractId) {
+                                            const params = new URLSearchParams({ contractId });
+                                            navigate(`/prepayment-page?${params.toString()}`);
+                                        } else {
+                                            navigate('/prepayment-page');
+                                        }
+                                    }}
+                                >
                                     Back to Pre-Payment
                                 </button>
                                 <button type="button" onClick={() => navigate('/tenant-contracts')}>
