@@ -322,11 +322,9 @@ class EmailService {
      * Send email verification email
      */
     async sendVerificationEmail(email: string, token: string): Promise<boolean> {
-        const verificationUrl = `${env.CLIENT_URL}/verify-email?token=${token}`;
-        // Also provide API endpoint for direct verification
-        const apiVerificationUrl = `http://localhost:${env.PORT}/api/auth/verify-email?token=${token}`;
+        const verificationUrl = `${env.CLIENT_URL}/verify-email?token=${encodeURIComponent(token)}`;
 
-        console.log('📧 [EMAIL SERVICE] Verification API URL:', apiVerificationUrl);
+        console.log('📧 [EMAIL SERVICE] Verification link:', verificationUrl);
 
         return this.sendEmail(email, 'Verify Your Email - HOMi', {
             title: 'Welcome to HOMi! 🏠',
@@ -338,7 +336,7 @@ class EmailService {
                 This verification link will expire in <strong>24 hours</strong>.
             `,
             buttonText: 'Verify My Email',
-            buttonUrl: apiVerificationUrl,
+            buttonUrl: verificationUrl,
             footer: "If you didn't create an account with HOMi, you can safely ignore this email.",
         });
     }

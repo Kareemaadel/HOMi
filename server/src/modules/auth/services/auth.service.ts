@@ -831,8 +831,9 @@ export class AuthService {
      * Called when user clicks the verification link
      */
     async verifyEmail(token: string): Promise<EmailVerificationResponse> {
+        const trimmed = token.trim();
         // Hash the provided token to compare with stored hash
-        const hashedToken = hashToken(token);
+        const hashedToken = hashToken(trimmed);
 
         // Find user with matching token
         const user = await User.findOne({
