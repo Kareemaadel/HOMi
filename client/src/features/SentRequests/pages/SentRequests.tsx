@@ -5,6 +5,7 @@ import { Inbox, Clock, CheckCircle, XCircle, RefreshCw, BedDouble, Bath, Ruler, 
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
+import PropertyDetailModal from '../../BrowseProperties/components/PropertyDetailedModal';
 import { rentalRequestService, type MyRentalRequest, type RentalRequestStatus } from '../../../services/rental-request.service';
 import './SentRequests.css';
 
@@ -54,13 +55,50 @@ const getPropertyImage = (req: MyRentalRequest): string => {
         || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800';
 };
 
+/** Shape PropertyDetailModal expects */
+const mapRequestToModalProperty = (req: MyRentalRequest) => {
+    const images = req.property.images ?? [];
+    const mainImage = images.find(i => i.isMain)?.imageUrl
+        || images[0]?.imageUrl
+        || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800';
+
+    const landlord = req.property.landlord;
+
+    return {
+        id:              req.property.id,
+        title:           req.property.title,
+        address:         req.property.address,
+        price:           req.property.monthlyPrice ?? 0,
+        securityDeposit: req.property.securityDeposit ?? 0,
+        image:           mainImage,
+        allImages:       images.map(i => i.imageUrl),
+        beds:            req.property.specifications?.bedrooms   ?? '—',
+        baths:           req.property.specifications?.bathrooms  ?? '—',
+        sqft:            req.property.specifications?.areaSqft   ?? '—',
+        ownerName:  landlord ? `${landlord.firstName} ${landlord.lastName}`.trim() : 'Property Owner',
+        ownerImage: landlord?.avatarUrl ?? undefined,
+        // Pass the original rental-request data so ApplicationModal can pre-fill read-only fields
+        rentalRequest: {
+            moveInDate:      req.moveInDate,
+            duration:        req.duration,
+            occupants:       req.occupants,
+            livingSituation: req.livingSituation,
+            message:         req.message,
+        },
+    };
+};
+
 const SentRequests: React.FC = () => {
     const navigate = useNavigate();
 
-    const [requests,    setRequests]    = useState<MyRentalRequest[]>([]);
-    const [loading,     setLoading]     = useState(true);
-    const [error,       setError]       = useState<string | null>(null);
+    const [requests,     setRequests]     = useState<MyRentalRequest[]>([]);
+    const [loading,      setLoading]      = useState(true);
+    const [error,        setError]        = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<RentalRequestStatus | 'ALL'>('ALL');
+
+    // Modal state
+    const [selectedRequest, setSelectedRequest] = useState<MyRentalRequest | null>(null);
+    const [isModalOpen,     setIsModalOpen]     = useState(false);
 
     const fetchRequests = async (status?: RentalRequestStatus) => {
         setLoading(true);
@@ -68,7 +106,7 @@ const SentRequests: React.FC = () => {
         try {
             const res = await rentalRequestService.getMyRequests({
                 status,
-                page: 1,
+                page:  1,
                 limit: 50,
             });
             setRequests(res.data);
@@ -82,6 +120,16 @@ const SentRequests: React.FC = () => {
     useEffect(() => {
         void fetchRequests(activeFilter === 'ALL' ? undefined : activeFilter);
     }, [activeFilter]);
+
+    const handleCardClick = (req: MyRentalRequest) => {
+        setSelectedRequest(req);
+        setIsModalOpen(true);
+    };
+
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setSelectedRequest(null);
+    };
 
     const landlordName = (req: MyRentalRequest) => {
         const l = req.property.landlord;
@@ -145,11 +193,11 @@ const SentRequests: React.FC = () => {
                     {!loading && !error && requests.length > 0 && (
                         <div className="requests-grid">
                             {requests.map(req => {
-                                const cfg   = STATUS_CONFIG[req.status];
-                                const img   = getPropertyImage(req);
-                                const beds  = req.property.specifications?.bedrooms ?? '—';
-                                const baths = req.property.specifications?.bathrooms ?? '—';
-                                const sqft  = req.property.specifications?.areaSqft ?? '—';
+                                const cfg     = STATUS_CONFIG[req.status];
+                                const img     = getPropertyImage(req);
+                                const beds    = req.property.specifications?.bedrooms  ?? '—';
+                                const baths   = req.property.specifications?.bathrooms ?? '—';
+                                const sqft    = req.property.specifications?.areaSqft  ?? '—';
                                 const movedIn = req.moveInDate
                                     ? new Date(req.moveInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                                     : 'TBD';
@@ -161,6 +209,8 @@ const SentRequests: React.FC = () => {
                                     <div
                                         key={req.id}
                                         className={`request-card ${cfg.cardClass}`}
+                                        onClick={() => handleCardClick(req)}
+                                        style={{ cursor: 'pointer' }}
                                     >
                                         {/* Image */}
                                         <div className="request-card-image-wrapper">
@@ -247,6 +297,16 @@ const SentRequests: React.FC = () => {
             </div>
 
             <Footer />
+
+            {/* ── Property Detail Modal ── */}
+            {isModalOpen && selectedRequest && (
+                <PropertyDetailModal
+                    property={mapRequestToModalProperty(selectedRequest)}
+                    isOpen={isModalOpen}
+                    onClose={handleModalClose}
+                    isSentRequestView={true}
+                />
+            )}
         </div>
     );
 };
