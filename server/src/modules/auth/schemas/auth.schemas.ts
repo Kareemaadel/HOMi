@@ -62,8 +62,8 @@ export const CompleteVerificationSchema = z.object({
         .string()
         .min(1, 'National ID is required')
         .max(50, 'National ID must be at most 50 characters'),
-    gender: z.enum([Gender.MALE, Gender.FEMALE], {
-        message: 'Gender must be MALE or FEMALE',
+    gender: z.enum([Gender.MALE, Gender.FEMALE, Gender.PREFER_NOT_TO_SAY], {
+        message: 'Gender must be MALE, FEMALE, or PREFER_NOT_TO_SAY',
     }),
     birthdate: z
         .string()
@@ -203,6 +203,12 @@ export const UpdateProfileSchema = z.object({
     preferredBudgetMax: z
         .number()
         .positive('Maximum budget must be positive')
+        .optional()
+        .nullable(),
+    currentLocation: z
+        .string()
+        .max(255, 'Location must be at most 255 characters')
+        .trim()
         .optional()
         .nullable(),
 }).refine(

@@ -81,6 +81,26 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 ALTER TABLE IF EXISTS "properties"
                     DROP COLUMN IF EXISTS "price";
             `);
+            // Add new profile.gender enum value for existing PostgreSQL databases
+            await sequelize.query(`
+                DO $$ BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_type t
+                        WHERE t.typname = 'enum_profiles_gender'
+                    ) AND NOT EXISTS (
+                        SELECT 1 FROM pg_enum e
+                        JOIN pg_type t ON e.enumtypid = t.oid
+                        WHERE t.typname = 'enum_profiles_gender'
+                          AND e.enumlabel = 'PREFER_NOT_TO_SAY'
+                    ) THEN
+                        ALTER TYPE enum_profiles_gender ADD VALUE 'PREFER_NOT_TO_SAY';
+                    END IF;
+                END $$;
+            `);
+            await sequelize.query(`
+                ALTER TABLE IF EXISTS "profiles"
+                    ADD COLUMN IF NOT EXISTS "current_location" VARCHAR(255);
+            `);
         }
         // ──────────────────────────────────────────────────────────────────
 

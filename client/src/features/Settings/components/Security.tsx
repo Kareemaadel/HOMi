@@ -1,5 +1,6 @@
 // client/src/features/Settings/components/Security.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Security.css';
 import { FaShieldVirus, FaFingerprint, FaHistory, FaKey, FaTimes, FaEye, FaEyeSlash, FaCheck, FaTimesCircle, FaGoogle } from 'react-icons/fa';
 import { authService } from '../../../services/auth.service';
@@ -41,6 +42,7 @@ function parseApiError(err: unknown): string {
 }
 
 const Security: React.FC = () => {
+    const navigate = useNavigate();
     const isGoogleUser = localStorage.getItem('authProvider') === 'google';
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
@@ -162,7 +164,9 @@ const Security: React.FC = () => {
                     <p>Finish setting up your account</p>
                     <button
                         className="tool-btn"
-                        onClick={() => window.location.href = '/complete-profile'}
+                        onClick={() => {
+                            navigate('/complete-profile', { state: { fromSettings: true } });
+                        }}
                     >
                         Continue
                     </button>

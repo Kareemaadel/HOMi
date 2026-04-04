@@ -87,6 +87,7 @@ export interface ProfileResponse {
     gamificationPoints: number;
     preferredBudgetMin: number | null;
     preferredBudgetMax: number | null;
+    currentLocation: string | null;
     isVerificationComplete: boolean;
 }
 
@@ -163,6 +164,7 @@ export interface UpdateProfileRequest {
     avatarUrl?: string;
     preferredBudgetMin?: number;
     preferredBudgetMax?: number;
+    currentLocation?: string | null;
 }
 
 /**

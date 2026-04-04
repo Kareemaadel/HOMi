@@ -1,7 +1,7 @@
 // client/src/features/Settings/components/MyProfile.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import './MyProfile.css';
-import { FaCamera, FaIdBadge, FaEnvelope, FaPhone } from 'react-icons/fa';
+import { FaCamera, FaIdBadge, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUserCircle } from 'react-icons/fa';
 import { authService } from '../../../services/auth.service';
 import type { UserResponse, ProfileResponse } from '../../../types/auth.types';
 
@@ -16,16 +16,22 @@ const MyProfile: React.FC = () => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [phone, setPhone] = useState('');
+    const [bio, setBio] = useState('');
+    const [currentLocation, setCurrentLocation] = useState('');
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const originalFirstName = profile?.firstName ?? '';
     const originalLastName = profile?.lastName ?? '';
     const originalPhone = profile?.phoneNumber ?? '';
+    const originalBio = profile?.bio ?? '';
+    const originalLocation = profile?.currentLocation ?? '';
     const hasChanges =
         firstName !== originalFirstName ||
         lastName !== originalLastName ||
-        phone !== originalPhone;
+        phone !== originalPhone ||
+        bio !== originalBio ||
+        currentLocation !== originalLocation;
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -36,6 +42,8 @@ const MyProfile: React.FC = () => {
                 setFirstName(data.profile.firstName);
                 setLastName(data.profile.lastName);
                 setPhone(data.profile.phoneNumber);
+                setBio(data.profile.bio ?? '');
+                setCurrentLocation(data.profile.currentLocation ?? '');
             } catch {
                 // Fall back to locally-cached data if the request fails
                 const cached = authService.getCurrentUser();
@@ -45,6 +53,8 @@ const MyProfile: React.FC = () => {
                     setFirstName(cached.profile.firstName);
                     setLastName(cached.profile.lastName);
                     setPhone(cached.profile.phoneNumber);
+                    setBio(cached.profile.bio ?? '');
+                    setCurrentLocation(cached.profile.currentLocation ?? '');
                 }
             } finally {
                 setLoading(false);
@@ -136,12 +146,22 @@ const MyProfile: React.FC = () => {
             // and avoids sending an empty phone (Google OAuth users may have none).
             const cached = authService.getCurrentUser();
             const orig = cached?.profile;
-            const payload: { firstName?: string; lastName?: string; phone?: string } = {};
+            const payload: {
+                firstName?: string;
+                lastName?: string;
+                phone?: string;
+                bio?: string | null;
+                currentLocation?: string | null;
+            } = {};
 
             if (firstName !== (orig?.firstName ?? '')) payload.firstName = firstName;
             if (lastName !== (orig?.lastName ?? '')) payload.lastName = lastName;
             // Only include phone if it's non-empty AND different from original
             if (phone && phone !== (orig?.phoneNumber ?? '')) payload.phone = phone;
+            if (bio !== (orig?.bio ?? '')) payload.bio = bio.trim() || null;
+            if (currentLocation !== (orig?.currentLocation ?? '')) {
+                payload.currentLocation = currentLocation.trim() || null;
+            }
 
             if (Object.keys(payload).length === 0) {
                 setMessage({ type: 'success', text: 'No changes to save.' });
@@ -309,6 +329,36 @@ const MyProfile: React.FC = () => {
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 placeholder="+1 (555) 000-0000"
+                            />
+                        </div>
+                    </div>
+                    <div className="modern-field" style={{ gridColumn: '1 / -1' }}>
+                        <FaUserCircle className="field-icon" />
+                        <div className="field-content">
+                            <label>Bio</label>
+                            <textarea
+                                value={bio}
+                                onChange={(e) => setBio(e.target.value)}
+                                placeholder="Tell others a bit about yourself"
+                                rows={3}
+                                style={{
+                                    resize: 'vertical',
+                                    minHeight: 72,
+                                    width: '100%',
+                                    fontFamily: 'inherit',
+                                }}
+                            />
+                        </div>
+                    </div>
+                    <div className="modern-field">
+                        <FaMapMarkerAlt className="field-icon" />
+                        <div className="field-content">
+                            <label>Current location</label>
+                            <input
+                                type="text"
+                                value={currentLocation}
+                                onChange={(e) => setCurrentLocation(e.target.value)}
+                                placeholder="City, Country"
                             />
                         </div>
                     </div>

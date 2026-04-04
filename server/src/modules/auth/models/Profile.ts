@@ -16,6 +16,7 @@ import type { User } from './User.js';
 export const Gender = {
     MALE: 'MALE',
     FEMALE: 'FEMALE',
+    PREFER_NOT_TO_SAY: 'PREFER_NOT_TO_SAY',
 } as const;
 
 export type GenderType = (typeof Gender)[keyof typeof Gender];
@@ -38,6 +39,7 @@ export class Profile extends Model<
     // Optional fields
     declare bio: CreationOptional<string | null>;
     declare avatar_url: CreationOptional<string | null>;
+    declare current_location: CreationOptional<string | null>;
 
     // Verification fields (nullable until user completes verification)
     declare national_id: CreationOptional<string | null>; // Encrypted at rest
@@ -121,6 +123,10 @@ Profile.init(
         },
         avatar_url: {
             type: DataTypes.TEXT,   // TEXT to support base64-encoded images
+            allowNull: true,
+        },
+        current_location: {
+            type: DataTypes.STRING(255),
             allowNull: true,
         },
         national_id: {

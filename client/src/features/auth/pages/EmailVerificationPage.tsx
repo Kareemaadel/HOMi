@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
@@ -21,7 +21,14 @@ const EmailVerificationPage: React.FC = () => {
     const tokenFromUrl = searchParams.get('token')?.trim() || null;
 
     const locationState = location.state as LocationState;
-    const targetRole = locationState?.role;
+
+    const resolveRoleForStep3 = useCallback((): 'tenant' | 'landlord' => {
+        const r = (locationState?.role ?? '').toString().toLowerCase();
+        if (r === 'landlord') return 'landlord';
+        if (r === 'tenant') return 'tenant';
+        const cr = authService.getCurrentUser()?.user?.role?.toUpperCase();
+        return cr === 'LANDLORD' ? 'landlord' : 'tenant';
+    }, [locationState?.role]);
 
     const displayEmail = useMemo(() => {
         const fromNav = locationState?.email;
@@ -116,7 +123,7 @@ const EmailVerificationPage: React.FC = () => {
     useEffect(() => {
         const forceRouteToStep3 = () => {
             navigate('/complete-profile', {
-                state: { step: 3, role: targetRole },
+                state: { step: 3, role: resolveRoleForStep3() },
                 replace: true,
             });
         };
@@ -132,7 +139,21 @@ const EmailVerificationPage: React.FC = () => {
         return () => {
             window.removeEventListener('storage', handleStorageChange);
         };
-    }, [navigate, targetRole]);
+    }, [navigate, resolveRoleForStep3]);
+
+    /** After a successful verify-from-link flow, continue to complete profile step 3 automatically. */
+    useEffect(() => {
+        if (verifyPhase !== 'success') return;
+
+        const t = window.setTimeout(() => {
+            navigate('/complete-profile', {
+                replace: true,
+                state: { step: 3, role: resolveRoleForStep3() },
+            });
+        }, 1600);
+
+        return () => window.clearTimeout(t);
+    }, [verifyPhase, navigate, resolveRoleForStep3]);
 
     useEffect(() => {
         if (countdown <= 0) {
@@ -162,7 +183,7 @@ const EmailVerificationPage: React.FC = () => {
 
     const handleContinueProfile = () => {
         navigate('/complete-profile', {
-            state: { step: 3, role: targetRole },
+            state: { step: 3, role: resolveRoleForStep3() },
             replace: false,
         });
     };
