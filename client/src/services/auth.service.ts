@@ -17,6 +17,9 @@ import type {
 
 const REFRESH_VIA_COOKIE = 'refreshViaCookie';
 
+/** One shared request per token (React Strict Mode runs effects twice; 2nd call must not re-verify after DB clears). */
+const verifyEmailInFlight = new Map<string, Promise<EmailVerificationResponse>>();
+
 function parseJwtExpMs(accessToken: string): number | null {
     try {
         const payload = JSON.parse(atob(accessToken.split('.')[1])) as { exp?: number };
@@ -288,8 +291,28 @@ class AuthService {
      * Verify email with token
      */
     async verifyEmail(token: string): Promise<EmailVerificationResponse> {
-        const response = await apiClient.get<EmailVerificationResponse>(`/auth/verify-email/${token}`);
-        return response.data;
+        const t = typeof token === 'string' ? token.trim() : String(token).trim();
+        if (!t) {
+            return Promise.reject(new Error('Verification token is required'));
+        }
+
+        const existing = verifyEmailInFlight.get(t);
+        if (existing) {
+            return existing;
+        }
+
+        const request = apiClient
+            .get<EmailVerificationResponse>('/auth/verify-email', {
+                params: { token: t },
+                headers: { Accept: 'application/json' },
+            })
+            .then((response) => response.data)
+            .finally(() => {
+                verifyEmailInFlight.delete(t);
+            });
+
+        verifyEmailInFlight.set(t, request);
+        return request;
     }
 
     /**

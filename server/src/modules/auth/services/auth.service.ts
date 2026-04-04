@@ -327,6 +327,7 @@ export class AuthService {
             gamificationPoints: profile.gamification_points,
             preferredBudgetMin: profile.preferred_budget_min ?? null,
             preferredBudgetMax: profile.preferred_budget_max ?? null,
+            currentLocation: profile.current_location ?? null,
             isVerificationComplete: profile.isVerificationComplete(),
         };
 
@@ -548,6 +549,7 @@ export class AuthService {
             gamificationPoints: profile.gamification_points,
             preferredBudgetMin: profile.preferred_budget_min ?? null,
             preferredBudgetMax: profile.preferred_budget_max ?? null,
+            currentLocation: profile.current_location ?? null,
             isVerificationComplete: profile.isVerificationComplete(),
         };
 
@@ -602,6 +604,7 @@ export class AuthService {
             gamificationPoints: profile.gamification_points,
             preferredBudgetMin: profile.preferred_budget_min ?? null,
             preferredBudgetMax: profile.preferred_budget_max ?? null,
+            currentLocation: profile.current_location ?? null,
             isVerificationComplete: profile.isVerificationComplete(),
         };
 
@@ -644,6 +647,7 @@ export class AuthService {
                 phone_number: string;
                 bio: string | null;
                 avatar_url: string | null;
+                current_location: string | null;
                 preferred_budget_min: number | null;
                 preferred_budget_max: number | null;
             }> = {};
@@ -653,6 +657,7 @@ export class AuthService {
             if (input.phone !== undefined) updateData.phone_number = input.phone;
             if (input.bio !== undefined) updateData.bio = input.bio;
             if (input.avatarUrl !== undefined) updateData.avatar_url = input.avatarUrl;
+            if (input.currentLocation !== undefined) updateData.current_location = input.currentLocation;
             if (input.preferredBudgetMin !== undefined) updateData.preferred_budget_min = input.preferredBudgetMin;
             if (input.preferredBudgetMax !== undefined) updateData.preferred_budget_max = input.preferredBudgetMax;
 
@@ -684,6 +689,7 @@ export class AuthService {
                 gamificationPoints: profile.gamification_points,
                 preferredBudgetMin: profile.preferred_budget_min ?? null,
                 preferredBudgetMax: profile.preferred_budget_max ?? null,
+                currentLocation: profile.current_location ?? null,
                 isVerificationComplete: profile.isVerificationComplete(),
             };
 
@@ -759,6 +765,7 @@ export class AuthService {
                 gamificationPoints: profile.gamification_points,
                 preferredBudgetMin: profile.preferred_budget_min ?? null,
                 preferredBudgetMax: profile.preferred_budget_max ?? null,
+                currentLocation: profile.current_location ?? null,
                 isVerificationComplete: profile.isVerificationComplete(),
             };
 
@@ -831,8 +838,9 @@ export class AuthService {
      * Called when user clicks the verification link
      */
     async verifyEmail(token: string): Promise<EmailVerificationResponse> {
+        const trimmed = token.trim();
         // Hash the provided token to compare with stored hash
-        const hashedToken = hashToken(token);
+        const hashedToken = hashToken(trimmed);
 
         // Find user with matching token
         const user = await User.findOne({

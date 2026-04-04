@@ -3,7 +3,7 @@
 // ==========================================
 
 export type UserRole = 'LANDLORD' | 'TENANT' | 'ADMIN' | 'SUPPORT';
-export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
+export type Gender = 'MALE' | 'FEMALE' | 'PREFER_NOT_TO_SAY' | 'OTHER';
 
 // ==========================================
 // Request Types
@@ -46,6 +46,7 @@ export interface UpdateProfileRequest {
     phone?: string;
     bio?: string;
     avatarUrl?: string;
+    currentLocation?: string | null;
     preferredBudgetMin?: number;
     preferredBudgetMax?: number;
 }
@@ -72,6 +73,7 @@ export interface ProfileResponse {
     gamificationPoints: number;
     preferredBudgetMin: number | null;
     preferredBudgetMax: number | null;
+    currentLocation: string | null;
     isVerificationComplete: boolean;
 }
 
