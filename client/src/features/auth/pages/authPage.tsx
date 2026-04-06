@@ -79,10 +79,7 @@ const AuthPage = () => {
 
           <div className="social-auth-grid">
             <GoogleLoginBtn rememberMe={rememberMe} />
-            <button className="social-pill" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-              <FaFacebookF size={18} color="#1877f2" />
-              <span>Facebook (Coming Soon)</span>
-            </button>
+
           </div>
 
           <div className="auth-ui-divider">
