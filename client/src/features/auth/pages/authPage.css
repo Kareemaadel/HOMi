@@ -113,11 +113,10 @@
 /* --- Social Auth Buttons --- */
 .social-auth-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 12px;
     margin-bottom: 24px;
     width: 100%;
-    width: 930px;
 }
 
 .social-pill {
@@ -135,6 +134,7 @@
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    width: 100%;
 }
 
 .social-pill:hover {
