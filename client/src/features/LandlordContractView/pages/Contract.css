@@ -13,13 +13,27 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+.dashboard-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--saas-bg);
+}
+
+.landlord-contract-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width, 260px);
+  width: calc(100% - var(--sidebar-width, 260px));
+}
+
 .landlord-contract-hub {
-  padding: 60px 48px;
+  padding: 116px 24px 32px;
   background-color: var(--saas-bg);
   min-height: 100vh;
-  margin-left: 15px; /* Aligned with your Sidebar width */
-  transition: all 0.3s ease;
-  margin-top: 30px;
+  margin: 0;
+  overflow-x: clip;
 }
 
 .landlord-hub-header {
@@ -49,8 +63,13 @@
 /* --- The Grid --- */
 .contract-list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.empty-state-container {
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -215,4 +234,19 @@
 
 .btn-primary:hover {
   opacity: 0.9;
+}
+
+@media (max-width: 1024px) {
+  .landlord-contract-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .landlord-contract-hub {
+    padding: 100px 18px 24px;
+  }
+
+  .landlord-hub-header {
+    margin-bottom: 32px;
+  }
 }

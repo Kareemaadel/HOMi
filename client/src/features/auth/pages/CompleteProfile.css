@@ -138,7 +138,7 @@
     color: var(--text-dark);
 }
 
-.input-wrapper input, .input-wrapper select { padding-left: 44px; }
+.input-wrapper input, .input-wrapper select { padding-left: 52px; }
 
 .form-field input:focus, .form-field select:focus {
     outline: none;

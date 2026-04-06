@@ -1,5 +1,5 @@
 // client/src/features/Settings/components/Security.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Security.css';
 import { FaShieldVirus, FaFingerprint, FaHistory, FaKey, FaTimes, FaEye, FaEyeSlash, FaCheck, FaTimesCircle, FaGoogle } from 'react-icons/fa';
@@ -53,6 +53,30 @@ const Security: React.FC = () => {
     const [showConfirm, setShowConfirm] = useState(false);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [isProfileComplete, setIsProfileComplete] = useState<boolean>(
+        Boolean(authService.getCurrentUser()?.profile?.isVerificationComplete)
+    );
+
+    useEffect(() => {
+        let mounted = true;
+
+        const syncProfileCompletion = async () => {
+            try {
+                const profile = await authService.getProfile();
+                if (!mounted) return;
+                setIsProfileComplete(Boolean(profile.profile?.isVerificationComplete));
+            } catch {
+                if (!mounted) return;
+                setIsProfileComplete(Boolean(authService.getCurrentUser()?.profile?.isVerificationComplete));
+            }
+        };
+
+        void syncProfileCompletion();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     // Track whether the user has started typing the new password (to show checklist)
     const newPasswordTouched = newPassword.length > 0;
@@ -160,15 +184,17 @@ const Security: React.FC = () => {
                 </div>
                 <div className="tool-card">
                     <div className="tool-icon-box"><FaHistory /></div>
-                    <h4>Complete Profile</h4>
-                    <p>Finish setting up your account</p>
+                    <h4>{isProfileComplete ? 'Profile Complete' : 'Complete Profile'}</h4>
+                    <p>{isProfileComplete ? 'Your verification details are already completed.' : 'Finish setting up your account'}</p>
                     <button
                         className="tool-btn"
+                        disabled={isProfileComplete}
                         onClick={() => {
+                            if (isProfileComplete) return;
                             navigate('/complete-profile', { state: { fromSettings: true } });
                         }}
                     >
-                        Continue
+                        {isProfileComplete ? 'Completed' : 'Continue'}
                     </button>
                 </div>
             </div>

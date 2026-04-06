@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     User, IdCard, Globe,
     Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
-    Calendar, Clock, ShieldCheck, CheckCircle2,
+    Calendar, Clock, CheckCircle2,
     Briefcase,
 } from 'lucide-react';
 import axios from 'axios';
@@ -45,7 +45,6 @@ interface LandlordStep3Draft {
     totalProperties: string;
     yearsExperience: string;
     businessAddress: string;
-    paymentMethod: string;
     availability: string;
 }
 
@@ -93,7 +92,6 @@ const defaultLandlordStep3 = (): LandlordStep3Draft => ({
     totalProperties: '',
     yearsExperience: '',
     businessAddress: '',
-    paymentMethod: '',
     availability: '',
 });
 
@@ -160,7 +158,6 @@ function validateLandlordStep3(t: LandlordStep3Draft): string | null {
     const ye = Number(t.yearsExperience);
     if (!Number.isFinite(ye) || ye < 0) return 'Years of experience must be a valid number (0 or more).';
     if (!t.businessAddress.trim()) return 'Please enter business address.';
-    if (!t.paymentMethod.trim()) return 'Please select payment method.';
     if (!t.availability.trim()) return 'Please enter availability.';
     return null;
 }
@@ -993,22 +990,6 @@ const CompleteProfile: React.FC = () => {
                                 </div>
                             </div>
                             <div className="form-field">
-                                <label>Payment Method {req}</label>
-                                <select
-                                    value={landlordStep3.paymentMethod}
-                                    onChange={(e) =>
-                                        setLandlordStep3((s) => ({ ...s, paymentMethod: e.target.value }))
-                                    }
-                                >
-                                    <option value="" disabled>
-                                        Select…
-                                    </option>
-                                    <option value="Bank Transfer">Bank Transfer</option>
-                                    <option value="Cash">Cash</option>
-                                    <option value="Online Payment">Online Payment</option>
-                                </select>
-                            </div>
-                            <div className="form-field">
                                 <label>Availability {req}</label>
                                 <div className="input-wrapper">
                                     <Clock className="input-icon" size={16} />
@@ -1020,13 +1001,6 @@ const CompleteProfile: React.FC = () => {
                                             setLandlordStep3((s) => ({ ...s, availability: e.target.value }))
                                         }
                                     />
-                                </div>
-                            </div>
-                            <div className="form-field full">
-                                <label>Ownership Proof (Deed/License)</label>
-                                <div className="upload-zone">
-                                    <ShieldCheck size={24} />
-                                    <span>Click to upload verification documents</span>
                                 </div>
                             </div>
                         </div>

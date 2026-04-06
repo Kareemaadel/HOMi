@@ -111,7 +111,7 @@ const LandlordContract: React.FC = () => {
     return (
         <div className="dashboard-shell">
             <Sidebar />
-            <div className="content-container">
+            <div className="landlord-contract-content">
                 <Header />
                 <main className="landlord-contract-hub">
                     <div className="landlord-hub-header">
@@ -185,7 +185,7 @@ const LandlordContract: React.FC = () => {
                 />
             )}
 
-            {selectedContract && selectedContract.status === 'ACTIVE' && (
+            {selectedContract?.status === 'ACTIVE' && (
                 <ActiveLeaseContract 
                     contract={selectedContract} 
                     onClose={() => setSelectedContract(null)} 
