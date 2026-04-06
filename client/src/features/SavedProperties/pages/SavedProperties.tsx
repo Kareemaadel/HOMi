@@ -156,6 +156,16 @@ const SavedProperties: React.FC = () => {
         }
     };
 
+    const handleToggleSave = async (propertyId: string | number) => {
+        const normalized = String(propertyId);
+        try {
+            await savedPropertiesService.removeSavedProperty(normalized);
+            setSavedItems((prev) => prev.filter((item) => item.id !== normalized));
+        } catch {
+            // Keep UI stable if API fails.
+        }
+    };
+
     return (
         <div className="sp-root">
             <Sidebar />
@@ -255,6 +265,8 @@ const SavedProperties: React.FC = () => {
                                             <PropertyCard
                                                 property={item}
                                                 onOpenDetails={() => handleOpenDetails(item)}
+                                                isSaved={true}
+                                                onToggleSave={handleToggleSave}
                                             />
                                         </div>
                                     ))}

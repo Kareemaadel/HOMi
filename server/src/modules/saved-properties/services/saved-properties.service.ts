@@ -14,6 +14,10 @@ export class SavedPropertiesError extends Error {
 }
 
 class SavedPropertiesService {
+    private isUuid(value: string): boolean {
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    }
+
     async getMySavedPropertyIds(userId: string): Promise<string[]> {
         const rows = await SavedProperty.findAll({
             where: { user_id: userId },
@@ -49,6 +53,10 @@ class SavedPropertiesService {
     }
 
     async saveProperty(userId: string, propertyId: string): Promise<void> {
+        if (!this.isUuid(propertyId)) {
+            throw new SavedPropertiesError('Invalid property id', 400, 'INVALID_PROPERTY_ID');
+        }
+
         const property = await Property.findByPk(propertyId);
         if (!property) {
             throw new SavedPropertiesError('Property not found', 404, 'PROPERTY_NOT_FOUND');
@@ -67,6 +75,10 @@ class SavedPropertiesService {
     }
 
     async removeSavedProperty(userId: string, propertyId: string): Promise<void> {
+        if (!this.isUuid(propertyId)) {
+            throw new SavedPropertiesError('Invalid property id', 400, 'INVALID_PROPERTY_ID');
+        }
+
         await SavedProperty.destroy({
             where: { user_id: userId, property_id: propertyId },
         });

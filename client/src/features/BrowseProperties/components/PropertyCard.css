@@ -93,6 +93,12 @@
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
 }
 
+.wishlist-btn.active {
+    background: #fee2e2;
+    color: #ef4444;
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+}
+
 /* Floating Price Tag */
 .floating-price {
     position: absolute;
