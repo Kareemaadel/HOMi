@@ -38,7 +38,7 @@ const RentalRequests: React.FC = () => {
             applicant: {
                 name: `${req.tenant.firstName} ${req.tenant.lastName}`.trim(),
                 image: req.tenant.avatarUrl || 'https://i.pravatar.cc/150?u=fallback',
-                occupation: req.tenant.bio || 'Tenant',
+                occupation: 'Tenant',
                 company: '',
                 income: 'Verified',
                 creditScore: 720,

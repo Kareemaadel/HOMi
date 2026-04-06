@@ -79,6 +79,7 @@ const TenantPayment: React.FC = () => {
     const [isTopupStarting, setIsTopupStarting] = useState(false);
     const [isTopupVerifying, setIsTopupVerifying] = useState(false);
     const topupVerifiedRef = useRef(false);
+    const [paymentActionError, setPaymentActionError] = useState<string | null>(null);
 
     const tenantProfile = authService.getCurrentUser()?.profile;
     const accountHolderName = `${tenantProfile?.firstName ?? ''} ${tenantProfile?.lastName ?? ''}`.trim() || 'Account Holder';
@@ -115,6 +116,7 @@ const TenantPayment: React.FC = () => {
             setTenantRequests(requestsRes.data ?? []);
             setSavedMethods(methods);
             setWalletBalance(Number(wallet.balance ?? 0));
+            setPaymentActionError(null);
         } catch {
             setDataError('Could not load latest payment data.');
         } finally {
@@ -180,16 +182,19 @@ const TenantPayment: React.FC = () => {
     const hasCurrentBalance = walletBalance > 0;
     const hasNextRent = Boolean(activeContract);
 
+    const getTotalContractCharge = (contract: LandlordContract): number => {
+        const rent = Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0);
+        const deposit = Number(contract.securityDeposit ?? contract.property?.securityDeposit ?? 0);
+        const serviceFee = 10;
+        return rent + deposit + serviceFee;
+    };
+
     const nextRentAmount = Number(activeContract?.rentAmount ?? activeContract?.property?.monthlyPrice ?? 0);
     const paidContracts = tenantContracts.filter((c) => c.status === 'ACTIVE');
     const annualSpendAmount = paidContracts.reduce((sum, c) => sum + Number(c.rentAmount ?? c.property?.monthlyPrice ?? 0), 0);
     const hasAnnualSpend = paidContracts.length > 0;
 
-    const pendingTotalDue = pendingPaymentContract
-        ? Number(pendingPaymentContract.rentAmount ?? 0) +
-          Number(pendingPaymentContract.securityDeposit ?? 0) +
-          10
-        : 0;
+        const pendingTotalDue = pendingPaymentContract ? getTotalContractCharge(pendingPaymentContract) : 0;
     const canAffordPendingPayment = walletBalance >= pendingTotalDue;
 
     const hasUpcomingPayments = Boolean(activeContract);
@@ -227,7 +232,7 @@ const TenantPayment: React.FC = () => {
         .map((c) => ({
             date: formatLongDate(c.createdAt),
             ref: `${c.property?.title ?? 'Rent Payment'} - ${c.contractId}`,
-            amount: Number(c.rentAmount ?? c.property?.monthlyPrice ?? 0),
+            amount: getTotalContractCharge(c),
             status: 'Success',
         }));
 
@@ -255,19 +260,24 @@ const TenantPayment: React.FC = () => {
     const handlePayFromBalance = async () => {
         if (!pendingPaymentContract) return;
 
+        if (walletBalance < pendingTotalDue) {
+            setPaymentActionError('Insufficient wallet balance to complete this payment.');
+            return;
+        }
+
         setIsProcessingPayment(true);
-        setDataError(null);
+        setPaymentActionError(null);
 
         try {
             const result = await contractService.payContractFromBalance(pendingPaymentContract.id);
             setWalletBalance(Number(result.remainingBalance ?? 0));
-            setSuccessMessage('Payment deducted from your wallet balance successfully.');
+            setSuccessMessage(`Payment of ${formatMoney(Number(result.debitedAmount ?? 0))} deducted from your wallet successfully.`);
             setShowSuccessToast(true);
             await loadPaymentData();
             setActiveTab('history');
         } catch (error: any) {
             const message = error?.response?.data?.message || 'Could not complete payment from balance.';
-            setDataError(message);
+            setPaymentActionError(message);
         } finally {
             setIsProcessingPayment(false);
         }
@@ -299,14 +309,14 @@ const TenantPayment: React.FC = () => {
     const getUpcomingActionLabel = (isActive: boolean): string => {
         if (!isActive) return 'Manage';
         if (isProcessingPayment) return 'Processing...';
-        return canAffordPendingPayment ? 'Pay from Balance' : 'Insufficient Balance';
+        return 'Pay';
     };
 
     const getRequestActionLabel = (status: string): string => {
         if (status === 'Pending') return 'Under Review';
         if (!pendingPaymentContract) return 'Awaiting Contract';
         if (isProcessingPayment) return 'Processing...';
-        return canAffordPendingPayment ? 'Pay from Balance' : 'Top Up Balance';
+        return 'Pay';
     };
 
     const renderOverview = () => (
@@ -392,7 +402,7 @@ const TenantPayment: React.FC = () => {
                                 <button
                                     className={item.status === 'Active' ? 'btn-pay-now' : 'btn-manage-ghost'}
                                     onClick={item.status === 'Active' ? handlePayFromBalance : undefined}
-                                    disabled={item.status === 'Active' && (!canAffordPendingPayment || isProcessingPayment)}
+                                    disabled={item.status === 'Active' && isProcessingPayment}
                                 >
                                     {getUpcomingActionLabel(item.status === 'Active')}
                                 </button>
@@ -452,36 +462,43 @@ const TenantPayment: React.FC = () => {
     const renderPending = () => (
         <div className="tab-viewport animate-fade-up">
             {hasPendingRequests ? (
-                <div className="grid-responsive">
-                    {requestCards.map((req) => (
-                        <div className="application-card-premium" key={req.id}>
-                            <div className="app-card-top">
-                                <span className={`status-tag ${req.status.toLowerCase()}`}>
-                                    {req.status === 'Accepted' ? <CheckCircle2 size={12}/> : <Clock size={12}/>}
-                                    {req.status}
-                                </span>
-                                <button className="icon-btn"><MoreVertical size={16}/></button>
-                            </div>
-                            <div className="app-card-body">
-                                <h4>{req.property}</h4>
-                                <p className="location-tag"><MapPin size={12}/> {req.loc}</p>
-                            </div>
-                            <div className="app-card-footer">
-                                <div className="price-group">
-                                    <span>Offer</span>
-                                    <span>{formatMoney(req.price)}</span>
+                <>
+                    <div className="grid-responsive">
+                        {requestCards.map((req) => (
+                            <div className="application-card-premium" key={req.id}>
+                                <div className="app-card-top">
+                                    <span className={`status-tag ${req.status.toLowerCase()}`}>
+                                        {req.status === 'Accepted' ? <CheckCircle2 size={12}/> : <Clock size={12}/>}
+                                        {req.status}
+                                    </span>
+                                    <button className="icon-btn"><MoreVertical size={16}/></button>
                                 </div>
-                                <button
-                                    className="btn-app-action"
-                                    disabled={req.status !== 'Accepted' || !pendingPaymentContract || isProcessingPayment}
-                                    onClick={handlePayFromBalance}
-                                >
-                                    {getRequestActionLabel(req.status)}
-                                </button>
+                                <div className="app-card-body">
+                                    <h4>{req.property}</h4>
+                                    <p className="location-tag"><MapPin size={12}/> {req.loc}</p>
+                                </div>
+                                <div className="app-card-footer">
+                                    <div className="price-group">
+                                        <span>Offer</span>
+                                        <span>{formatMoney(req.price)}</span>
+                                    </div>
+                                    <button
+                                        className="btn-app-action"
+                                        disabled={req.status !== 'Accepted' || !pendingPaymentContract || isProcessingPayment}
+                                        onClick={handlePayFromBalance}
+                                    >
+                                        {getRequestActionLabel(req.status)}
+                                    </button>
+                                </div>
                             </div>
+                        ))}
+                    </div>
+                    {paymentActionError && (
+                        <div className="wallet-topup-message" style={{ marginTop: '16px' }}>
+                            {paymentActionError}
                         </div>
-                    ))}
-                </div>
+                    )}
+                </>
             ) : (
                 <div className="empty-state">
                     <div className="empty-icon"><SearchX size={32} /></div>

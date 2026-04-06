@@ -35,6 +35,7 @@ interface DetailedRequestModalProps {
         habits?: string[];
         livingSituation?: string;
         appliedOnDate?: string;
+        propertyName?: string;
     };
     requestId: string;
     onStatusChange?: () => void;
@@ -53,8 +54,11 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
 
     const { 
         applicant, property, moveInDate, duration, occupants, 
-        message, habits, livingSituation, appliedOnDate 
+        message, habits, livingSituation, appliedOnDate, propertyName
     } = data;
+    const applyingForName = [property?.title, property?.name, propertyName, property?.unit]
+        .map((value) => value?.trim())
+        .find(Boolean) || 'Selected Property';
 
     const defaultHabits = ["Early Riser", "Non-smoker", "Plant Parent", "Quiet Lifestyle"];
     const allHabits = habits && habits.length > 0 ? habits : defaultHabits;
@@ -163,8 +167,9 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                 {/* --- END OVERLAYS --- */}
 
                 <div className="detailed-modal-body">
-                    {/* LEFT COLUMN: Profile & Message */}
-                    <div className="detailed-left-col">
+                    <div className="detailed-top-grid">
+                        {/* LEFT COLUMN: Profile & Message */}
+                        <div className="detailed-left-col">
                         <div className="applicant-hero">
                             <div className="hero-avatar-wrapper">
                                 <img src={applicant?.image || "https://via.placeholder.com/120"} alt={applicant?.name} />
@@ -173,9 +178,12 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                                     <label>Match</label>
                                 </div>
                             </div>
-                            <h2>{applicant?.name || "Applicant Name"} <FaCheckCircle className="verified-badge" style={{ color: '#10b981', marginLeft: '4px' }} /></h2>
+                            <h2 className="hero-name-row">
+                                <span>{applicant?.name || "Applicant Name"}</span>
+                                <FaCheckCircle className="verified-badge" style={{ color: '#10b981' }} />
+                            </h2>
                             <p className="hero-subtext">
-                                {applicant?.occupation || "Professional"} at {applicant?.company || "Company"}
+                                {applicant?.occupation || "Tenant"}
                             </p>
                             <p className="hero-subtext" style={{ fontSize: '12px', marginTop: '4px', color: '#94a3b8' }}>
                                 Applied on {appliedOnDate || "Oct 24, 2023"}
@@ -214,10 +222,10 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                                 )}
                             </div>
                         </div>
-                    </div>
+                        </div>
 
-                    {/* RIGHT COLUMN: Stats & Actions */}
-                    <div className="detailed-right-col">
+                        {/* RIGHT COLUMN: Stats & Actions */}
+                        <div className="detailed-right-col">
                         <div className="section-block financials">
                             <h3>Financial Overview</h3>
                             <div className="financial-grid">
@@ -268,11 +276,13 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
  
                             </div>
                         </div>
+                        </div>
+                    </div>
 
+                    <div className="detailed-bottom-cta">
                         <div className="property-context">
                             <label>Applying For</label>
-                            {/* Uses title first, falls back to name */}
-                            <h4>{property?.title || property?.name || "Property Title"}</h4>
+                            <h4>{applyingForName}</h4>
                             <p>{property?.unit || "Unit details unavailable"}</p>
                         </div>
 
@@ -281,7 +291,7 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                             <button className="btn-approve-main" onClick={() => setConfirmAction('approve')}>Accept Application</button>
                             
                             {/* Wrapper to put Message and Decline on the same row */}
-                            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                            <div className="sticky-actions-row">
                                 <button className="btn-secondary-main" onClick={() => navigate('/messages')} style={{
                                     background: '#eff6ff', 
                                     color: '#3b82f6', 

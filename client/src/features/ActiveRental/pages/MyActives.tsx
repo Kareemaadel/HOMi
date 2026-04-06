@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import './MyActives.css';
@@ -6,36 +6,98 @@ import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import RentedPropertyCard from '../components/RentedPropertyCard';
+import contractService, { type LandlordContract } from '../../../services/contract.service';
 
 const MyActives: React.FC = () => {
     // Hooks for routing and state
     const navigate = useNavigate();
-    
-    // DEV TOGGLE: Change to true or false to test both views.
-    const [hasData] = useState(false);
 
-    // Mocking a list of properties
-    const mockRentals = [
-        {
-            id: "1",
-            title: "Azure Horizon Suite",
-            address: "452 Ocean Drive, Miami, FL",
-            leaseEnd: "Jan 12, 2025",
-            status: "Active" as const,
-            image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80"
-        },
-        {
-            id: "2",
-            title: "The Urban Loft",
-            address: "128 Wynwood St, Miami, FL",
-            leaseEnd: "Nov 05, 2024",
-            status: "Expiring Soon" as const,
-            image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80"
-        }
-    ];
+    const [contracts, setContracts] = useState<LandlordContract[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Conditionally load rentals based on our hasData state
-    const activeRentals = hasData ? mockRentals : [];
+    useEffect(() => {
+        const loadActiveContracts = async () => {
+            setIsLoading(true);
+            try {
+                const response = await contractService.getTenantContracts({ page: 1, limit: 50 });
+                const activeOnly = (response.data ?? []).filter((contract) => contract.status === 'ACTIVE');
+                setContracts(activeOnly);
+            } catch {
+                setContracts([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        void loadActiveContracts();
+    }, []);
+
+    const formatLeaseEnd = (contract: LandlordContract): string => {
+        const start = new Date(contract.moveInDate);
+        if (Number.isNaN(start.getTime())) return 'N/A';
+
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + Number(contract.leaseDurationMonths ?? 0));
+
+        return end.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    };
+
+    const getLeaseStatus = (contract: LandlordContract): 'Active' | 'Expiring Soon' | 'Pending Renewal' => {
+        const start = new Date(contract.moveInDate);
+        if (Number.isNaN(start.getTime())) return 'Active';
+
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + Number(contract.leaseDurationMonths ?? 0));
+
+        const daysLeft = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        if (daysLeft <= 30) return 'Expiring Soon';
+        return 'Active';
+    };
+
+    const activeRentals = useMemo(() => {
+        return contracts.map((contract) => ({
+            id: contract.id,
+            title: contract.property?.title || 'Property',
+            address: contract.property?.address || 'Address unavailable',
+            leaseEnd: formatLeaseEnd(contract),
+            status: getLeaseStatus(contract),
+            image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80',
+        }));
+    }, [contracts]);
+
+    const hasData = activeRentals.length > 0;
+    let rentalsContent: React.ReactNode;
+
+    if (isLoading) {
+        rentalsContent = (
+            <div className="empty-state-container">
+                <h3 className="empty-state-title">Loading active rentals...</h3>
+            </div>
+        );
+    } else if (hasData) {
+        rentalsContent = (
+            <div className="rentals-grid">
+                {activeRentals.map(property => (
+                    <RentedPropertyCard key={property.id} property={property} />
+                ))}
+            </div>
+        );
+    } else {
+        rentalsContent = (
+            <div className="empty-state-container">
+                <Home size={56} className="empty-state-icon" />                            <h3 className="empty-state-title">No Active Rentals</h3>
+                <p className="empty-state-text">
+                    You don't have any active leases at the moment. Check the status of your submitted applications to see if you've been approved!
+                </p>
+                <button 
+                    className="btn-empty-state"
+                    onClick={() => navigate('/sent-requests')}
+                >
+                    View your rent requests
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="layout-wrapper">
@@ -50,30 +112,11 @@ const MyActives: React.FC = () => {
                         </div>
                         <div className="stats-mini-grid">
                             <div className="stat-pill"><strong>{activeRentals.length}</strong> Properties</div>
-                            <div className="stat-pill"><strong>{hasData ? "1" : "0"}</strong> Pending Maintenance</div>
+                            <div className="stat-pill"><strong>0</strong> Pending Maintenance</div>
                         </div>
                     </div>
 
-                    {hasData ? (
-                        <div className="rentals-grid">
-                            {activeRentals.map(property => (
-                                <RentedPropertyCard key={property.id} property={property} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="empty-state-container">
-<Home size={56} className="empty-state-icon" />                            <h3 className="empty-state-title">No Active Rentals</h3>
-                            <p className="empty-state-text">
-                                You don't have any active leases at the moment. Check the status of your submitted applications to see if you've been approved!
-                            </p>
-                            <button 
-                                className="btn-empty-state"
-                                onClick={() => navigate('/sent-requests')}
-                            >
-                                View your rent requests
-                            </button>
-                        </div>
-                    )}
+                    {rentalsContent}
                 </div>
                 <Footer />
             </div>

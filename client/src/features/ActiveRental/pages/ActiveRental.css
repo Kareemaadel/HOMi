@@ -112,4 +112,24 @@
     background: #3680e5;
 }
 
+.active-rental-state-box {
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+}
+
+.active-rental-state-title {
+    margin: 0 0 8px;
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.active-rental-state-text {
+    margin: 0;
+    color: #64748b;
+}
+
 /* ... keep existing pulse-icon animations ... */

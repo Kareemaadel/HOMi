@@ -18,8 +18,7 @@ const RentedPropertyCard: React.FC<RentedPropertyProps> = ({ property }) => {
   const navigate = useNavigate();
 
   const handleDetailsClick = () => {
-    // Navigate exactly to /active-rental as requested
-    navigate('/active-rental');
+    navigate(`/active-rental?contractId=${encodeURIComponent(property.id)}`);
   };
 
   return (

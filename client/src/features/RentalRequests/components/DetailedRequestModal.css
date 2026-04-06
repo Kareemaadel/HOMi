@@ -132,10 +132,23 @@
 
 .detailed-modal-body {
     display: flex;
-    gap: 32px;
+    flex-direction: column;
+    gap: 20px;
     padding: 32px;
     overflow-y: auto; 
     flex: 1; 
+}
+
+.detailed-top-grid {
+    display: flex;
+    gap: 32px;
+}
+
+.detailed-bottom-cta {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* Left Column */
@@ -148,6 +161,19 @@
 .applicant-hero {
     text-align: center;
     margin-bottom: 40px;
+}
+
+.hero-name-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.hero-name-row .verified-badge {
+    font-size: 0.95rem;
+    transform: translateY(1px);
 }
 
 .hero-avatar-wrapper {
@@ -269,15 +295,27 @@
 .lease-item p { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0; }
 
 .property-context {
-    margin-top: auto;
+    margin-top: 0;
     padding-top: 20px;
     border-top: 1px dashed #cbd5e1;
+    text-align: center;
 }
 
 .sticky-actions {
     margin-top: 25px;
     display: grid;
     gap: 12px;
+    max-width: 420px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sticky-actions-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
 }
 
 .btn-approve-main {
@@ -351,7 +389,7 @@
 }
 
 .property-context {
-    margin-top: 14px; 
+    margin-top: 0; 
     background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
     padding: 20px;
     border-radius: 20px;
@@ -359,6 +397,11 @@
     position: relative;
     overflow: hidden;
     box-shadow: inset 0 2px 4px rgba(255,255,255,1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min(100%, 520px);
 }
 
 .property-context::after {
@@ -386,9 +429,8 @@
     color: #0f172a;
     margin: 0 0 4px 0;
     font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .property-context p {
@@ -398,6 +440,7 @@
     font-weight: 600;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 .property-context p::before {
@@ -411,8 +454,11 @@
     
 }
 @media (max-width: 768px) {
-    .detailed-modal-body {
+    .detailed-top-grid {
         flex-direction: column; 
+    }
+
+    .detailed-modal-body {
         padding: 20px;
         gap: 24px;
     }

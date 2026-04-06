@@ -14,6 +14,7 @@ interface RentalProps {
     leaseEnd: string;
     sqft: number;
     image: string;
+        propertyType?: string;
   };
 }
 
@@ -69,7 +70,7 @@ const DetailedRentCard: React.FC<RentalProps> = ({ rental }) => {
                         <div className="tile-icon"><FaHome /></div>
                         <div className="tile-data">
                             <span className="tile-label">Type</span>
-                            <span className="tile-value">Apartment</span>
+                            <span className="tile-value">{rental.propertyType || 'Apartment'}</span>
                         </div>
                     </div>
 

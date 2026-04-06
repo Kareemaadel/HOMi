@@ -76,7 +76,8 @@
 /* --- The Grid --- */
 .contract-list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 420px));
+  justify-content: center;
   gap: 32px;
   max-width: 1400px;
   margin: 0 auto;
@@ -90,6 +91,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: var(--saas-shadow-sm);
   overflow: hidden;
@@ -157,8 +159,9 @@
 }
 
 .card-meta {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
   margin-bottom: 24px;
 }
 
@@ -166,6 +169,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: 13px;
   font-weight: 500;
   color: var(--saas-text-muted);
@@ -179,6 +183,48 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .tenant-contract-header {
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .contract-list-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .card-top {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .contract-card h3 {
+    font-size: 20px;
+  }
+
+  .card-meta {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .card-footer {
+    padding: 16px 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn-view-contract {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .price-info .label {
