@@ -159,7 +159,7 @@
 .team-section {
   padding: 100px 0;
   background-color:#ece9ff;
-  width: 1800px;
+  width: 100%;
 }
 
 .section-header {
@@ -185,7 +185,9 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.03);
   transition: var(--about-transition);
   border: 1px solid #f1f5f9;
-  width: 250px;
+  width: 100%;
+  max-width: 300px;
+  justify-self: center;
 }
 
 .member-image {
