@@ -100,12 +100,12 @@ const RentalRequests: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="empty-state-container">
-                            <div className="empty-state-icon">
+                        <div className="rr-empty-state-container">
+                            <div className="rr-empty-state-icon">
                                 <FaInbox />
                             </div>
-                            <h3>No rental applications yet</h3>
-                            <p>We'll notify you as soon as someone applies.</p>
+                            <h3 className="rr-empty-state-title">No rental applications yet</h3>
+                            <p className="rr-empty-state-text">We'll notify you as soon as someone applies.</p>
                         </div>
                     )}
 
