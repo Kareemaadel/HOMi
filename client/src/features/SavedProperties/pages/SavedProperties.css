@@ -102,9 +102,8 @@
 }
 
 .sp-hero-title {
-    font-family: 'DM Serif Display', serif;
     font-size: clamp(2.8rem, 5vw, 4.2rem);
-    font-weight: 400;
+    font-weight: 900;
     line-height: 1.05;
     color: var(--sp-text);
     margin: 0 0 14px;
@@ -112,7 +111,7 @@
 }
 
 .sp-hero-title em {
-    font-style: italic;
+    font-style:normal;
     color: var(--sp-gold-light);
 }
 
@@ -380,7 +379,7 @@
     pointer-events: none;
     position: relative;
     z-index: 1;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 20px 60px rgb(255, 255, 255);
 }
 
 .sp-empty-title {

@@ -140,11 +140,11 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose, onSaved }) => 
                         </div>
                         <div className="card-bottom-row">
                             <div className="card-holder-info">
-                                <span>Card Holder</span>
+                                <span></span>
                                 <span>{cardData.holder || 'YOUR NAME'}</span>
                             </div>
                             <div className="card-expiry-info">
-                                <span>Expires</span>
+                                <span>Expires </span>
                                 <span>{cardData.expiry || 'MM/YY'}</span>
                             </div>
                         </div>

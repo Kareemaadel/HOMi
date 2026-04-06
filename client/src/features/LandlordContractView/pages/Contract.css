@@ -13,15 +13,16 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-.contract-hub {
+.landlord-contract-hub {
   padding: 60px 48px;
   background-color: var(--saas-bg);
   min-height: 100vh;
-  margin-left: 280px; /* Aligned with your Sidebar width */
+  margin-left: 15px; /* Aligned with your Sidebar width */
   transition: all 0.3s ease;
+  margin-top: 30px;
 }
 
-.hub-header {
+.landlord-hub-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -31,7 +32,7 @@
   margin-right: auto;
 }
 
-.hub-header h1 {
+.landlord-hub-header h1 {
   font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.06em;
@@ -39,7 +40,7 @@
   margin: 0 0 8px 0;
 }
 
-.hub-header p {
+.landlord-hub-header p {
   color: var(--saas-text-muted);
   font-size: 16px;
   font-weight: 450;

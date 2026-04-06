@@ -171,7 +171,7 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
     return (
         <div className="modal-overlay">
             <div className="modal-container app-modal-view">
-                <button className="close-modal" onClick={onClose} aria-label="Close modal">
+                <button className="close-app-modal" onClick={onClose} aria-label="Close modal">
                     <FaTimes size={20} />
                 </button>
 

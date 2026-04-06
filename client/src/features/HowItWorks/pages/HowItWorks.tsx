@@ -306,11 +306,9 @@ const HowItWorks: React.FC = () => {
                 </div>
                 <div className="how-final-actions">
                   <Link to="/auth" className="how-btn-primary how-btn-primary--big">
-                    Create landlord account
+                    List your first property
                   </Link>
-                  <Link to="/for-tenants" className="how-btn-secondary how-btn-secondary--big">
-                    Explore for tenants
-                  </Link>
+
                 </div>
               </div>
             </div>

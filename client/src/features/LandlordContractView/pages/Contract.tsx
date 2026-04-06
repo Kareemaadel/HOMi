@@ -113,8 +113,8 @@ const LandlordContract: React.FC = () => {
             <Sidebar />
             <div className="content-container">
                 <Header />
-                <main className="contract-hub">
-                    <div className="hub-header">
+                <main className="landlord-contract-hub">
+                    <div className="landlord-hub-header">
                         <div>
                             <h1>Property Management</h1>
                             <p>Manage legal agreements for your rental portfolio.</p>
