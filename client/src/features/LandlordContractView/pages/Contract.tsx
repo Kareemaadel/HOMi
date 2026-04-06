@@ -105,7 +105,7 @@ const LandlordContract: React.FC = () => {
             ACTIVE: { label: 'Active Lease', color: 'green' },
             EXPIRED: { label: 'Expired', color: 'gray' },
         };
-        return map[status];
+        return map[status] || { label: 'Unknown', color: 'gray' };
     };
 
     return (
