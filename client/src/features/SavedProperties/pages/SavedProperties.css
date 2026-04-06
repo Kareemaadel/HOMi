@@ -36,6 +36,7 @@
     flex-direction: column;
     min-width: 0;
     overflow-x: hidden;
+    margin-left: var(--sidebar-width, 260px);
 }
 
 .sp-page {
@@ -51,7 +52,7 @@
     padding: 64px 56px 52px;
     border-bottom: 1px solid var(--sp-border);
     background: var(--sp-surface);
-    margin-left: 255px;
+    margin-left: 0;
 }
 
 .sp-hero-noise {
@@ -195,8 +196,8 @@
     border-radius: var(--sp-radius);
     padding: 14px 20px;
     flex: 1;
-    width: 1000px;
-    margin-left: 250px;
+    width: 100%;
+    max-width: 1200px;
 }
 
 .sp-insight-icon {
@@ -315,7 +316,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 24px;
-    margin-left: 250px;
+    margin-left: 0;
 }
 
 .sp-card-wrapper {
@@ -435,6 +436,10 @@
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
+    .sp-main {
+        margin-left: 0;
+    }
+
     .sp-hero {
         padding: 48px 28px 40px;
     }
@@ -459,9 +464,9 @@
 
     .sp-toolbar {
         flex-direction: column;
-        align-items:normal;
-        width: 1500px;
-        margin-left: 200px;
+        align-items: stretch;
+        width: 100%;
+        margin-left: 0;
     }
 
     .sp-toolbar-actions {

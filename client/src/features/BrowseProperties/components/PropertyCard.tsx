@@ -22,20 +22,27 @@ interface PropertyCardProps {
         rating: number;
     };
     onOpenDetails: () => void;
+    isSaved?: boolean;
+    onToggleSave?: (propertyId: string | number) => void;
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails, isSaved: controlledSaved, onToggleSave }) => {
     // Local state to handle the heart toggle
     const [isSaved, setIsSaved] = useState(false);
+    const currentSaved = typeof controlledSaved === 'boolean' ? controlledSaved : isSaved;
 
     const handleWishlistToggle = (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevents the card's onClick from firing
+        if (onToggleSave) {
+            onToggleSave(property.id);
+            return;
+        }
+
         setIsSaved(!isSaved);
-        console.log(isSaved ? "Removed from favorites" : "Added to favorites");
     };
 
     return (
-        <div className="tenant-card-premium" onClick={onOpenDetails}>
+        <div className="tenant-card-premium">
             {/* Top Media Section */}
             <div className="card-media">
                 <img src={property.image} alt={property.title} loading="lazy" />
@@ -44,13 +51,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onOpenDetails }) 
                 <div className="card-overlay-gradient" />
 
                 <div className="card-badges">
-                    {property.tags.map((tag, index) => (
-                        <span key={index} className="badge-luxury">{tag}</span>
+                    {property.tags.map((tag) => (
+                        <span key={`${property.id}-${tag}`} className="badge-luxury">{tag}</span>
                     ))}
                 </div>
 
                 <button 
-                    className={`wishlist-btn ${isSaved ? 'active' : ''}`} 
+                    className={`wishlist-btn ${currentSaved ? 'active' : ''}`} 
                     aria-label="Add to favorites"
                     onClick={handleWishlistToggle}
                 >

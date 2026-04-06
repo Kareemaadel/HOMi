@@ -8,6 +8,7 @@ import PropertyCard from '../components/PropertyCard';
 import SearchHero from '../components/SearchHero';
 import PropertyDetailModal from '../components/PropertyDetailedModal';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
+import savedPropertiesService from '../../../services/saved-properties.service';
 
 interface BrowsePropertyUI {
     id: string;
@@ -48,17 +49,19 @@ const mapTargetTenant = (targetTenant: string) => {
     }
 };
 
+const mapFurnishingLabel = (furnishing: string | null): string => {
+    if (furnishing === 'Fully') return 'Fully Furnished';
+    if (furnishing === 'Semi') return 'Semi-Furnished';
+    return 'Unfurnished';
+};
+
 const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
     const mainImage = property.images.find((image) => image.isMain)?.imageUrl;
     const fallbackImage = property.images[0]?.imageUrl;
     const image = mainImage || fallbackImage || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80';
     const allImages = property.images.length > 0 ? property.images.map((img) => img.imageUrl) : [image];
     const tags = property.amenities.slice(0, 2).map((amenity) => amenity.name);
-    const normalizedFurnishing = property.furnishing === 'Fully'
-        ? 'Fully Furnished'
-        : property.furnishing === 'Semi'
-            ? 'Semi-Furnished'
-            : 'Unfurnished';
+    const normalizedFurnishing = mapFurnishingLabel(property.furnishing);
 
     return {
         id: property.id,
@@ -99,6 +102,40 @@ const BrowseProperties: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [viewingAll, setViewingAll] = useState<string | null>(null);
+    const [savedIds, setSavedIds] = useState<string[]>([]);
+
+    useEffect(() => {
+        const loadSavedIds = async () => {
+            try {
+                const ids = await savedPropertiesService.getSavedIds();
+                setSavedIds(ids);
+            } catch {
+                setSavedIds([]);
+            }
+        };
+
+        void loadSavedIds();
+    }, []);
+
+    const handleToggleSave = async (propertyId: string | number) => {
+        const normalized = String(propertyId);
+        const currentlySaved = savedIds.includes(normalized);
+
+        try {
+            if (currentlySaved) {
+                await savedPropertiesService.removeSavedProperty(propertyId);
+                setSavedIds((prev) => prev.filter((id) => id !== normalized));
+                return;
+            }
+
+            await savedPropertiesService.saveProperty(propertyId);
+            setSavedIds((prev) => Array.from(new Set([...prev, normalized])));
+        } catch {
+            // Keep UI stable; no-op on failure.
+        }
+    };
+
+    const isPropertySaved = (propertyId: string | number) => savedIds.includes(String(propertyId));
 
     const fetchDefaultProperties = async () => {
         setLoading(true);
@@ -139,6 +176,96 @@ const BrowseProperties: React.FC = () => {
     const handleViewAll = (section: string) => {
         setViewingAll(section);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const renderPropertyCard = (property: BrowsePropertyUI) => (
+        <PropertyCard
+            key={property.id}
+            property={property}
+            onOpenDetails={() => setSelectedProperty(property)}
+            isSaved={isPropertySaved(property.id)}
+            onToggleSave={handleToggleSave}
+        />
+    );
+
+    const getViewingAllTitle = (section: string | null): string => {
+        if (section === 'newListings') return 'Newly Listed';
+        if (section === 'popular') return 'Popular Properties';
+        return 'Suits Your Lifestyle';
+    };
+
+    const renderMainSections = () => {
+        if (isSearching) {
+            return (
+                <section className="property-scroll-section animate-fade-in">
+                    <div className="section-header">
+                        <div className="title-area">
+                            <h2>Search Results</h2>
+                        </div>
+                        <button className="view-all-btn" onClick={fetchDefaultProperties}>Clear Search</button>
+                    </div>
+                    <div className="properties-grid properties-grid-expanded">
+                        {properties.map(renderPropertyCard)}
+                    </div>
+                </section>
+            );
+        }
+
+        if (viewingAll) {
+            return (
+                <section className="property-scroll-section animate-fade-in">
+                    <div className="section-header">
+                        <div className="title-area">
+                            <h2>{getViewingAllTitle(viewingAll)}</h2>
+                        </div>
+                        <button className="view-all-btn" onClick={() => setViewingAll(null)}>Back to Categories</button>
+                    </div>
+                    <div className="properties-grid properties-grid-expanded">
+                        {properties.map(renderPropertyCard)}
+                    </div>
+                </section>
+            );
+        }
+
+        return (
+            <>
+                <section className="property-scroll-section">
+                    <div className="section-header">
+                        <div className="title-area">
+                            <h2>Newly Listed</h2>
+                        </div>
+                        <button className="view-all-btn" onClick={() => handleViewAll('newListings')}>View All ({properties.length})</button>
+                    </div>
+                    <div className="properties-grid">
+                        {newListings.map(renderPropertyCard)}
+                    </div>
+                </section>
+
+                <section className="property-scroll-section">
+                    <div className="section-header">
+                        <div className="title-area">
+                            <h2>Popular Properties</h2>
+                        </div>
+                        <button className="view-all-btn" onClick={() => handleViewAll('popular')}>View All ({properties.length})</button>
+                    </div>
+                    <div className="properties-grid">
+                        {popularProperties.map(renderPropertyCard)}
+                    </div>
+                </section>
+
+                <section className="property-scroll-section">
+                    <div className="section-header">
+                        <div className="title-area">
+                            <h2>Suits Your Lifestyle</h2>
+                        </div>
+                        <button className="view-all-btn" onClick={() => handleViewAll('recommended')}>View All ({properties.length})</button>
+                    </div>
+                    <div className="properties-grid">
+                        {recommendedProperties.map(renderPropertyCard)}
+                    </div>
+                </section>
+            </>
+        );
     };
 
     return (
@@ -204,84 +331,7 @@ const BrowseProperties: React.FC = () => {
                     )}
 
                     {!loading && !error && properties.length > 0 && (
-                        <>
-                                {isSearching ? (
-                                    <section className="property-scroll-section animate-fade-in">
-                                        <div className="section-header">
-                                            <div className="title-area">
-                                                <h2>Search Results</h2>
-                                            </div>
-                                            <button className="view-all-btn" onClick={fetchDefaultProperties}>Clear Search</button>
-                                        </div>
-                                        <div className="properties-grid properties-grid-expanded">
-                                            {properties.map(property => (
-                                                <PropertyCard key={property.id} property={property} onOpenDetails={() => setSelectedProperty(property)} />
-                                            ))}
-                                        </div>
-                                    </section>
-                                ) : viewingAll ? (
-                                    <section className="property-scroll-section animate-fade-in">
-                                        <div className="section-header">
-                                            <div className="title-area">
-                                                <h2>
-                                                    {viewingAll === 'newListings' ? 'Newly Listed' :
-                                                     viewingAll === 'popular' ? 'Popular Properties' : 'Suits Your Lifestyle'}
-                                                </h2>
-                                            </div>
-                                            <button className="view-all-btn" onClick={() => setViewingAll(null)}>Back to Categories</button>
-                                        </div>
-                                        <div className="properties-grid properties-grid-expanded">
-                                            {properties.map(property => (
-                                                <PropertyCard key={property.id} property={property} onOpenDetails={() => setSelectedProperty(property)} />
-                                            ))}
-                                        </div>
-                                    </section>
-                                ) : (
-                                    <>
-                                        <section className="property-scroll-section">
-                                            <div className="section-header">
-                                                <div className="title-area">
-                                                    <h2>Newly Listed</h2>
-                                                </div>
-                                                <button className="view-all-btn" onClick={() => handleViewAll('newListings')}>View All ({properties.length})</button>
-                                            </div>
-                                            <div className="properties-grid">
-                                                {newListings.map(property => (
-                                                    <PropertyCard key={property.id} property={property} onOpenDetails={() => setSelectedProperty(property)} />
-                                                ))}
-                                            </div>
-                                        </section>
-
-                                        <section className="property-scroll-section">
-                                            <div className="section-header">
-                                                <div className="title-area">
-                                                    <h2>Popular Properties</h2>
-                                                </div>
-                                                <button className="view-all-btn" onClick={() => handleViewAll('popular')}>View All ({properties.length})</button>
-                                            </div>
-                                            <div className="properties-grid">
-                                                {popularProperties.map(property => (
-                                                    <PropertyCard key={property.id} property={property} onOpenDetails={() => setSelectedProperty(property)} />
-                                                ))}
-                                            </div>
-                                        </section>
-
-                                        <section className="property-scroll-section">
-                                            <div className="section-header">
-                                                <div className="title-area">
-                                                    <h2>Suits Your Lifestyle</h2>
-                                                </div>
-                                                <button className="view-all-btn" onClick={() => handleViewAll('recommended')}>View All ({properties.length})</button>
-                                            </div>
-                                            <div className="properties-grid">
-                                                {recommendedProperties.map(property => (
-                                                    <PropertyCard key={property.id} property={property} onOpenDetails={() => setSelectedProperty(property)} />
-                                                ))}
-                                            </div>
-                                        </section>
-                                    </>
-                                )}
-                        </>
+                        <>{renderMainSections()}</>
                     )}
                 </div>
                 <Footer />
