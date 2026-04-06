@@ -642,9 +642,7 @@ const TenantPayment: React.FC = () => {
                         <div className="header-text">
                             <h1>{checkoutData ? 'Checkout' : 'Billing & Payments'}</h1>
                         </div>
-                        <div className="header-buttons" style={{ display: 'flex', gap: '12px' }}>
-                            <button className="btn-ghost"><ExternalLink size={16}/> View Contracts</button>
-                        </div>
+                       
                     </header>
 
                     {!checkoutData && (
