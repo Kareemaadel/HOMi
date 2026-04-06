@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { contractService, ContractError } from '../services/contract.service.js';
+import { contractService } from '../services/contract.service.js';
 import type {
     LandlordLeaseTermsInput,
     LandlordIdentityInput,
@@ -8,6 +8,8 @@ import type {
     TenantIdentityInput,
     TenantSignInput,
     VerifyPaymobPaymentInput,
+    WalletTopupInitiateInput,
+    WalletTopupVerifyInput,
 } from '../interfaces/contract.interfaces.js';
 
 /**
@@ -241,6 +243,79 @@ class ContractController {
                 success: true,
                 message: 'Payment verified successfully. Contract is now active.',
                 data: contract,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/payments/wallet/balance
+     */
+    async getWalletBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const tenantId = (req as any).user.userId;
+            const balance = await contractService.getWalletBalance(tenantId);
+
+            res.status(200).json({
+                success: true,
+                data: balance,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/contracts/:id/payments/balance/pay
+     */
+    async payContractFromBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const result = await contractService.payContractFromBalance(id as string, tenantId);
+
+            res.status(200).json({
+                success: true,
+                message: 'Contract payment completed from wallet balance.',
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/contracts/payments/wallet/topup/initiate
+     */
+    async initiateWalletTopup(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const tenantId = (req as any).user.userId;
+            const input: WalletTopupInitiateInput = req.body;
+            const checkout = await contractService.initiateWalletTopup(tenantId, input);
+
+            res.status(200).json({
+                success: true,
+                data: checkout,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/contracts/payments/wallet/topup/verify
+     */
+    async verifyWalletTopup(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const tenantId = (req as any).user.userId;
+            const input: WalletTopupVerifyInput = req.body;
+            const balance = await contractService.verifyWalletTopup(tenantId, input);
+
+            res.status(200).json({
+                success: true,
+                message: 'Wallet top-up verified successfully.',
+                data: balance,
             });
         } catch (error) {
             next(error);

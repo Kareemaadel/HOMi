@@ -46,7 +46,9 @@ interface EnvConfig {
     PAYMOB_BASE_URL: string;
     PAYMOB_API_KEY: string;
     PAYMOB_INTEGRATION_ID: number;
+    PAYMOB_WALLET_INTEGRATION_ID: number;
     PAYMOB_IFRAME_ID: number;
+    PAYMOB_WALLET_IFRAME_ID: number;
     PAYMOB_HMAC_SECRET: string;
 }
 
@@ -120,7 +122,9 @@ export const env: EnvConfig = {
     PAYMOB_BASE_URL: getEnvString('PAYMOB_BASE_URL', 'https://accept.paymob.com'),
     PAYMOB_API_KEY: getEnvString('PAYMOB_API_KEY', ''),
     PAYMOB_INTEGRATION_ID: getEnvNumber('PAYMOB_INTEGRATION_ID', 0),
+    PAYMOB_WALLET_INTEGRATION_ID: getEnvNumber('PAYMOB_WALLET_INTEGRATION_ID', 5607894),
     PAYMOB_IFRAME_ID: getEnvNumber('PAYMOB_IFRAME_ID', 0),
+    PAYMOB_WALLET_IFRAME_ID: getEnvNumber('PAYMOB_WALLET_IFRAME_ID', 0),
     PAYMOB_HMAC_SECRET: getEnvString('PAYMOB_HMAC_SECRET', ''),
 };
 

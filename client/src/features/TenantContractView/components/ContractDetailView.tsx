@@ -92,7 +92,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                         <p>The contract for <strong>{contract.property}</strong> has been legally signed and activated.</p>
                         
                         <div className="success-actions">
-                            <button className="btn-pay-action" onClick={() => window.location.href = `/prepayment-page?contractId=${contract.id}`}>
+                            <button className="btn-pay-action" onClick={() => globalThis.location.href = '/tenant-payment?tab=pending'}>
                                 <CreditCard size={18} /> Go to Payments Page
                             </button>
                             <button className="btn-close-dashboard" onClick={onClose}>

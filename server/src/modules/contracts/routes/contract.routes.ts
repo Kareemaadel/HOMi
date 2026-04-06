@@ -10,6 +10,8 @@ import {
     TenantIdentitySchema,
     TenantSignSchema,
     VerifyPaymobPaymentSchema,
+    VerifyWalletTopupSchema,
+    WalletTopupInitiateSchema,
     ContractQuerySchema,
 } from '../schemas/contract.schemas.js';
 
@@ -547,6 +549,32 @@ router.post(
     protect,
     validate(VerifyPaymobPaymentSchema),
     contractController.verifyPaymobPayment.bind(contractController)
+);
+
+router.get(
+    '/payments/wallet/balance',
+    protect,
+    contractController.getWalletBalance.bind(contractController)
+);
+
+router.post(
+    '/:id/payments/balance/pay',
+    protect,
+    contractController.payContractFromBalance.bind(contractController)
+);
+
+router.post(
+    '/payments/wallet/topup/initiate',
+    protect,
+    validate(WalletTopupInitiateSchema),
+    contractController.initiateWalletTopup.bind(contractController)
+);
+
+router.post(
+    '/payments/wallet/topup/verify',
+    protect,
+    validate(VerifyWalletTopupSchema),
+    contractController.verifyWalletTopup.bind(contractController)
 );
 
 export default router;

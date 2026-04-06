@@ -37,7 +37,36 @@ interface InitiatePaymobResponse {
     };
 }
 
-export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
+interface WalletBalanceApiResponse {
+    success: boolean;
+    data: {
+        balance: number;
+        currency: string;
+    };
+}
+
+interface WalletTopupCheckoutResponse {
+    success: boolean;
+    data: {
+        checkoutUrl: string;
+        amountCents: number;
+        orderId: number;
+        currency: string;
+    };
+}
+
+export type WalletTopupPaymentMethod = 'CARD' | 'WALLET';
+
+interface BalancePaymentApiResponse {
+    success: boolean;
+    data: {
+        contract: LandlordContract;
+        remainingBalance: number;
+        debitedAmount: number;
+    };
+}
+
+export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
 export type RentDueDate = '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH';
 
 export interface ContractParty {
@@ -155,6 +184,32 @@ class ContractService {
         await apiClient.post(`/contracts/${contractId}/payments/paymob/verify`, {
             transaction_id: transactionId,
         });
+    }
+
+    async getWalletBalance(): Promise<WalletBalanceApiResponse['data']> {
+        const response = await apiClient.get<WalletBalanceApiResponse>('/contracts/payments/wallet/balance');
+        return response.data.data;
+    }
+
+    async payContractFromBalance(contractId: string): Promise<BalancePaymentApiResponse['data']> {
+        const response = await apiClient.post<BalancePaymentApiResponse>(`/contracts/${contractId}/payments/balance/pay`);
+        return response.data.data;
+    }
+
+    async initiateWalletTopup(amount: number, paymentMethod: WalletTopupPaymentMethod, saveCard?: boolean): Promise<WalletTopupCheckoutResponse['data']> {
+        const response = await apiClient.post<WalletTopupCheckoutResponse>('/contracts/payments/wallet/topup/initiate', {
+            amount,
+            payment_method: paymentMethod,
+            save_card: Boolean(saveCard),
+        });
+        return response.data.data;
+    }
+
+    async verifyWalletTopup(transactionId: number): Promise<WalletBalanceApiResponse['data']> {
+        const response = await apiClient.post<WalletBalanceApiResponse>('/contracts/payments/wallet/topup/verify', {
+            transaction_id: transactionId,
+        });
+        return response.data.data;
     }
 
     async getLandlordContracts(params?: {

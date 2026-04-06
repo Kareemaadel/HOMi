@@ -13,6 +13,8 @@ interface CreateCheckoutSessionInput {
     merchantOrderId: string;
     billingData: PaymobBillingData;
     callbackUrl: string;
+    integrationId?: number;
+    iframeId?: number;
 }
 
 interface CreateCheckoutSessionResult {
@@ -30,6 +32,12 @@ interface VerifyTransactionResult {
     orderId: number;
     isVoided: boolean;
     isRefunded: boolean;
+    cardToken?: string;
+    cardBrand?: string;
+    cardLast4?: string;
+    cardExpMonth?: number;
+    cardExpYear?: number;
+    cardholderName?: string;
 }
 
 class PaymobService {
@@ -81,7 +89,8 @@ class PaymobService {
         orderId: number,
         amountCents: number,
         billingData: PaymobBillingData,
-        callbackUrl: string
+        callbackUrl: string,
+        integrationId: number
     ): Promise<string> {
         const response = await this.client.post<{ token: string }>('/api/acceptance/payment_keys', {
             auth_token: authToken,
@@ -104,7 +113,7 @@ class PaymobService {
                 state: 'Cairo',
             },
             currency: 'EGP',
-            integration_id: env.PAYMOB_INTEGRATION_ID,
+            integration_id: integrationId,
             lock_order_when_paid: true,
             redirection_url: callbackUrl,
         });
@@ -115,6 +124,15 @@ class PaymobService {
     async createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CreateCheckoutSessionResult> {
         this.ensureConfigured();
 
+        const selectedIntegrationId = input.integrationId ?? env.PAYMOB_INTEGRATION_ID;
+        const selectedIframeId = input.iframeId ?? env.PAYMOB_IFRAME_ID;
+        if (selectedIntegrationId <= 0) {
+            throw new Error('Paymob integration ID is invalid. Please check your integration configuration.');
+        }
+        if (selectedIframeId <= 0) {
+            throw new Error('Paymob iframe ID is invalid. Please check your iframe configuration.');
+        }
+
         const authToken = await this.authenticate();
         const orderId = await this.createOrder(authToken, input.amountCents, input.merchantOrderId);
         const paymentToken = await this.createPaymentKey(
@@ -122,10 +140,11 @@ class PaymobService {
             orderId,
             input.amountCents,
             input.billingData,
-            input.callbackUrl
+            input.callbackUrl,
+            selectedIntegrationId
         );
 
-        const iframeUrl = `${env.PAYMOB_BASE_URL}/api/acceptance/iframes/${env.PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
+        const iframeUrl = `${env.PAYMOB_BASE_URL}/api/acceptance/iframes/${selectedIframeId}?payment_token=${paymentToken}`;
 
         return {
             iframeUrl,
@@ -149,11 +168,42 @@ class PaymobService {
             order?: {
                 id: number;
             };
+            source_data?: {
+                pan?: string;
+                sub_type?: string;
+            };
+            card?: {
+                token?: string;
+                last_four?: string;
+                first_six?: string;
+                expiry_month?: number;
+                expiry_year?: number;
+                owner?: string;
+                subtype?: string;
+            };
+            payment_key_claims?: {
+                billing_data?: {
+                    first_name?: string;
+                    last_name?: string;
+                };
+            };
         }>(`/api/acceptance/transactions/${transactionId}`, {
             params: { auth_token: authToken },
         });
 
         const data = response.data;
+
+        const cardToken = data.card?.token;
+        const cardBrand = data.card?.subtype || data.source_data?.sub_type;
+        const cardLast4 = data.card?.last_four || data.source_data?.pan;
+        const cardExpMonth = data.card?.expiry_month;
+        const cardExpYear = data.card?.expiry_year;
+        const cardholderName =
+            data.card?.owner ||
+            [data.payment_key_claims?.billing_data?.first_name, data.payment_key_claims?.billing_data?.last_name]
+                .filter(Boolean)
+                .join(' ') ||
+            undefined;
 
         return {
             transactionId: data.id,
@@ -164,6 +214,12 @@ class PaymobService {
             orderId: data.order?.id ?? 0,
             isVoided: data.is_voided,
             isRefunded: data.is_refunded,
+            ...(cardToken ? { cardToken } : {}),
+            ...(cardBrand ? { cardBrand } : {}),
+            ...(cardLast4 ? { cardLast4 } : {}),
+            ...(cardExpMonth ? { cardExpMonth } : {}),
+            ...(cardExpYear ? { cardExpYear } : {}),
+            ...(cardholderName ? { cardholderName } : {}),
         };
     }
 }

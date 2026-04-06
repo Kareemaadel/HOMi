@@ -72,6 +72,36 @@ export interface PaymobCheckoutResponse {
     currency: string;
 }
 
+export interface WalletBalanceResponse {
+    balance: number;
+    currency: string;
+}
+
+export type WalletTopupPaymentMethod = 'CARD' | 'WALLET';
+
+export interface WalletTopupInitiateInput {
+    amount: number;
+    payment_method: WalletTopupPaymentMethod;
+    save_card?: boolean;
+}
+
+export interface WalletTopupVerifyInput {
+    transaction_id: number;
+}
+
+export interface WalletTopupCheckoutResponse {
+    checkoutUrl: string;
+    amountCents: number;
+    orderId: number;
+    currency: string;
+}
+
+export interface ContractBalancePaymentResponse {
+    contract: ContractResponse;
+    remainingBalance: number;
+    debitedAmount: number;
+}
+
 // ─── Contract Response ────────────────────────────────────────────────────────
 
 export interface ContractResponse {

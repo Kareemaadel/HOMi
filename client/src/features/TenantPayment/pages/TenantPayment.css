@@ -899,6 +899,157 @@
     max-width: 300px;
 }
 
+.wallet-topup-card {
+    background: #ffffff;
+    border: 1px solid var(--accents-2);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wallet-topup-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.wallet-topup-header h3 {
+    margin: 0;
+}
+
+.wallet-topup-header p {
+    margin: 6px 0 0;
+    color: var(--accents-4);
+}
+
+.wallet-balance-pill {
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.wallet-topup-actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.wallet-payment-hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 12px;
+    font-size: 14px;
+}
+
+.wallet-topup-message {
+    border: 1px solid #f1f5f9;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #475569;
+    padding: 10px 12px;
+}
+
+.wallet-topup-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 16px;
+}
+
+.wallet-topup-modal {
+    width: 100%;
+    max-width: 460px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
+}
+
+.wallet-topup-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.wallet-topup-modal-header h3 {
+    margin: 0;
+}
+
+.wallet-topup-modal-copy {
+    margin: 10px 0 14px;
+    color: #64748b;
+}
+
+.wallet-topup-modal label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.wallet-topup-modal input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+}
+
+.wallet-topup-modal select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    background: #ffffff;
+}
+
+.topup-save-card-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.topup-save-card-row input {
+    width: 16px;
+    height: 16px;
+}
+
+.wallet-topup-modal-error {
+    margin-top: 10px;
+    color: #b91c1c;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.wallet-topup-modal-actions {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
 /* --- DISABLED BUTTON STATE --- */
 .btn-vercel-black:disabled {
     background: #e2e8f0;

@@ -1,29 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
-import { 
-    LayoutDashboard, CalendarClock, History, Undo2, 
-    CreditCard, FileSearch, Download, Plus, CheckCircle2, 
-    Clock, ArrowUpRight, Wallet, Receipt, ShieldCheck,
-    TrendingUp, ExternalLink, MoreVertical, MapPin, Loader2, X,
-    Landmark, SearchX, CalendarX
+import {
+    LayoutDashboard,
+    CalendarClock,
+    History,
+    CreditCard,
+    FileSearch,
+    Download,
+    Plus,
+    CheckCircle2,
+    Clock,
+    ArrowUpRight,
+    Wallet,
+    Receipt,
+    ShieldCheck,
+    TrendingUp,
+    MoreVertical,
+    MapPin,
+    Loader2,
+    X,
+    Landmark,
+    SearchX,
+    CalendarX,
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
-import contractService, { type LandlordContract } from '../../../services/contract.service';
+import contractService, { type LandlordContract, type WalletTopupPaymentMethod } from '../../../services/contract.service';
 import rentalRequestService, { type MyRentalRequest } from '../../../services/rental-request.service';
 import { authService } from '../../../services/auth.service';
 import paymentMethodService, { type SavedPaymentMethod } from '../../../services/payment-method.service';
 
-type TabType = 'overview' | 'upcoming' | 'history' | 'refunds' | 'methods' | 'pending';
-
-interface CheckoutInfo {
-    name: string;
-    price: number;
-    location: string;
-}
+type TabType = 'overview' | 'upcoming' | 'history' | 'topup' | 'methods' | 'pending';
 
 const formatMoney = (amount: number): string =>
     `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -47,38 +57,32 @@ const getDueDayFromContract = (rentDueDate: string | null | undefined): number =
 };
 
 const TenantPayment: React.FC = () => {
-    // --- UI STATE ---
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('overview');
-    const [checkoutData, setCheckoutData] = useState<CheckoutInfo | null>(null);
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [showSuccessToast, setShowSuccessToast] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('Payment completed successfully.');
+
     const location = useLocation();
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [dataError, setDataError] = useState<string | null>(null);
     const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
     const [tenantRequests, setTenantRequests] = useState<MyRentalRequest[]>([]);
-
-    // --- ENTITY DATA STATES ---
-    // Overview Tab
-    const [hasCurrentBalance, setHasCurrentBalance] = useState(false);
-    const [hasNextRent, setHasNextRent] = useState(true);
-    const [hasAnnualSpend, setHasAnnualSpend] = useState(true);
-    const [hasActiveProtection, setHasActiveProtection] = useState(true);
-    
-    // Checkout
     const [savedMethods, setSavedMethods] = useState<SavedPaymentMethod[]>([]);
-    
-    // Other Tabs
-    const [hasUpcomingPayments, setHasUpcomingPayments] = useState(true);
-    const [hasPaymentHistory, setHasPaymentHistory] = useState(true);
-    const [hasRefunds, setHasRefunds] = useState(true);
-    const [hasPendingRequests, setHasPendingRequests] = useState(true);
+    const [walletBalance, setWalletBalance] = useState(0);
+
+    const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
+    const [topupAmount, setTopupAmount] = useState('');
+    const [topupMethod, setTopupMethod] = useState<WalletTopupPaymentMethod>('CARD');
+    const [topupSaveCard, setTopupSaveCard] = useState(false);
+    const [topupError, setTopupError] = useState<string | null>(null);
+    const [isTopupStarting, setIsTopupStarting] = useState(false);
+    const [isTopupVerifying, setIsTopupVerifying] = useState(false);
+    const topupVerifiedRef = useRef(false);
 
     const tenantProfile = authService.getCurrentUser()?.profile;
     const accountHolderName = `${tenantProfile?.firstName ?? ''} ${tenantProfile?.lastName ?? ''}`.trim() || 'Account Holder';
 
-    // --- EFFECTS ---
     useEffect(() => {
         if (location.state?.tab) {
             setActiveTab(location.state.tab as TabType);
@@ -86,63 +90,111 @@ const TenantPayment: React.FC = () => {
     }, [location.state]);
 
     useEffect(() => {
-        let mounted = true;
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        const allowedTabs: TabType[] = ['overview', 'upcoming', 'history', 'topup', 'methods', 'pending'];
 
-        const loadPaymentData = async () => {
-            try {
-                setIsLoadingData(true);
-                setDataError(null);
+        if (tab && allowedTabs.includes(tab as TabType)) {
+            setActiveTab(tab as TabType);
+        }
+    }, [location.search]);
 
-                const [contractsRes, requestsRes] = await Promise.all([
-                    contractService.getTenantContracts({ page: 1, limit: 50 }),
-                    rentalRequestService.getMyRequests({ page: 1, limit: 50 })
-                ]);
+    const loadPaymentData = async () => {
+        setIsLoadingData(true);
+        setDataError(null);
 
-                if (!mounted) return;
+        try {
+            const [contractsRes, requestsRes, methods, wallet] = await Promise.all([
+                contractService.getTenantContracts({ page: 1, limit: 50 }),
+                rentalRequestService.getMyRequests({ page: 1, limit: 50 }),
+                paymentMethodService.getMyMethods(),
+                contractService.getWalletBalance(),
+            ]);
 
-                const contracts = contractsRes.data ?? [];
-                const requests = requestsRes.data ?? [];
+            setTenantContracts(contractsRes.data ?? []);
+            setTenantRequests(requestsRes.data ?? []);
+            setSavedMethods(methods);
+            setWalletBalance(Number(wallet.balance ?? 0));
+        } catch {
+            setDataError('Could not load latest payment data.');
+        } finally {
+            setIsLoadingData(false);
+        }
+    };
 
-                setTenantContracts(contracts);
-                setTenantRequests(requests);
-
-                const activeContract = contracts.find((c) => ['ACTIVE', 'PENDING_PAYMENT', 'PENDING_TENANT'].includes(c.status));
-                const paidContracts = contracts.filter((c) => c.status === 'ACTIVE');
-                const approvedOrPendingRequests = requests.filter((r) => r.status === 'APPROVED' || r.status === 'PENDING');
-
-                setHasNextRent(Boolean(activeContract));
-                setHasCurrentBalance(Boolean(activeContract && activeContract.status !== 'ACTIVE'));
-                setHasAnnualSpend(paidContracts.length > 0);
-                setHasActiveProtection(contracts.length > 0);
-                setHasUpcomingPayments(Boolean(activeContract));
-                setHasPaymentHistory(paidContracts.length > 0);
-                setHasPendingRequests(approvedOrPendingRequests.length > 0);
-                setHasRefunds(false);
-
-                const methods = await paymentMethodService.getMyMethods();
-                if (mounted) {
-                    setSavedMethods(methods);
-                }
-            } catch {
-                if (!mounted) return;
-                setDataError('Could not load latest payment data.');
-            } finally {
-                if (mounted) setIsLoadingData(false);
-            }
-        };
-
+    useEffect(() => {
         void loadPaymentData();
-
-        return () => {
-            mounted = false;
-        };
     }, []);
 
-    const activeContract = tenantContracts.find((c) => ['ACTIVE', 'PENDING_PAYMENT', 'PENDING_TENANT'].includes(c.status));
+    useEffect(() => {
+        if (topupVerifiedRef.current) return;
+
+        const params = new URLSearchParams(location.search);
+        const walletTopupFlag = params.get('walletTopup');
+        const successFlag = params.get('success');
+        const transactionIdRaw = params.get('id') || params.get('transaction_id') || '';
+        const transactionId = Number(transactionIdRaw);
+
+        if (walletTopupFlag !== '1') return;
+        if (successFlag === 'false') {
+            setActiveTab('topup');
+            setTopupError('Top-up was not completed. Please try again.');
+            return;
+        }
+        if (!transactionIdRaw || !Number.isFinite(transactionId) || transactionId <= 0) {
+            return;
+        }
+
+        topupVerifiedRef.current = true;
+        setActiveTab('topup');
+        setIsTopupVerifying(true);
+
+        void (async () => {
+            try {
+                const response = await contractService.verifyWalletTopup(transactionId);
+                setWalletBalance(Number(response.balance ?? 0));
+                setTopupError(null);
+                setSuccessMessage('Wallet top-up completed successfully.');
+                setShowSuccessToast(true);
+                await loadPaymentData();
+            } catch {
+                setTopupError('Wallet top-up verification failed. Please retry top-up.');
+            } finally {
+                setIsTopupVerifying(false);
+                const cleanUrl = `${location.pathname}`;
+                globalThis.history.replaceState({}, document.title, cleanUrl);
+            }
+        })();
+    }, [location.pathname, location.search]);
+
+    const activeContract = useMemo(
+        () => tenantContracts.find((c) => ['ACTIVE', 'PENDING_PAYMENT', 'PENDING_TENANT'].includes(c.status)),
+        [tenantContracts]
+    );
+
+    const pendingPaymentContract = useMemo(
+        () => tenantContracts.find((c) => c.status === 'PENDING_PAYMENT'),
+        [tenantContracts]
+    );
+
+    const hasCurrentBalance = walletBalance > 0;
+    const hasNextRent = Boolean(activeContract);
+
     const nextRentAmount = Number(activeContract?.rentAmount ?? activeContract?.property?.monthlyPrice ?? 0);
-    const currentBalanceAmount = hasCurrentBalance ? nextRentAmount : 0;
     const paidContracts = tenantContracts.filter((c) => c.status === 'ACTIVE');
     const annualSpendAmount = paidContracts.reduce((sum, c) => sum + Number(c.rentAmount ?? c.property?.monthlyPrice ?? 0), 0);
+    const hasAnnualSpend = paidContracts.length > 0;
+
+    const pendingTotalDue = pendingPaymentContract
+        ? Number(pendingPaymentContract.rentAmount ?? 0) +
+          Number(pendingPaymentContract.securityDeposit ?? 0) +
+          10
+        : 0;
+    const canAffordPendingPayment = walletBalance >= pendingTotalDue;
+
+    const hasUpcomingPayments = Boolean(activeContract);
+    const hasPaymentHistory = paidContracts.length > 0;
+    const hasPendingRequests = tenantRequests.some((r) => r.status === 'APPROVED' || r.status === 'PENDING');
 
     const getNextDueDateLabel = (): string => {
         if (!activeContract) return 'No active lease';
@@ -156,16 +208,18 @@ const TenantPayment: React.FC = () => {
 
     const upcomingPayments = activeContract
         ? Array.from({ length: 3 }, (_, idx) => {
-            const dueDay = getDueDayFromContract(activeContract.rentDueDate);
-            const base = new Date();
-            const date = new Date(base.getFullYear(), base.getMonth() + idx, dueDay);
-            return {
-                title: `${date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
-                date: formatShortDate(date.toISOString()),
-                amount: nextRentAmount,
-                status: idx === 0 ? 'Active' : 'Scheduled',
-            };
-        })
+              const dueDay = getDueDayFromContract(activeContract.rentDueDate);
+              const base = new Date();
+              const date = new Date(base.getFullYear(), base.getMonth() + idx, dueDay);
+              const status = idx === 0 && activeContract.status === 'PENDING_PAYMENT' ? 'Active' : 'Scheduled';
+
+              return {
+                  title: `${date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
+                  date: formatShortDate(date.toISOString()),
+                  amount: nextRentAmount,
+                  status,
+              };
+          })
         : [];
 
     const historyRows = [...paidContracts]
@@ -190,9 +244,6 @@ const TenantPayment: React.FC = () => {
     const successfulPaymentsLabel = `${historyRows.length} successful payment${historyRows.length === 1 ? '' : 's'}`;
     const hasSavedMethods = savedMethods.length > 0;
     const primaryMethod = savedMethods.find((m) => m.isDefault) ?? savedMethods[0] ?? null;
-    const paymentMethodLabel = primaryMethod
-        ? `${primaryMethod.brand.toUpperCase()} ending in ${primaryMethod.last4}`
-        : 'No saved method';
 
     const handlePaymentMethodSaved = (created: SavedPaymentMethod) => {
         setSavedMethods((prev) => {
@@ -201,117 +252,61 @@ const TenantPayment: React.FC = () => {
         });
     };
 
-    // --- HANDLERS ---
-    const handleConfirmPayment = () => {
-        setIsProcessing(true);
-        // Simulate API Call
-        setTimeout(() => {
-            setIsProcessing(false);
-            setCheckoutData(null); // Return to dashboard
+    const handlePayFromBalance = async () => {
+        if (!pendingPaymentContract) return;
+
+        setIsProcessingPayment(true);
+        setDataError(null);
+
+        try {
+            const result = await contractService.payContractFromBalance(pendingPaymentContract.id);
+            setWalletBalance(Number(result.remainingBalance ?? 0));
+            setSuccessMessage('Payment deducted from your wallet balance successfully.');
             setShowSuccessToast(true);
-            
-            // Automatically switch necessary states to "populated" on successful payment
-            setHasPaymentHistory(true); 
-            setHasAnnualSpend(true);
-            
-            setActiveTab('history'); // Move them to history to see the record
-            
-            // Auto-hide toast after 5 seconds
-            setTimeout(() => setShowSuccessToast(false), 5000);
-        }, 2000);
+            await loadPaymentData();
+            setActiveTab('history');
+        } catch (error: any) {
+            const message = error?.response?.data?.message || 'Could not complete payment from balance.';
+            setDataError(message);
+        } finally {
+            setIsProcessingPayment(false);
+        }
     };
 
-    // --- TAB RENDERERS ---
+    const handleStartTopup = async () => {
+        const amount = Number(topupAmount);
 
-    const renderCheckout = () => {
-        if (!checkoutData) return null;
-        
-        return (
-            <div className="checkout-view animate-fade-up">
-                <button className="back-link" onClick={() => setCheckoutData(null)}>
-                    ← Back to Requests
-                </button>
-                
-                <div className="checkout-grid">
-                    <div className="checkout-main">
-                        <header className="checkout-header">
-                        </header>
+        if (!Number.isFinite(amount) || amount <= 0) {
+            setTopupError('Please enter a valid amount greater than 0.');
+            return;
+        }
 
-                        <section className="checkout-section">
-                            <h3>1. Select Payment Method</h3>
-                            <div className="method-selector-mini">
-                                {hasSavedMethods ? (
-                                    <div className="mini-card selected">
-                                        <div className="card-brand-info">
-                                            <CreditCard size={18} />
-                                            <span>{paymentMethodLabel}</span>
-                                        </div>
-                                        <CheckCircle2 size={16} className="text-success" />
-                                    </div>
-                                ) : (
-                                    <div className="empty-method-prompt text-muted" style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', marginBottom: '12px' }}>
-                                        No payment methods saved.
-                                    </div>
-                                )}
-                                <button className="add-new-mini" onClick={() => setIsModalOpen(true)}>
-                                    <Plus size={16} /> Add New Method
-                                </button>
-                            </div>
-                        </section>
+        setTopupError(null);
+        setIsTopupStarting(true);
 
-                        <section className="checkout-section">
-                            <h3>2. Review Lease Terms</h3>
-                            <div className="terms-box">
-                                <ShieldCheck size={20} className="text-success" />
-                                <div>
-                                    <p>By clicking "Confirm & Pay", you agree to the 12-month lease agreement and house rules.</p>
-                                    <button className="text-btn">View Lease Agreement (PDF)</button>
-                                </div>
-                            </div>
-                        </section>
+        try {
+            const checkout = await contractService.initiateWalletTopup(amount, topupMethod, topupSaveCard);
+            globalThis.location.href = checkout.checkoutUrl;
+        } catch (error: any) {
+            const backendMessage = error?.response?.data?.message;
+            const fallback = 'Could not start Paymob top-up. Please try again.';
+            setTopupError(typeof backendMessage === 'string' && backendMessage.trim() ? backendMessage : fallback);
+        } finally {
+            setIsTopupStarting(false);
+        }
+    };
 
-                        <button 
-                            className={`btn-confirm-pay ${isProcessing ? 'loading' : ''}`} 
-                            onClick={handleConfirmPayment}
-                            disabled={isProcessing}
-                        >
-                            {isProcessing ? (
-                                <><Loader2 className="animate-spin" size={20} /> Processing...</>
-                            ) : (
-                                `Confirm & Pay $${(checkoutData.price + 500).toLocaleString()}`
-                            )}
-                        </button>
-                    </div>
+    const getUpcomingActionLabel = (isActive: boolean): string => {
+        if (!isActive) return 'Manage';
+        if (isProcessingPayment) return 'Processing...';
+        return canAffordPendingPayment ? 'Pay from Balance' : 'Insufficient Balance';
+    };
 
-                    <div className="checkout-summary">
-                        <div className="summary-card">
-                            <h4>Payment Summary</h4>
-                            <div className="summary-property-info">
-                                <p className="summary-prop-name">{checkoutData.name}</p>
-                                <p className="summary-prop-loc"><MapPin size={12}/> {checkoutData.location}</p>
-                            </div>
-                            <div className="summary-divider"></div>
-                            <div className="summary-row">
-                                <span>First Month Rent</span>
-                                <span>${checkoutData.price.toLocaleString()}</span>
-                            </div>
-                            <div className="summary-row">
-                                <span>Security Deposit</span>
-                                <span>$500.00</span>
-                            </div>
-                            <div className="summary-row">
-                                <span>Processing Fee</span>
-                                <span className="text-success">FREE</span>
-                            </div>
-                            <div className="summary-total">
-                                <span>Total Due Now</span>
-                                <span>${(checkoutData.price + 500).toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+    const getRequestActionLabel = (status: string): string => {
+        if (status === 'Pending') return 'Under Review';
+        if (!pendingPaymentContract) return 'Awaiting Contract';
+        if (isProcessingPayment) return 'Processing...';
+        return canAffordPendingPayment ? 'Pay from Balance' : 'Top Up Balance';
     };
 
     const renderOverview = () => (
@@ -321,13 +316,13 @@ const TenantPayment: React.FC = () => {
                     {hasCurrentBalance && <div className="card-glass-overlay"></div>}
                     <div className="card-content">
                         <div className="icon-wrap-blur"><Wallet size={20} /></div>
-                        <span>Current Balance</span>
+                        <span>Wallet Balance</span>
                         <div className="amount-row">
-                            <h2>{formatMoney(currentBalanceAmount)}</h2>
-                            {hasCurrentBalance && <span className="mini-badge">Utilities</span>}
+                            <h2>{formatMoney(walletBalance)}</h2>
+                            {hasCurrentBalance && <span className="mini-badge">Available</span>}
                         </div>
                         <p className={`card-footer-text ${hasCurrentBalance ? '' : 'opacity-70'}`}>
-                            {hasCurrentBalance ? "Auto-pay scheduled for April 15" : "No outstanding balances"}
+                            {hasCurrentBalance ? 'Available for pending payments' : 'Top up to pay pending contracts'}
                         </p>
                     </div>
                 </div>
@@ -335,16 +330,16 @@ const TenantPayment: React.FC = () => {
                 <div className="stat-card-white">
                     <div className="card-header-row">
                         <span>Next Rent</span>
-                        <TrendingUp size={16} className={hasNextRent ? "text-success" : "text-muted"} />
+                        <TrendingUp size={16} className={hasNextRent ? 'text-success' : 'text-muted'} />
                     </div>
                     <div className="flex-baseline">
-                        <h3 className={hasNextRent ? "" : "text-muted"}>{formatMoney(hasNextRent ? nextRentAmount : 0)}</h3>
+                        <h3 className={hasNextRent ? '' : 'text-muted'}>{formatMoney(hasNextRent ? nextRentAmount : 0)}</h3>
                         <span className="sub-label">/mo</span>
                     </div>
                     <div className="due-indicator">
                         {hasNextRent && <div className="pulse-dot"></div>}
-                        <span className={hasNextRent ? "" : "text-muted"}>
-                            {hasNextRent ? getNextDueDateLabel() : "No active lease"}
+                        <span className={hasNextRent ? '' : 'text-muted'}>
+                            {hasNextRent ? getNextDueDateLabel() : 'No active lease'}
                         </span>
                     </div>
                 </div>
@@ -354,33 +349,24 @@ const TenantPayment: React.FC = () => {
                         <span>Annual Spend</span>
                         <Receipt size={16} className="text-slate" />
                     </div>
-                    <h3 className={hasAnnualSpend ? "" : "text-muted"}>{formatMoney(hasAnnualSpend ? annualSpendAmount : 0)}</h3>
-                    <p className="sub-label-sm">{hasAnnualSpend ? successfulPaymentsLabel : "No payments made yet"}</p>
+                    <h3 className={hasAnnualSpend ? '' : 'text-muted'}>{formatMoney(hasAnnualSpend ? annualSpendAmount : 0)}</h3>
+                    <p className="sub-label-sm">{hasAnnualSpend ? successfulPaymentsLabel : 'No payments made yet'}</p>
                 </div>
             </div>
 
-            <div className={`stripe-style-banner ${hasActiveProtection ? '' : 'inactive-banner'}`}>
+            <div className="stripe-style-banner">
                 <div className="banner-left">
                     <div className="banner-icon">
-                        {hasActiveProtection ? <ShieldCheck size={24} /> : <FileSearch size={24} />}
+                        <ShieldCheck size={24} />
                     </div>
                     <div className="banner-copy">
-                        <h4>{hasActiveProtection ? "Payment protection is active" : "Why wait? Looking for a place?"}</h4>
-                        <p>{hasActiveProtection 
-                            ? "Your transactions are encrypted and monitored for your security." 
-                            : "Browse properties and submit applications to get started."}
-                        </p>
+                        <h4>Pending contract payments are wallet-only</h4>
+                        <p>Top up your balance with Paymob, then pay instantly from your wallet without external redirect during payment.</p>
                     </div>
                 </div>
-                {hasActiveProtection ? (
-                    <button className="btn-vercel-black" onClick={() => setActiveTab('upcoming')}>
-                        Pay Now! <ArrowUpRight size={16} />
-                    </button>
-                ) : (
-                    <button className="btn-vercel-black" style={{ background: '#334155' }}>
-                        Find Properties
-                    </button>
-                )}
+                <button className="btn-vercel-black" onClick={() => setActiveTab('topup')}>
+                    Top Up Wallet <ArrowUpRight size={16} />
+                </button>
             </div>
         </div>
     );
@@ -398,20 +384,17 @@ const TenantPayment: React.FC = () => {
                                 </div>
                                 <div className="row-text">
                                     <h5>{item.title}</h5>
-                                    <p>{item.status === 'Active' ? 'Awaiting payment' : 'Automatic payment scheduled'}</p>
+                                    <p>{item.status === 'Active' ? 'Awaiting wallet payment' : 'Automatic payment scheduled'}</p>
                                 </div>
                             </div>
                             <div className="row-actions">
                                 <span className="row-amount">{formatMoney(item.amount)}</span>
-                                <button 
+                                <button
                                     className={item.status === 'Active' ? 'btn-pay-now' : 'btn-manage-ghost'}
-                                    onClick={item.status === 'Active' ? () => setCheckoutData({ 
-                                        name: item.title, 
-                                        price: item.amount, 
-                                        location: activeContract?.property?.address ?? 'Current Rental' 
-                                    }) : undefined}
+                                    onClick={item.status === 'Active' ? handlePayFromBalance : undefined}
+                                    disabled={item.status === 'Active' && (!canAffordPendingPayment || isProcessingPayment)}
                                 >
-                                    {item.status === 'Active' ? 'Pay Now' : 'Manage'}
+                                    {getUpcomingActionLabel(item.status === 'Active')}
                                 </button>
                             </div>
                         </div>
@@ -486,18 +469,14 @@ const TenantPayment: React.FC = () => {
                             <div className="app-card-footer">
                                 <div className="price-group">
                                     <span>Offer</span>
-                                        <span>{formatMoney(req.price)}</span>
+                                    <span>{formatMoney(req.price)}</span>
                                 </div>
-                                <button 
-                                    className="btn-app-action" 
-                                    disabled={req.status !== 'Accepted'}
-                                    onClick={() => setCheckoutData({ 
-                                        name: req.property, 
-                                        price: req.price, 
-                                        location: req.loc 
-                                    })}
+                                <button
+                                    className="btn-app-action"
+                                    disabled={req.status !== 'Accepted' || !pendingPaymentContract || isProcessingPayment}
+                                    onClick={handlePayFromBalance}
                                 >
-                                    {req.status === 'Accepted' ? 'Proceed to Payment' : 'Under Review'}
+                                    {getRequestActionLabel(req.status)}
                                 </button>
                             </div>
                         </div>
@@ -513,10 +492,9 @@ const TenantPayment: React.FC = () => {
         </div>
     );
 
-   const renderMethods = () => (
+    const renderMethods = () => (
         <div className="tab-viewport animate-fade-in">
             <div className="methods-viewport">
-                {/* Visual Card Section */}
                 {hasSavedMethods ? (
                     <div className="card-visual bank-account">
                         <div className="card-top-row">
@@ -540,7 +518,6 @@ const TenantPayment: React.FC = () => {
                     </div>
                 )}
 
-                {/* List Section */}
                 <div className="methods-list-side">
                     {hasSavedMethods ? (
                         <div className="method-entry active">
@@ -553,11 +530,11 @@ const TenantPayment: React.FC = () => {
                         </div>
                     ) : (
                         <div className="empty-method-text" style={{ marginBottom: '20px', color: '#64748b' }}>
-                            <p>You haven't linked a payment method yet. Add a credit card or bank account to quickly pay for deposits and rent.</p>
+                            <p>You haven't linked a payment method yet. Add a credit card or bank account to quickly manage future payment options.</p>
                         </div>
                     )}
 
-                    <button className="btn-add-method" onClick={() => setIsModalOpen(true)}>
+                    <button className="btn-add-method" onClick={() => setIsMethodModalOpen(true)}>
                         <Plus size={18} /> Add New Payment Method
                     </button>
                 </div>
@@ -565,38 +542,43 @@ const TenantPayment: React.FC = () => {
         </div>
     );
 
-    const renderRefunds = () => (
+    const renderTopUp = () => (
         <div className="tab-viewport animate-fade-up">
-            {hasRefunds ? (
-                <div className="list-container">
-                    <div className="list-row" style={{ borderLeft: '4px solid #f59e0b' }}>
-                        <div className="row-main">
-                            <div className="calendar-box" style={{ background: '#fef3c7', color: '#d97706' }}>
-                                <Undo2 size={24} />
-                            </div>
-                            <div className="row-text">
-                                <h5>Security Deposit Return</h5>
-                                <p>Processing back to Chase •••• 9901</p>
-                            </div>
-                        </div>
-                        <div className="row-actions">
-                            <span className="row-amount text-success">+$500.00</span>
-                            <span className="status-tag pending">Processing</span>
-                        </div>
+            <div className="wallet-topup-card">
+                <div className="wallet-topup-header">
+                    <div>
+                        <h3>Wallet Balance</h3>
+                        <p>Top up with Paymob, then complete pending payments directly from wallet balance.</p>
                     </div>
+                    <div className="wallet-balance-pill">{formatMoney(walletBalance)}</div>
                 </div>
-            ) : (
-                <div className="empty-state">
-                    <div className="empty-icon"><Undo2 size={32} /></div>
-                    <h4>No active refunds</h4>
-                    <p>Refunds for security deposits or overpayments will appear here.</p>
+
+                <div className="wallet-topup-actions">
+                    <button className="btn-pay-now" onClick={() => setIsTopupModalOpen(true)}>
+                        <Plus size={16} /> Add Funds
+                    </button>
                 </div>
-            )}
+
+                {pendingPaymentContract && (
+                    <div className="wallet-payment-hint">
+                        <span>Pending payment due: {formatMoney(pendingTotalDue)}</span>
+                        <span className={canAffordPendingPayment ? 'text-success' : 'text-muted'}>
+                            {canAffordPendingPayment ? 'You can pay now from balance.' : 'Top up is needed before payment.'}
+                        </span>
+                    </div>
+                )}
+
+                {(topupError || isTopupVerifying) && (
+                    <div className="wallet-topup-message">
+                        {isTopupVerifying ? 'Verifying top-up transaction...' : topupError}
+                    </div>
+                )}
+            </div>
         </div>
     );
 
     const viewportContent = (() => {
-        if (isLoadingData && !checkoutData) {
+        if (isLoadingData) {
             return (
                 <div className="empty-state">
                     <div className="empty-icon"><Loader2 size={32} className="animate-spin" /></div>
@@ -606,7 +588,7 @@ const TenantPayment: React.FC = () => {
             );
         }
 
-        if (dataError && !checkoutData) {
+        if (dataError) {
             return (
                 <div className="empty-state">
                     <div className="empty-icon"><X size={32} /></div>
@@ -616,16 +598,12 @@ const TenantPayment: React.FC = () => {
             );
         }
 
-        if (checkoutData) {
-            return renderCheckout();
-        }
-
         return (
             <>
                 {activeTab === 'overview' && renderOverview()}
                 {activeTab === 'upcoming' && renderUpcoming()}
                 {activeTab === 'history' && renderHistory()}
-                {activeTab === 'refunds' && renderRefunds()}
+                {activeTab === 'topup' && renderTopUp()}
                 {activeTab === 'methods' && renderMethods()}
                 {activeTab === 'pending' && renderPending()}
             </>
@@ -640,33 +618,30 @@ const TenantPayment: React.FC = () => {
                 <main className="payment-hub">
                     <header className="hub-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div className="header-text">
-                            <h1>{checkoutData ? 'Checkout' : 'Billing & Payments'}</h1>
+                            <h1>Billing & Payments</h1>
                         </div>
-                       
                     </header>
 
-                    {!checkoutData && (
-                        <div className="tabs-wrapper">
-                            <nav className="modern-tabs">
-                                {[
-                                    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16}/> },
-                                    { id: 'upcoming', label: 'Upcoming', icon: <CalendarClock size={16}/> },
-                                    { id: 'history', label: 'History', icon: <History size={16}/> },
-                                    { id: 'refunds', label: 'Refunds', icon: <Undo2 size={16}/> },
-                                    { id: 'methods', label: 'Methods', icon: <CreditCard size={16}/> },
-                                    { id: 'pending', label: 'Requests', icon: <FileSearch size={16}/> },
-                                ].map(tab => (
-                                    <button 
-                                        key={tab.id}
-                                        className={activeTab === tab.id ? 'active' : ''} 
-                                        onClick={() => setActiveTab(tab.id as TabType)}
-                                    >
-                                        {tab.icon} {tab.label}
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
-                    )}
+                    <div className="tabs-wrapper">
+                        <nav className="modern-tabs">
+                            {[
+                                { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16}/> },
+                                { id: 'upcoming', label: 'Upcoming', icon: <CalendarClock size={16}/> },
+                                { id: 'history', label: 'History', icon: <History size={16}/> },
+                                { id: 'topup', label: 'Top Up', icon: <Wallet size={16}/> },
+                                { id: 'methods', label: 'Methods', icon: <CreditCard size={16}/> },
+                                { id: 'pending', label: 'Requests', icon: <FileSearch size={16}/> },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    className={activeTab === tab.id ? 'active' : ''}
+                                    onClick={() => setActiveTab(tab.id as TabType)}
+                                >
+                                    {tab.icon} {tab.label}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
 
                     <div className="viewport-container">
                         {viewportContent}
@@ -675,14 +650,13 @@ const TenantPayment: React.FC = () => {
                 <Footer />
             </div>
 
-            {/* Success Toast */}
             {showSuccessToast && (
                 <div className="toast-success-overlay">
                     <div className="toast-card">
                         <div className="toast-icon"><CheckCircle2 size={24} /></div>
                         <div className="toast-body">
-                            <h6>Payment Successful!</h6>
-                            <p>Your lease is now active. Receipt sent to your email.</p>
+                            <h6>Success</h6>
+                            <p>{successMessage}</p>
                         </div>
                         <button className="toast-close" onClick={() => setShowSuccessToast(false)}>
                             <X size={16} />
@@ -691,9 +665,68 @@ const TenantPayment: React.FC = () => {
                 </div>
             )}
 
-            <CreditCardModal 
-                isOpen={isModalOpen} 
-                onClose={() => setIsModalOpen(false)}
+            {isTopupModalOpen && (
+                <div className="wallet-topup-modal-overlay">
+                    <div className="wallet-topup-modal">
+                        <div className="wallet-topup-modal-header">
+                            <h3>Add Funds to Wallet</h3>
+                            <button className="icon-btn" onClick={() => setIsTopupModalOpen(false)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <p className="wallet-topup-modal-copy">Enter the amount you want to add. You will be redirected to Paymob to complete payment securely.</p>
+                        <label htmlFor="topup-method">Payment Method</label>
+                        <select
+                            id="topup-method"
+                            value={topupMethod}
+                            onChange={(e) => {
+                                const selected = e.target.value as WalletTopupPaymentMethod;
+                                setTopupMethod(selected);
+                                if (selected !== 'CARD') setTopupSaveCard(false);
+                            }}
+                        >
+                            <option value="CARD">Card</option>
+                            <option value="WALLET">Mobile Wallet</option>
+                        </select>
+                        {topupMethod === 'CARD' && (
+                            <label htmlFor="topup-save-card" className="topup-save-card-row">
+                                <input
+                                    id="topup-save-card"
+                                    type="checkbox"
+                                    checked={topupSaveCard}
+                                    onChange={(e) => setTopupSaveCard(e.target.checked)}
+                                />{' '}
+                                Save this card for future use
+                            </label>
+                        )}
+                        <label htmlFor="topup-amount">Amount (EGP)</label>
+                        <input
+                            id="topup-amount"
+                            type="number"
+                            min="1"
+                            step="0.01"
+                            value={topupAmount}
+                            onChange={(e) => setTopupAmount(e.target.value)}
+                            placeholder="e.g. 2500"
+                        />
+
+                        {topupError && <div className="wallet-topup-modal-error">{topupError}</div>}
+
+                        <div className="wallet-topup-modal-actions">
+                            <button className="btn-manage-ghost" onClick={() => setIsTopupModalOpen(false)}>
+                                Cancel
+                            </button>
+                            <button className="btn-pay-now" onClick={handleStartTopup} disabled={isTopupStarting}>
+                                {isTopupStarting ? 'Starting...' : 'Continue to Paymob'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <CreditCardModal
+                isOpen={isMethodModalOpen}
+                onClose={() => setIsMethodModalOpen(false)}
                 onSaved={handlePaymentMethodSaved}
             />
         </div>

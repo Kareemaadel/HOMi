@@ -53,13 +53,19 @@ export class Profile extends Model<
     declare preferred_budget_min: CreationOptional<number | null>;
     declare preferred_budget_max: CreationOptional<number | null>;
 
+    // Wallet balance + pending top-up metadata
+    declare wallet_balance: CreationOptional<number>;
+    declare wallet_pending_order_id: CreationOptional<number | null>;
+    declare wallet_pending_amount_cents: CreationOptional<number | null>;
+    declare wallet_pending_save_card: CreationOptional<boolean>;
+
     // Timestamps
     declare created_at: CreationOptional<Date>;
     declare updated_at: CreationOptional<Date>;
 
     // Associations
     declare user?: NonAttribute<User>;
-    declare static associations: {
+    declare static readonly associations: {
         user: Association<Profile, User>;
     };
 
@@ -153,6 +159,24 @@ Profile.init(
         preferred_budget_max: {
             type: DataTypes.DECIMAL(12, 2),
             allowNull: true,
+        },
+        wallet_balance: {
+            type: DataTypes.DECIMAL(12, 2),
+            allowNull: false,
+            defaultValue: 0,
+        },
+        wallet_pending_order_id: {
+            type: DataTypes.BIGINT,
+            allowNull: true,
+        },
+        wallet_pending_amount_cents: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        wallet_pending_save_card: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
         },
         created_at: {
             type: DataTypes.DATE,

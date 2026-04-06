@@ -14,9 +14,10 @@ import {
 import { paymobService } from '../../../shared/services/paymob.service.js';
 import { env } from '../../../config/env.js';
 import { decrypt, encrypt } from '../../../shared/utils/encryption.util.js';
-import { PropertyImage } from '../../properties/models/PropertyImage.js';
+import { PaymentMethod, PaymentProvider } from '../../payment-methods/models/PaymentMethod.js';
 import type {
     ContractResponse,
+    ContractBalancePaymentResponse,
     ContractListResponse,
     VerificationSummaryResponse,
     MaintenanceResponsibilityResponse,
@@ -28,6 +29,10 @@ import type {
     TenantSignInput,
     VerifyPaymobPaymentInput,
     PaymobCheckoutResponse,
+    WalletBalanceResponse,
+    WalletTopupCheckoutResponse,
+    WalletTopupInitiateInput,
+    WalletTopupVerifyInput,
 } from '../interfaces/contract.interfaces.js';
 
 // ─── Duration map ─────────────────────────────────────────────────────────────
@@ -589,6 +594,254 @@ class ContractService {
         return this.formatContractResponse(contract);
     }
 
+    async getWalletBalance(tenantId: string): Promise<WalletBalanceResponse> {
+        const profile = await Profile.findOne({
+            where: { user_id: tenantId },
+            attributes: ['wallet_balance'],
+        });
+
+        if (!profile) {
+            throw new ContractError('Tenant profile not found', 404, 'PROFILE_NOT_FOUND');
+        }
+
+        return {
+            balance: Number((profile as any).wallet_balance ?? 0),
+            currency: 'EGP',
+        };
+    }
+
+    async payContractFromBalance(contractId: string, tenantId: string): Promise<ContractBalancePaymentResponse> {
+        const transaction = await sequelize.transaction();
+
+        try {
+            const contract = await this.findAndValidateTenantPaymentContract(contractId, tenantId, transaction);
+
+            if (contract.payment_status === ContractPaymentStatus.PAID) {
+                throw new ContractError('This contract payment is already completed', 400, 'PAYMENT_ALREADY_COMPLETED');
+            }
+
+            const profile = await Profile.findOne({
+                where: { user_id: tenantId },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+
+            if (!profile) {
+                throw new ContractError('Tenant profile not found', 404, 'PROFILE_NOT_FOUND');
+            }
+
+            const requiredAmount = this.calculateContractTotalAmount(contract);
+            const availableBalance = Number((profile as any).wallet_balance ?? 0);
+
+            if (availableBalance < requiredAmount) {
+                throw new ContractError('Insufficient wallet balance to complete this payment', 400, 'INSUFFICIENT_WALLET_BALANCE');
+            }
+
+            const remainingBalance = Math.max(availableBalance - requiredAmount, 0);
+
+            await profile.update(
+                {
+                    wallet_balance: remainingBalance,
+                },
+                { transaction }
+            );
+
+            await contract.update(
+                {
+                    payment_status: ContractPaymentStatus.PAID,
+                    payment_verified_at: new Date(),
+                    status: ContractStatus.ACTIVE,
+                    paymob_order_id: null,
+                    paymob_transaction_id: null,
+                },
+                { transaction }
+            );
+
+            await transaction.commit();
+
+            const refreshedContract = await Contract.findByPk(contract.id, {
+                include: this.getContractDetailIncludes(),
+            });
+
+            return {
+                contract: this.formatContractResponse(refreshedContract ?? contract, true, true),
+                remainingBalance,
+                debitedAmount: requiredAmount,
+            };
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+    }
+
+    async initiateWalletTopup(
+        tenantId: string,
+        input: WalletTopupInitiateInput
+    ): Promise<WalletTopupCheckoutResponse> {
+        const amount = Number(input.amount ?? 0);
+        const amountCents = Math.round(amount * 100);
+        const paymentMethod = input.payment_method ?? 'CARD';
+        const shouldSaveCard = Boolean(input.save_card) && paymentMethod === 'CARD';
+
+        if (!Number.isFinite(amount) || amount <= 0 || amountCents <= 0) {
+            throw new ContractError('Top-up amount must be greater than zero', 400, 'INVALID_TOPUP_AMOUNT');
+        }
+
+        const integrationId = paymentMethod === 'WALLET'
+            ? env.PAYMOB_WALLET_INTEGRATION_ID
+            : env.PAYMOB_INTEGRATION_ID;
+        const iframeId = paymentMethod === 'WALLET'
+            ? env.PAYMOB_WALLET_IFRAME_ID
+            : env.PAYMOB_IFRAME_ID;
+
+        if (integrationId <= 0) {
+            throw new ContractError('Selected Paymob integration is not configured', 500, 'PAYMOB_INTEGRATION_NOT_CONFIGURED');
+        }
+        if (iframeId <= 0) {
+            throw new ContractError('Selected Paymob iframe is not configured', 500, 'PAYMOB_IFRAME_NOT_CONFIGURED');
+        }
+
+        const tenantUser = await User.findByPk(tenantId, {
+            include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'phone_number'] }],
+            attributes: ['id', 'email'],
+        });
+
+        if (!tenantUser) {
+            throw new ContractError('Tenant user not found', 404, 'USER_NOT_FOUND');
+        }
+
+        const callbackUrl = `${env.CLIENT_URL.replace(/\/$/, '')}/tenant-payment?walletTopup=1`;
+        const profile = (tenantUser as any).profile;
+        const checkout = await paymobService.createCheckoutSession({
+            amountCents,
+            merchantOrderId: `WALLET-${tenantId}-${Date.now()}`,
+            billingData: {
+                email: tenantUser.email,
+                first_name: profile?.first_name || 'Tenant',
+                last_name: profile?.last_name || 'User',
+                phone_number: profile?.phone_number || '+201000000000',
+            },
+            callbackUrl,
+            integrationId,
+            iframeId,
+        });
+
+        await Profile.update(
+            {
+                wallet_pending_order_id: checkout.orderId,
+                wallet_pending_amount_cents: amountCents,
+                wallet_pending_save_card: shouldSaveCard,
+            },
+            {
+                where: { user_id: tenantId },
+            }
+        );
+
+        return {
+            checkoutUrl: checkout.iframeUrl,
+            amountCents: checkout.amountCents,
+            orderId: checkout.orderId,
+            currency: 'EGP',
+        };
+    }
+
+    async verifyWalletTopup(tenantId: string, input: WalletTopupVerifyInput): Promise<WalletBalanceResponse> {
+        const transaction = await sequelize.transaction();
+
+        try {
+            const profile = await Profile.findOne({
+                where: { user_id: tenantId },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+
+            if (!profile) {
+                throw new ContractError('Tenant profile not found', 404, 'PROFILE_NOT_FOUND');
+            }
+
+            const pendingOrderId = Number((profile as any).wallet_pending_order_id ?? 0);
+            const pendingAmountCents = Number((profile as any).wallet_pending_amount_cents ?? 0);
+            const shouldSaveCard = Boolean((profile as any).wallet_pending_save_card);
+
+            if (!pendingOrderId || !pendingAmountCents) {
+                throw new ContractError('No pending wallet top-up found for verification', 400, 'NO_PENDING_TOPUP');
+            }
+
+            const verification = await paymobService.verifyTransaction(input.transaction_id);
+            const isOrderMatched = verification.orderId === pendingOrderId;
+            const isAmountMatched = verification.amountCents === pendingAmountCents;
+            const isSuccess = verification.success && !verification.pending && !verification.isVoided && !verification.isRefunded;
+
+            if (!isSuccess || !isOrderMatched || !isAmountMatched) {
+                await profile.update(
+                    {
+                        wallet_pending_order_id: null,
+                        wallet_pending_amount_cents: null,
+                        wallet_pending_save_card: false,
+                    },
+                    { transaction }
+                );
+
+                throw new ContractError('Wallet top-up verification failed. Please retry top-up.', 400, 'TOPUP_VERIFICATION_FAILED');
+            }
+
+            const currentBalance = Number((profile as any).wallet_balance ?? 0);
+            const updatedBalance = currentBalance + pendingAmountCents / 100;
+
+            await profile.update(
+                {
+                    wallet_balance: updatedBalance,
+                    wallet_pending_order_id: null,
+                    wallet_pending_amount_cents: null,
+                    wallet_pending_save_card: false,
+                },
+                { transaction }
+            );
+
+            if (shouldSaveCard && verification.cardToken && verification.cardLast4 && verification.cardExpMonth && verification.cardExpYear) {
+                const existing = await PaymentMethod.findOne({
+                    where: {
+                        user_id: tenantId,
+                        provider: PaymentProvider.PAYMOB,
+                        provider_payment_token: verification.cardToken,
+                    },
+                    transaction,
+                });
+
+                if (!existing) {
+                    const safeBrand = (verification.cardBrand || 'CARD').toUpperCase().slice(0, 40);
+                    const safeLast4 = verification.cardLast4.slice(-4).padStart(4, '0');
+                    const safeHolder = (verification.cardholderName || 'Card Holder').trim().slice(0, 120) || 'Card Holder';
+
+                    await PaymentMethod.create(
+                        {
+                            user_id: tenantId,
+                            provider: PaymentProvider.PAYMOB,
+                            provider_payment_token: verification.cardToken,
+                            brand: safeBrand,
+                            last4: safeLast4,
+                            exp_month: verification.cardExpMonth,
+                            exp_year: verification.cardExpYear,
+                            cardholder_name: safeHolder,
+                            is_default: false,
+                        },
+                        { transaction }
+                    );
+                }
+            }
+
+            await transaction.commit();
+
+            return {
+                balance: updatedBalance,
+                currency: 'EGP',
+            };
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+    }
+
     // ─── Private Helpers ──────────────────────────────────────────────────────
 
     /**
@@ -660,9 +913,10 @@ class ContractService {
      */
     private async findAndValidateTenantPaymentContract(
         contractId: string,
-        tenantId: string
+        tenantId: string,
+        transaction?: any
     ): Promise<Contract> {
-        const contract = await Contract.findByPk(contractId);
+        const contract = await Contract.findByPk(contractId, { transaction });
 
         if (!contract) {
             throw new ContractError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
@@ -688,12 +942,15 @@ class ContractService {
     }
 
     private calculateContractTotalAmountCents(contract: Contract): number {
+        const total = this.calculateContractTotalAmount(contract);
+        return Math.round(total * 100);
+    }
+
+    private calculateContractTotalAmount(contract: Contract): number {
         const rent = Number(contract.rent_amount ?? 0);
         const deposit = Number(contract.security_deposit ?? 0);
         const fee = Number(contract.service_fee ?? 0);
-        const total = rent + deposit + fee;
-
-        return Math.round(total * 100);
+        return rent + deposit + fee;
     }
 
     /**

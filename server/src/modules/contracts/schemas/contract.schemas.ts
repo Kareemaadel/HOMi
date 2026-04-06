@@ -93,6 +93,28 @@ export const VerifyPaymobPaymentSchema = z.object({
 });
 
 /**
+ * Initiate wallet top-up checkout
+ */
+export const WalletTopupInitiateSchema = z.object({
+    amount: z
+        .number({ error: 'Top-up amount is required' })
+        .positive('Top-up amount must be greater than zero')
+        .max(1000000, 'Top-up amount is too large'),
+    payment_method: z.enum(['CARD', 'WALLET']).default('CARD'),
+    save_card: z.boolean().optional(),
+});
+
+/**
+ * Verify wallet top-up transaction
+ */
+export const VerifyWalletTopupSchema = z.object({
+    transaction_id: z
+        .number({ error: 'Transaction ID is required' })
+        .int('Transaction ID must be an integer')
+        .positive('Transaction ID must be positive'),
+});
+
+/**
  * Contract List Query Parameters
  */
 export const ContractQuerySchema = z.object({
@@ -128,6 +150,8 @@ export type LandlordSignInput = z.infer<typeof LandlordSignSchema>;
 export type TenantIdentityInput = z.infer<typeof TenantIdentitySchema>;
 export type TenantSignInput = z.infer<typeof TenantSignSchema>;
 export type VerifyPaymobPaymentInput = z.infer<typeof VerifyPaymobPaymentSchema>;
+export type WalletTopupInitiateInput = z.infer<typeof WalletTopupInitiateSchema>;
+export type VerifyWalletTopupInput = z.infer<typeof VerifyWalletTopupSchema>;
 export type ContractQueryInput = z.infer<typeof ContractQuerySchema>;
 
 export default {
@@ -138,5 +162,7 @@ export default {
     TenantIdentitySchema,
     TenantSignSchema,
     VerifyPaymobPaymentSchema,
+    WalletTopupInitiateSchema,
+    VerifyWalletTopupSchema,
     ContractQuerySchema,
 };
