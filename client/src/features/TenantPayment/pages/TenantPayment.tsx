@@ -15,6 +15,7 @@ import CreditCardModal from '../components/CreditCardModal';
 import contractService, { type LandlordContract } from '../../../services/contract.service';
 import rentalRequestService, { type MyRentalRequest } from '../../../services/rental-request.service';
 import { authService } from '../../../services/auth.service';
+import paymentMethodService, { type SavedPaymentMethod } from '../../../services/payment-method.service';
 
 type TabType = 'overview' | 'upcoming' | 'history' | 'refunds' | 'methods' | 'pending';
 
@@ -66,13 +67,12 @@ const TenantPayment: React.FC = () => {
     const [hasActiveProtection, setHasActiveProtection] = useState(true);
     
     // Checkout
-    const [hasSavedMethods] = useState(true);
+    const [savedMethods, setSavedMethods] = useState<SavedPaymentMethod[]>([]);
     
     // Other Tabs
     const [hasUpcomingPayments, setHasUpcomingPayments] = useState(true);
     const [hasPaymentHistory, setHasPaymentHistory] = useState(true);
     const [hasRefunds, setHasRefunds] = useState(true);
-    const [hasPaymentMethods] = useState(true);
     const [hasPendingRequests, setHasPendingRequests] = useState(true);
 
     const tenantProfile = authService.getCurrentUser()?.profile;
@@ -107,17 +107,22 @@ const TenantPayment: React.FC = () => {
                 setTenantRequests(requests);
 
                 const activeContract = contracts.find((c) => ['ACTIVE', 'PENDING_PAYMENT', 'PENDING_TENANT'].includes(c.status));
-                const paidContracts = contracts.filter((c) => c.paymentStatus === 'PAID');
+                const paidContracts = contracts.filter((c) => c.status === 'ACTIVE');
                 const approvedOrPendingRequests = requests.filter((r) => r.status === 'APPROVED' || r.status === 'PENDING');
 
                 setHasNextRent(Boolean(activeContract));
-                setHasCurrentBalance(Boolean(activeContract && activeContract.paymentStatus !== 'PAID'));
+                setHasCurrentBalance(Boolean(activeContract && activeContract.status !== 'ACTIVE'));
                 setHasAnnualSpend(paidContracts.length > 0);
                 setHasActiveProtection(contracts.length > 0);
                 setHasUpcomingPayments(Boolean(activeContract));
                 setHasPaymentHistory(paidContracts.length > 0);
                 setHasPendingRequests(approvedOrPendingRequests.length > 0);
                 setHasRefunds(false);
+
+                const methods = await paymentMethodService.getMyMethods();
+                if (mounted) {
+                    setSavedMethods(methods);
+                }
             } catch {
                 if (!mounted) return;
                 setDataError('Could not load latest payment data.');
@@ -136,7 +141,7 @@ const TenantPayment: React.FC = () => {
     const activeContract = tenantContracts.find((c) => ['ACTIVE', 'PENDING_PAYMENT', 'PENDING_TENANT'].includes(c.status));
     const nextRentAmount = Number(activeContract?.rentAmount ?? activeContract?.property?.monthlyPrice ?? 0);
     const currentBalanceAmount = hasCurrentBalance ? nextRentAmount : 0;
-    const paidContracts = tenantContracts.filter((c) => c.paymentStatus === 'PAID');
+    const paidContracts = tenantContracts.filter((c) => c.status === 'ACTIVE');
     const annualSpendAmount = paidContracts.reduce((sum, c) => sum + Number(c.rentAmount ?? c.property?.monthlyPrice ?? 0), 0);
 
     const getNextDueDateLabel = (): string => {
@@ -183,6 +188,18 @@ const TenantPayment: React.FC = () => {
         }));
 
     const successfulPaymentsLabel = `${historyRows.length} successful payment${historyRows.length === 1 ? '' : 's'}`;
+    const hasSavedMethods = savedMethods.length > 0;
+    const primaryMethod = savedMethods.find((m) => m.isDefault) ?? savedMethods[0] ?? null;
+    const paymentMethodLabel = primaryMethod
+        ? `${primaryMethod.brand.toUpperCase()} ending in ${primaryMethod.last4}`
+        : 'No saved method';
+
+    const handlePaymentMethodSaved = (created: SavedPaymentMethod) => {
+        setSavedMethods((prev) => {
+            const withoutDuplicates = prev.filter((m) => m.id !== created.id);
+            return [created, ...withoutDuplicates];
+        });
+    };
 
     // --- HANDLERS ---
     const handleConfirmPayment = () => {
@@ -227,7 +244,7 @@ const TenantPayment: React.FC = () => {
                                     <div className="mini-card selected">
                                         <div className="card-brand-info">
                                             <CreditCard size={18} />
-                                            <span>Visa ending in 4242</span>
+                                            <span>{paymentMethodLabel}</span>
                                         </div>
                                         <CheckCircle2 size={16} className="text-success" />
                                     </div>
@@ -500,18 +517,18 @@ const TenantPayment: React.FC = () => {
         <div className="tab-viewport animate-fade-in">
             <div className="methods-viewport">
                 {/* Visual Card Section */}
-                {hasPaymentMethods ? (
+                {hasSavedMethods ? (
                     <div className="card-visual bank-account">
                         <div className="card-top-row">
-                            <span className="bank-logo">CHASE BUSINESS</span>
+                            <span className="bank-logo">{primaryMethod?.brand?.toUpperCase() ?? 'CARD'}</span>
                             <div className="chip-gold"></div>
                         </div>
                         <div className="card-mid-row">
-                            <div className="iban-display">US76 •••• •••• 9901</div>
+                            <div className="iban-display">•••• •••• •••• {primaryMethod?.last4 ?? '0000'}</div>
                         </div>
                         <div className="card-bottom-row">
                             <span className="card-holder-label">Account Holder</span>
-                            <span className="card-holder-name">{accountHolderName}</span>
+                            <span className="card-holder-name">{primaryMethod?.cardholderName ?? accountHolderName}</span>
                         </div>
                     </div>
                 ) : (
@@ -525,12 +542,12 @@ const TenantPayment: React.FC = () => {
 
                 {/* List Section */}
                 <div className="methods-list-side">
-                    {hasPaymentMethods ? (
+                    {hasSavedMethods ? (
                         <div className="method-entry active">
                             <div className="method-icon-wrap"><Landmark size={20}/></div>
                             <div className="method-info-text">
-                                <h5>Chase Business Savings</h5>
-                                <p>Primary Payout Method</p>
+                                <h5>{primaryMethod?.brand?.toUpperCase() ?? 'Card'} •••• {primaryMethod?.last4 ?? '0000'}</h5>
+                                <p>{primaryMethod?.isDefault ? 'Primary payment method' : 'Saved payment method'}</p>
                             </div>
                             <CheckCircle2 size={18} className="ml-auto text-success" />
                         </div>
@@ -678,7 +695,8 @@ const TenantPayment: React.FC = () => {
 
             <CreditCardModal 
                 isOpen={isModalOpen} 
-                onClose={() => setIsModalOpen(false)} 
+                onClose={() => setIsModalOpen(false)}
+                onSaved={handlePaymentMethodSaved}
             />
         </div>
     );
