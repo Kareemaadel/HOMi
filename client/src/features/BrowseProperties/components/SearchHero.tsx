@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaHome, FaDollarSign, FaSlidersH, FaCalendarAlt, FaUserFriends, FaCouch, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaSearch, FaHome, FaDollarSign, FaSlidersH, FaCalendarAlt, FaUserFriends, FaCouch, FaMapMarkedAlt, FaCrosshairs } from 'react-icons/fa';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -76,6 +76,16 @@ const MapEventsHandler = ({ position, onLocationSelect, radiusKm }: any) => {
   );
 };
 
+const MapCenterUpdater = ({ center }: { center: [number, number] }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        map.setView(center, Math.max(map.getZoom(), 12));
+    }, [center, map]);
+
+    return null;
+};
+
 export interface FilterParams {
     type?: string;
     furnishing?: string;
@@ -105,6 +115,10 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
     const [position, setPosition] = useState<{lat: number, lng: number} | null>(null);
     const [radiusKm, setRadiusKm] = useState<number>(5);
     const [isMapActive, setIsMapActive] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+    const [cityQuery, setCityQuery] = useState('');
+    const [isCitySearching, setIsCitySearching] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -130,6 +144,87 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
         }
 
         onSearch(cleanedFilters);
+    };
+
+    const handleUseCurrentLocation = () => {
+        setLocationError(null);
+
+        if (!navigator.geolocation) {
+            setLocationError('Geolocation is not supported by your browser.');
+            return;
+        }
+
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (coords) => {
+                const { latitude, longitude } = coords.coords;
+                const candidate = L.latLng(latitude, longitude);
+
+                if (!EGYPT_BOUNDS.contains(candidate)) {
+                    setIsLocating(false);
+                    setLocationError('Current location appears to be outside Egypt. Please pin manually.');
+                    return;
+                }
+
+                setPosition({ lat: latitude, lng: longitude });
+                setIsMapActive(true);
+                setIsLocating(false);
+            },
+            (error) => {
+                setIsLocating(false);
+                if (error.code === error.PERMISSION_DENIED) {
+                    setLocationError('Location permission was denied. Please allow it and try again.');
+                    return;
+                }
+
+                setLocationError('Could not get your current location. Please try again.');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0,
+            }
+        );
+    };
+
+    const handleCitySearch = async () => {
+        const query = cityQuery.trim();
+        if (!query) {
+            setLocationError('Please type a city name first.');
+            return;
+        }
+
+        setLocationError(null);
+        setIsCitySearching(true);
+
+        try {
+            const cityInEgyptQuery = `${query}, Egypt`;
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(cityInEgyptQuery)}&limit=1`
+            );
+            const results = await response.json();
+
+            if (!Array.isArray(results) || results.length === 0) {
+                setLocationError('City not found. Try a more specific city name.');
+                return;
+            }
+
+            const lat = Number(results[0].lat);
+            const lng = Number(results[0].lon);
+
+            if (Number.isNaN(lat) || Number.isNaN(lng) || !EGYPT_BOUNDS.contains(L.latLng(lat, lng))) {
+                setLocationError('Please search for a city within Egypt.');
+                return;
+            }
+
+            setPosition({ lat, lng });
+            setIsMapActive(true);
+        } catch (error) {
+            console.error('City search failed', error);
+            setLocationError('Could not search that city right now. Please try again.');
+        } finally {
+            setIsCitySearching(false);
+        }
     };
 
     return (
@@ -223,6 +318,39 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
                             
                             <div className="adv-map-section">
                                 <label><FaMapMarkedAlt /> Where do you want to live?</label>
+                                <div className="map-search-toolbar">
+                                    <button
+                                        type="button"
+                                        className="location-action-btn"
+                                        onClick={handleUseCurrentLocation}
+                                        disabled={isLocating}
+                                    >
+                                        <FaCrosshairs /> {isLocating ? 'Locating...' : 'Use Current Location'}
+                                    </button>
+                                    <div className="city-search-box">
+                                        <input
+                                            type="text"
+                                            placeholder="Type city name (e.g., Cairo)"
+                                            value={cityQuery}
+                                            onChange={(e) => setCityQuery(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    void handleCitySearch();
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="city-search-btn"
+                                            onClick={() => void handleCitySearch()}
+                                            disabled={isCitySearching}
+                                        >
+                                            {isCitySearching ? 'Searching...' : 'Find City'}
+                                        </button>
+                                    </div>
+                                </div>
+                                {locationError && <p className="map-location-error">{locationError}</p>}
                                 <div className="map-radius-control">
                                     <span>Search Radius: <strong>{radiusKm} km</strong></span>
                                     <input 
@@ -253,13 +381,14 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
                                               style={{ height: '100%', width: '100%' }}
                                             >
                                               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                              {position && <MapCenterUpdater center={[position.lat, position.lng]} />}
                                               <SearchField onLocationSelect={(lat, lng) => setPosition({lat, lng})} />
                                               <MapEventsHandler position={position} onLocationSelect={(lat: number, lng: number) => setPosition({lat, lng})} radiusKm={radiusKm} />
                                             </MapContainer>
                                         </div>
                                     )}
                                     {position && (
-                                        <button className="clear-location-btn" onClick={() => { setPosition(null); setIsMapActive(false); }}>
+                                        <button className="clear-location-btn" onClick={() => { setPosition(null); setIsMapActive(false); setLocationError(null); }}>
                                             Clear Location
                                         </button>
                                     )}

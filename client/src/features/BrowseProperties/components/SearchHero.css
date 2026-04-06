@@ -650,6 +650,93 @@
     gap: 8px;
 }
 
+.map-search-toolbar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.location-action-btn {
+    background: #1d4ed8;
+    color: #ffffff;
+    border: 1px solid #1e40af;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+
+.location-action-btn:hover:not(:disabled) {
+    background: #1e40af;
+    color: #ffffff;
+}
+
+.location-action-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.city-search-box {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+}
+
+.city-search-box input {
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    color: #f8fafc;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    outline: none;
+}
+
+.city-search-box input::placeholder {
+    color: rgba(203, 213, 225, 0.75);
+}
+
+.city-search-box input:focus {
+    border-color: rgba(96, 165, 250, 0.7);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.city-search-btn {
+    background: #047857;
+    color: #ffffff;
+    border: 1px solid #065f46;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.city-search-btn:hover:not(:disabled) {
+    background: #065f46;
+    color: #ffffff;
+}
+
+.city-search-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.map-location-error {
+    margin: 0;
+    color: #fca5a5;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 .map-radius-control {
     display: flex;
     align-items: center;
@@ -725,4 +812,28 @@
 
 .clear-location-btn:hover {
     background: rgba(239, 68, 68, 0.2);
+}
+
+@media (max-width: 768px) {
+    .map-search-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .city-search-box {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Keep advanced map controls from getting clipped when extra actions are visible. */
+.search-hero.advanced-open {
+    height: auto;
+    min-height: 1020px;
+    overflow: visible;
+    padding-bottom: 18px;
+}
+
+@media (max-width: 768px) {
+    .search-hero.advanced-open {
+        min-height: 1160px;
+    }
 }
