@@ -116,6 +116,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     margin-bottom: 24px;
+    width: 100%;
+    width: 930px;
 }
 
 .social-pill {
