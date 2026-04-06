@@ -1,27 +1,133 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FiBell, FiDollarSign, FiTool, FiUserPlus, FiChevronRight } from 'react-icons/fi';
 import './Notifications.css';
 import NotificationBar from './NotificationBar';
+import authService from '../../../../services/auth.service';
+import propertyService from '../../../../services/property.service';
+import rentalRequestService from '../../../../services/rental-request.service';
+import contractService from '../../../../services/contract.service';
 
 interface LandlordAlert {
-  id: number;
+  id: string;
   type: 'payment' | 'maintenance' | 'lead';
   title: string;
   desc: string;
   time: string;
   unread: boolean;
+  createdAt: string;
 }
+
+const relativeTime = (value: string): string => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Just now';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  if (diffMinutes < 1) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString();
+};
 
 const Notifications: React.FC = () => {
   const [isBarOpen, setIsBarOpen] = useState(false);
-  const navigate = useNavigate();
+  const [alerts, setAlerts] = useState<LandlordAlert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [alerts] = useState<LandlordAlert[]>([
-    { id: 1, type: 'payment', title: 'Rent Received', desc: 'Skyline Apt #402 payment confirmed.', time: '10m ago', unread: true },
-    { id: 2, type: 'maintenance', title: 'New Request', desc: 'Broken AC reported in Sunset Loft.', time: '1h ago', unread: true },
-    { id: 3, type: 'lead', title: 'New Application', desc: 'John Doe applied for Oak Ridge Villa.', time: '3h ago', unread: false },
-  ]);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAlerts = async () => {
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser?.user?.id) {
+        if (isMounted) {
+          setAlerts([]);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const [requestsResponse, contractsResponse, propertiesResponse] = await Promise.all([
+          rentalRequestService.getLandlordRequests({ page: 1, limit: 8 }),
+          contractService.getLandlordContracts({ page: 1, limit: 8 }),
+          propertyService.getAllProperties({ landlordId: currentUser.user.id, page: 1, limit: 8 }),
+        ]);
+
+        const requestAlerts: LandlordAlert[] = (requestsResponse.data ?? []).map((request) => {
+          let requestTitle = 'New Rental Request';
+          if (request.status === 'APPROVED') requestTitle = 'Request Approved';
+          if (request.status === 'DECLINED') requestTitle = 'Request Declined';
+
+          return {
+            id: `req-${request.id}`,
+            type: 'lead',
+            title: requestTitle,
+            desc: `${request.tenant.firstName} ${request.tenant.lastName} for ${request.property.title}`,
+            time: relativeTime(request.createdAt),
+            unread: request.status === 'PENDING',
+            createdAt: request.createdAt,
+          };
+        });
+
+        const contractAlerts: LandlordAlert[] = (contractsResponse.data ?? []).map((contract) => {
+          const propertyTitle = contract.property?.title || 'Property';
+          return {
+            id: `contract-${contract.id}`,
+            type: 'payment',
+            title: contract.status === 'ACTIVE' ? 'Lease Active' : `Contract ${contract.status}`,
+            desc: `${propertyTitle} • Payment ${contract.paymentStatus}`,
+            time: relativeTime(contract.createdAt),
+            unread: contract.status === 'PENDING_LANDLORD' || contract.status === 'PENDING_TENANT',
+            createdAt: contract.createdAt,
+          };
+        });
+
+        const propertyAlerts: LandlordAlert[] = (propertiesResponse.data ?? []).map((property) => ({
+          id: `property-${property.id}`,
+          type: 'maintenance',
+          title: property.status === 'Published' ? 'Listing Published' : `Listing ${property.status}`,
+          desc: `${property.title} listed at $${property.monthlyPrice}/month`,
+          time: relativeTime(property.createdAt),
+          unread: property.status === 'Draft',
+          createdAt: property.createdAt,
+        }));
+
+        const merged = [...requestAlerts, ...contractAlerts, ...propertyAlerts]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 12);
+
+        if (isMounted) {
+          setAlerts(merged);
+        }
+      } catch {
+        if (isMounted) {
+          setAlerts([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadAlerts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const hasUnread = useMemo(() => alerts.some((a) => a.unread), [alerts]);
+  const emptyStateMessage = isLoading ? 'Loading activity...' : 'No recent activity yet.';
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -39,7 +145,7 @@ const Notifications: React.FC = () => {
           <div className="notif-title-group">
             <div className="bell-ring">
               <FiBell />
-              {alerts.some(a => a.unread) && <span className="active-dot"></span>}
+              {hasUnread && <span className="active-dot"></span>}
             </div>
             <h3>Management Feed</h3>
           </div>
@@ -49,26 +155,31 @@ const Notifications: React.FC = () => {
         </header>
 
         <div className="notif-scroll-area">
-          {alerts.map((alert) => (
-            <div 
-              key={alert.id} 
-              className={`notif-item-row ${alert.unread ? 'is-unread' : ''}`}
-              onClick={() => setIsBarOpen(true)}
-            >
-              <div className={`icon-box ${alert.type}`}>
-                {getIcon(alert.type)}
-              </div>
-              
-              <div className="notif-info">
-                <div className="notif-meta-top">
-                  <span className="subject">{alert.title}</span>
-                  <span className="timestamp">{alert.time}</span>
+          {alerts.length === 0 ? (
+            <div className="notif-empty-state">{emptyStateMessage}</div>
+          ) : (
+            alerts.map((alert) => (
+              <button
+                key={alert.id}
+                type="button"
+                className={`notif-item-row ${alert.unread ? 'is-unread' : ''}`}
+                onClick={() => setIsBarOpen(true)}
+              >
+                <div className={`icon-box ${alert.type}`}>
+                  {getIcon(alert.type)}
                 </div>
-                <p className="description">{alert.desc}</p>
-              </div>
-              <FiChevronRight className="arrow-hint" />
-            </div>
-          ))}
+
+                <div className="notif-info">
+                  <div className="notif-meta-top">
+                    <span className="subject">{alert.title}</span>
+                    <span className="timestamp">{alert.time}</span>
+                  </div>
+                  <p className="description">{alert.desc}</p>
+                </div>
+                <FiChevronRight className="arrow-hint" />
+              </button>
+            ))
+          )}
         </div>
 
         <button className="btn-history-expand" onClick={() => setIsBarOpen(true)}>
@@ -76,7 +187,7 @@ const Notifications: React.FC = () => {
         </button>
       </div>
 
-      <NotificationBar isOpen={isBarOpen} onClose={() => setIsBarOpen(false)} />
+      <NotificationBar isOpen={isBarOpen} onClose={() => setIsBarOpen(false)} alerts={alerts} />
     </>
   );
 };

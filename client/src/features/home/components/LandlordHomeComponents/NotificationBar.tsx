@@ -2,18 +2,51 @@ import React from 'react';
 import { FiX, FiBell, FiTrash2 } from 'react-icons/fi';
 import './NotificationBar.css';
 
-interface Props { isOpen: boolean; onClose: () => void; }
+interface ActivityAlert {
+  id: string;
+  type: 'payment' | 'maintenance' | 'lead';
+  title: string;
+  desc: string;
+  time: string;
+}
 
-const NotificationBar: React.FC<Props> = ({ isOpen, onClose }) => {
-  const history = [
-    { id: 1, type: 'Maintenance', title: 'AC Repair Completed', date: 'Today', status: 'done' },
-    { id: 2, type: 'Lease', title: 'New Lease Signed - Unit 102', date: 'Yesterday', status: 'new' },
-    { id: 3, type: 'Payment', title: 'Rent Overdue - Sunset Loft', date: '2 days ago', status: 'alert' },
-  ];
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  alerts: ActivityAlert[];
+}
+
+const labelMap: Record<ActivityAlert['type'], string> = {
+  payment: 'Payment',
+  maintenance: 'Maintenance',
+  lead: 'Lease',
+};
+
+const NotificationBar: React.FC<Props> = ({ isOpen, onClose, alerts }) => {
+  const [dismissedIds, setDismissedIds] = React.useState<string[]>([]);
+
+  const visibleAlerts = React.useMemo(
+    () => alerts.filter((item) => !dismissedIds.includes(item.id)),
+    [alerts, dismissedIds]
+  );
+
+  React.useEffect(() => {
+    setDismissedIds([]);
+  }, [alerts]);
+
+  const handleClearAll = () => {
+    setDismissedIds(alerts.map((item) => item.id));
+  };
 
   return (
-    <div className={`notif-sidebar-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
-      <div className="notif-sidebar" onClick={e => e.stopPropagation()}>
+    <div
+      className={`notif-sidebar-overlay ${isOpen ? 'open' : ''}`}
+      onClick={onClose}
+    >
+      <div
+        className="notif-sidebar"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sidebar-header">
           <div className="header-title">
             <div className="icon-circle"><FiBell /></div>
@@ -26,17 +59,20 @@ const NotificationBar: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="sidebar-content">
-          {history.map(item => (
+          {visibleAlerts.length === 0 ? (
+            <div className="history-empty-state">No activity to show.</div>
+          ) : visibleAlerts.map((item) => (
             <div key={item.id} className="history-card">
-              <div className="history-tag">{item.type}</div>
+              <div className="history-tag">{labelMap[item.type]}</div>
               <h4>{item.title}</h4>
-              <span>{item.date}</span>
+              <p>{item.desc}</p>
+              <span>{item.time}</span>
             </div>
           ))}
         </div>
 
         <div className="sidebar-footer">
-          <button className="clear-btn"><FiTrash2 /> Clear All History</button>
+          <button className="clear-btn" onClick={handleClearAll}><FiTrash2 /> Clear All History</button>
         </div>
       </div>
     </div>

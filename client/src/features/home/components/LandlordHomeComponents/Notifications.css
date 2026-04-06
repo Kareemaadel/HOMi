@@ -56,12 +56,26 @@
     overflow-y: auto; flex: 1;
 }
 
+.notif-empty-state {
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
 .notif-item-row {
     display: flex; gap: 12px; padding: 12px;
     border-radius: 16px;
     cursor: pointer;
     transition: all 0.2s ease;
     align-items: center;
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
 }
 
 .notif-item-row:hover { background: #f8fafc; transform: translateX(4px); }
