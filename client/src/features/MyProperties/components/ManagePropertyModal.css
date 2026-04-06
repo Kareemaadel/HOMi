@@ -5,10 +5,9 @@
     inset: 0;
     background: rgba(15, 23, 42, 0.8);
     backdrop-filter: blur(12px);
-    z-index: 3000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    z-index: 11000;
+    display: grid;
+    place-items: center;
     padding: 20px;
 }
 
@@ -21,6 +20,7 @@
     display: flex;
     overflow: hidden;
     box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
+    margin: 0 auto;
 }
 
 /* Sidebar Styling */
@@ -122,6 +122,11 @@
     border: none;
     width: 40px;
     height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
     border-radius: 50%;
     cursor: pointer;
     color: #64748b;
@@ -129,6 +134,11 @@
 }
 
 .close-circle-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+.close-circle-btn svg {
+    display: block;
+    font-size: 16px;
+}
 
 .manage-content-scroll { flex: 1; padding: 40px; overflow-y: auto; }
 
@@ -268,8 +278,18 @@
     background: #f8fafc;
     border-top: 1px solid #f1f5f9;
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 15px;
+}
+
+.save-error-banner {
+    margin: 0;
+    margin-right: auto;
+    color: #b91c1c;
+    font-size: 0.86rem;
+    font-weight: 700;
 }
 
 .m-btn-cancel { background: none; border: none; font-weight: 700; color: #64748b; cursor: pointer; }

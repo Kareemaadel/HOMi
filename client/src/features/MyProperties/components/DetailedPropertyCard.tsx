@@ -1,5 +1,6 @@
 // client\src\features\MyProperties\components\DetailedPropertyCard.tsx
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, 
   FaUserCircle, FaCalendarAlt, FaTools, FaEllipsisH 
@@ -92,10 +93,13 @@ const DetailedPropertyCard = ({ property }: any) => {
 
       {/* RENDER MODAL */}
       {isManageModalOpen && (
-        <ManagePropertyModal 
-          property={property} 
-          onClose={() => setIsManageModalOpen(false)} 
-        />
+        createPortal(
+          <ManagePropertyModal 
+            property={property} 
+            onClose={() => setIsManageModalOpen(false)} 
+          />,
+          document.body
+        )
       )}
     </>
   );

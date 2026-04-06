@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   FiMapPin, FiMoreHorizontal, FiMaximize, 
-  FiUsers, FiActivity, FiArrowUpRight, FiCheckCircle, FiClock 
+  FiArrowUpRight, FiCheckCircle, FiClock 
 } from 'react-icons/fi';
 import ManagePropertyModal from '../../../MyProperties/components/ManagePropertyModal';
 import './PropertyCard.css';
@@ -108,10 +109,13 @@ const PropertyCard = ({
       </div>
 
       {isModalOpen && (
-        <ManagePropertyModal 
-          property={propertyData} 
-          onClose={() => setIsModalOpen(false)} 
-        />
+        createPortal(
+          <ManagePropertyModal 
+            property={propertyData} 
+            onClose={() => setIsModalOpen(false)} 
+          />,
+          document.body
+        )
       )}
     </>
   );
