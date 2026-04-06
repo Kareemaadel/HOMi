@@ -4,6 +4,13 @@
     gap: 32px;
 }
 
+.billing-error {
+    margin: -12px 0 0 0;
+    color: #b91c1c;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
 /* ─── Plan Card ────────────────────────────────────────────── */
 .current-plan-card {
     background: linear-gradient(135deg, #2563eb, #4f46e5);

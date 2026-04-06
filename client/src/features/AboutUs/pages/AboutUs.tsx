@@ -1,7 +1,9 @@
 import React from 'react';
 import Header from '../../../components/global/header';
-import Sidebar from '../../../components/global/Tenant/sidebar';
+import TenantSidebar from '../../../components/global/Tenant/sidebar';
+import LandlordSidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
+import authService from '../../../services/auth.service';
 import { Shield, Rocket, Github, Linkedin, Quote, Calendar } from 'lucide-react';
 import './AboutUs.css';
 
@@ -15,6 +17,8 @@ interface TeamMember {
 }
 
 const AboutUs: React.FC = () => {
+const role = authService.getCurrentUser()?.user?.role;
+const SidebarComponent = role === 'LANDLORD' ? LandlordSidebar : TenantSidebar;
 const devTeam: TeamMember[] = [
     {
       id: 1,
@@ -63,7 +67,7 @@ const devTeam: TeamMember[] = [
 
   return (
     <div className="about-page-layout">
-      <Sidebar  />
+      <SidebarComponent />
       
       <div className="about-main-content">
         <Header />

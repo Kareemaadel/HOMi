@@ -3,8 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { FiDollarSign, FiArrowRight, FiClock, FiCheckCircle } from 'react-icons/fi';
 import './PaymentState.css';
 
-const PaymentState = () => {
+interface PaymentStateProps {
+  upcomingPayouts: number;
+  recentlyReceived: number;
+  isLoading?: boolean;
+}
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
+
+const PaymentState: React.FC<PaymentStateProps> = ({
+  upcomingPayouts,
+  recentlyReceived,
+  isLoading = false,
+}) => {
   const navigate = useNavigate();
+
+  const upcomingValue = isLoading ? 'Loading...' : currencyFormatter.format(upcomingPayouts);
+  const receivedValue = isLoading ? 'Loading...' : currencyFormatter.format(recentlyReceived);
 
   return (
     <div className="payment-state-card">
@@ -23,7 +42,7 @@ const PaymentState = () => {
             <FiClock className="icon-pending" />
             <span>Upcoming Payouts</span>
           </div>
-          <span className="payment-amount">$3,100</span>
+          <span className="payment-amount">{upcomingValue}</span>
         </div>
         
         <div className="payment-row">
@@ -31,7 +50,7 @@ const PaymentState = () => {
             <FiCheckCircle className="icon-success" />
             <span>Recently Received</span>
           </div>
-          <span className="payment-amount">$4,250</span>
+          <span className="payment-amount">{receivedValue}</span>
         </div>
       </div>
 

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import Header from '../../../components/global/header';
-import Sidebar from '../../../components/global/Tenant/sidebar';
+import TenantSidebar from '../../../components/global/Tenant/sidebar';
+import LandlordSidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
+import authService from '../../../services/auth.service';
 import { 
   Search, 
   MessageSquare, 
@@ -25,6 +27,8 @@ interface FAQItem {
 const GetHelp: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const role = authService.getCurrentUser()?.user?.role;
+  const SidebarComponent = role === 'LANDLORD' ? LandlordSidebar : TenantSidebar;
 
   const categories = [
     { id: 'All', icon: <LifeBuoy size={18} /> },
@@ -53,7 +57,7 @@ const GetHelp: React.FC = () => {
 
   return (
     <div className="help-page-layout">
-      <Sidebar />
+      <SidebarComponent />
       
       <div className="help-main-content">
         <Header />

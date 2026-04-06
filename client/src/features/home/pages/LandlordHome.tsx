@@ -12,12 +12,14 @@ import { FiPlus, FiHome, FiCamera, FiBookOpen, FiCreditCard, FiStar, FiZap, FiMe
 import authService from '../../../services/auth.service';
 import propertyService from '../../../services/property.service';
 import type { PropertyResponse } from '../../../services/property.service';
+import contractService, { type LandlordContract } from '../../../services/contract.service';
 import './landlordHome.css';
 
 const LandlordHome = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
   const [properties, setProperties] = useState<PropertyResponse[]>([]);
+  const [contracts, setContracts] = useState<LandlordContract[]>([]);
   const [landlordName, setLandlordName] = useState('Landlord');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,14 +39,32 @@ const LandlordHome = () => {
         'Landlord'
       );
 
-      const response = await propertyService.getAllProperties({ landlordId: currentUser.user.id });
-      setProperties(response?.data ?? []);
+      const [propertiesResponse, contractsResponse] = await Promise.all([
+        propertyService.getAllProperties({ landlordId: currentUser.user.id }),
+        contractService.getLandlordContracts({ page: 1, limit: 100 }),
+      ]);
+
+      setProperties(propertiesResponse?.data ?? []);
+      setContracts(contractsResponse?.data ?? []);
     } catch {
       setProperties([]);
+      setContracts([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const getContractPaymentStatus = (contract: LandlordContract): string => {
+    return ((contract as unknown as { paymentStatus?: string }).paymentStatus || 'PENDING').toUpperCase();
+  };
+
+  const receivedTotal = contracts
+    .filter((contract) => getContractPaymentStatus(contract) === 'PAID')
+    .reduce((sum, contract) => sum + Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0), 0);
+
+  const upcomingTotal = contracts
+    .filter((contract) => getContractPaymentStatus(contract) !== 'PAID')
+    .reduce((sum, contract) => sum + Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0), 0);
 
   useEffect(() => {
     void fetchProperties();
@@ -113,7 +133,11 @@ const LandlordHome = () => {
                   </div>
                   
                   <div className="payment-widget">
-                    <PaymentState />
+                    <PaymentState
+                      upcomingPayouts={upcomingTotal}
+                      recentlyReceived={receivedTotal}
+                      isLoading={isLoading}
+                    />
                   </div>
 
                   <div className="notifications-widget">
