@@ -96,6 +96,8 @@ export interface CreatePropertyPayload {
         image_url: string;
         is_main: boolean;
     }>;
+    amenity_names?: string[];
+    house_rule_names?: string[];
     specifications: {
         bedrooms: number;
         bathrooms: number;

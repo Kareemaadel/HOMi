@@ -148,10 +148,30 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     "Security Systems": 'landlord',
   });
 
-  const amenitiesList = ["Pet Friendly", "Fitness Center", "Swimming Pool", "WiFi Included", "Air Conditioning", "Smart Lock", "Balcony", "Laundry in Unit"];
-  const houseRules = ["No Smoking", "Pets Allowed", "Families Only", "Students Allowed", "No Parties", "Couple Friendly", "Work Professionals", "Quiet Hours (10PM-6AM)"];
+  const amenitiesList = [
+    "Pet Friendly",
+    "Fitness Center",
+    "High-Speed Wi-Fi",
+    "Air Conditioning (A/C)",
+    "Keyless / Biometric Entry",
+    "Private Parking",
+    "24/7 Security System",
+    "Smart Home System",
+  ];
+  const houseRules = [
+    "No Smoking",
+    "Pets Allowed",
+    "No Parties or Events",
+    "Quiet Hours (10 PM - 8 AM)",
+    "No Additional Guests",
+    "Respect Neighbours",
+    "Children Welcome",
+    "Recycling Required",
+  ];
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedHouseRules, setSelectedHouseRules] = useState<string[]>([]);
+
+  const uniqueValues = (values: string[]) => [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 
   useEffect(() => {
     let isMounted = true;
@@ -408,6 +428,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
           bathrooms: parsedBaths,
           area_sqft: parsedSqft,
         },
+        amenity_names: uniqueValues(selectedAmenities),
+        house_rule_names: uniqueValues(selectedHouseRules),
         maintenance_responsibilities: Object.entries(maintenance).map(([areaName, assigned]) => ({
           area: areaName,
           responsible_party: assigned === 'landlord' ? 'LANDLORD' : 'TENANT',
