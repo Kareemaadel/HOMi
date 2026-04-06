@@ -43,6 +43,21 @@ const DURATION_TO_MONTHS: Record<string, number> = {
     '24_MONTHS': 24,
 };
 
+function parseDurationToMonths(duration: string): number {
+    const mapped = DURATION_TO_MONTHS[duration];
+    if (mapped) return mapped;
+
+    const match = /^(\d+)_MONTHS$/.exec(duration);
+    if (match) {
+        const months = Number(match[1]);
+        if (Number.isInteger(months) && months > 0) {
+            return months;
+        }
+    }
+
+    throw new ContractError(`Unsupported rental duration: ${duration}`, 400, 'INVALID_RENTAL_DURATION');
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function generateContractId(): string {
@@ -123,7 +138,7 @@ class ContractService {
             );
         }
 
-        const durationMonths = DURATION_TO_MONTHS[rentalRequest.duration] || 12;
+        const durationMonths = parseDurationToMonths(String(rentalRequest.duration));
 
         const contract = await Contract.create({
             contract_id: generateContractId(),

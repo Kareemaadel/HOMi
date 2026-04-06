@@ -18,7 +18,13 @@ export const RentalRequestDuration = {
     TWENTY_FOUR_MONTHS: '24_MONTHS',
 } as const;
 
-export type RentalRequestDurationType = (typeof RentalRequestDuration)[keyof typeof RentalRequestDuration];
+// Supports 1 to 120 months (up to 10 years) while preserving legacy values.
+export const RentalRequestDurationValues = Array.from(
+    { length: 120 },
+    (_, index) => `${index + 1}_MONTHS`
+);
+
+export type RentalRequestDurationType = `${number}_MONTHS`;
 
 export const LivingSituation = {
     SINGLE: 'SINGLE',
@@ -103,7 +109,7 @@ RentalRequest.init(
             allowNull: false,
         },
         duration: {
-            type: DataTypes.ENUM(...Object.values(RentalRequestDuration)),
+            type: DataTypes.ENUM(...RentalRequestDurationValues),
             allowNull: false,
         },
         occupants: {

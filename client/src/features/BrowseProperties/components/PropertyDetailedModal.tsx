@@ -14,7 +14,7 @@ import ApplicationModal from './ApplicationModal';
 import AuthModal from '../../../components/global/AuthModal';
 import './PropertyDetailedModal.css';
 
-const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequestView = false }: any) => {
+const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequestView = false, onCancelRequest }: any) => {
     const [showApplication, setShowApplication] = useState(false);
     const [showGallery, setShowGallery] = useState(false);
     const [currentImgIdx, setCurrentImgIdx] = useState(0);
@@ -23,6 +23,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
     // Cancel Request States
     const [showCancelPrompt, setShowCancelPrompt] = useState(false);
     const [showCancelSuccess, setShowCancelSuccess] = useState(false);
+    const canCancelSentRequest = property?.rentalRequest?.status === 'PENDING';
     
     // Use only real property images, with a single safe fallback
     const images = (property.allImages && property.allImages.length > 0)
@@ -52,9 +53,27 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
         }
     };
 
-    const handleCancelYes = () => {
-        setShowCancelPrompt(false);
-        setShowCancelSuccess(true);
+    const [cancelError, setCancelError] = useState<string | null>(null);
+
+    const handleCancelYes = async () => {
+        const requestId = property?.rentalRequest?.id;
+        if (!requestId || !onCancelRequest) {
+            setCancelError('Could not find this request to cancel.');
+            return;
+        }
+
+        setCancelError(null);
+        try {
+            await onCancelRequest(requestId);
+            setShowCancelPrompt(false);
+            setShowCancelSuccess(true);
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                'Could not cancel this request right now. Please try again.';
+            setCancelError(message);
+        }
     };
 
     if (showApplication) {
@@ -211,8 +230,12 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                             {/* CONDITIONAL ACTION BUTTONS */}
                             {isSentRequestView ? (
                                 <div className="sent-request-actions" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <button className="primary-cta-btn" style={{ backgroundColor: '#22c55e', cursor: 'default' }} disabled>
-                                        <FaCheckCircle /> Request Sent
+                                    <button
+                                        className="primary-cta-btn"
+                                        style={{ backgroundColor: canCancelSentRequest ? '#22c55e' : '#64748b', cursor: 'default' }}
+                                        disabled
+                                    >
+                                        <FaCheckCircle /> {canCancelSentRequest ? 'Request Sent' : 'Request Processed'}
                                     </button>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button 
@@ -222,14 +245,17 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                                         >
                                             Review Application
                                         </button>
-                                        <button 
-                                            className="sec-btn" 
-                                            style={{ flex: 1, padding: '8px', fontSize: '0.8rem', color: '#ef4444', borderColor: '#ef4444' }}
-                                            onClick={() => setShowCancelPrompt(true)}
-                                        >
-                                            Cancel Request
-                                        </button>
+                                        {canCancelSentRequest && (
+                                            <button 
+                                                className="sec-btn" 
+                                                style={{ flex: 1, padding: '8px', fontSize: '0.8rem', color: '#ef4444', borderColor: '#ef4444' }}
+                                                onClick={() => setShowCancelPrompt(true)}
+                                            >
+                                                Cancel Request
+                                            </button>
+                                        )}
                                     </div>
+                                    {cancelError && <p style={{ margin: '6px 0 0', color: '#ef4444', fontSize: '0.8rem', fontWeight: 600 }}>{cancelError}</p>}
                                 </div>
                             ) : (
                                 <>

@@ -1,7 +1,7 @@
 //client\src\services\rental-request.service.ts
 import apiClient from '../config/api';
 
-export type RentalDuration = '6_MONTHS' | '12_MONTHS' | '24_MONTHS';
+export type RentalDuration = `${number}_MONTHS`;
 export type LivingSituation = 'SINGLE' | 'FAMILY' | 'MARRIED' | 'STUDENTS';
 
 export interface SubmitRentalRequestPayload {
@@ -134,6 +134,11 @@ class RentalRequestService {
 
     async updateRequestStatus(id: string, status: 'APPROVED' | 'DECLINED'): Promise<{ success: boolean; message: string }> {
         const response = await apiClient.put<{ success: boolean; message: string }>(`/rental-requests/${id}/status`, { status });
+        return response.data;
+    }
+
+    async cancelMyRequest(id: string): Promise<{ success: boolean; message: string }> {
+        const response = await apiClient.patch<{ success: boolean; message: string }>(`/rental-requests/${id}/cancel`);
         return response.data;
     }
 }

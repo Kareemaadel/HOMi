@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { rentalRequestService, RentalRequestError } from '../services/rental-request.service.js';
+import { rentalRequestService } from '../services/rental-request.service.js';
 import type {
     CreateRentalRequestInput,
     UpdateRentalRequestStatusInput,
@@ -113,6 +113,26 @@ class RentalRequestController {
                 success: true,
                 message: `Rental request ${input.status.toLowerCase()} successfully`,
                 data: rentalRequest,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PATCH /api/rental-requests/:id/cancel
+     * Cancel a pending rental request (tenant only)
+     */
+    async cancelMyRentalRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+
+            await rentalRequestService.cancelTenantRentalRequest(id as string, tenantId);
+
+            res.status(200).json({
+                success: true,
+                message: 'Rental request cancelled successfully',
             });
         } catch (error) {
             next(error);

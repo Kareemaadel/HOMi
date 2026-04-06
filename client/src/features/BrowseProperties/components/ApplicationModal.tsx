@@ -21,11 +21,36 @@ const PRESET_HABITS = [
     "Gamer", "Chef at Home", "Organized", "Eco-friendly", "Introverted"
 ];
 
-const durationOptions: { label: string; value: RentalDuration }[] = [
-    { label: '6 Months', value: '6_MONTHS' },
-    { label: '12 Months', value: '12_MONTHS' },
-    { label: '24 Months', value: '24_MONTHS' },
-];
+const YEAR_OPTIONS = Array.from({ length: 10 }, (_, index) => index);
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => index);
+
+const parseDurationMonths = (duration: string | undefined): number => {
+    if (!duration) return 0;
+    const match = /^(\d+)_MONTHS$/.exec(duration);
+    if (!match) return 0;
+    const months = Number(match[1]);
+    return Number.isInteger(months) && months > 0 ? months : 0;
+};
+
+const formatDurationLabel = (duration: string | undefined): string => {
+    const totalMonths = parseDurationMonths(duration);
+    if (!totalMonths) return '—';
+
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    let yearsPart = '';
+    if (years > 0) {
+        yearsPart = `${years} year${years === 1 ? '' : 's'}`;
+    }
+
+    let monthsPart = '';
+    if (months > 0) {
+        monthsPart = `${months} month${months === 1 ? '' : 's'}`;
+    }
+
+    if (yearsPart && monthsPart) return `${yearsPart}, ${monthsPart}`;
+    return yearsPart || monthsPart;
+};
 
 const livingSituationOptions: { label: string; value: LivingSituation }[] = [
     { label: 'Single',   value: 'SINGLE'   },
@@ -65,8 +90,14 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
     const [habitsLoading, setHabitsLoading] = useState(true);
 
     // Step 1 — form state (initialised from prefillData when in read-only review)
+    const initialDurationMonths = parseDurationMonths(prefillData?.duration);
+
     const [moveInDate,      setMoveInDate]      = useState(prefillData?.moveInDate      ?? '');
-    const [duration,        setDuration]        = useState<RentalDuration | ''>(prefillData?.duration        ?? '');
+    const [duration,        setDuration]        = useState<RentalDuration | ''>(
+        initialDurationMonths > 0 ? `${initialDurationMonths}_MONTHS` : ''
+    );
+    const [durationYears,   setDurationYears]   = useState(Math.floor(initialDurationMonths / 12));
+    const [durationMonths,  setDurationMonths]  = useState(initialDurationMonths % 12);
     const [occupants,       setOccupants]       = useState<number | ''>(prefillData?.occupants       ?? '');
     const [livingSituation, setLivingSituation] = useState<LivingSituation | ''>(prefillData?.livingSituation ?? '');
     const [message,         setMessage]         = useState(prefillData?.message         ?? '');
@@ -98,12 +129,20 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
     // Sync prefillData into state if it arrives after mount (edge case)
     useEffect(() => {
         if (!prefillData) return;
+        const months = parseDurationMonths(prefillData.duration);
         setMoveInDate(prefillData.moveInDate);
-        setDuration(prefillData.duration);
+        setDuration(months > 0 ? `${months}_MONTHS` : '');
+        setDurationYears(Math.floor(months / 12));
+        setDurationMonths(months % 12);
         setOccupants(prefillData.occupants);
         setLivingSituation(prefillData.livingSituation);
         setMessage(prefillData.message);
     }, [prefillData]);
+
+    useEffect(() => {
+        const totalMonths = durationYears * 12 + durationMonths;
+        setDuration(totalMonths > 0 ? `${totalMonths}_MONTHS` : '');
+    }, [durationYears, durationMonths]);
 
     const handleNext = (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,17 +169,22 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
         setLoading(true);
         setSubmitError(null);
         try {
-            await Promise.all([
-                rentalRequestService.submitRentalRequest({
-                    property_id:      property.id,
-                    move_in_date:     moveInDate,
-                    duration:         duration as RentalDuration,
-                    occupants:        Number(occupants),
-                    living_situation: livingSituation as LivingSituation,
-                    message:          message.trim(),
-                }),
-                authService.setHabits(selectedHabits),
-            ]);
+            await rentalRequestService.submitRentalRequest({
+                property_id:      property.id,
+                move_in_date:     moveInDate,
+                duration,
+                occupants:        Number(occupants),
+                living_situation: livingSituation,
+                message:          message.trim(),
+            });
+
+            // Keep profile habits sync as best-effort so request data persistence is never blocked.
+            try {
+                await authService.setHabits(selectedHabits);
+            } catch (habitsError) {
+                console.warn('Rental request saved but habit sync failed.', habitsError);
+            }
+
             setIsSubmitted(true);
         } catch (err: any) {
             const apiMessage: string =
@@ -163,7 +207,7 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
         } catch { return iso; }
     };
 
-    const durationLabel     = (durationOptions.find(o => o.value === duration)?.label ?? String(duration)) || '—';
+    const durationLabel     = formatDurationLabel(duration || undefined);
     const livSituationLabel = (livingSituationOptions.find(o => o.value === livingSituation)?.label ?? String(livingSituation)) || '—';
 
     // Custom habits that are saved but not in the preset list
@@ -281,17 +325,34 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
                                                 </div>
                                                 <div className="field-group">
                                                     <label><FaHourglassHalf /> Duration</label>
-                                                    <select
-                                                        required
-                                                        className="premium-select"
-                                                        value={duration}
-                                                        onChange={e => setDuration(e.target.value as RentalDuration)}
-                                                    >
-                                                        <option value="">Select duration</option>
-                                                        {durationOptions.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                        ))}
-                                                    </select>
+                                                    <div className="duration-grid">
+                                                        <select
+                                                            required
+                                                            className="premium-select"
+                                                            value={durationYears}
+                                                            onChange={e => setDurationYears(Number(e.target.value))}
+                                                        >
+                                                            {YEAR_OPTIONS.map((years) => (
+                                                                <option key={`years-${years}`} value={years}>
+                                                                    {years} year{years === 1 ? '' : 's'}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+
+                                                        <select
+                                                            required
+                                                            className="premium-select"
+                                                            value={durationMonths}
+                                                            onChange={e => setDurationMonths(Number(e.target.value))}
+                                                        >
+                                                            {MONTH_OPTIONS.map((months) => (
+                                                                <option key={`months-${months}`} value={months}>
+                                                                    {months} month{months === 1 ? '' : 's'}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <small className="duration-hint">Total duration: {durationLabel}</small>
                                                 </div>
                                             </div>
 

@@ -20,10 +20,9 @@ const router = Router();
  *
  *       A tenant cannot submit multiple pending requests for the same property.
  *
- *       ### Duration Options
- *       - `6_MONTHS`
- *       - `12_MONTHS`
- *       - `24_MONTHS`
+ *       ### Duration Format
+ *       - Use `N_MONTHS` where `N` is from 1 to 120
+ *       - Examples: `6_MONTHS`, `14_MONTHS`, `24_MONTHS`
  *
  *       ### Living Situation Options
  *       - `SINGLE`
@@ -241,6 +240,12 @@ router.get(
     protect,
     validateQuery(RentalRequestQuerySchema),
     rentalRequestController.getLandlordRentalRequests.bind(rentalRequestController)
+);
+
+router.patch(
+    '/:id/cancel',
+    protect,
+    rentalRequestController.cancelMyRentalRequest.bind(rentalRequestController)
 );
 
 /**

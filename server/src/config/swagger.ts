@@ -916,9 +916,9 @@ const options: Options = {
                 // ─── Rental Request Enums ─────────────────────────────────────────────────
                 RentalRequestDuration: {
                     type: 'string',
-                    enum: ['6_MONTHS', '12_MONTHS', '24_MONTHS'],
-                    description: 'Desired lease duration',
-                    example: '12_MONTHS',
+                    pattern: '^\\d+_MONTHS$',
+                    description: 'Desired lease duration in months (from 1 to 120).',
+                    example: '14_MONTHS',
                 },
                 LivingSituation: {
                     type: 'string',

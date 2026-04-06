@@ -258,6 +258,35 @@
     font-weight: 600;
 }
 
+/* ── Cancel Toast ── */
+.sr-toast {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 4000;
+    background: #16a34a;
+    color: #fff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    box-shadow: 0 10px 28px rgba(22, 163, 74, 0.35);
+    animation: srToastIn 0.22s ease;
+}
+
+@keyframes srToastIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .landlord-meta { border-top: 1px solid #f1f5f9; padding-top: 5px; margin-top: 2px; }
 .submitted-meta { color: #94a3b8; font-size: 0.75rem; }
 

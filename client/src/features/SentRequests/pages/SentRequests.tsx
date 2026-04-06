@@ -41,6 +41,27 @@ const DURATION_LABELS: Record<string, string> = {
     '24_MONTHS': '24 months',
 };
 
+const formatDuration = (duration: string): string => {
+    const match = /^(\d+)_MONTHS$/.exec(duration);
+    if (!match) return duration;
+
+    const totalMonths = Number(match[1]);
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    let yearsPart = '';
+    if (years > 0) {
+        yearsPart = `${years} year${years === 1 ? '' : 's'}`;
+    }
+
+    let monthsPart = '';
+    if (months > 0) {
+        monthsPart = `${months} month${months === 1 ? '' : 's'}`;
+    }
+
+    if (yearsPart && monthsPart) return `${yearsPart}, ${monthsPart}`;
+    return yearsPart || monthsPart || duration;
+};
+
 const FILTERS: { label: string; value: RentalRequestStatus | 'ALL' }[] = [
     { label: 'All',      value: 'ALL'      },
     { label: 'Pending',  value: 'PENDING'  },
@@ -79,6 +100,8 @@ const mapRequestToModalProperty = (req: MyRentalRequest) => {
         ownerImage: landlord?.avatarUrl ?? undefined,
         // Pass the original rental-request data so ApplicationModal can pre-fill read-only fields
         rentalRequest: {
+            id:              req.id,
+            status:          req.status,
             moveInDate:      req.moveInDate,
             duration:        req.duration,
             occupants:       req.occupants,
@@ -99,6 +122,7 @@ const SentRequests: React.FC = () => {
     // Modal state
     const [selectedRequest, setSelectedRequest] = useState<MyRentalRequest | null>(null);
     const [isModalOpen,     setIsModalOpen]     = useState(false);
+    const [showCancelToast, setShowCancelToast] = useState(false);
 
     const fetchRequests = async (status?: RentalRequestStatus) => {
         setLoading(true);
@@ -131,6 +155,15 @@ const SentRequests: React.FC = () => {
         setSelectedRequest(null);
     };
 
+    const handleCancelRequest = async (requestId: string) => {
+        await rentalRequestService.cancelMyRequest(requestId);
+
+        setRequests((prev) => prev.filter((req) => req.id !== requestId));
+
+        setShowCancelToast(true);
+        globalThis.setTimeout(() => setShowCancelToast(false), 2600);
+    };
+
     const landlordName = (req: MyRentalRequest) => {
         const l = req.property.landlord;
         const name = l ? `${l.firstName} ${l.lastName}`.trim() : '';
@@ -142,7 +175,7 @@ const SentRequests: React.FC = () => {
             <Header />
 
             <div className="sent-requests-main">
-                <Sidebar />
+                {!isModalOpen && <Sidebar />}
 
                 <div className="sent-requests-content">
                     {/* ── Page header ── */}
@@ -240,7 +273,7 @@ const SentRequests: React.FC = () => {
                                                 </div>
                                                 <div className="meta-row">
                                                     <Clock size={13} />
-                                                    <span>Duration: <strong>{DURATION_LABELS[req.duration] ?? req.duration}</strong></span>
+                                                    <span>Duration: <strong>{DURATION_LABELS[req.duration] ?? formatDuration(req.duration)}</strong></span>
                                                 </div>
                                                 <div className="meta-row landlord-meta">
                                                     <span>Landlord: <strong>{landlordName(req)}</strong></span>
@@ -305,7 +338,15 @@ const SentRequests: React.FC = () => {
                     isOpen={isModalOpen}
                     onClose={handleModalClose}
                     isSentRequestView={true}
+                    onCancelRequest={handleCancelRequest}
                 />
+            )}
+
+            {showCancelToast && (
+                <div className="sr-toast">
+                    <CheckCircle size={18} />
+                    <span>Request cancelled successfully.</span>
+                </div>
             )}
         </div>
     );

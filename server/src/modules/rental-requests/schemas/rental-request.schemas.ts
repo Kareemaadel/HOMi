@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RentalRequestDuration, LivingSituation, RentalRequestStatus } from '../models/RentalRequest.js';
+import { LivingSituation, RentalRequestStatus } from '../models/RentalRequest.js';
 
 /**
  * Create Rental Request Schema
@@ -11,10 +11,13 @@ export const CreateRentalRequestSchema = z.object({
     move_in_date: z
         .string({ error: 'Move-in date is required' })
         .regex(/^\d{4}-\d{2}-\d{2}$/, 'Move-in date must be in YYYY-MM-DD format'),
-    duration: z.enum(
-        [RentalRequestDuration.SIX_MONTHS, RentalRequestDuration.TWELVE_MONTHS, RentalRequestDuration.TWENTY_FOUR_MONTHS],
-        { message: 'Duration must be 6_MONTHS, 12_MONTHS, or 24_MONTHS' }
-    ),
+    duration: z
+        .string({ error: 'Duration is required' })
+        .regex(/^\d+_MONTHS$/, 'Duration must be in format like 18_MONTHS')
+        .refine((value) => {
+            const months = Number(value.replace('_MONTHS', ''));
+            return Number.isInteger(months) && months >= 1 && months <= 120;
+        }, 'Duration must be between 1 and 120 months'),
     occupants: z
         .number({ error: 'Occupants is required' })
         .int('Occupants must be an integer')

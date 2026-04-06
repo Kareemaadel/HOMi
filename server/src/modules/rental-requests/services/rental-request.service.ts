@@ -5,15 +5,12 @@ import {
     User,
     Property,
     Profile,
-    sequelize,
 } from '../models/index.js';
 import type {
     CreateRentalRequestInput,
     UpdateRentalRequestStatusInput,
     RentalRequestResponse,
     RentalRequestListResponse,
-    TenantSummary,
-    RentalRequestSuccessResponse,
 } from '../interfaces/rental-request.interfaces.js';
 import { PropertyImage } from '../../properties/models/PropertyImage.js';
 import { PropertySpecifications } from '../../properties/models/PropertySpecifications.js';
@@ -367,6 +364,43 @@ class RentalRequestService {
     }
 
     /**
+     * Cancel a tenant's own pending rental request
+     */
+    async cancelTenantRentalRequest(requestId: string, tenantId: string): Promise<void> {
+        const request = await RentalRequest.findByPk(requestId, {
+            include: [
+                {
+                    model: Property,
+                    as: 'property',
+                    attributes: ['id', 'title', 'address'],
+                },
+            ],
+        });
+
+        if (!request) {
+            throw new RentalRequestError('Rental request not found', 404, 'RENTAL_REQUEST_NOT_FOUND');
+        }
+
+        if (request.tenant_id !== tenantId) {
+            throw new RentalRequestError(
+                'You do not have permission to cancel this rental request',
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        if (request.status !== RentalRequestStatus.PENDING) {
+            throw new RentalRequestError(
+                'Only pending rental requests can be cancelled',
+                400,
+                'REQUEST_NOT_PENDING'
+            );
+        }
+
+        await request.destroy();
+    }
+
+    /**
      * Helper method to format rental request response
      */
     private formatRentalRequestResponse(
@@ -417,7 +451,7 @@ class RentalRequestService {
             }
 
             const pLandlord = (request.property as any).landlord;
-            if (pLandlord && pLandlord.profile) {
+            if (pLandlord?.profile) {
                 response.property.landlord = {
                     firstName: pLandlord.profile.first_name ?? '',
                     lastName: pLandlord.profile.last_name ?? '',
