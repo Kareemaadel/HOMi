@@ -36,7 +36,7 @@ const PrePayment: React.FC = () => {
             }
 
             try {
-                const contract = await contractService.getContractById(contractId);
+                const contract = await contractService.getContractPaymentDetails(contractId);
                 if (!isMounted) return;
 
                 setMonthlyRent(contract.paymentTerms.rentAmount ?? 0);

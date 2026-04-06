@@ -11,7 +11,6 @@ import {
     PropertySpecifications,
     sequelize,
 } from '../models/index.js';
-import { encrypt } from '../../../shared/utils/encryption.util.js';
 import { paymobService } from '../../../shared/services/paymob.service.js';
 import { env } from '../../../config/env.js';
 import { decrypt, encrypt } from '../../../shared/utils/encryption.util.js';

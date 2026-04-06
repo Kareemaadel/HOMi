@@ -12,6 +12,9 @@ import {
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
+import contractService, { type LandlordContract } from '../../../services/contract.service';
+import rentalRequestService, { type MyRentalRequest } from '../../../services/rental-request.service';
+import { authService } from '../../../services/auth.service';
 
 type TabType = 'overview' | 'upcoming' | 'history' | 'refunds' | 'methods' | 'pending';
 
@@ -21,6 +24,27 @@ interface CheckoutInfo {
     location: string;
 }
 
+const formatMoney = (amount: number): string =>
+    `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const formatShortDate = (isoDate: string): string => {
+    const parsed = new Date(isoDate);
+    if (Number.isNaN(parsed.getTime())) return 'N/A';
+    return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit' });
+};
+
+const formatLongDate = (isoDate: string): string => {
+    const parsed = new Date(isoDate);
+    if (Number.isNaN(parsed.getTime())) return 'N/A';
+    return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
+const getDueDayFromContract = (rentDueDate: string | null | undefined): number => {
+    if (rentDueDate === '1ST_OF_MONTH') return 1;
+    if (rentDueDate === '5TH_OF_MONTH') return 5;
+    return 1;
+};
+
 const TenantPayment: React.FC = () => {
     // --- UI STATE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,6 +53,10 @@ const TenantPayment: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const location = useLocation();
+    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [dataError, setDataError] = useState<string | null>(null);
+    const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
+    const [tenantRequests, setTenantRequests] = useState<MyRentalRequest[]>([]);
 
     // --- ENTITY DATA STATES ---
     // Overview Tab
@@ -38,14 +66,17 @@ const TenantPayment: React.FC = () => {
     const [hasActiveProtection, setHasActiveProtection] = useState(true);
     
     // Checkout
-    const [hasSavedMethods, setHasSavedMethods] = useState(true);
+    const [hasSavedMethods] = useState(true);
     
     // Other Tabs
     const [hasUpcomingPayments, setHasUpcomingPayments] = useState(true);
     const [hasPaymentHistory, setHasPaymentHistory] = useState(true);
     const [hasRefunds, setHasRefunds] = useState(true);
-    const [hasPaymentMethods, setHasPaymentMethods] = useState(true);
+    const [hasPaymentMethods] = useState(true);
     const [hasPendingRequests, setHasPendingRequests] = useState(true);
+
+    const tenantProfile = authService.getCurrentUser()?.profile;
+    const accountHolderName = `${tenantProfile?.firstName ?? ''} ${tenantProfile?.lastName ?? ''}`.trim() || 'Account Holder';
 
     // --- EFFECTS ---
     useEffect(() => {
@@ -53,6 +84,105 @@ const TenantPayment: React.FC = () => {
             setActiveTab(location.state.tab as TabType);
         }
     }, [location.state]);
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadPaymentData = async () => {
+            try {
+                setIsLoadingData(true);
+                setDataError(null);
+
+                const [contractsRes, requestsRes] = await Promise.all([
+                    contractService.getTenantContracts({ page: 1, limit: 50 }),
+                    rentalRequestService.getMyRequests({ page: 1, limit: 50 })
+                ]);
+
+                if (!mounted) return;
+
+                const contracts = contractsRes.data ?? [];
+                const requests = requestsRes.data ?? [];
+
+                setTenantContracts(contracts);
+                setTenantRequests(requests);
+
+                const activeContract = contracts.find((c) => ['ACTIVE', 'PENDING_PAYMENT', 'PENDING_TENANT'].includes(c.status));
+                const paidContracts = contracts.filter((c) => c.paymentStatus === 'PAID');
+                const approvedOrPendingRequests = requests.filter((r) => r.status === 'APPROVED' || r.status === 'PENDING');
+
+                setHasNextRent(Boolean(activeContract));
+                setHasCurrentBalance(Boolean(activeContract && activeContract.paymentStatus !== 'PAID'));
+                setHasAnnualSpend(paidContracts.length > 0);
+                setHasActiveProtection(contracts.length > 0);
+                setHasUpcomingPayments(Boolean(activeContract));
+                setHasPaymentHistory(paidContracts.length > 0);
+                setHasPendingRequests(approvedOrPendingRequests.length > 0);
+                setHasRefunds(false);
+            } catch {
+                if (!mounted) return;
+                setDataError('Could not load latest payment data.');
+            } finally {
+                if (mounted) setIsLoadingData(false);
+            }
+        };
+
+        void loadPaymentData();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const activeContract = tenantContracts.find((c) => ['ACTIVE', 'PENDING_PAYMENT', 'PENDING_TENANT'].includes(c.status));
+    const nextRentAmount = Number(activeContract?.rentAmount ?? activeContract?.property?.monthlyPrice ?? 0);
+    const currentBalanceAmount = hasCurrentBalance ? nextRentAmount : 0;
+    const paidContracts = tenantContracts.filter((c) => c.paymentStatus === 'PAID');
+    const annualSpendAmount = paidContracts.reduce((sum, c) => sum + Number(c.rentAmount ?? c.property?.monthlyPrice ?? 0), 0);
+
+    const getNextDueDateLabel = (): string => {
+        if (!activeContract) return 'No active lease';
+        const dueDay = getDueDayFromContract(activeContract.rentDueDate);
+        const now = new Date();
+        const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+        if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
+        const diffDays = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        return `Due in ${diffDays} day${diffDays === 1 ? '' : 's'} (${formatShortDate(dueDate.toISOString())})`;
+    };
+
+    const upcomingPayments = activeContract
+        ? Array.from({ length: 3 }, (_, idx) => {
+            const dueDay = getDueDayFromContract(activeContract.rentDueDate);
+            const base = new Date();
+            const date = new Date(base.getFullYear(), base.getMonth() + idx, dueDay);
+            return {
+                title: `${date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
+                date: formatShortDate(date.toISOString()),
+                amount: nextRentAmount,
+                status: idx === 0 ? 'Active' : 'Scheduled',
+            };
+        })
+        : [];
+
+    const historyRows = [...paidContracts]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .map((c) => ({
+            date: formatLongDate(c.createdAt),
+            ref: `${c.property?.title ?? 'Rent Payment'} - ${c.contractId}`,
+            amount: Number(c.rentAmount ?? c.property?.monthlyPrice ?? 0),
+            status: 'Success',
+        }));
+
+    const requestCards = tenantRequests
+        .filter((r) => r.status === 'APPROVED' || r.status === 'PENDING')
+        .map((r) => ({
+            id: r.id,
+            property: r.property.title,
+            status: r.status === 'APPROVED' ? 'Accepted' : 'Pending',
+            price: Number(r.property.monthlyPrice ?? 0),
+            loc: r.property.address,
+        }));
+
+    const successfulPaymentsLabel = `${historyRows.length} successful payment${historyRows.length === 1 ? '' : 's'}`;
 
     // --- HANDLERS ---
     const handleConfirmPayment = () => {
@@ -174,12 +304,12 @@ const TenantPayment: React.FC = () => {
                     {hasCurrentBalance && <div className="card-glass-overlay"></div>}
                     <div className="card-content">
                         <div className="icon-wrap-blur"><Wallet size={20} /></div>
-                        <label>Current Balance</label>
+                        <span>Current Balance</span>
                         <div className="amount-row">
-                            <h2>{hasCurrentBalance ? "$120.00" : "$0.00"}</h2>
+                            <h2>{formatMoney(currentBalanceAmount)}</h2>
                             {hasCurrentBalance && <span className="mini-badge">Utilities</span>}
                         </div>
-                        <p className={`card-footer-text ${!hasCurrentBalance ? 'opacity-70' : ''}`}>
+                        <p className={`card-footer-text ${hasCurrentBalance ? '' : 'opacity-70'}`}>
                             {hasCurrentBalance ? "Auto-pay scheduled for April 15" : "No outstanding balances"}
                         </p>
                     </div>
@@ -187,38 +317,38 @@ const TenantPayment: React.FC = () => {
 
                 <div className="stat-card-white">
                     <div className="card-header-row">
-                        <label>Next Rent</label>
+                        <span>Next Rent</span>
                         <TrendingUp size={16} className={hasNextRent ? "text-success" : "text-muted"} />
                     </div>
                     <div className="flex-baseline">
-                        <h3 className={!hasNextRent ? "text-muted" : ""}>{hasNextRent ? "$800.00" : "$0.00"}</h3>
+                        <h3 className={hasNextRent ? "" : "text-muted"}>{formatMoney(hasNextRent ? nextRentAmount : 0)}</h3>
                         <span className="sub-label">/mo</span>
                     </div>
                     <div className="due-indicator">
                         {hasNextRent && <div className="pulse-dot"></div>}
-                        <span className={!hasNextRent ? "text-muted" : ""}>
-                            {hasNextRent ? "Due in 12 days (May 01)" : "No active lease"}
+                        <span className={hasNextRent ? "" : "text-muted"}>
+                            {hasNextRent ? getNextDueDateLabel() : "No active lease"}
                         </span>
                     </div>
                 </div>
 
                 <div className="stat-card-white">
                     <div className="card-header-row">
-                        <label>Annual Spend</label>
+                        <span>Annual Spend</span>
                         <Receipt size={16} className="text-slate" />
                     </div>
-                    <h3 className={!hasAnnualSpend ? "text-muted" : ""}>{hasAnnualSpend ? "$3,200.00" : "$0.00"}</h3>
-                    <p className="sub-label-sm">{hasAnnualSpend ? "4 successful payments in 2024" : "No payments made yet"}</p>
+                    <h3 className={hasAnnualSpend ? "" : "text-muted"}>{formatMoney(hasAnnualSpend ? annualSpendAmount : 0)}</h3>
+                    <p className="sub-label-sm">{hasAnnualSpend ? successfulPaymentsLabel : "No payments made yet"}</p>
                 </div>
             </div>
 
-            <div className={`stripe-style-banner ${!hasActiveProtection ? 'inactive-banner' : ''}`}>
+            <div className={`stripe-style-banner ${hasActiveProtection ? '' : 'inactive-banner'}`}>
                 <div className="banner-left">
                     <div className="banner-icon">
                         {hasActiveProtection ? <ShieldCheck size={24} /> : <FileSearch size={24} />}
                     </div>
                     <div className="banner-copy">
-                        <h4>{hasActiveProtection ? "Payment protection is active" : "Looking for a place?"}</h4>
+                        <h4>{hasActiveProtection ? "Payment protection is active" : "Why wait? Looking for a place?"}</h4>
                         <p>{hasActiveProtection 
                             ? "Your transactions are encrypted and monitored for your security." 
                             : "Browse properties and submit applications to get started."}
@@ -242,12 +372,8 @@ const TenantPayment: React.FC = () => {
         <div className="tab-viewport animate-fade-up">
             {hasUpcomingPayments ? (
                 <div className="list-container">
-                    {[
-                        { title: 'May 2024 Rent', date: 'May 01', amount: 800, status: 'Active' },
-                        { title: 'June 2024 Rent', date: 'Jun 01', amount: 800, status: 'Scheduled' },
-                        { title: 'July 2024 Rent', date: 'Jul 01', amount: 800, status: 'Scheduled' },
-                    ].map((item, i) => (
-                        <div className="list-row" key={i}>
+                    {upcomingPayments.map((item) => (
+                        <div className="list-row" key={`${item.title}-${item.date}`}>
                             <div className="row-main">
                                 <div className="calendar-box">
                                     <span className="month">{item.date.split(' ')[0]}</span>
@@ -259,13 +385,13 @@ const TenantPayment: React.FC = () => {
                                 </div>
                             </div>
                             <div className="row-actions">
-                                <span className="row-amount">${item.amount}</span>
+                                <span className="row-amount">{formatMoney(item.amount)}</span>
                                 <button 
                                     className={item.status === 'Active' ? 'btn-pay-now' : 'btn-manage-ghost'}
                                     onClick={item.status === 'Active' ? () => setCheckoutData({ 
                                         name: item.title, 
                                         price: item.amount, 
-                                        location: 'Current Rental' 
+                                        location: activeContract?.property?.address ?? 'Current Rental' 
                                     }) : undefined}
                                 >
                                     {item.status === 'Active' ? 'Pay Now' : 'Manage'}
@@ -299,14 +425,11 @@ const TenantPayment: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {[
-                                { date: 'Apr 01, 2024', ref: 'Sunset Loft - April Rent', amount: 800, status: 'Success' },
-                                { date: 'Mar 01, 2024', ref: 'Sunset Loft - March Rent', amount: 800, status: 'Success' },
-                            ].map((row, i) => (
-                                <tr key={i}>
+                            {historyRows.map((row) => (
+                                <tr key={`${row.ref}-${row.date}`}>
                                     <td>{row.date}</td>
                                     <td className="font-medium">{row.ref}</td>
-                                    <td>${row.amount}</td>
+                                    <td>{formatMoney(row.amount)}</td>
                                     <td><span className="pill success">{row.status}</span></td>
                                     <td className="text-right">
                                         <button className="icon-btn"><Download size={16} /></button>
@@ -330,11 +453,8 @@ const TenantPayment: React.FC = () => {
         <div className="tab-viewport animate-fade-up">
             {hasPendingRequests ? (
                 <div className="grid-responsive">
-                    {[
-                        { property: 'Azure Horizon Suite', status: 'Accepted', price: 1200, loc: 'Miami, FL' },
-                        { property: 'Urban Glass Tower', status: 'Pending', price: 950, loc: 'New York, NY' },
-                    ].map((req, i) => (
-                        <div className="application-card-premium" key={i}>
+                    {requestCards.map((req) => (
+                        <div className="application-card-premium" key={req.id}>
                             <div className="app-card-top">
                                 <span className={`status-tag ${req.status.toLowerCase()}`}>
                                     {req.status === 'Accepted' ? <CheckCircle2 size={12}/> : <Clock size={12}/>}
@@ -348,8 +468,8 @@ const TenantPayment: React.FC = () => {
                             </div>
                             <div className="app-card-footer">
                                 <div className="price-group">
-                                    <label>Offer</label>
-                                    <span>${req.price}</span>
+                                    <span>Offer</span>
+                                        <span>{formatMoney(req.price)}</span>
                                 </div>
                                 <button 
                                     className="btn-app-action" 
@@ -391,7 +511,7 @@ const TenantPayment: React.FC = () => {
                         </div>
                         <div className="card-bottom-row">
                             <span className="card-holder-label">Account Holder</span>
-                            <span className="card-holder-name">ALEX STERLING</span>
+                            <span className="card-holder-name">{accountHolderName}</span>
                         </div>
                     </div>
                 ) : (
@@ -458,6 +578,43 @@ const TenantPayment: React.FC = () => {
         </div>
     );
 
+    const viewportContent = (() => {
+        if (isLoadingData && !checkoutData) {
+            return (
+                <div className="empty-state">
+                    <div className="empty-icon"><Loader2 size={32} className="animate-spin" /></div>
+                    <h4>Loading payment data</h4>
+                    <p>Please wait while we fetch your latest payment records.</p>
+                </div>
+            );
+        }
+
+        if (dataError && !checkoutData) {
+            return (
+                <div className="empty-state">
+                    <div className="empty-icon"><X size={32} /></div>
+                    <h4>Could not load payments</h4>
+                    <p>{dataError}</p>
+                </div>
+            );
+        }
+
+        if (checkoutData) {
+            return renderCheckout();
+        }
+
+        return (
+            <>
+                {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'upcoming' && renderUpcoming()}
+                {activeTab === 'history' && renderHistory()}
+                {activeTab === 'refunds' && renderRefunds()}
+                {activeTab === 'methods' && renderMethods()}
+                {activeTab === 'pending' && renderPending()}
+            </>
+        );
+    })();
+
     return (
         <div className="dashboard-shell">
             <Sidebar />
@@ -497,16 +654,7 @@ const TenantPayment: React.FC = () => {
                     )}
 
                     <div className="viewport-container">
-                        {checkoutData ? renderCheckout() : (
-                            <>
-                                {activeTab === 'overview' && renderOverview()}
-                                {activeTab === 'upcoming' && renderUpcoming()}
-                                {activeTab === 'history' && renderHistory()}
-                                {activeTab === 'refunds' && renderRefunds()}
-                                {activeTab === 'methods' && renderMethods()}
-                                {activeTab === 'pending' && renderPending()}
-                            </>
-                        )}
+                        {viewportContent}
                     </div>
                 </main>
                 <Footer />

@@ -57,13 +57,16 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
     };
 
     if (showApplication) {
-        // If it's the sent request view, open application as Read-Only
-        return <ApplicationModal 
-            property={property} 
-            onClose={onClose} 
-            onBack={() => setShowApplication(false)} 
-            isReadOnly={isSentRequestView} 
-        />;
+        return (
+            <ApplicationModal 
+                property={property} 
+                onClose={onClose} 
+                onBack={() => setShowApplication(false)} 
+                isReadOnly={isSentRequestView}
+                // Pass the pre-filled rental request data when in sent-request view
+                prefillData={isSentRequestView ? property.rentalRequest : undefined}
+            />
+        );
     }
 
     return (
@@ -183,9 +186,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                                     ) : (
                                         <div className="resp-row">
                                             <span>No maintenance responsibilities configured for this property.</span>
-                                            <span className="owner-badge tenant">
-                                                N/A
-                                            </span>
+                                            <span className="owner-badge tenant">N/A</span>
                                         </div>
                                     )}
                                 </div>
@@ -212,7 +213,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                                     <button className="primary-cta-btn" style={{ backgroundColor: '#22c55e', cursor: 'default' }} disabled>
                                         <FaCheckCircle /> Request Sent
                                     </button>
-                                    <div className="sent-request-actions" style={{ display: 'flex', gap: '8px' }}>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
                                         <button 
                                             className="sec-btn" 
                                             style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}

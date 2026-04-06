@@ -110,7 +110,6 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
             <div className="detail-panel animate-slide-in">
                 <header className="panel-header">
                     <div className="header-title">
-                        <h2>Step {step} of 4</h2>
                         <span>{contract.id} • {contract.property}</span>
                     </div>
                     <div className="header-actions">

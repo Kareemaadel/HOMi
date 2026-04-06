@@ -21,6 +21,16 @@ const AuthPage = () => {
       const ok = await authService.tryRestoreSession();
       if (cancelled) return;
       if (ok) {
+        const currentUser = authService.getCurrentUser();
+        
+        // Intercept: If user logs in (e.g. via Google) but lacks a specific role setup,
+        // redirect them to complete their profile before accessing any dashboard.
+        const userRole = currentUser?.user?.role;
+        if (!userRole || userRole === 'USER' || userRole === '') {
+           navigate('/complete-profile', { replace: true });
+           return;
+        }
+
         const nextPath = authService.resolvePostAuthRoute();
         navigate('/', { state: { next: nextPath, force: true }, replace: true });
         return;

@@ -262,14 +262,29 @@ export class AuthController {
      */
     async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const token = req.query.token as string;
+            const raw = req.query.token;
+            const token =
+                typeof raw === 'string'
+                    ? raw.trim()
+                    : Array.isArray(raw) && typeof raw[0] === 'string'
+                      ? raw[0].trim()
+                      : '';
             if (!token) {
                 throw new AuthError('Verification token is required', 400, 'TOKEN_REQUIRED');
             }
 
             const result = await authService.verifyEmail(token);
 
-            // Return success HTML page for better UX when clicked from email
+            const wantsJson =
+                req.query.format === 'json' ||
+                (typeof req.get('Accept') === 'string' && req.get('Accept')!.includes('application/json'));
+
+            if (wantsJson) {
+                res.status(200).json(result);
+                return;
+            }
+
+            // HTML fallback when the link is opened without a JSON Accept header (e.g. legacy direct API URL)
             res.status(200).send(`
 <!DOCTYPE html>
 <html lang="en">
