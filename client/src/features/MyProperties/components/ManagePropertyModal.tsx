@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   FaTimes, FaSave, FaTrashAlt, FaHome, FaDollarSign, 
   FaClipboardList, FaImages, FaExclamationTriangle,
-  FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShieldAlt, FaCheckCircle, FaWrench
+  FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaCheckCircle, FaWrench
 } from 'react-icons/fa';
 import './ManagePropertyModal.css';
 
@@ -17,6 +17,44 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
   const [activeTab, setActiveTab] = useState(initialTab || 'general');
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  const amenitiesMaster = [
+    'High-Speed Wi-Fi',
+    'Fitness Center',
+    'Keyless / Biometric Entry',
+    'Pet Friendly',
+    'Air Conditioning (A/C)',
+    'Private Parking',
+    '24/7 Security System',
+  ];
+
+  const rulesMaster = [
+    'No Smoking',
+    'Pets Allowed',
+    'No Parties or Events',
+    'Quiet Hours (10 PM - 8 AM)',
+    'No Additional Guests',
+    'Respect Neighbours',
+    'Children Welcome',
+  ];
+
+  const normalizeText = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
+
+  const uniqNormalized = (values: string[]) => {
+    const seen = new Set<string>();
+    const output: string[] = [];
+
+    values.forEach((raw) => {
+      if (!raw) return;
+      const key = normalizeText(raw);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      output.push(raw);
+    });
+
+    return output;
+  };
 
   // 1. Initial State for Comparison (Dirty Checking)
   // Included the full 10-item maintenance list here
@@ -28,6 +66,8 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     beds: property.beds || 0,
     baths: property.baths || 0,
     sqft: property.sqft || 0,
+    amenities: Array.isArray(property.amenities) ? property.amenities.filter(Boolean) : [],
+    houseRules: Array.isArray(property.houseRules) ? property.houseRules.filter(Boolean) : [],
     maintenance: property.maintenance || {
         structural: 'Landlord',
         appliances: 'Tenant',
@@ -46,6 +86,35 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  const amenitiesOptions = useMemo(
+    () => uniqNormalized([...(formData.amenities || []), ...amenitiesMaster]),
+    [formData.amenities]
+  );
+
+  const rulesOptions = useMemo(
+    () => uniqNormalized([...(formData.houseRules || []), ...rulesMaster]),
+    [formData.houseRules]
+  );
+
+  const isSelected = (selected: string[], candidate: string) => {
+    const candidateKey = normalizeText(candidate);
+    return selected.some((item) => normalizeText(item) === candidateKey);
+  };
+
+  const toggleSelection = (key: 'amenities' | 'houseRules', value: string) => {
+    setFormData((prev: any) => {
+      const list: string[] = prev[key] || [];
+      const valueKey = normalizeText(value);
+      const exists = list.some((item) => normalizeText(item) === valueKey);
+      return {
+        ...prev,
+        [key]: exists
+          ? list.filter((item) => normalizeText(item) !== valueKey)
+          : [...list, value],
+      };
+    });
+  };
+
   // 3. Logic to check if any data has changed (Dirty State)
   const isDirty = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(initialState);
@@ -59,48 +128,68 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     if (Number(formData.price) < 100) newErrors.price = "Rent must be at least $100";
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleUpdate = async () => {
-    if (!validate()) {
-      if (errors.name || errors.address) setActiveTab('general');
-      else if (errors.price) setActiveTab('financials');
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      if (validationErrors.name || validationErrors.address) setActiveTab('general');
+      else if (validationErrors.price) setActiveTab('financials');
       return;
     }
 
+    setSaveError('');
     setLoading(true);
     try {
-      import('../../../services/property.service').then(async ({ propertyService }) => {
-        let backendStatus = 'Draft';
-        if (formData.status === 'available') backendStatus = 'Published';
-        if (formData.status === 'rented') backendStatus = 'Rented';
+      const { propertyService } = await import('../../../services/property.service');
 
-        const payload = {
-          title: formData.name,
-          address: formData.address,
-          monthly_price: Number(formData.price),
-          status: backendStatus,
-          specifications: {
-            bedrooms: formData.beds,
-            bathrooms: formData.baths,
-            area_sqft: formData.sqft
-          }
-        };
+      let backendStatus = 'Draft';
+      if (formData.status === 'available') backendStatus = 'Published';
+      if (formData.status === 'rented') backendStatus = 'Rented';
 
-        const res = await propertyService.updateProperty(property.id, payload);
-        if (res.success) {
-          setShowToast(true);
-          setTimeout(() => {
-            setShowToast(false);
-            if (property.onUpdate) {
-              property.onUpdate();
-            }
-            onClose();
-          }, 2000);
+      const maintenanceResponsibilities = Object.entries(formData.maintenance || {}).map(([area, owner]) => ({
+        area,
+        responsible_party: String(owner).toUpperCase() === 'TENANT' ? 'TENANT' : 'LANDLORD'
+      }));
+
+      const payload = {
+        title: formData.name,
+        address: formData.address,
+        monthly_price: Number(formData.price),
+        status: backendStatus,
+        amenity_names: uniqNormalized(formData.amenities || []),
+        house_rule_names: uniqNormalized(formData.houseRules || []),
+        maintenance_responsibilities: maintenanceResponsibilities,
+        specifications: {
+          bedrooms: formData.beds,
+          bathrooms: formData.baths,
+          area_sqft: formData.sqft
         }
-      }).catch(err => console.error("Error loading service", err));
+      };
+
+      const res = await propertyService.updateProperty(property.id, payload);
+      if (res.success) {
+        setShowToast(true);
+        setTimeout(() => {
+          setShowToast(false);
+          if (property.onUpdate) {
+            property.onUpdate();
+          }
+          onClose();
+        }, 2000);
+      }
     } catch (e) {
+      const fallbackMessage = 'Could not save changes. Please try again.';
+      const messageFromApi =
+        typeof e === 'object' &&
+        e !== null &&
+        'response' in e &&
+        typeof (e as any).response?.data?.message === 'string'
+          ? (e as any).response.data.message
+          : fallbackMessage;
+
+      setSaveError(messageFromApi);
       console.error(e);
     } finally {
       setLoading(false);
@@ -276,11 +365,32 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                  <div className="manage-card-group">
                     <h4 className="section-subtitle">Core Amenities</h4>
                     <div className="selection-grid">
-                        {['WiFi Included', 'Swimming Pool', 'Gym Access', 'Smart Lock', 'Pet Friendly'].map(perk => (
+                        {amenitiesOptions.map(perk => (
                           <label key={perk} className="selection-card">
-                            <input type="checkbox" defaultChecked={perk === 'WiFi Included'} />
+                            <input
+                              type="checkbox"
+                              checked={isSelected(formData.amenities || [], perk)}
+                              onChange={() => toggleSelection('amenities', perk)}
+                            />
                             <div className="indicator"></div>
                             <span>{perk}</span>
+                          </label>
+                        ))}
+                    </div>
+                 </div>
+
+                 <div className="manage-card-group">
+                    <h4 className="section-subtitle">House Rules</h4>
+                    <div className="selection-grid">
+                        {rulesOptions.map(rule => (
+                          <label key={rule} className="selection-card">
+                            <input
+                              type="checkbox"
+                              checked={isSelected(formData.houseRules || [], rule)}
+                              onChange={() => toggleSelection('houseRules', rule)}
+                            />
+                            <div className="indicator"></div>
+                            <span>{rule}</span>
                           </label>
                         ))}
                     </div>
@@ -352,6 +462,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
           </div>
 
           <footer className="main-footer">
+             {saveError && <p className="save-error-banner">{saveError}</p>}
              <button 
                 className="m-btn-cancel" 
                 onClick={() => setFormData(initialState)} 

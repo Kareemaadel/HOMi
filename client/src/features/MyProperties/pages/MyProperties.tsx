@@ -45,6 +45,8 @@ const MyProperties = () => {
               yield: "5.0", // Placeholder for now
               occupancyRate: prop.status === 'Rented' ? 100 : 0,
               images: prop.images || [],
+                amenities: (prop.amenities || []).map((amenity: any) => amenity.name),
+                houseRules: (prop.houseRules || []).map((rule: any) => rule.name),
               onUpdate: () => setRefreshKey(prev => prev + 1)
            }));
            setProperties(mappedProperties);
