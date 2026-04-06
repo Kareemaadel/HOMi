@@ -13,15 +13,38 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-.contract-hub {
-  padding: 60px 48px;
+.tenant-contract-hub {
+  padding: 132px 48px 40px;
   background-color: var(--saas-bg);
   min-height: 100vh;
-  margin-left: 280px; /* Aligned with your Sidebar width */
+  margin-left: 0;
   transition: all 0.3s ease;
 }
 
-.hub-header {
+.tenant-contract-shell {
+  display: flex;
+  background: var(--saas-bg);
+  min-height: 100vh;
+}
+
+.tenant-contract-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width, 260px);
+}
+
+@media (max-width: 1024px) {
+  .tenant-contract-content {
+    margin-left: 0;
+  }
+
+  .tenant-contract-hub {
+    padding: 116px 20px 28px;
+  }
+}
+
+.tenant-contract-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -31,7 +54,7 @@
   margin-right: auto;
 }
 
-.hub-header h1 {
+.tenant-contract-header h1 {
   font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.06em;
@@ -39,10 +62,15 @@
   margin: 0 0 8px 0;
 }
 
-.hub-header p {
+.tenant-contract-header p {
   color: var(--saas-text-muted);
   font-size: 16px;
   font-weight: 450;
+}
+
+.tenant-contract-empty-state {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* --- The Grid --- */

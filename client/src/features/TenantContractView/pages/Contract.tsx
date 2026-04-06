@@ -113,12 +113,12 @@ const Contract: React.FC = () => {
     };
 
     return (
-        <div className="dashboard-shell">
+        <div className="tenant-contract-shell">
             <Sidebar />
-            <div className="content-container">
+            <div className="tenant-contract-content">
                 <Header />
-                <main className="contract-hub">
-                    <div className="hub-header">
+                <main className="tenant-contract-hub">
+                    <div className="tenant-contract-header">
                         <div>
                             <h1>Lease Agreements</h1>
                             <p>Track, sign, and manage your property contracts.</p>
@@ -162,7 +162,7 @@ const Contract: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="empty-state-container" style={{ 
+                        <div className="tenant-contract-empty-state" style={{ 
                             textAlign: 'center', padding: '80px 20px', 
                             backgroundColor: 'var(--saas-card-bg)', 
                             borderRadius: '14px', border: '1px dashed var(--saas-border-hover)' 
@@ -183,7 +183,7 @@ const Contract: React.FC = () => {
                 <Footer />
             </div>
 
-            {selectedContract && selectedContract.status === 'PENDING_TENANT' && (
+            {selectedContract?.status === 'PENDING_TENANT' && (
                 <ContractDetailView 
                     contract={selectedContract} 
                     onUpdated={fetchContracts}
@@ -191,7 +191,7 @@ const Contract: React.FC = () => {
                 />
             )}
 
-            {selectedContract && selectedContract.status === 'ACTIVE' && (
+            {selectedContract?.status === 'ACTIVE' && (
                 <ActiveLeaseContract 
                     contract={selectedContract} 
                     onClose={() => setSelectedContract(null)} 
