@@ -1,5 +1,6 @@
 // client/src/features/BrowseProperties/components/ApplicationModal.tsx
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     FaTimes, FaCheckCircle, FaCalendarAlt, FaHourglassHalf, FaCommentDots,
     FaPaperPlane, FaUsers, FaUserFriends, FaUserTie, FaArrowLeft, FaPlus, FaChevronRight,
@@ -168,9 +169,9 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
     // Custom habits that are saved but not in the preset list
     const customSavedHabits = selectedHabits.filter(h => !PRESET_HABITS.includes(h));
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-container app-modal-view">
+    const modalMarkup = (
+        <div className="app-modal-overlay">
+            <div className="app-modal-view">
                 <button className="close-app-modal" onClick={onClose} aria-label="Close modal">
                     <FaTimes size={20} />
                 </button>
@@ -445,6 +446,8 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
             </div>
         </div>
     );
+
+    return createPortal(modalMarkup, document.body);
 };
 
 export default ApplicationModal;

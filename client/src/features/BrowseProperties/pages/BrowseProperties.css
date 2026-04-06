@@ -5,6 +5,26 @@
     
 }
 
+/* Scope layout so global .main-content rules from other pages don't trap modals below the sidebar. */
+.layout-wrapper {
+    display: block;
+    min-height: 100vh;
+}
+
+.layout-wrapper > .main-content {
+    margin-left: var(--sidebar-width, 260px);
+    width: calc(100% - var(--sidebar-width, 260px));
+    position: relative;
+    z-index: auto;
+}
+
+@media (max-width: 1024px) {
+    .layout-wrapper > .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
 /* Layout Structure */
 .marketplace-container {
     display: grid;

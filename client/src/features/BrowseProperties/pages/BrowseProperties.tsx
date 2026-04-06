@@ -270,7 +270,7 @@ const BrowseProperties: React.FC = () => {
 
     return (
         <div className="layout-wrapper">
-            <Sidebar />
+            {!selectedProperty && <Sidebar />}
             <div className="main-content">
                 <Header />
                 <div className="browse-properties-page">

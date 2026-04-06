@@ -1,5 +1,6 @@
 // client/src/features/BrowseProperties/components/PropertyDetailModal.tsx
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { 
     FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, 
@@ -69,8 +70,8 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
         );
     }
 
-    return (
-        <div className="modal-overlay" onClick={onClose}>
+    const modalMarkup = (
+        <div className="property-detail-overlay" onClick={onClose}>
             {/* LIGHTBOX GALLERY VIEW */}
             {showGallery && (
                 <div className="lightbox-overlay" onClick={() => setShowGallery(false)}>
@@ -84,7 +85,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                 </div>
             )}
 
-            <div className="modal-container" onClick={e => e.stopPropagation()}>
+            <div className="property-detail-container" onClick={e => e.stopPropagation()}>
                 <nav className="modal-nav">
                     <div className="nav-id-section">
                         <span className="id-badge">REF: {property.id?.toString().slice(-6).toUpperCase() || 'LXP-992'}</span>
@@ -101,7 +102,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                 <div className="modal-layout-grid">
                     <div className="main-scroll-area">
                         {/* GALLERY TRIGGER */}
-                        <section className="property-gallery-grid" onClick={() => setShowGallery(true)}>
+                        <section className={`property-gallery-grid ${images.length === 1 ? 'single-image' : ''}`} onClick={() => setShowGallery(true)}>
                             <div className="hero-image-wrapper">
                                 <img src={images[0]} alt="Property Main" />
                             </div>
@@ -292,6 +293,8 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
             )}
         </div>
     );
+
+    return createPortal(modalMarkup, document.body);
 };
 
 export default PropertyDetailModal;
