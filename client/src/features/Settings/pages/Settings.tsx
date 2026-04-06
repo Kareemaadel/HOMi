@@ -11,7 +11,6 @@ import { useNavigate } from 'react-router-dom';
 import MyProfile from '../components/MyProfile';
 import Security from '../components/Security';
 import Preferences from '../components/Preferences';
-import About from '../components/About';
 import Notifications from '../components/Notifications';
 import Billing from '../components/Billing';
 import Privacy from '../components/Privacy';
@@ -127,7 +126,6 @@ const Settings: React.FC = () => {
         security: <Security />,
         privacy: <Privacy />,
         preferences: <Preferences />,
-        about: <About />,
         delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />
     };
 

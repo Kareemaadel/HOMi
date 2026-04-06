@@ -19,12 +19,15 @@ const LandlordHome = () => {
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
   const [properties, setProperties] = useState<PropertyResponse[]>([]);
   const [landlordName, setLandlordName] = useState('Landlord');
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchProperties = useCallback(async () => {
+    setIsLoading(true);
     try {
       const currentUser = authService.getCurrentUser();
       if (!currentUser?.user?.id) {
         setProperties([]);
+        setIsLoading(false);
         return;
       }
 
@@ -38,6 +41,8 @@ const LandlordHome = () => {
       setProperties(response?.data ?? []);
     } catch {
       setProperties([]);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -84,7 +89,11 @@ const LandlordHome = () => {
           <Header />
           
           <main className="dashboard-container">
-            {hasData ? (
+            {isLoading ? (
+              <div className="loading-state" style={{ textAlign: 'center', padding: '2rem' }}>
+                Loading Home page...
+              </div>
+            ) : hasData ? (
               /* =========================================
                  PREMIUM POPULATED STATE (Dashboard)
                  ========================================= */

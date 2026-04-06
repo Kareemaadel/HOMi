@@ -19,7 +19,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, setActiveT
         { id: 'security', label: 'Security', icon: <FaShieldAlt /> },
         { id: 'privacy', label: 'Privacy & Data', icon: <FaUserShield /> }, // NEW
         { id: 'preferences', label: 'Preferences', icon: <FaCog /> },
-        { id: 'about', label: 'About', icon: <FaInfoCircle /> },
     ];
 
     return (
