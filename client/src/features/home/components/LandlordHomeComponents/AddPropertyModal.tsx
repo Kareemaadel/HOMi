@@ -5,7 +5,7 @@ import {
   FaMapMarkerAlt, FaChevronRight, FaChevronLeft, FaCloudUploadAlt, 
   FaRocket, FaCalendarAlt, FaShieldAlt, FaChair, 
   FaMapMarkedAlt, FaCity, FaBuilding, FaLayerGroup,
-  FaTools, FaUserTie, FaUserAlt
+  FaTools, FaUserTie, FaUserAlt, FaExclamationTriangle
 } from 'react-icons/fa';
 
 // Leaflet Imports
@@ -18,6 +18,7 @@ import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
 // CSS Import
 import './AddPropertyModal.css';
 import { propertyService } from '../../../../services/property.service';
+import authService from '../../../../services/auth.service';
 
 // Fix for Leaflet default marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -67,7 +68,17 @@ const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng
   return null;
 };
 
-const MapEventsHandler = ({ setPosition, position, onLocationSelect }: any) => {
+const MapCenterUpdater = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, Math.max(map.getZoom(), 14));
+  }, [center, map]);
+
+  return null;
+};
+
+const MapEventsHandler = ({ position, onLocationSelect }: { position: { lat: number; lng: number } | null; onLocationSelect: (lat: number, lng: number) => void }) => {
   const map = useMap();
   useEffect(() => {
     map.invalidateSize();
@@ -84,10 +95,19 @@ const MapEventsHandler = ({ setPosition, position, onLocationSelect }: any) => {
 };
 
 const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onPropertyAdded }) => {
+  const cachedUser = authService.getCurrentUser();
+
+  const isCachedFullyVerified = Boolean(
+    cachedUser?.user?.isVerified &&
+    cachedUser?.user?.emailVerified &&
+    cachedUser?.profile?.isVerificationComplete
+  );
+
   const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showVerificationWarning, setShowVerificationWarning] = useState(!isCachedFullyVerified);
 
   // Form States
   const [title, setTitle] = useState('');
@@ -109,6 +129,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
   const [aboutProperty, setAboutProperty] = useState('');
   const [position, setPosition] = useState<{lat: number, lng: number} | null>(null);
   const [isMapActive, setIsMapActive] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -131,7 +153,97 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedHouseRules, setSelectedHouseRules] = useState<string[]>([]);
 
-  const nextStep = () => setStep(s => s + 1);
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncVerificationState = async () => {
+      try {
+        const latest = await authService.getProfile();
+        if (!isMounted) return;
+
+        const isFullyVerified = Boolean(
+          latest.user?.isVerified &&
+          latest.user?.emailVerified &&
+          latest.profile?.isVerificationComplete
+        );
+
+        setShowVerificationWarning(!isFullyVerified);
+      } catch {
+        // Keep cached verification state if profile refresh fails.
+      }
+    };
+
+    syncVerificationState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const getStepValidationError = (currentStep: number): string | null => {
+    if (currentStep === 1) {
+      if (!title.trim()) return 'Please enter a property title before continuing.';
+
+      const parsedMonthlyPrice = Number(monthlyPrice);
+      const parsedSecurityDeposit = Number(securityDeposit);
+
+      if (!monthlyPrice || Number.isNaN(parsedMonthlyPrice) || parsedMonthlyPrice <= 0) {
+        return 'Please enter a valid monthly price greater than 0.';
+      }
+
+      if (!securityDeposit || Number.isNaN(parsedSecurityDeposit) || parsedSecurityDeposit < 0) {
+        return 'Please enter a valid security deposit.';
+      }
+
+      if (!availabilityDate) {
+        return 'Please select an availability date before continuing.';
+      }
+    }
+
+    if (currentStep === 2) {
+      const parsedBeds = Number(beds);
+      const parsedBaths = Number(baths);
+      const parsedSqft = Number(sqft);
+
+      if (!beds || Number.isNaN(parsedBeds) || parsedBeds <= 0) {
+        return 'Please enter a valid number of bedrooms.';
+      }
+
+      if (!baths || Number.isNaN(parsedBaths) || parsedBaths <= 0) {
+        return 'Please enter a valid number of bathrooms.';
+      }
+
+      if (!sqft || Number.isNaN(parsedSqft) || parsedSqft <= 0) {
+        return 'Please enter a valid property area in sqft.';
+      }
+
+      if (uploadedImages.length === 0) {
+        return 'Please upload at least one property photo before continuing.';
+      }
+    }
+
+    if (currentStep === 3) {
+      if (!position) return 'Please choose a map location before continuing.';
+      if (!city.trim()) return 'Please enter the city before continuing.';
+      if (!area.trim()) return 'Please enter the area/neighborhood before continuing.';
+      if (!streetName.trim()) return 'Please enter the street name before continuing.';
+      if (!buildingNumber.trim()) return 'Please enter the building number before continuing.';
+      if (!unitApt.trim()) return 'Please enter the unit/apartment before continuing.';
+    }
+
+    return null;
+  };
+
+  const nextStep = () => {
+    const validationError = getStepValidationError(step);
+    if (validationError) {
+      setSubmitError(validationError);
+      return;
+    }
+
+    setSubmitError(null);
+    setStep((s) => s + 1);
+  };
   const prevStep = () => setStep(s => s - 1);
 
   const readFileAsDataUrl = (file: File): Promise<string> =>
@@ -170,6 +282,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
   };
 
   const handleLocationSelect = async (lat: number, lng: number) => {
+    setLocationError(null);
     setPosition({ lat, lng });
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
@@ -180,6 +293,46 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     } catch (error) {
       console.error("Geocoding failed", error);
     }
+  };
+
+  const handleUseCurrentLocation = () => {
+    setLocationError(null);
+
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (coords) => {
+        const { latitude, longitude } = coords.coords;
+
+        if (!EGYPT_BOUNDS.contains(L.latLng(latitude, longitude))) {
+          setIsLocating(false);
+          setLocationError('Current location appears to be outside Egypt. Please pin manually.');
+          return;
+        }
+
+        await handleLocationSelect(latitude, longitude);
+        setIsMapActive(true);
+        setIsLocating(false);
+      },
+      (error) => {
+        setIsLocating(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError('Location permission was denied. Please allow it and try again.');
+          return;
+        }
+
+        setLocationError('Could not get your current location. Please try again.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      }
+    );
   };
 
   const mapPropertyType = (value: string): 'APARTMENT' | 'VILLA' | 'STUDIO' | 'CHALET' => {
@@ -336,6 +489,19 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
               <div className="progress-fill" style={{ width: `${(step / 4) * 100}%` }}></div>
             </div>
 
+            {showVerificationWarning && (
+              <div className="verification-warning-banner" role="alert" aria-live="polite">
+                <FaExclamationTriangle className="verification-warning-icon" aria-hidden="true" />
+                <span>Your account must be verified before adding a property.</span>
+              </div>
+            )}
+
+            {submitError && (
+              <div className="property-modal-error-text property-modal-error-top">
+                {submitError}
+              </div>
+            )}
+
             <div className="modal-body-content">
               {step === 1 && (
                 <div className="step-view animate-fade-in">
@@ -428,14 +594,20 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                         ) : (
                           <p>Pinpoint the location in Egypt</p>
                         )}
-                        <button className="map-trigger-btn" onClick={() => setIsMapActive(true)}>
-                          {position ? "Change Location" : "Open Interactive Map"}
-                        </button>
+                        <div className="map-quick-actions">
+                          <button className="map-trigger-btn" onClick={() => setIsMapActive(true)}>
+                            {position ? "Change Location" : "Open Interactive Map"}
+                          </button>
+                          <button className="current-location-btn" onClick={handleUseCurrentLocation} disabled={isLocating}>
+                            {isLocating ? 'Locating...' : 'Use Current Location'}
+                          </button>
+                        </div>
+                        {locationError && <p className="location-error-text">{locationError}</p>}
                       </div>
                     ) : (
-                      <div className="leaflet-wrapper" style={{ height: '300px', width: '100%', position: 'relative' }}>
+                      <div className="leaflet-wrapper" style={{ height: '100%', width: '100%', position: 'relative' }}>
                         <MapContainer 
-                          center={[26.8206, 30.8025]} 
+                          center={position ? [position.lat, position.lng] : [26.8206, 30.8025]} 
                           zoom={6} 
                           maxBounds={EGYPT_BOUNDS}
                           style={{ height: '100%', width: '100%' }}
@@ -443,11 +615,18 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                           <SearchField onLocationSelect={handleLocationSelect} />
                           <MapEventsHandler position={position} onLocationSelect={handleLocationSelect} />
+                          {position && <MapCenterUpdater center={[position.lat, position.lng]} />}
                         </MapContainer>
-                        <button className="confirm-map-btn" onClick={() => setIsMapActive(false)}>Confirm Location</button>
+                        <div className="map-action-bar">
+                          <button className="current-location-btn" onClick={handleUseCurrentLocation} disabled={isLocating}>
+                            {isLocating ? 'Locating...' : 'Use Current Location'}
+                          </button>
+                          <button className="confirm-map-btn" onClick={() => setIsMapActive(false)}>Confirm Location</button>
+                        </div>
                       </div>
                     )}
                   </div>
+                  {locationError && isMapActive && <p className="location-error-text location-error-map">{locationError}</p>}
 
                   <div className="address-grid-structured">
                     <div className="field-group">
@@ -488,6 +667,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                       <div>
                         <label className="section-subtitle">Maintenance Responsibilities</label>
                         <p className="section-desc">Who handles these tasks?</p>
+                        <p className="maintenance-legend">L = Landlord, T = Tenant</p>
                       </div>
                     </div>
                     
@@ -566,11 +746,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                 </button>
               )}
             </div>
-            {submitError && (
-              <div style={{ padding: '0 40px 20px', color: '#dc2626', fontWeight: 700, fontSize: '0.9rem' }}>
-                {submitError}
-              </div>
-            )}
           </>
         ) : (
           <div className="success-animation-view">
