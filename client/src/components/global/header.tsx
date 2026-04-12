@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBars, FaTimes, FaSearch, FaSignOutAlt } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
 import { authService } from '../../services/auth.service';
 import ConfirmModal from './ConfirmModal';
 import './header.css';
@@ -64,7 +64,7 @@ const Header = () => {
     navigate('/guest-home', { replace: true });
   };
 
-  // Add a nice shadow effect on scroll
+  // Shadow effect on scroll
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
@@ -76,8 +76,7 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // If a signed-in user lands on the "other role" How It Works page,
-  // immediately route them to the correct one.
+  // Immediately route correctly for "How It Works"
   useEffect(() => {
     if (!signedInRole) return;
 
@@ -110,24 +109,9 @@ const Header = () => {
   return (
     <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
-        {/* Logo/Brand */}
-        <div className="header-brand">
-
-        </div>
-
-        {/* Search Bar - Desktop */}
-        <div className="header-search desktop-search">
-          <div className="search-wrapper">
-            <FaSearch className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Search properties, tenants..." 
-              className="search-input"
-              aria-label="Search"
-            />
-            <kbd className="search-hint">⌘K</kbd>
-          </div>
-        </div>
+        
+        {/* Empty left spacer to keep things perfectly centered using Flexbox */}
+        <div className="header-spacer left-spacer"></div>
 
         {/* Desktop Navigation */}
         <nav className="header-nav desktop-nav" aria-label="Main navigation">
@@ -146,7 +130,7 @@ const Header = () => {
             How It Works
           </Link>
           <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
-            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>PRO</span>
+            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
           </Link>
           <Link to="/get-help" className={`nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
             Get Help
@@ -161,42 +145,31 @@ const Header = () => {
           )}
         </nav>
 
-        {/* Mobile Menu Toggle */}
-        <button 
-          type="button"
-          ref={mobileToggleRef}
-          className="mobile-menu-toggle"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle navigation menu"
-          aria-expanded={isMobileMenuOpen}
-        >
-          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-        </button>
+        {/* Mobile Menu Toggle & Right Spacer */}
+        <div className="header-spacer right-spacer">
+          <button 
+            type="button"
+            ref={mobileToggleRef}
+            className="mobile-menu-toggle"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
-        <nav ref={mobileMenuRef} className="header-nav mobile-nav" aria-label="Mobile navigation" onPointerDown={(e) => e.stopPropagation()}>
-          {/* Mobile Search */}
-          <div className="header-search mobile-search">
-            <div className="search-wrapper">
-              <FaSearch className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="Search properties, tenants..." 
-                className="search-input"
-                aria-label="Search"
-              />
-            </div>
-          </div>
-
-          <Link to={isSignedIn ? dashboardPath : '/'} className={`nav-link ${location.pathname === dashboardPath || (!isSignedIn && location.pathname === '/') ? 'active' : ''}`}>
+        <nav ref={mobileMenuRef} className="mobile-nav" aria-label="Mobile navigation" onPointerDown={(e) => e.stopPropagation()}>
+          <Link to={isSignedIn ? dashboardPath : '/'} className={`mobile-nav-link ${location.pathname === dashboardPath || (!isSignedIn && location.pathname === '/') ? 'active' : ''}`}>
             Home
           </Link>
           <Link
             to={howItWorksPath}
-            className={`nav-link ${location.pathname === howItWorksPath ? 'active' : ''}`}
+            className={`mobile-nav-link ${location.pathname === howItWorksPath ? 'active' : ''}`}
             onClick={(e) => {
               if (!isSignedIn) return;
               e.preventDefault();
@@ -205,29 +178,29 @@ const Header = () => {
           >
             How It Works
           </Link>
-          <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
-            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Plus</span>
+          <Link to="/homi-plus" className={`mobile-nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
+            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
           </Link>
-          <Link to="/get-help" className={`nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
+          <Link to="/get-help" className={`mobile-nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
             Get Help
           </Link>
-          <Link to="/about-us" className={`nav-link ${location.pathname === '/about-us' ? 'active' : ''}`}>
+          <Link to="/about-us" className={`mobile-nav-link ${location.pathname === '/about-us' ? 'active' : ''}`}>
             About Us
           </Link>
           {isSignedIn && (
-            <Link to="/settings" className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
+            <Link to="/settings" className={`mobile-nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
               Settings
             </Link>
           )}
 
           {isSignedIn && (
             <>
-              <div className="mobile-nav-divider">Dashboard</div>
+              <div className="mobile-nav-divider">Dashboard Menu</div>
               {mobileRoleLinks.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`nav-link ${location.pathname === item.to ? 'active' : ''}`}
+                  className={`mobile-nav-link ${location.pathname === item.to ? 'active' : ''}`}
                 >
                   {item.label}
                 </Link>
