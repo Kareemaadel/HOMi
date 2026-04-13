@@ -1,6 +1,6 @@
 .my-actives-container {
     padding: 2.5rem;
-    max-width: 1400px;
+    width: 100%;
     margin: 0 auto;
     min-height: calc(100vh - 160px);
     margin-left: 0px;

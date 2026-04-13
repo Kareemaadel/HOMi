@@ -131,21 +131,21 @@ const Contract: React.FC = () => {
                     {hasContracts ? (
                         <div className="contract-list-grid">
                             {contracts.map(contract => (
-                                <div key={contract.id} className="contract-card">
+                                <div key={contract.id} className="tenant-contract-card">
                                     <div className="card-status-bar" data-status={contract.status === 'PENDING_TENANT' ? 'signing' : contract.status.toLowerCase()}></div>
-                                    <div className="card-body">
-                                        <div className="card-top">
+                                    <div className="tenant-card-body">
+                                        <div className="tenant-card-top">
                                             <span className="contract-id">{contract.id}</span>
                                             <span className={`status-tag ${contract.status === 'PENDING_TENANT' ? 'signing' : contract.status.toLowerCase()}`}>
                                                 {getStatusInfo(contract.status).label}
                                             </span>
                                         </div>
                                         <h3>{contract.property}</h3>
-                                        <div className="card-meta">
+                                        <div className="tenant-card-meta">
                                             <div className="meta-item"><Building2 size={14}/> {contract.duration}</div>
                                             <div className="meta-item"><Clock size={14}/> Starts {contract.startDate}</div>
                                         </div>
-                                        <div className="card-footer">
+                                        <div className="tenant-card-footer">
                                             <div className="price-info">
                                                 <span className="label">Monthly Rent</span>
                                                 <span className="value">${contract.amount}</span>
