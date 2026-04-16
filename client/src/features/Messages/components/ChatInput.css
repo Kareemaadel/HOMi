@@ -3,6 +3,7 @@
 .input-wrapper { 
   background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
   display: flex; align-items: center; padding: 8px 12px;
+  position: relative;
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 .input-wrapper input { 
@@ -11,8 +12,83 @@
 .input-actions { display: flex; align-items: center; gap: 15px; }
 .action-icon { color: #94a3b8; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
 .action-icon:hover { color: #2084e1; }
+
+.icon-action-btn {
+  border: none;
+  background: transparent;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.icon-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-action-menu-wrap {
+  position: relative;
+  display: flex;
+}
+
+.emoji-picker,
+.quick-actions-menu {
+  position: absolute;
+  bottom: 36px;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  z-index: 10;
+}
+
+.emoji-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px;
+  width: 170px;
+}
+
+.emoji-picker button {
+  border: none;
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.quick-actions-menu {
+  width: 240px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quick-actions-menu button {
+  border: none;
+  background: #fff;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 0.85rem;
+  padding: 8px;
+  cursor: pointer;
+  color: #1e293b;
+}
+
+.quick-actions-menu button:hover,
+.emoji-picker button:hover {
+  background: #f1f5f9;
+}
 .send-btn { 
-  background: #2084e1; color: white; border: none; padding: 10px 24px; 
+  background: #0f5ea8; color: #ffffff; border: none; padding: 10px 24px; 
   border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s;
 }
-.send-btn:hover { background: #1a6cb9; transform: translateY(-1px); }
+.send-btn:hover { background: #0b4a84; transform: translateY(-1px); }
+.send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
