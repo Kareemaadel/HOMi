@@ -7,12 +7,14 @@ import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import RentedPropertyCard from '../components/RentedPropertyCard';
 import contractService, { type LandlordContract } from '../../../services/contract.service';
+import { propertyService, type PropertyResponse } from '../../../services/property.service';
 
 const MyActives: React.FC = () => {
     // Hooks for routing and state
     const navigate = useNavigate();
 
     const [contracts, setContracts] = useState<LandlordContract[]>([]);
+    const [propertyById, setPropertyById] = useState<Record<string, PropertyResponse>>({});
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -31,6 +33,47 @@ const MyActives: React.FC = () => {
 
         void loadActiveContracts();
     }, []);
+
+    useEffect(() => {
+        const propertyIds = Array.from(
+            new Set(contracts.map((contract) => contract.property?.id).filter((id): id is string => Boolean(id)))
+        );
+
+        if (propertyIds.length === 0) {
+            setPropertyById({});
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadPropertyDetails = async () => {
+            const results = await Promise.allSettled(
+                propertyIds.map(async (propertyId) => {
+                    const response = await propertyService.getPropertyById(propertyId);
+                    return response.data;
+                })
+            );
+
+            if (cancelled) {
+                return;
+            }
+
+            const nextById: Record<string, PropertyResponse> = {};
+            for (const result of results) {
+                if (result.status === 'fulfilled') {
+                    nextById[result.value.id] = result.value;
+                }
+            }
+
+            setPropertyById(nextById);
+        };
+
+        void loadPropertyDetails();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [contracts]);
 
     const formatLeaseEnd = (contract: LandlordContract): string => {
         const start = new Date(contract.moveInDate);
@@ -55,15 +98,24 @@ const MyActives: React.FC = () => {
     };
 
     const activeRentals = useMemo(() => {
-        return contracts.map((contract) => ({
-            id: contract.id,
-            title: contract.property?.title || 'Property',
-            address: contract.property?.address || 'Address unavailable',
-            leaseEnd: formatLeaseEnd(contract),
-            status: getLeaseStatus(contract),
-            image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80',
-        }));
-    }, [contracts]);
+        return contracts.map((contract) => {
+            const propertyId = contract.property?.id ?? '';
+            const propertyDetails = propertyId ? propertyById[propertyId] : undefined;
+            const realImage =
+                propertyDetails?.images?.find((image) => image.isMain)?.imageUrl ||
+                propertyDetails?.images?.[0]?.imageUrl ||
+                null;
+
+            return {
+                id: contract.id,
+                title: propertyDetails?.title || contract.property?.title || 'Property',
+                address: propertyDetails?.address || contract.property?.address || 'Address unavailable',
+                leaseEnd: formatLeaseEnd(contract),
+                status: getLeaseStatus(contract),
+                image: realImage,
+            };
+        });
+    }, [contracts, propertyById]);
 
     const hasData = activeRentals.length > 0;
     let rentalsContent: React.ReactNode;

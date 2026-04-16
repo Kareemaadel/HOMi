@@ -13,8 +13,9 @@ interface RentalProps {
     leaseStart: string;
     leaseEnd: string;
     sqft: number;
-    image: string;
+        image: string | null;
         propertyType?: string;
+        houseRules: string[];
   };
 }
 
@@ -33,25 +34,27 @@ const DetailedRentCard: React.FC<RentalProps> = ({ rental }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const houseRules = [
-        "No smoking inside the premises",
-        "Quiet hours: 10:00 PM - 07:00 AM",
-        "Pets allowed (subject to deposit)",
-        "No unauthorized subletting",
-        "Trash collection on Tuesday mornings"
-    ];
+    const houseRules = rental.houseRules;
+    const locationBadge = rental.address.split(',')[1]?.trim() || rental.address;
 
     return (
         <div className="premium-detailed-card animate-fade-in">
             <div className="card-visual-side">
-                <img src={rental.image} alt={rental.title} className="hero-rental-img" />
+                {rental.image ? (
+                    <img src={rental.image} alt={rental.title} className="hero-rental-img" />
+                ) : (
+                    <div className="hero-rental-img placeholder-rental-img" aria-label="Property image unavailable">
+                        <FaHome />
+                        <span>No property image uploaded yet</span>
+                    </div>
+                )}
                 <div className="glass-status-tag">Active Lease</div>
             </div>
 
             <div className="card-content-side">
                 <header className="rental-header">
                     <div className="location-badge">
-                        <FaMapMarkerAlt /> {rental.address.split(',')[1] || 'Miami, FL'}
+                        <FaMapMarkerAlt /> {locationBadge}
                     </div>
                     <h2>{rental.title}</h2>
                     <p className="full-address">{rental.address}</p>
@@ -105,8 +108,8 @@ const DetailedRentCard: React.FC<RentalProps> = ({ rental }) => {
                                     <FaTimes className="close-rules" onClick={() => setShowRules(false)} />
                                 </div>
                                 <ul className="rules-list">
-                                    {houseRules.map((rule, index) => (
-                                        <li key={index}>{rule}</li>
+                                    {(houseRules.length > 0 ? houseRules : ['No house rules were provided for this property.']).map((rule) => (
+                                        <li key={rule}>{rule}</li>
                                     ))}
                                 </ul>
                             </div>

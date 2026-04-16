@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaCalendarAlt, FaChevronRight } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaChevronRight, FaHome } from 'react-icons/fa';
 import './RentedPropertyCard.css';
 
 interface RentedPropertyProps {
@@ -9,7 +9,7 @@ interface RentedPropertyProps {
     title: string;
     address: string;
     leaseEnd: string;
-    image: string;
+    image: string | null;
     status: 'Active' | 'Expiring Soon' | 'Pending Renewal';
   };
 }
@@ -22,10 +22,17 @@ const RentedPropertyCard: React.FC<RentedPropertyProps> = ({ property }) => {
   };
 
   return (
-    <div className="rented-property-card" onClick={handleDetailsClick}>
+    <button type="button" className="rented-property-card" onClick={handleDetailsClick}>
       <div className="card-image-wrapper">
-        <img src={property.image} alt={property.title} className="property-thumb" />
-        <span className={`status-badge ${property.status.toLowerCase().replace(/\s+/g, '-')}`}>
+        {property.image ? (
+          <img src={property.image} alt={property.title} className="property-thumb" />
+        ) : (
+          <div className="property-thumb property-thumb-placeholder" aria-label="Property image unavailable">
+            <FaHome />
+            <span>No image uploaded</span>
+          </div>
+        )}
+        <span className={`status-badge ${property.status.toLowerCase().replaceAll(' ', '-')}`}>
           {property.status}
         </span>
       </div>
@@ -48,7 +55,7 @@ const RentedPropertyCard: React.FC<RentedPropertyProps> = ({ property }) => {
           </button>
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 

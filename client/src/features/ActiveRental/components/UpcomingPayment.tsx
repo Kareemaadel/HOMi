@@ -1,12 +1,20 @@
 import './UpcomingPayment.css';
 import { FaArrowRight } from 'react-icons/fa';
 
-const UpcomingPayment = ({ amount, dueDate }: { amount: number, dueDate: string }) => {
+const UpcomingPayment = ({
+    amount,
+    dueDate,
+    dueInLabel,
+}: {
+    amount: number;
+    dueDate: string;
+    dueInLabel: string;
+}) => {
     return (
         <div className="payment-card">
             <div className="payment-header">
                 <h3>Upcoming Payment</h3>
-                <span className="due-tag">Due in 5 days</span>
+                <span className="due-tag">Due in {dueInLabel}</span>
             </div>
             <div className="amount-display">
                 <span className="currency">$</span>
@@ -19,13 +27,13 @@ const UpcomingPayment = ({ amount, dueDate }: { amount: number, dueDate: string 
                 </div>
                 <div className="detail-row">
                     <span>Payment Method</span>
-                    <strong>**** 4242</strong>
+                    <strong>Not available</strong>
                 </div>
             </div>
             <button className="pay-now-btn">
                 Pay Now <FaArrowRight />
             </button>
-            <p className="autopay-note">Autopay is enabled for this rental.</p>
+            <p className="autopay-note">Autopay status is not available yet.</p>
         </div>
     );
 };
