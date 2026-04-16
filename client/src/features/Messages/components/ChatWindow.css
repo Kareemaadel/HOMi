@@ -11,5 +11,45 @@
 
 .action-btn { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; color: #64748b; cursor: pointer; margin-left: 8px; }
 
-.message-history { width: 140%;flex: 1; padding: 30px; overflow-y: auto; background: #fcfdfe; }
-.date-separator { text-align: calc(100%); font-size: 0.75rem; color: #94a3b8; margin: 20px 0; font-weight: 600; }
+.header-menu-wrap {
+  position: relative;
+}
+
+.chat-header-menu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  min-width: 180px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 10;
+}
+
+.chat-header-menu button {
+  border: none;
+  background: #ffffff;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #1e293b;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chat-header-menu button:hover {
+  background: #f1f5f9;
+}
+
+.chat-header-menu button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message-history { flex: 1; padding: 30px; overflow-y: auto; background: #fcfdfe; display: flex; flex-direction: column; }
+.date-separator { text-align: center; font-size: 0.75rem; color: #94a3b8; margin: 20px 0; font-weight: 600; }

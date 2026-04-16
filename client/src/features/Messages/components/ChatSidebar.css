@@ -43,7 +43,7 @@
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #64748b;
+    color: #475569;
     font-size: 18px;
 }
 
@@ -52,14 +52,19 @@
     color: #1e293b;
 }
 
+.icon-btn.active {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
 .icon-btn.primary {
-    background: #2084e1;
+    background: #0f5ea8;
     color: white;
 }
 
 .icon-btn.primary:hover {
-    background: #1b6bb8;
-    box-shadow: 0 2px 8px rgba(32, 132, 225, 0.3);
+    background: #0b4a84;
+    box-shadow: 0 2px 8px rgba(15, 94, 168, 0.35);
 }
 
 .chat-tabs {
@@ -67,6 +72,26 @@
     gap: 0;
     margin-top: 20px;
     border-bottom: 1px solid #e2e8f0;
+}
+
+.sidebar-search-row {
+    margin-top: 12px;
+    margin-bottom: 4px;
+}
+
+.sidebar-search-row input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 0.9rem;
+    color: #1e293b;
+    outline: none;
+}
+
+.sidebar-search-row input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .tab {
@@ -101,6 +126,12 @@
     padding: 10px 0;
 }
 
+.conversation-empty {
+    padding: 24px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
 /* Custom Scrollbar for a "Mac" look */
 .conversation-list-scroll::-webkit-scrollbar {
     width: 6px;
@@ -117,6 +148,12 @@
     cursor: pointer;
     transition: all 0.2s ease;
     border-left: 4px solid transparent;
+    width: 100%;
+    text-align: left;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    background: transparent;
 }
 
 .contact-item:hover {
@@ -191,7 +228,7 @@
 }
 
 .unread-badge {
-    background: #2084e1;
+    background: #0f5ea8;
     color: white;
     font-size: 0.7rem;
     font-weight: 800;
