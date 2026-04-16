@@ -90,6 +90,12 @@ export interface ContractProperty {
     }>;
 }
 
+export interface ContractPropertySpecifications {
+    bedrooms: number;
+    bathrooms: number;
+    areaSqft: number;
+}
+
 export interface ContractMaintenanceResponsibility {
     id: string;
     area: string;
@@ -118,6 +124,7 @@ export interface LandlordContract {
     landlord?: ContractParty;
     tenant?: ContractParty;
     property?: ContractProperty;
+    propertySpecifications?: ContractPropertySpecifications | null;
     maintenanceResponsibilities?: ContractMaintenanceResponsibility[];
 }
 

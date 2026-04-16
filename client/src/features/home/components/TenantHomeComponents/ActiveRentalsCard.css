@@ -1,255 +1,234 @@
 .rental-card-premium {
   position: relative;
-  padding: 1.5rem !important;
+  padding: 1.25rem !important;
   background: #ffffff;
-  height: 316px; /* Fixed height as requested */
+  min-height: 330px;
   display: flex;
-  align-items: center;
-  box-sizing: border-box;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .rental-grid {
   display: grid;
-  grid-template-columns: 220px 1fr; /* Slightly wider image for the taller card */
-  gap: 2rem;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
   width: 100%;
-  height: 100%;
 }
 
-/* --- Media Styling --- */
 .rental-media {
   position: relative;
-  height: 100%; /* Spans the full 316px (minus padding) */
   width: 100%;
+  min-height: 260px;
 }
 
 .rental-img {
   width: 100%;
   height: 100%;
-  border-radius: 16px;
+  border-radius: 14px;
   object-fit: cover;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .rental-price-tag {
   position: absolute;
-  bottom: 12px;
   left: 12px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(10px);
-  color: white;
-  padding: 8px 14px;
-  border-radius: 10px;
-  display: flex;
+  bottom: 12px;
+  display: inline-flex;
   align-items: baseline;
-  gap: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
-.price-amt { font-weight: 800; font-size: 1.1rem; }
-.price-unit { font-size: 0.75rem; opacity: 0.7; }
+.rental-price-tag .price-amt {
+  color: #ffffff !important;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
 
-/* --- Info Section Layout --- */
+.rental-price-tag .price-unit {
+  color: #f1f5f9 !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .rental-info {
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* This is key for the 316px height */
-  height: 100%;
-  padding: 0.5rem 0;
 }
 
 .rental-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin-bottom: 12px;
 }
 
 .rental-title {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: #0f172a;
-  margin: 0 0 6px 0;
+  margin: 0;
   letter-spacing: -0.02em;
 }
 
 .rental-address {
-  font-size: 0.9rem;
-  color: #64748b;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-right: 35px;
+  color: #64748b;
+  font-size: 1rem;
 }
 
-.icon-subtle { color: #3b82f6; }
+.icon-subtle {
+  color: #3b82f6;
+}
 
-/* --- Lease Progress --- */
 .lease-section {
-  margin: 1.5rem 0;
+  margin-top: 8px;
+  margin-bottom: 14px;
   background: #f8fafc;
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
 }
 
 .lease-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
-  font-size: 0.85rem;
-  font-weight: 700;
 }
 
-.lease-label { display: flex; align-items: center; gap: 8px; color: #1e293b; }
-.lease-remaining { color: #3b82f6; }
+.lease-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.lease-remaining {
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+}
 
 .progress-track {
-  height: 10px;
-  background: #e2e8f0;
-  border-radius: 20px;
-  overflow: hidden;
   flex: 1;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  border-radius: 20px;
-  position: relative;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
 }
 
-.progress-pct { font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-left: 12px;}
+.progress-pct {
+  margin-left: 10px;
+  font-weight: 800;
+  color: #0f172a;
+}
 
-/* --- Specs Row (Bottom Anchored) --- */
-.specs-row {
+.rental-footer {
+  margin-top: auto;
   display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: 12px;
 }
 
-.spec-tag {
+.specs-row {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.spec-tag {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  padding: 10px 14px;
+  color: #1e293b;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #334155;
-  transition: all 0.2s ease;
 }
 
-.spec-tag:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
-  background: #eff6ff;
+.spec-icon {
+  color: #64748b;
 }
 
-.spec-icon { font-size: 1rem; opacity: 0.8; }
-
-/* --- Manage Button --- */
 .btn-manage-circle {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
+  border: none;
   border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #0f172a;
+  background: #0f172a;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.24);
+  flex-shrink: 0;
 }
 
 .btn-manage-circle:hover {
-  background: #0f172a;
-  color: white;
-  transform: rotate(-45deg);
+  background: #1d4ed8;
 }
 
-/* --- Status Ribbon --- */
 .ribbon-wrapper {
   position: absolute;
-  top: 0; right: 0;
-  width: 120px; height: 120px;
+  top: 0;
+  right: 0;
+  width: 180px;
+  height: 180px;
   overflow: hidden;
   pointer-events: none;
 }
 
 .ribbon-text {
   position: absolute;
-  top: 20px; right: -30px;
-  width: 150px;
-  background: #3b82f6;
-  color: white;
+  top: 34px;
+  right: -40px;
+  width: 200px;
   text-align: center;
-  padding: 4px 0;
-  font-size: 0.6rem;
-  font-weight: 900;
-  text-transform: uppercase;
   transform: rotate(45deg);
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 0;
 }
 
-/* ... Keep previous rental-card-premium and rental-grid styles ... */
+@media (max-width: 1200px) {
+  .rental-grid {
+    grid-template-columns: 1fr;
+  }
 
-.rental-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  padding: 0.25rem 0; /* Tightened padding for better fit */
+  .rental-media {
+    min-height: 200px;
+  }
+
+  .rental-title {
+    font-size: 1.5rem;
+  }
 }
-
-/* Footer Container to hold Specs and the Button */
-.rental-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end; /* Aligns button to bottom-right */
-  margin-top: auto;
-}
-
-.specs-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  max-width: 80%; /* Ensures specs don't crash into the button */
-}
-
-.btn-manage-circle {
-  width: 48px; /* Slightly larger for better click target at bottom */
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: #0f172a; /* Darker background for more "Action" emphasis */
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-  flex-shrink: 0; /* Prevents button from squishing */
-}
-
-.btn-manage-circle:hover {
-  background: #3b82f6;
-  transform: scale(1.1) translateX(4px);
-  box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
-}
-
-.btn-manage-circle:active {
-  transform: scale(0.95);
-}
-
-.lease-section {
-  margin: 1.25rem 0;
-  background: #f8fafc;
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
-}
-

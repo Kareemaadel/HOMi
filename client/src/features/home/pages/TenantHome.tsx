@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Home, ShieldCheck, UserCircle, Handshake, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './TenantHome.css';
@@ -10,20 +10,112 @@ import Footer from '../../../components/global/footer';
 
 // Dashboard Widgets
 import ActiveRentalsCard from '../components/TenantHomeComponents/ActiveRentalsCard';
-import UpcomingPayments from '../components/TenantHomeComponents/UpcomingPayments';
+import { UpcomingPayments } from '../components/TenantHomeComponents/UpcomingPayments';
 import MaintenanceRequests from '../components/TenantHomeComponents/MaintenanceRequests';
 import Notifications from '../components/TenantHomeComponents/Notifications';
 import RewardsSummary from '../components/TenantHomeComponents/RewardsSummary';
 import { authService } from '../../../services/auth.service';
+import contractService from '../../../services/contract.service';
+import type { LandlordContract } from '../../../services/contract.service';
+import { propertyService, type PropertyResponse } from '../../../services/property.service';
 
 const TenantHome: React.FC = () => {
-  // TODO: Replace this with actual API data
-  const [hasActiveRentals, setHasActiveRentals] = useState<boolean>(false); 
+  const [hasActiveRentals, setHasActiveRentals] = useState<boolean>(false);
+  const [isCheckingContracts, setIsCheckingContracts] = useState<boolean>(true);
+  const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
+  const [activePropertyDetails, setActivePropertyDetails] = useState<PropertyResponse | null>(null);
   const navigate = useNavigate(); 
   const firstName = authService.getCurrentUser()?.profile?.firstName?.trim() || 'there';
 
   const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
+  let greeting = 'Good Evening';
+  if (currentHour < 12) {
+    greeting = 'Good Morning';
+  } else if (currentHour < 18) {
+    greeting = 'Good Afternoon';
+  }
+
+  useEffect(() => {
+    const loadActiveContracts = async () => {
+      setIsCheckingContracts(true);
+      try {
+        const response = await contractService.getTenantContracts({ page: 1, limit: 50 });
+        const contracts = response.data ?? [];
+        const activeContracts = contracts.filter((contract) => contract.status === 'ACTIVE');
+        setTenantContracts(contracts);
+        setHasActiveRentals(activeContracts.length > 0);
+      } catch {
+        setTenantContracts([]);
+        setHasActiveRentals(false);
+      } finally {
+        setIsCheckingContracts(false);
+      }
+    };
+
+    void loadActiveContracts();
+  }, []);
+
+  const activeContract = useMemo(
+    () => tenantContracts.find((contract) => contract.status === 'ACTIVE') ?? null,
+    [tenantContracts]
+  );
+
+  useEffect(() => {
+    const propertyId = activeContract?.property?.id;
+    if (!propertyId) {
+      setActivePropertyDetails(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPropertyDetails = async () => {
+      try {
+        const response = await propertyService.getPropertyById(propertyId);
+        if (!cancelled) {
+          setActivePropertyDetails(response.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setActivePropertyDetails(null);
+        }
+      }
+    };
+
+    void loadPropertyDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeContract?.property?.id]);
+
+  const openPaymentContractsCount = useMemo(
+    () => tenantContracts.filter((contract) => contract.status === 'PENDING_PAYMENT').length,
+    [tenantContracts]
+  );
+
+  const maintenanceAreasCount = activeContract?.maintenanceResponsibilities?.length ?? 0;
+
+  let activeSummaryText = `Your lease dashboard is up to date with ${maintenanceAreasCount} maintenance area${maintenanceAreasCount === 1 ? '' : 's'} configured.`;
+  if (openPaymentContractsCount > 0) {
+    const paymentLabel = `payment${openPaymentContractsCount > 1 ? 's' : ''}`;
+    const areaLabel = `area${maintenanceAreasCount === 1 ? '' : 's'}`;
+    activeSummaryText = `You have ${openPaymentContractsCount} pending ${paymentLabel} and ${maintenanceAreasCount} maintenance ${areaLabel} in your lease.`;
+  }
+
+  if (isCheckingContracts) {
+    return (
+      <div className="tenant-dashboard-root">
+        <Sidebar />
+        <div className="main-wrapper">
+          <Header />
+          <main className="content-area" style={{ display: 'grid', placeItems: 'center' }}>
+            <p style={{ color: '#64748b', fontWeight: 600 }}>Loading your dashboard...</p>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="tenant-dashboard-root">
@@ -37,7 +129,7 @@ const TenantHome: React.FC = () => {
             <div className="welcome-text">
               <h1>{greeting}, <span className="highlight">{firstName}!</span></h1>
               {hasActiveRentals ? (
-                <p>You have 2 payments due this week and 1 active maintenance request.</p>
+                <p>{activeSummaryText}</p>
               ) : (
                 <p>Welcome to your new dashboard. Let's get you into your dream home!</p>
               )}
@@ -45,21 +137,21 @@ const TenantHome: React.FC = () => {
           </header>
 
           {hasActiveRentals ? (
-            <div className="dashboard-grid">
-              <section className="grid-col-2">
-                <ActiveRentalsCard />
+            <div className="dashboard-grid active-dashboard-grid">
+              <section className="grid-col-2 active-home-card-slot">
+                <ActiveRentalsCard contract={activeContract} propertyDetails={activePropertyDetails} />
+              </section>
+              <section className="grid-col-1 active-payment-card-slot">
+                <UpcomingPayments contract={activeContract} />
               </section>
               <section className="grid-col-1">
-                <UpcomingPayments />
+                <Notifications contracts={tenantContracts} />
               </section>
               <section className="grid-col-1">
-                <Notifications />
+                <MaintenanceRequests contract={activeContract} />
               </section>
               <section className="grid-col-1">
-                <MaintenanceRequests />
-              </section>
-              <section className="grid-col-1">
-                <RewardsSummary />
+                <RewardsSummary contracts={tenantContracts} />
               </section>
             </div>
           ) : (
@@ -142,7 +234,7 @@ const TenantHome: React.FC = () => {
 
                 <section className="grid-col-1">
                   <h3 className="section-subtitle" style={{ marginBottom: '1.25rem' }}>Your Updates</h3>
-                  <Notifications />
+                  <Notifications contracts={tenantContracts} />
                 </section>
 
               </div>

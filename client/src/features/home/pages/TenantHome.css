@@ -67,6 +67,22 @@
   align-items: start;
 }
 
+.active-dashboard-grid {
+  align-items: stretch;
+}
+
+.active-home-card-slot,
+.active-payment-card-slot {
+  display: flex;
+}
+
+.active-home-card-slot .rental-card-premium,
+.active-payment-card-slot .payment-premium-card {
+  width: 100%;
+  height: 100%;
+  min-height: 330px;
+}
+
 .dashboard-grid > * {
   min-width: 0;
 }

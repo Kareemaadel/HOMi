@@ -82,6 +82,11 @@ interface GetPropertiesApiResponse {
     };
 }
 
+interface GetPropertyByIdApiResponse {
+    success: boolean;
+    data: PropertyResponse;
+}
+
 export interface CreatePropertyPayload {
     title: string;
     description: string;
@@ -133,6 +138,11 @@ class PropertyService {
 
     async createProperty(payload: CreatePropertyPayload): Promise<PropertyMutationResponse> {
         const response = await apiClient.post<PropertyMutationResponse>('/properties', payload);
+        return response.data;
+    }
+
+    async getPropertyById(propertyId: string): Promise<GetPropertyByIdApiResponse> {
+        const response = await apiClient.get<GetPropertyByIdApiResponse>(`/properties/${propertyId}`);
         return response.data;
     }
 

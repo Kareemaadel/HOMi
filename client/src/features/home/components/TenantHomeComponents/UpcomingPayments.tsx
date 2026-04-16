@@ -1,20 +1,49 @@
 import React from 'react';
 import { FaCreditCard, FaCalendarAlt, FaChevronRight, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import type { LandlordContract, RentDueDate } from '../../../../services/contract.service';
 import './UpcomingPayments.css';
 
-interface PaymentProps {
-  amount?: number;
-  dueDate?: string;
-  isAutopay?: boolean;
-  lastFour?: string;
+interface UpcomingPaymentsProps {
+  contract: LandlordContract | null;
 }
 
-const UpcomingPayments: React.FC<PaymentProps> = ({ 
-  amount = 1450.00, 
-  dueDate = "3 days", 
-  isAutopay = false, 
-  lastFour = "4242" 
-}) => {
+const getDueDayFromContract = (rentDueDate: RentDueDate | null): number => {
+  if (rentDueDate === '1ST_OF_MONTH') return 1;
+  if (rentDueDate === '5TH_OF_MONTH') return 5;
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+};
+
+const getDueInLabel = (rentDueDate: RentDueDate | null): string => {
+  const dueDay = getDueDayFromContract(rentDueDate);
+  const now = new Date();
+  const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+
+  if (dueDate < now) {
+    dueDate.setMonth(dueDate.getMonth() + 1);
+  }
+
+  const diffDays = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  return `${diffDays} day${diffDays === 1 ? '' : 's'}`;
+};
+
+const getPeriodLabel = (): string => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+};
+
+export const UpcomingPayments: React.FC<UpcomingPaymentsProps> = ({ contract }) => {
+  const navigate = useNavigate();
+
+  const amount = Number(contract?.rentAmount ?? contract?.property?.monthlyPrice ?? 0);
+  const dueDate = getDueInLabel(contract?.rentDueDate ?? null);
+  const isAutopay = false;
+  const hasLinkedMethod = false;
+
   return (
     <div className="card-base payment-premium-card">
       <div className="payment-main-content">
@@ -33,7 +62,7 @@ const UpcomingPayments: React.FC<PaymentProps> = ({
             <span className="amount-fraction">.00</span>
           </div>
           <p className="billing-label">
-            <FaCalendarAlt className="icon-subtle" /> Period: April 1 - April 30
+            <FaCalendarAlt className="icon-subtle" /> Period: {getPeriodLabel()}
           </p>
         </div>
 
@@ -42,7 +71,7 @@ const UpcomingPayments: React.FC<PaymentProps> = ({
             <span className="meta-label">Method</span>
             <div className="meta-value">
               <FaCreditCard className="card-icon" /> 
-              <span>•••• {lastFour}</span>
+              <span>{hasLinkedMethod ? 'Card on file' : 'Not connected'}</span>
             </div>
           </div>
           <div className="meta-item">
@@ -53,17 +82,17 @@ const UpcomingPayments: React.FC<PaymentProps> = ({
             </div>
           </div>
         </footer>
-      </div>
 
-      <button className="payment-side-action" aria-label="Process payment">
-        <div className="action-top">
+        <button
+          className="payment-action-inline"
+          aria-label="Process payment"
+          onClick={() => navigate('/tenant-payment')}
+        >
           <FaCreditCard className="pay-icon" />
-        </div>
-        <span className="action-text">Pay Now</span>
-        <div className="action-bottom">
+          <span>Pay Now</span>
           <FaChevronRight className="arrow-icon" />
-        </div>
-      </button>
+        </button>
+      </div>
     </div>
   );
 };

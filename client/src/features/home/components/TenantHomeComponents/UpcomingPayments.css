@@ -1,22 +1,19 @@
 .payment-premium-card {
   display: flex;
-  padding: 0 !important;
-  border-radius: 20px !important;
-  background: white;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-  height: 320px;
+  min-height: 330px;
+  border-radius: 18px !important;
+  background: #ffffff;
+  box-shadow: 0 10px 25px -8px rgba(15, 23, 42, 0.12);
 }
 
 .payment-main-content {
-  flex: 1;
-  padding: 1.75rem;
+  width: 100%;
+  padding: 1.3rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 1rem;
 }
 
-/* Header & Status */
 .payment-header {
   display: flex;
   justify-content: space-between;
@@ -24,14 +21,12 @@
 }
 
 .type-badge {
-  background: #f8fafc;
-  color: #64748b;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  border: 1px solid #f1f5f9;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .due-status-indicator {
@@ -39,22 +34,13 @@
   align-items: center;
   gap: 8px;
   color: #e11d48;
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 800;
 }
 
-.pulse-icon {
-  animation: pulse-ring 2s infinite;
+.amount-display {
+  margin-top: 0.25rem;
 }
-
-@keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.2); opacity: 0.5; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* Amount Section */
-.amount-display { margin: 1.5rem 0; }
 
 .amount-main {
   display: flex;
@@ -62,66 +48,93 @@
   color: #0f172a;
 }
 
-.currency-symbol { font-size: 1.5rem; font-weight: 600; margin-right: 4px; }
-.amount-value { font-size: 3rem; font-weight: 900; letter-spacing: -0.05em; }
-.amount-fraction { font-size: 1.5rem; font-weight: 600; opacity: 0.4; }
+.currency-symbol {
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.amount-value {
+  font-size: 3.3rem;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.amount-fraction {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
 
 .billing-label {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.payment-meta-footer {
+  display: flex;
+  gap: 26px;
+  padding-top: 14px;
+  border-top: 1px dashed #dbe3ee;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.meta-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  margin-top: 4px;
 }
 
-/* Footer Meta */
-.payment-meta-footer {
-  display: flex;
-  gap: 32px;
-  padding-top: 1.25rem;
-  border-top: 1px dashed #e2e8f0;
+.autopay-status.inactive {
+  color: #d97706;
 }
 
-.meta-item { display: flex; flex-direction: column; gap: 4px; }
-.meta-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
-.meta-value { font-size: 0.85rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+.autopay-status.active {
+  color: #059669;
+}
 
-.autopay-status.inactive { color: #f59e0b; }
-.autopay-status.active { color: #10b981; }
-
-/* Sidebar Button */
-.payment-side-action {
-  width: 80px;
-  background: #0f172a;
+.payment-action-inline {
+  margin-top: auto;
+  width: 100%;
   border: none;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 1.5rem 0;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.action-text {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  text-transform: uppercase;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.95rem;
   font-weight: 800;
-  font-size: 0.8rem;
-  letter-spacing: 2px;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
 }
 
-.pay-icon { font-size: 1.2rem; }
-.arrow-icon { font-size: 1rem; opacity: 0.4; transition: transform 0.3s; }
-
-.payment-side-action:hover {
-  width: 100px;
-  background: #3b82f6;
+.payment-action-inline:hover {
+  background: #1d4ed8;
 }
 
-.payment-side-action:hover .arrow-icon {
-  opacity: 1;
-  transform: translateY(5px);
+.pay-icon,
+.arrow-icon {
+  font-size: 0.9rem;
 }
