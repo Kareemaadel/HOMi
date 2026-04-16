@@ -11,6 +11,7 @@ import { RentalRequestError } from './modules/rental-requests/services/rental-re
 import { ContractError } from './modules/contracts/services/contract.service.js';
 import { PaymentMethodError } from './modules/payment-methods/services/payment-method.service.js';
 import { SavedPropertiesError } from './modules/saved-properties/services/saved-properties.service.js';
+import { MessageError } from './modules/messages/services/message.service.js';
 
 // Import routes
 import authRoutes from './modules/auth/routes/auth.routes.js';
@@ -19,6 +20,7 @@ import rentalRequestRoutes from './modules/rental-requests/routes/rental-request
 import contractRoutes from './modules/contracts/routes/contract.routes.js';
 import paymentMethodRoutes from './modules/payment-methods/routes/payment-method.routes.js';
 import savedPropertiesRoutes from './modules/saved-properties/routes/saved-properties.routes.js';
+import messageRoutes from './modules/messages/routes/message.routes.js';
 
 // Import models to register them
 import './modules/auth/models/index.js';
@@ -27,6 +29,7 @@ import './modules/rental-requests/models/index.js';
 import './modules/contracts/models/index.js';
 import './modules/payment-methods/models/index.js';
 import './modules/saved-properties/models/index.js';
+import './modules/messages/models/index.js';
 
 // Create Express app
 const app = express();
@@ -97,6 +100,7 @@ app.use('/api/rental-requests', rentalRequestRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/payment-methods', paymentMethodRoutes);
 app.use('/api/saved-properties', savedPropertiesRoutes);
+app.use('/api/messages', messageRoutes);
 
 // ======================
 // 404 Handler
@@ -174,6 +178,15 @@ app.use((
     }
 
     if (err instanceof SavedPropertiesError) {
+        res.status(err.statusCode).json({
+            success: false,
+            message: err.message,
+            code: err.code,
+        });
+        return;
+    }
+
+    if (err instanceof MessageError) {
         res.status(err.statusCode).json({
             success: false,
             message: err.message,

@@ -1,23 +1,24 @@
+import { createServer } from 'node:http';
 import { env } from './config/env.js';
 import { testConnection, syncDatabase } from './config/database.js';
 import { seedAmenities } from './seeds/amenities.seed.js';
 import { seedHouseRules } from './seeds/house_rules.seed.js';
 import { seedHabits } from './seeds/habits.seed.js';
 import app from './app.js';
+import { initSocketServer } from './shared/realtime/socket.js';
 
-// ======================
-// Start Server
-// ======================
-async function startServer(): Promise<void> {
-    try {
-        await testConnection();
-        await syncDatabase(false);
-        await seedAmenities();
-        await seedHouseRules();
-        await seedHabits();
+try {
+    await testConnection();
+    await syncDatabase(false);
+    await seedAmenities();
+    await seedHouseRules();
+    await seedHabits();
 
-        app.listen(env.PORT, () => {
-            console.log(`
+    const httpServer = createServer(app);
+    initSocketServer(httpServer);
+
+    httpServer.listen(env.PORT, () => {
+        console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
 ║   🏠 HOMi API Server                                       ║
@@ -29,13 +30,10 @@ async function startServer(): Promise<void> {
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
       `);
-        });
-    } catch (error) {
-        console.error('❌ Failed to start server:', error);
-        process.exit(1);
-    }
+    });
+} catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
 }
-
-startServer();
 
 export default app;
