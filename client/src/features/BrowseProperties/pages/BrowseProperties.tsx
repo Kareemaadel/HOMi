@@ -12,6 +12,7 @@ import savedPropertiesService from '../../../services/saved-properties.service';
 
 interface BrowsePropertyUI {
     id: string;
+    ownerId: string;
     title: string;
     address: string;
     price: number;
@@ -65,6 +66,7 @@ const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
 
     return {
         id: property.id,
+        ownerId: property.landlordId,
         title: property.title,
         address: property.address,
         price: property.monthlyPrice,

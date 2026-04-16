@@ -1,6 +1,7 @@
 // client/src/features/BrowseProperties/components/PropertyDetailModal.tsx
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { 
     FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaTimes, 
@@ -12,13 +13,16 @@ import {
 } from 'react-icons/fa';
 import ApplicationModal from './ApplicationModal';
 import AuthModal from '../../../components/global/AuthModal';
+import { messageService } from '../../../services/message.service';
 import './PropertyDetailedModal.css';
 
 const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequestView = false, onCancelRequest }: any) => {
+    const navigate = useNavigate();
     const [showApplication, setShowApplication] = useState(false);
     const [showGallery, setShowGallery] = useState(false);
     const [currentImgIdx, setCurrentImgIdx] = useState(0);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [isStartingChat, setIsStartingChat] = useState(false);
     
     // Cancel Request States
     const [showCancelPrompt, setShowCancelPrompt] = useState(false);
@@ -73,6 +77,48 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                 error?.message ||
                 'Could not cancel this request right now. Please try again.';
             setCancelError(message);
+        }
+    };
+
+    const handleMessageOwner = async () => {
+        if (isGuest) {
+            setShowAuthModal(true);
+            return;
+        }
+
+        const participantId = property?.ownerId;
+        if (!participantId) {
+            navigate('/messages');
+            onClose();
+            return;
+        }
+
+        setIsStartingChat(true);
+        try {
+            const response = await messageService.startConversation({
+                participantId,
+                propertyId: property?.id,
+            });
+
+            navigate('/messages', {
+                state: {
+                    conversationId: response.data.id,
+                    participantId,
+                    propertyId: property?.id,
+                },
+            });
+            onClose();
+        } catch (error) {
+            console.error('Failed to start conversation from property detail:', error);
+            navigate('/messages', {
+                state: {
+                    participantId,
+                    propertyId: property?.id,
+                },
+            });
+            onClose();
+        } finally {
+            setIsStartingChat(false);
         }
     };
 
@@ -277,9 +323,15 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                                     <span className="name">{property.ownerName || 'Owner'}</span>
                                     <span className="role">Verified Owner • 4.9★</span>
                                 </div>
-                                <button className="chat-btn" onClick={() => {
-                                    if (isGuest) setShowAuthModal(true);
-                                }}><FaComment /></button>
+                                <button
+                                    type="button"
+                                    className="chat-btn"
+                                    onClick={handleMessageOwner}
+                                    aria-label="Message owner"
+                                    disabled={isStartingChat}
+                                >
+                                    <FaComment />
+                                </button>
                             </div>
 
                             <div className="secondary-actions">
