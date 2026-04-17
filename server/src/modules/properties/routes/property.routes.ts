@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { propertyController } from '../controllers/property.controller.js';
 import { validate, validateQuery } from '../../../shared/middleware/validate.middleware.js';
-import { protect, requireVerified } from '../../../shared/middleware/auth.middleware.js';
+import { protect, requireVerified, restrictTo } from '../../../shared/middleware/auth.middleware.js';
 import {
     CreatePropertySchema,
     UpdatePropertySchema,
@@ -542,6 +542,14 @@ router.delete(
     '/:id',
     protect,
     propertyController.deleteProperty.bind(propertyController)
+);
+
+router.post(
+    '/:id/report',
+    protect,
+    requireVerified,
+    restrictTo('TENANT'),
+    propertyController.reportProperty.bind(propertyController)
 );
 
 export default router;

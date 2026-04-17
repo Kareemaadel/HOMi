@@ -37,6 +37,33 @@ export interface PendingApprovalProperty {
     }>;
 }
 
+export interface ListingReport {
+    id: string;
+    reason: 'SCAM_OR_FRAUD' | 'MISLEADING_INFORMATION' | 'FAKE_PHOTOS' | 'DUPLICATE_LISTING' | 'OFFENSIVE_CONTENT' | 'UNAVAILABLE_OR_ALREADY_RENTED' | 'OTHER';
+    details: string;
+    status: 'OPEN' | 'REVIEWED' | 'ACTIONED';
+    createdAt: string;
+    property: {
+        id: string;
+        title: string;
+        address: string;
+        monthlyPrice: number;
+        thumbnailUrl: string | null;
+        landlord: {
+            id: string;
+            email: string;
+            firstName?: string;
+            lastName?: string;
+        } | null;
+    };
+    reporter: {
+        id: string;
+        email: string;
+        firstName?: string;
+        lastName?: string;
+    } | null;
+}
+
 class AdminService {
     async getDashboardStats() {
         const response = await apiClient.get<{ success: boolean; data: AdminStatsResponse }>('/admin/dashboard/stats');
@@ -50,6 +77,18 @@ class AdminService {
 
     async verifyProperty(id: string, payload: VerifyPropertyRequest) {
         const response = await apiClient.patch<{ success: boolean; message: string; data: PropertyResponse }>(`/admin/properties/${id}/verify`, payload);
+        return response.data;
+    }
+
+    async getListingReports() {
+        const response = await apiClient.get<{ success: boolean; data: ListingReport[] }>('/admin/reports/listings');
+        return response.data.data;
+    }
+
+    async removeListingFromReport(reportId: string) {
+        const response = await apiClient.delete<{ success: boolean; message: string; data: { reportId: string; propertyId: string } }>(
+            `/admin/reports/${reportId}/remove-listing`
+        );
         return response.data;
     }
 }

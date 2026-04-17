@@ -8,6 +8,9 @@ import {
     PropertyDetailedLocation,
     HouseRule,
     PropertyOwnershipDoc,
+    PropertyReport,
+    PropertyReportReason,
+    PropertyReportStatus,
     sequelize,
 } from '../models/index.js';
 import { User } from '../../auth/models/User.js';
@@ -46,6 +49,61 @@ export class PropertyError extends Error {
  * Handles all property business logic
  */
 class PropertyService {
+    async reportProperty(
+        propertyId: string,
+        reporterId: string,
+        payload: { reason: string; details: string }
+    ): Promise<{ id: string; status: string; message: string }> {
+        const property = await Property.findByPk(propertyId);
+        if (!property) {
+            throw new PropertyError('Property not found', 404, 'PROPERTY_NOT_FOUND');
+        }
+
+        if (property.status !== PropertyStatus.AVAILABLE) {
+            throw new PropertyError('Only available listings can be reported', 400, 'INVALID_PROPERTY_STATUS');
+        }
+
+        if (property.landlord_id === reporterId) {
+            throw new PropertyError('You cannot report your own listing', 400, 'SELF_REPORT_NOT_ALLOWED');
+        }
+
+        const validReasons = Object.values(PropertyReportReason);
+        if (!validReasons.includes(payload.reason as any)) {
+            throw new PropertyError('Invalid report reason', 400, 'INVALID_REPORT_REASON');
+        }
+
+        const details = payload.details.trim();
+        if (details.length < 30) {
+            throw new PropertyError('Please provide at least 30 characters describing the issue', 400, 'REPORT_DETAILS_TOO_SHORT');
+        }
+
+        const existingOpenReport = await PropertyReport.findOne({
+            where: {
+                property_id: propertyId,
+                reporter_id: reporterId,
+                status: PropertyReportStatus.OPEN,
+            },
+        });
+
+        if (existingOpenReport) {
+            throw new PropertyError('You already have an open report for this listing', 409, 'DUPLICATE_OPEN_REPORT');
+        }
+
+        const created = await PropertyReport.create({
+            property_id: propertyId,
+            reporter_id: reporterId,
+            reason: payload.reason as any,
+            details,
+            status: PropertyReportStatus.OPEN,
+        });
+
+        return {
+            id: created.id,
+            status: created.status,
+            message: 'Your report has been submitted and sent to admin moderation.',
+        };
+    }
+
     /**
      * Resolve amenity names → verified Amenity records.
      * Throws if any name does not exist in the database.

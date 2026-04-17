@@ -397,5 +397,7 @@ router.get('/properties/pending', adminController.getPendingProperties.bind(admi
  *               code: "PROPERTY_NOT_FOUND"
  */
 router.patch('/properties/:id/verify', adminController.verifyProperty.bind(adminController));
+router.get('/reports/listings', adminController.getListingReports.bind(adminController));
+router.delete('/reports/:reportId/remove-listing', adminController.removeReportedListing.bind(adminController));
 
 export default router;

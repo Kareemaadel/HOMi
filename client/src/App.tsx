@@ -29,6 +29,7 @@ import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
 import AdminLogin from "./features/admin/pages/AdminLogin";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
 import AdminPropertyApprovals from "./features/admin/pages/AdminPropertyApprovals";
+import AdminUserReports from "./features/admin/pages/AdminUserReports";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -107,6 +108,7 @@ function App() {
         <Route path="/admin/auth/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AuthGuard allowedRoles={['ADMIN']}><AdminDashboard /></AuthGuard>} />
         <Route path="/admin/property-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminPropertyApprovals /></AuthGuard>} />
+        <Route path="/admin/user-reports" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserReports /></AuthGuard>} />
 
         {/* Auth Routes — public */}
         <Route path="/auth"             element={<AuthPage />} />

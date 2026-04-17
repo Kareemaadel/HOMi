@@ -109,6 +109,34 @@ class AdminController {
             next(error);
         }
     }
+
+    async getListingReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const reports = await adminService.getListingReports();
+            res.status(200).json({
+                success: true,
+                data: reports,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async removeReportedListing(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { reportId } = req.params;
+            const adminId = (req as any).user.userId;
+            const result = await adminService.removeListingFromReport(reportId as string, adminId);
+
+            res.status(200).json({
+                success: true,
+                message: 'Reported listing removed successfully.',
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export const adminController = new AdminController();

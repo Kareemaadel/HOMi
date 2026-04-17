@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { FiUsers, FiHome, FiCheckCircle, FiFileText, FiLogOut, FiTrendingUp, FiBarChart2 } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import { FiUsers, FiHome, FiCheckCircle, FiFileText, FiLogOut, FiTrendingUp, FiBarChart2, FiAlertTriangle } from 'react-icons/fi';
 import { useNavigate, NavLink } from 'react-router-dom';
 import adminService from '../../../services/admin.service';
 import type { AdminStatsResponse } from '../../../services/admin.service';
@@ -104,6 +104,18 @@ const AdminDashboard = () => {
                             }
                         >
                             <FiFileText /> <span>Property Approvals</span>
+                        </NavLink>
+                        <NavLink
+                            to="/admin/user-reports"
+                            className={({ isActive }) =>
+                                `flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                                    isActive
+                                        ? 'border-sky-400/40 bg-sky-500/20 text-white shadow-[0_0_0_1px_rgba(56,189,248,0.2)]'
+                                        : 'border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white'
+                                }`
+                            }
+                        >
+                            <FiAlertTriangle /> <span>User Reports</span>
                         </NavLink>
                     </nav>
                     <div className="mt-auto border-t border-white/10 p-4">

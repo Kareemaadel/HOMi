@@ -138,6 +138,18 @@ interface PropertyMutationResponse {
     data: PropertyResponse;
 }
 
+export interface ReportListingPayload {
+    reason:
+        | 'SCAM_OR_FRAUD'
+        | 'MISLEADING_INFORMATION'
+        | 'FAKE_PHOTOS'
+        | 'DUPLICATE_LISTING'
+        | 'OFFENSIVE_CONTENT'
+        | 'UNAVAILABLE_OR_ALREADY_RENTED'
+        | 'OTHER';
+    details: string;
+}
+
 class PropertyService {
     async getAllProperties(params?: PropertyQueryParams): Promise<GetPropertiesApiResponse> {
         const response = await apiClient.get<GetPropertiesApiResponse>('/properties', { params });
@@ -163,6 +175,14 @@ class PropertyService {
 
     async updateProperty(propertyId: string, payload: any): Promise<PropertyMutationResponse> {
         const response = await apiClient.put<PropertyMutationResponse>(`/properties/${propertyId}`, payload);
+        return response.data;
+    }
+
+    async reportProperty(propertyId: string, payload: ReportListingPayload): Promise<{ success: boolean; message: string; data: { id: string; status: string } }> {
+        const response = await apiClient.post<{ success: boolean; message: string; data: { id: string; status: string } }>(
+            `/properties/${propertyId}/report`,
+            payload
+        );
         return response.data;
     }
 }

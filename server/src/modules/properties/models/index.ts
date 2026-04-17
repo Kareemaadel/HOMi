@@ -19,6 +19,7 @@ import { PropertyDetailedLocation } from './PropertyDetailedLocation.js';
 import { HouseRule } from './HouseRule.js';
 import { PropertyHouseRule } from './PropertyHouseRule.js';
 import { PropertyOwnershipDoc } from './PropertyOwnershipDoc.js';
+import { PropertyReport, PropertyReportReason, PropertyReportStatus } from './PropertyReport.js';
 
 // ─── Associations ─────────────────────────────────────────────────────────────
 
@@ -120,6 +121,42 @@ HouseRule.belongsToMany(Property, {
     as: 'properties',
 });
 
+// Property has many reports submitted by tenants
+Property.hasMany(PropertyReport, {
+    foreignKey: 'property_id',
+    as: 'reports',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// PropertyReport belongs to Property
+PropertyReport.belongsTo(Property, {
+    foreignKey: 'property_id',
+    as: 'property',
+});
+
+// PropertyReport belongs to reporter (User)
+PropertyReport.belongsTo(User, {
+    foreignKey: 'reporter_id',
+    as: 'reporter',
+});
+
+User.hasMany(PropertyReport, {
+    foreignKey: 'reporter_id',
+    as: 'submittedPropertyReports',
+});
+
+// PropertyReport can be reviewed/actioned by an admin (User)
+PropertyReport.belongsTo(User, {
+    foreignKey: 'reviewed_by_admin_id',
+    as: 'reviewedBy',
+});
+
+User.hasMany(PropertyReport, {
+    foreignKey: 'reviewed_by_admin_id',
+    as: 'reviewedPropertyReports',
+});
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 export {
@@ -137,6 +174,9 @@ export {
     HouseRule,
     PropertyHouseRule,
     PropertyOwnershipDoc,
+    PropertyReport,
+    PropertyReportReason,
+    PropertyReportStatus,
 };
 
 export type { PropertyStatusType, FurnishingStatusType, PropertyTypeType, TargetTenantType };
@@ -152,4 +192,7 @@ export default {
     HouseRule,
     PropertyHouseRule,
     PropertyOwnershipDoc,
+    PropertyReport,
+    PropertyReportReason,
+    PropertyReportStatus,
 };
