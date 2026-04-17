@@ -106,6 +106,12 @@ export interface AdminManagedUser {
     resetTokenExpires: Date | null;
     emailVerificationTokenHash: string | null;
     emailVerificationTokenExpires: Date | null;
+    isBanned: boolean;
+    banReason: string | null;
+    banMessage: string | null;
+    banUntil: Date | null;
+    bannedByAdminId: string | null;
+    banCreatedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;

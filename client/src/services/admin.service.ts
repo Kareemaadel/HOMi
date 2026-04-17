@@ -125,6 +125,12 @@ export interface AdminManagedUser {
     resetTokenExpires: string | null;
     emailVerificationTokenHash: string | null;
     emailVerificationTokenExpires: string | null;
+    isBanned: boolean;
+    banReason: string | null;
+    banMessage: string | null;
+    banUntil: string | null;
+    bannedByAdminId: string | null;
+    banCreatedAt: string | null;
     createdAt: string;
     updatedAt: string;
     deletedAt: string | null;
@@ -204,6 +210,19 @@ class AdminService {
             '/admin/users/management/all'
         );
         return response.data.data;
+    }
+
+    async banUser(
+        userId: string,
+        payload: { banUntil: string | null; reason: string; message: string }
+    ) {
+        const response = await apiClient.patch<{ success: boolean; message: string }>(`/admin/users/${userId}/ban`, payload);
+        return response.data;
+    }
+
+    async unbanUser(userId: string) {
+        const response = await apiClient.patch<{ success: boolean; message: string }>(`/admin/users/${userId}/unban`);
+        return response.data;
     }
 }
 

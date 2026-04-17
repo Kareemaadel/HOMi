@@ -482,6 +482,12 @@ class AdminService {
             resetTokenExpires: user.reset_token_expires ?? null,
             emailVerificationTokenHash: user.email_verification_token_hash ?? null,
             emailVerificationTokenExpires: user.email_verification_token_expires ?? null,
+            isBanned: user.is_banned,
+            banReason: user.ban_reason ?? null,
+            banMessage: user.ban_message ?? null,
+            banUntil: user.ban_until ?? null,
+            bannedByAdminId: user.banned_by_admin_id ?? null,
+            banCreatedAt: user.ban_created_at ?? null,
             createdAt: user.created_at,
             updatedAt: user.updated_at,
             deletedAt: user.deleted_at ?? null,
@@ -516,6 +522,43 @@ class AdminService {
             landlords: mappedUsers.filter((user) => user.role === UserRole.LANDLORD),
             tenants: mappedUsers.filter((user) => user.role === UserRole.TENANT),
         };
+    }
+
+    async banUserForAdmin(
+        targetUserId: string,
+        adminId: string,
+        payload: { banUntil: string | null; reason: string; message: string }
+    ): Promise<void> {
+        const user = await User.findByPk(targetUserId);
+        if (!user) {
+            throw new AdminError('User not found', 404, 'USER_NOT_FOUND');
+        }
+        if (user.role === UserRole.ADMIN) {
+            throw new AdminError('Admin accounts cannot be banned', 400, 'INVALID_TARGET_ROLE');
+        }
+        await user.update({
+            is_banned: true,
+            ban_reason: payload.reason.trim(),
+            ban_message: payload.message.trim(),
+            ban_until: payload.banUntil ? new Date(payload.banUntil) : null,
+            banned_by_admin_id: adminId,
+            ban_created_at: new Date(),
+        });
+    }
+
+    async unbanUserForAdmin(targetUserId: string): Promise<void> {
+        const user = await User.findByPk(targetUserId);
+        if (!user) {
+            throw new AdminError('User not found', 404, 'USER_NOT_FOUND');
+        }
+        await user.update({
+            is_banned: false,
+            ban_reason: null,
+            ban_message: null,
+            ban_until: null,
+            banned_by_admin_id: null,
+            ban_created_at: null,
+        });
     }
 }
 

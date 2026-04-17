@@ -44,6 +44,12 @@ export class User extends Model<
     declare email_verified: CreationOptional<boolean>;
     declare email_verification_token_hash: CreationOptional<string | null>;
     declare email_verification_token_expires: CreationOptional<Date | null>;
+    declare is_banned: CreationOptional<boolean>;
+    declare ban_reason: CreationOptional<string | null>;
+    declare ban_message: CreationOptional<string | null>;
+    declare ban_until: CreationOptional<Date | null>;
+    declare banned_by_admin_id: CreationOptional<string | null>;
+    declare ban_created_at: CreationOptional<Date | null>;
 
     // Timestamps
     declare created_at: CreationOptional<Date>;
@@ -114,6 +120,31 @@ User.init(
             allowNull: true,
         },
         email_verification_token_expires: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        is_banned: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
+        ban_reason: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        ban_message: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        ban_until: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        banned_by_admin_id: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        },
+        ban_created_at: {
             type: DataTypes.DATE,
             allowNull: true,
         },

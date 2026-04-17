@@ -11,6 +11,20 @@ const AdminUserManagement = () => {
     const [tenants, setTenants] = useState<AdminManagedUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [banUser, setBanUser] = useState<AdminManagedUser | null>(null);
+    const [banType, setBanType] = useState<'until' | 'unlimited'>('until');
+    const [banUntil, setBanUntil] = useState('');
+    const [banReason, setBanReason] = useState('Fake national ID');
+    const [banMessage, setBanMessage] = useState('Your account was flagged for fake identity data.');
+    const [banLoading, setBanLoading] = useState(false);
+    const [customMessage, setCustomMessage] = useState('');
+
+    const mockMessages = [
+        { reason: 'Fake national ID', message: 'Your account was flagged for fake identity data.' },
+        { reason: 'Scam activity', message: 'Your account has been suspended due to scam reports.' },
+        { reason: 'Fake data', message: 'Your account has inconsistent information that violates policy.' },
+        { reason: 'Abusive behavior', message: 'Your account is restricted due to abusive behavior.' },
+    ];
 
     const hasValidAdminSession = () => {
         const token = localStorage.getItem('accessToken');
@@ -59,6 +73,28 @@ const AdminUserManagement = () => {
         navigate('/admin/auth/login', { replace: true });
     };
 
+    const handleBan = async () => {
+        if (!banUser) return;
+        setBanLoading(true);
+        try {
+            await adminService.banUser(banUser.id, {
+                banUntil: banType === 'unlimited' ? null : banUntil || null,
+                reason: banReason,
+                message: customMessage.trim() || banMessage,
+            });
+            setBanUser(null);
+            setCustomMessage('');
+            await fetchUsers();
+        } finally {
+            setBanLoading(false);
+        }
+    };
+
+    const handleUnban = async (userId: string) => {
+        await adminService.unbanUser(userId);
+        await fetchUsers();
+    };
+
     const renderUserRows = (users: AdminManagedUser[]) =>
         users.map((user) => (
             <tr key={user.id}>
@@ -99,6 +135,17 @@ const AdminUserManagement = () => {
                 <td>{user.profile?.walletPendingSaveCard ? 'Yes' : 'No'}</td>
                 <td>{user.profile?.createdAt ? new Date(user.profile.createdAt).toLocaleString() : '-'}</td>
                 <td>{user.profile?.updatedAt ? new Date(user.profile.updatedAt).toLocaleString() : '-'}</td>
+                <td>{user.isBanned ? 'Yes' : 'No'}</td>
+                <td>{user.banReason || '-'}</td>
+                <td>{user.banUntil ? new Date(user.banUntil).toLocaleString() : 'Unlimited / N/A'}</td>
+                <td>{user.banMessage || '-'}</td>
+                <td>
+                    {user.isBanned ? (
+                        <button type="button" className="ban-btn unban" onClick={() => void handleUnban(user.id)}>Unban</button>
+                    ) : (
+                        <button type="button" className="ban-btn" onClick={() => setBanUser(user)}>Ban</button>
+                    )}
+                </td>
             </tr>
         ));
 
@@ -147,7 +194,7 @@ const AdminUserManagement = () => {
                                             <th>Email Verify Expires</th><th>User Created</th><th>User Updated</th><th>User Deleted</th>
                                             <th>Profile ID</th><th>Phone</th><th>Bio</th><th>Location</th><th>Gender</th>
                                             <th>Birthdate</th><th>National ID (Encrypted)</th><th>National ID (Decrypted)</th><th>Gamification Points</th><th>Budget Min</th><th>Budget Max</th>
-                                            <th>Wallet Balance</th><th>Wallet Pending Order</th><th>Wallet Pending Amount Cents</th><th>Wallet Pending Save Card</th><th>Profile Created</th><th>Profile Updated</th>
+                                            <th>Wallet Balance</th><th>Wallet Pending Order</th><th>Wallet Pending Amount Cents</th><th>Wallet Pending Save Card</th><th>Profile Created</th><th>Profile Updated</th><th>Banned</th><th>Ban Reason</th><th>Ban Until</th><th>Ban Message</th><th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>{renderUserRows(landlords)}</tbody>
@@ -167,7 +214,7 @@ const AdminUserManagement = () => {
                                             <th>Email Verify Expires</th><th>User Created</th><th>User Updated</th><th>User Deleted</th>
                                             <th>Profile ID</th><th>Phone</th><th>Bio</th><th>Location</th><th>Gender</th>
                                             <th>Birthdate</th><th>National ID (Encrypted)</th><th>National ID (Decrypted)</th><th>Gamification Points</th><th>Budget Min</th><th>Budget Max</th>
-                                            <th>Wallet Balance</th><th>Wallet Pending Order</th><th>Wallet Pending Amount Cents</th><th>Wallet Pending Save Card</th><th>Profile Created</th><th>Profile Updated</th>
+                                            <th>Wallet Balance</th><th>Wallet Pending Order</th><th>Wallet Pending Amount Cents</th><th>Wallet Pending Save Card</th><th>Profile Created</th><th>Profile Updated</th><th>Banned</th><th>Ban Reason</th><th>Ban Until</th><th>Ban Message</th><th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>{renderUserRows(tenants)}</tbody>
@@ -177,6 +224,56 @@ const AdminUserManagement = () => {
                     </div>
                 )}
             </main>
+
+            {banUser && (
+                <div className="modal-backdrop" onClick={() => setBanUser(null)}>
+                    <div className="ban-modal" onClick={(event) => event.stopPropagation()}>
+                        <h3>Ban User</h3>
+                        <p>{banUser.email}</p>
+                        <label>Ban duration</label>
+                        <select value={banType} onChange={(e) => setBanType(e.target.value as 'until' | 'unlimited')}>
+                            <option value="until">Until date</option>
+                            <option value="unlimited">Unlimited</option>
+                        </select>
+                        {banType === 'until' && (
+                            <>
+                                <label>Ban until</label>
+                                <input type="datetime-local" value={banUntil} onChange={(e) => setBanUntil(e.target.value)} />
+                            </>
+                        )}
+                        <label>Reason</label>
+                        <select
+                            value={banReason}
+                            onChange={(e) => {
+                                const selected = mockMessages.find((m) => m.reason === e.target.value);
+                                setBanReason(e.target.value);
+                                if (selected) setBanMessage(selected.message);
+                            }}
+                        >
+                            {mockMessages.map((m) => (
+                                <option key={m.reason} value={m.reason}>{m.reason}</option>
+                            ))}
+                        </select>
+                        <label>Message template</label>
+                        <select
+                            value={banMessage}
+                            onChange={(e) => setBanMessage(e.target.value)}
+                        >
+                            {mockMessages.map((m) => (
+                                <option key={m.message} value={m.message}>{m.message}</option>
+                            ))}
+                        </select>
+                        <label>Custom message (optional)</label>
+                        <textarea value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} placeholder="Write your own message..." />
+                        <div className="ban-actions">
+                            <button type="button" onClick={() => setBanUser(null)}>Cancel</button>
+                            <button type="button" className="ban-btn" onClick={() => void handleBan()} disabled={banLoading}>
+                                {banLoading ? 'Banning...' : 'Confirm Ban'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

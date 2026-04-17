@@ -200,6 +200,35 @@ class AdminController {
             next(error);
         }
     }
+
+    async banUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const adminId = (req as any).user?.userId;
+            const { userId } = req.params;
+            const { banUntil, reason, message } = req.body as { banUntil?: string | null; reason?: string; message?: string };
+            if (!reason?.trim() || !message?.trim()) {
+                throw new AdminError('Reason and message are required', 400, 'VALIDATION_ERROR');
+            }
+            await adminService.banUserForAdmin(String(userId), String(adminId), {
+                banUntil: banUntil || null,
+                reason,
+                message,
+            });
+            res.status(200).json({ success: true, message: 'User banned successfully' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async unbanUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { userId } = req.params;
+            await adminService.unbanUserForAdmin(String(userId));
+            res.status(200).json({ success: true, message: 'User unbanned successfully' });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export const adminController = new AdminController();

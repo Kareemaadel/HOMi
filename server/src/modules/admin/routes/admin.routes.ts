@@ -402,6 +402,8 @@ router.delete('/reports/:reportId/remove-listing', adminController.removeReporte
 router.get('/activity-logs', adminController.getActivityLogs.bind(adminController));
 router.get('/users/:userId/profile', adminController.getUserProfile.bind(adminController));
 router.get('/users/management/all', adminController.getUsersForManagement.bind(adminController));
+router.patch('/users/:userId/ban', adminController.banUser.bind(adminController));
+router.patch('/users/:userId/unban', adminController.unbanUser.bind(adminController));
 router.get('/properties/:propertyId/details', adminController.getPropertyDetails.bind(adminController));
 
 export default router;
