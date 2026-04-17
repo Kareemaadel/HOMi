@@ -188,6 +188,18 @@ class AdminController {
             next(error);
         }
     }
+
+    async getUsersForManagement(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const users = await adminService.getUsersForManagement();
+            res.status(200).json({
+                success: true,
+                data: users,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export const adminController = new AdminController();

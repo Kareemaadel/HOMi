@@ -95,3 +95,41 @@ export interface AdminPropertyDetails {
         avatarUrl: string | null;
     } | null;
 }
+
+export interface AdminManagedUser {
+    id: string;
+    email: string;
+    role: string;
+    isVerified: boolean;
+    emailVerified: boolean;
+    resetTokenHash: string | null;
+    resetTokenExpires: Date | null;
+    emailVerificationTokenHash: string | null;
+    emailVerificationTokenExpires: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date | null;
+    profile: {
+        id: string;
+        userId: string;
+        firstName: string;
+        lastName: string;
+        phoneNumber: string;
+        bio: string | null;
+        avatarUrl: string | null;
+        currentLocation: string | null;
+        nationalIdEncrypted: string | null;
+        nationalIdDecrypted: string | null;
+        gender: string | null;
+        birthdate: string | null;
+        gamificationPoints: number;
+        preferredBudgetMin: number | null;
+        preferredBudgetMax: number | null;
+        walletBalance: number;
+        walletPendingOrderId: number | null;
+        walletPendingAmountCents: number | null;
+        walletPendingSaveCard: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    } | null;
+}

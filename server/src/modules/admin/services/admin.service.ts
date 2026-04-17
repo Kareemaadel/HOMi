@@ -6,7 +6,8 @@ import { PropertyReport, PropertyReportStatus } from '../../properties/models/Pr
 import { Contract, ContractStatus } from '../../contracts/models/Contract.js';
 import { Profile } from '../../auth/models/Profile.js';
 import { ActivityLog } from '../models/ActivityLog.js';
-import type { AdminStatsResponse, AdminListingReport, AdminActivityLogItem, AdminUserProfileDetails, AdminPropertyDetails } from '../interfaces/admin.interfaces.js';
+import type { AdminStatsResponse, AdminListingReport, AdminActivityLogItem, AdminUserProfileDetails, AdminPropertyDetails, AdminManagedUser } from '../interfaces/admin.interfaces.js';
+import { UserRole } from '../../auth/models/User.js';
 import type { PropertyResponse } from '../../properties/interfaces/property.interfaces.js';
 import { propertyService } from '../../properties/services/property.service.js';
 import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
@@ -453,6 +454,67 @@ class AdminService {
                     avatarUrl: property.landlord.profile?.avatar_url || null,
                 }
                 : null,
+        };
+    }
+
+    async getUsersForManagement(): Promise<{ landlords: AdminManagedUser[]; tenants: AdminManagedUser[] }> {
+        const users = await User.findAll({
+            where: {
+                role: [UserRole.LANDLORD, UserRole.TENANT],
+            },
+            paranoid: false,
+            include: [
+                {
+                    model: Profile,
+                    as: 'profile',
+                },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+
+        const mappedUsers: AdminManagedUser[] = users.map((user) => ({
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.is_verified,
+            emailVerified: user.email_verified,
+            resetTokenHash: user.reset_token_hash ?? null,
+            resetTokenExpires: user.reset_token_expires ?? null,
+            emailVerificationTokenHash: user.email_verification_token_hash ?? null,
+            emailVerificationTokenExpires: user.email_verification_token_expires ?? null,
+            createdAt: user.created_at,
+            updatedAt: user.updated_at,
+            deletedAt: user.deleted_at ?? null,
+            profile: user.profile
+                ? {
+                    id: user.profile.id,
+                    userId: user.profile.user_id,
+                    firstName: user.profile.first_name,
+                    lastName: user.profile.last_name,
+                    phoneNumber: user.profile.phone_number,
+                    bio: user.profile.bio ?? null,
+                    avatarUrl: user.profile.avatar_url ?? null,
+                    currentLocation: user.profile.current_location ?? null,
+                    nationalIdEncrypted: user.profile.national_id ?? null,
+                    nationalIdDecrypted: user.profile.getDecryptedNationalId(),
+                    gender: user.profile.gender ?? null,
+                    birthdate: user.profile.birthdate ? String(user.profile.birthdate) : null,
+                    gamificationPoints: user.profile.gamification_points,
+                    preferredBudgetMin: user.profile.preferred_budget_min !== null ? Number(user.profile.preferred_budget_min) : null,
+                    preferredBudgetMax: user.profile.preferred_budget_max !== null ? Number(user.profile.preferred_budget_max) : null,
+                    walletBalance: Number(user.profile.wallet_balance),
+                    walletPendingOrderId: user.profile.wallet_pending_order_id ?? null,
+                    walletPendingAmountCents: user.profile.wallet_pending_amount_cents ?? null,
+                    walletPendingSaveCard: user.profile.wallet_pending_save_card,
+                    createdAt: user.profile.created_at,
+                    updatedAt: user.profile.updated_at,
+                }
+                : null,
+        }));
+
+        return {
+            landlords: mappedUsers.filter((user) => user.role === UserRole.LANDLORD),
+            tenants: mappedUsers.filter((user) => user.role === UserRole.TENANT),
         };
     }
 }

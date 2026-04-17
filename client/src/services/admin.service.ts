@@ -115,6 +115,44 @@ export interface AdminPropertyDetails {
     } | null;
 }
 
+export interface AdminManagedUser {
+    id: string;
+    email: string;
+    role: string;
+    isVerified: boolean;
+    emailVerified: boolean;
+    resetTokenHash: string | null;
+    resetTokenExpires: string | null;
+    emailVerificationTokenHash: string | null;
+    emailVerificationTokenExpires: string | null;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+    profile: {
+        id: string;
+        userId: string;
+        firstName: string;
+        lastName: string;
+        phoneNumber: string;
+        bio: string | null;
+        avatarUrl: string | null;
+        currentLocation: string | null;
+        nationalIdEncrypted: string | null;
+        nationalIdDecrypted: string | null;
+        gender: string | null;
+        birthdate: string | null;
+        gamificationPoints: number;
+        preferredBudgetMin: number | null;
+        preferredBudgetMax: number | null;
+        walletBalance: number;
+        walletPendingOrderId: number | null;
+        walletPendingAmountCents: number | null;
+        walletPendingSaveCard: boolean;
+        createdAt: string;
+        updatedAt: string;
+    } | null;
+}
+
 class AdminService {
     async getDashboardStats() {
         const response = await apiClient.get<{ success: boolean; data: AdminStatsResponse }>('/admin/dashboard/stats');
@@ -158,6 +196,13 @@ class AdminService {
 
     async getPropertyDetails(propertyId: string) {
         const response = await apiClient.get<{ success: boolean; data: AdminPropertyDetails }>(`/admin/properties/${propertyId}/details`);
+        return response.data.data;
+    }
+
+    async getUsersForManagement() {
+        const response = await apiClient.get<{ success: boolean; data: { landlords: AdminManagedUser[]; tenants: AdminManagedUser[] } }>(
+            '/admin/users/management/all'
+        );
         return response.data.data;
     }
 }

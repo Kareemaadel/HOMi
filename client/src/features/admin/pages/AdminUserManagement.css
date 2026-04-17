@@ -1,0 +1,38 @@
+.user-management-content {
+    gap: 16px;
+}
+
+.user-table-panel {
+    overflow: hidden;
+}
+
+.user-table-wrap {
+    overflow: auto;
+    max-height: 460px;
+}
+
+.user-management-table {
+    width: 100%;
+    min-width: 2600px;
+    border-collapse: collapse;
+}
+
+.user-management-table th,
+.user-management-table td {
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #eef2f7;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.user-management-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+}

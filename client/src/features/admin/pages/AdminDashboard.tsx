@@ -89,6 +89,7 @@ const AdminDashboard = () => {
                     <NavLink to="/admin/dashboard" end><FiHome /> Dashboard</NavLink>
                     <NavLink to="/admin/property-approvals"><FiFileText /> Property Approvals</NavLink>
                     <NavLink to="/admin/user-reports"><FiAlertTriangle /> User Reports</NavLink>
+                    <NavLink to="/admin/user-management"><FiUsers /> User Management</NavLink>
                     <NavLink to="/admin/activity-logs"><FiActivity /> Activity Logs</NavLink>
                 </nav>
                 <button className="admin-signout" onClick={handleSignOut} type="button">
