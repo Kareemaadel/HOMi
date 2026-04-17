@@ -1,0 +1,169 @@
+.banned-page-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: radial-gradient(circle at top left, #e0edff 0%, #f7faff 45%, #eef5ff 100%);
+}
+
+.banned-card {
+    width: min(760px, 100%);
+    background: #ffffff;
+    border: 1px solid #dbe7f5;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 24px 55px rgba(37, 99, 235, 0.12);
+}
+
+.banned-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.banned-brand img {
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+}
+
+.banned-brand span {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2563eb;
+}
+
+.banned-card h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    color: #0f172a;
+}
+
+.banned-subtitle {
+    margin: 10px 0 16px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.banned-reason-line {
+    border: 1px solid #dbe7f5;
+    background: #f8fbff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.banned-reason-line span {
+    color: #475569;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.banned-reason-line strong {
+    color: #1d4ed8;
+}
+
+.banned-timer-wrap {
+    margin-top: 16px;
+    border-radius: 14px;
+    border: 1px solid #dbe7f5;
+    background: linear-gradient(135deg, #eef5ff 0%, #f8fbff 100%);
+    padding: 14px;
+}
+
+.timer-label {
+    display: block;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.timer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.timer-grid div {
+    background: #ffffff;
+    border: 1px solid #dbe7f5;
+    border-radius: 10px;
+    text-align: center;
+    padding: 10px 8px;
+}
+
+.timer-grid strong {
+    display: block;
+    font-size: 1.3rem;
+    line-height: 1;
+    color: #0f172a;
+}
+
+.timer-grid span {
+    font-size: 0.74rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.timer-unlimited {
+    display: inline-block;
+    border-radius: 999px;
+    background: #1d4ed8;
+    color: #fff;
+    padding: 7px 12px;
+    font-weight: 700;
+}
+
+.ban-until {
+    margin: 10px 0 0;
+    color: #475569;
+    font-size: 0.88rem;
+}
+
+.banned-message {
+    margin: 16px 0 0;
+    border-left: 4px solid #60a5fa;
+    background: #f8fbff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #334155;
+    font-style: italic;
+    line-height: 1.6;
+}
+
+.banned-actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.banned-actions button {
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.back-auth-btn {
+    border-color: #cbd5e1 !important;
+    background: #fff;
+    color: #334155;
+}
+
+.contact-us-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+}
