@@ -30,6 +30,7 @@ import type {
     ChangePasswordRequest,
     UpdateRoleRequest,
 } from '../interfaces/auth.interfaces.js';
+import { activityLogService } from '../../../shared/services/activity-log.service.js';
 
 /** Returned with 409 when DELETE /auth/account is blocked by related records */
 export type AccountDeleteBlockers = {
@@ -46,7 +47,7 @@ export class AuthError extends Error {
         message: string,
         public statusCode: number = 400,
         public code: string = 'AUTH_ERROR',
-        public details?: AccountDeleteBlockers
+        public details?: AccountDeleteBlockers | Record<string, unknown>
     ) {
         super(message);
         this.name = 'AuthError';
@@ -58,6 +59,35 @@ export class AuthError extends Error {
  * Handles all authentication business logic
  */
 export class AuthService {
+    private async enforceBanPolicy(user: User): Promise<void> {
+        if (!user.is_banned) return;
+
+        if (user.ban_until && user.ban_until <= new Date()) {
+            await user.update({
+                is_banned: false,
+                ban_reason: null,
+                ban_message: null,
+                ban_until: null,
+                banned_by_admin_id: null,
+                ban_created_at: null,
+            });
+            return;
+        }
+
+        const remainingMs = user.ban_until ? Math.max(0, user.ban_until.getTime() - Date.now()) : null;
+        throw new AuthError(
+            'Your account is banned.',
+            403,
+            'ACCOUNT_BANNED',
+            {
+                reason: user.ban_reason || 'Policy violation',
+                message: user.ban_message || 'Your account has been restricted by an administrator.',
+                banUntil: user.ban_until ? user.ban_until.toISOString() : null,
+                remainingMs,
+                isUnlimited: !user.ban_until,
+            }
+        );
+    }
     /**
      * Register a new user with profile
      * Creates User and Profile atomically within a transaction
@@ -117,6 +147,15 @@ export class AuthService {
 
             // Commit transaction
             await transaction.commit();
+
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'AUTH_REGISTERED',
+                entityType: 'USER',
+                entityId: user.id,
+                description: `New ${user.role.toLowerCase()} account registered.`,
+                metadata: { email: user.email },
+            });
 
             return {
                 success: true,
@@ -195,6 +234,13 @@ export class AuthService {
 
             // Send welcome email
             await emailService.sendWelcomeEmail(user.email, profile.first_name);
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'AUTH_VERIFICATION_COMPLETED',
+                entityType: 'USER',
+                entityId: user.id,
+                description: 'User completed profile verification.',
+            });
 
             return {
                 success: true,
@@ -290,6 +336,8 @@ export class AuthService {
             throw new AuthError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
         }
 
+        await this.enforceBanPolicy(user);
+
         // Verify password
         const isPasswordValid = await user.comparePassword(input.password);
         if (!isPasswordValid) {
@@ -298,6 +346,13 @@ export class AuthService {
 
         // Generate tokens
         const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
+        await activityLogService.log({
+            actor: { userId: user.id, role: user.role, email: user.email },
+            action: 'AUTH_LOGIN',
+            entityType: 'USER',
+            entityId: user.id,
+            description: 'User logged in.',
+        });
 
         // Build sanitized response
         const userResponse: UserResponse = {
@@ -517,6 +572,8 @@ export class AuthService {
                 throw new AuthError('Failed to create user account', 500, 'REGISTRATION_FAILED');
             }
         }
+
+        await this.enforceBanPolicy(user);
 
         // 4. Generate HOMi JWT tokens
         const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
@@ -739,6 +796,14 @@ export class AuthService {
             await user.update({ role: input.role }, { transaction });
 
             await transaction.commit();
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'AUTH_ROLE_UPDATED',
+                entityType: 'USER',
+                entityId: user.id,
+                description: `User role updated to ${user.role}.`,
+                metadata: { role: user.role },
+            });
 
             // Return updated user and profile, with new tokens (since token embeds role)
             const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);

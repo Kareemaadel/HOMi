@@ -1,11 +1,16 @@
 import { Op, Sequelize } from 'sequelize';
 import {
     Property,
+    PropertyStatus,
     PropertyImage,
     Amenity,
     PropertySpecifications,
     PropertyDetailedLocation,
     HouseRule,
+    PropertyOwnershipDoc,
+    PropertyReport,
+    PropertyReportReason,
+    PropertyReportStatus,
     sequelize,
 } from '../models/index.js';
 import { User } from '../../auth/models/User.js';
@@ -44,6 +49,61 @@ export class PropertyError extends Error {
  * Handles all property business logic
  */
 class PropertyService {
+    async reportProperty(
+        propertyId: string,
+        reporterId: string,
+        payload: { reason: string; details: string }
+    ): Promise<{ id: string; status: string; message: string }> {
+        const property = await Property.findByPk(propertyId);
+        if (!property) {
+            throw new PropertyError('Property not found', 404, 'PROPERTY_NOT_FOUND');
+        }
+
+        if (property.status !== PropertyStatus.AVAILABLE) {
+            throw new PropertyError('Only available listings can be reported', 400, 'INVALID_PROPERTY_STATUS');
+        }
+
+        if (property.landlord_id === reporterId) {
+            throw new PropertyError('You cannot report your own listing', 400, 'SELF_REPORT_NOT_ALLOWED');
+        }
+
+        const validReasons = Object.values(PropertyReportReason);
+        if (!validReasons.includes(payload.reason as any)) {
+            throw new PropertyError('Invalid report reason', 400, 'INVALID_REPORT_REASON');
+        }
+
+        const details = payload.details.trim();
+        if (details.length < 30) {
+            throw new PropertyError('Please provide at least 30 characters describing the issue', 400, 'REPORT_DETAILS_TOO_SHORT');
+        }
+
+        const existingOpenReport = await PropertyReport.findOne({
+            where: {
+                property_id: propertyId,
+                reporter_id: reporterId,
+                status: PropertyReportStatus.OPEN,
+            },
+        });
+
+        if (existingOpenReport) {
+            throw new PropertyError('You already have an open report for this listing', 409, 'DUPLICATE_OPEN_REPORT');
+        }
+
+        const created = await PropertyReport.create({
+            property_id: propertyId,
+            reporter_id: reporterId,
+            reason: payload.reason as any,
+            details,
+            status: PropertyReportStatus.OPEN,
+        });
+
+        return {
+            id: created.id,
+            status: created.status,
+            message: 'Your report has been submitted and sent to admin moderation.',
+        };
+    }
+
     /**
      * Resolve amenity names → verified Amenity records.
      * Throws if any name does not exist in the database.
@@ -134,7 +194,7 @@ class PropertyService {
                     target_tenant: input.target_tenant ?? 'ANY',
                     availability_date: new Date(input.availability_date),
                     maintenance_responsibilities: input.maintenance_responsibilities ?? [],
-                    status: 'Draft',
+                    status: 'PENDING_APPROVAL',
                 },
                 { transaction }
             );
@@ -176,6 +236,15 @@ class PropertyService {
                 { transaction }
             );
 
+            // Create ownership docs
+            const ownershipDocs = await PropertyOwnershipDoc.bulkCreate(
+                input.ownership_documents.map((url) => ({
+                    property_id: property.id,
+                    document_url: url,
+                })),
+                { transaction }
+            );
+
             // Associate amenities (by their resolved IDs)
             if (amenities.length > 0) {
                 await (property as any).setAmenities(
@@ -194,7 +263,7 @@ class PropertyService {
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation, ownershipDocs);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -289,6 +358,11 @@ class PropertyService {
                     model: PropertySpecifications,
                     as: 'specifications',
                 },
+                {
+                    model: PropertyOwnershipDoc,
+                    as: 'ownershipDocs',
+                    attributes: ['id', 'document_url'],
+                },
                 detailedLocationInclude,
             ],
             limit,
@@ -304,7 +378,8 @@ class PropertyService {
                 (property as any).amenities || [],
                 (property as any).houseRules || [],
                 (property as any).specifications ?? null,
-                (property as any).detailedLocation ?? null
+                (property as any).detailedLocation ?? null,
+                (property as any).ownershipDocs || []
             )
         );
 
@@ -362,6 +437,11 @@ class PropertyService {
                     model: PropertyDetailedLocation,
                     as: 'detailedLocation',
                 },
+                {
+                    model: PropertyOwnershipDoc,
+                    as: 'ownershipDocs',
+                    attributes: ['id', 'document_url'],
+                },
             ],
         });
 
@@ -375,7 +455,8 @@ class PropertyService {
             (property as any).amenities || [],
             (property as any).houseRules || [],
             (property as any).specifications ?? null,
-            (property as any).detailedLocation ?? null
+            (property as any).detailedLocation ?? null,
+            (property as any).ownershipDocs || []
         );
     }
 
@@ -405,6 +486,22 @@ class PropertyService {
                 );
             }
 
+            if (property.status === PropertyStatus.PENDING_APPROVAL) {
+                throw new PropertyError(
+                    'Pending-approval properties are locked until admin approves or rejects them.',
+                    403,
+                    'PROPERTY_LOCKED'
+                );
+            }
+
+            if (property.status === PropertyStatus.REJECTED) {
+                throw new PropertyError(
+                    'Rejected properties cannot be edited by landlords.',
+                    403,
+                    'PROPERTY_LOCKED'
+                );
+            }
+
             // Update property fields
             const updateData: any = {};
             if (input.title !== undefined) updateData.title = input.title;
@@ -414,7 +511,17 @@ class PropertyService {
             if (input.address !== undefined) updateData.address = input.address;
             if (input.type !== undefined) updateData.type = input.type;
             if (input.furnishing !== undefined) updateData.furnishing = input.furnishing;
-            if (input.status !== undefined) updateData.status = input.status;
+            if (input.status !== undefined) {
+                const allowedLandlordStatuses = [PropertyStatus.DRAFT, PropertyStatus.AVAILABLE];
+                if (!allowedLandlordStatuses.includes(input.status)) {
+                    throw new PropertyError(
+                        'Landlords can only set status to DRAFT or AVAILABLE.',
+                        400,
+                        'INVALID_STATUS_TRANSITION'
+                    );
+                }
+                updateData.status = input.status;
+            }
             if (input.target_tenant !== undefined) updateData.target_tenant = input.target_tenant;
             if (input.availability_date !== undefined)
                 updateData.availability_date = new Date(input.availability_date);
@@ -488,6 +595,19 @@ class PropertyService {
                 images = await PropertyImage.findAll({ where: { property_id: id }, transaction });
             }
 
+            // Update ownership docs if provided
+            let ownershipDocs = await PropertyOwnershipDoc.findAll({ where: { property_id: id }, transaction });
+            if (input.ownership_documents !== undefined) {
+                await PropertyOwnershipDoc.destroy({ where: { property_id: id }, transaction });
+                ownershipDocs = await PropertyOwnershipDoc.bulkCreate(
+                    input.ownership_documents.map((url) => ({
+                        property_id: id,
+                        document_url: url,
+                    })),
+                    { transaction }
+                );
+            }
+
             // Update amenities if provided (by name — replace strategy)
             let amenities: Amenity[] = [];
             if (input.amenity_names !== undefined) {
@@ -514,7 +634,7 @@ class PropertyService {
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation, ownershipDocs);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -556,7 +676,8 @@ class PropertyService {
         amenities: Amenity[] = [],
         houseRules: HouseRule[] = [],
         spec: PropertySpecifications | null = null,
-        loc: PropertyDetailedLocation | null = null
+        loc: PropertyDetailedLocation | null = null,
+        docs: PropertyOwnershipDoc[] = []
     ): PropertyResponse {
         const formattedImages: PropertyImageResponse[] = images.map((img) => ({
             id: img.id,
@@ -632,6 +753,11 @@ class PropertyService {
             specifications: formattedSpec,
             detailedLocation: formattedLocation,
             landlord: formattedLandlord,
+            rejectionReason: property.rejection_reason ?? null,
+            ownershipDocs: docs.map((d) => ({
+                id: d.id,
+                documentUrl: d.document_url,
+            })),
         };
     }
 }

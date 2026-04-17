@@ -4,6 +4,7 @@ import { testConnection, syncDatabase } from './config/database.js';
 import { seedAmenities } from './seeds/amenities.seed.js';
 import { seedHouseRules } from './seeds/house_rules.seed.js';
 import { seedHabits } from './seeds/habits.seed.js';
+import { seedAdminAccount } from './seeds/admin.seed.js';
 import app from './app.js';
 import { initSocketServer } from './shared/realtime/socket.js';
 
@@ -13,6 +14,7 @@ try {
     await seedAmenities();
     await seedHouseRules();
     await seedHabits();
+    await seedAdminAccount();
 
     const httpServer = createServer(app);
     initSocketServer(httpServer);

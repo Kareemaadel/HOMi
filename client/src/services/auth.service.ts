@@ -76,10 +76,11 @@ class AuthService {
     }): string {
         const cached = source ?? this.getCurrentUser() ?? undefined;
         const role = cached?.user?.role;
-        const hasAppRole = role === 'LANDLORD' || role === 'TENANT';
+        const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN';
 
         // Onboarding gate should enforce selecting a role, not forcing every optional profile field.
         if (!hasAppRole) return '/complete-profile';
+        if (role === 'ADMIN') return '/admin/dashboard';
         if (role === 'LANDLORD') return '/landlord-home';
         if (role === 'TENANT') return '/tenant-home';
 
@@ -133,13 +134,13 @@ class AuthService {
         const userStr = localStorage.getItem('user');
         const profileStr = localStorage.getItem('profile');
 
-        if (!userStr || !profileStr) {
+        if (!userStr) {
             return null;
         }
 
         return {
             user: JSON.parse(userStr),
-            profile: JSON.parse(profileStr),
+            profile: profileStr ? JSON.parse(profileStr) : null,
         };
     }
 

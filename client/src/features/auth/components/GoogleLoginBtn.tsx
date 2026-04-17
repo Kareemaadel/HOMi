@@ -29,6 +29,10 @@ export const GoogleLoginBtn = ({ rememberMe = false }: GoogleLoginBtnProps) => {
                 navigate('/', { state: { next: nextPath, force: true } });
             } catch (err) {
                 console.error('❌ Google Login failed:', err);
+                if (axios.isAxiosError(err) && err.response?.data?.code === 'ACCOUNT_BANNED') {
+                    navigate('/account-banned', { state: err.response.data.details || {} });
+                    return;
+                }
                 const errorMessage = axios.isAxiosError(err)
                     ? err.response?.data?.message || 'Google login failed. Please try again.'
                     : 'Google login failed. Please try again.';

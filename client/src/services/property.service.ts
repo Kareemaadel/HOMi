@@ -24,6 +24,11 @@ export interface PropertySpecificationsResponse {
     areaSqft: number;
 }
 
+export interface PropertyOwnershipDocResponse {
+    id: string;
+    documentUrl: string;
+}
+
 export interface PropertyLandlordResponse {
     id: string;
     firstName: string;
@@ -54,10 +59,12 @@ export interface PropertyResponse {
     }>;
     specifications: PropertySpecificationsResponse | null;
     landlord: PropertyLandlordResponse | null;
+    ownershipDocs: PropertyOwnershipDocResponse[];
+    rejectionReason?: string | null;
 }
 
 export interface PropertyQueryParams {
-    status?: 'Draft' | 'Published' | 'Rented';
+    status?: 'DRAFT' | 'PENDING_APPROVAL' | 'AVAILABLE' | 'REJECTED' | 'RENTED';
     type?: 'APARTMENT' | 'VILLA' | 'STUDIO' | 'CHALET';
     furnishing?: 'Fully' | 'Semi' | 'Unfurnished';
     target_tenant?: 'ANY' | 'STUDENTS' | 'FAMILIES' | 'TOURISTS';
@@ -108,6 +115,7 @@ export interface CreatePropertyPayload {
         bathrooms: number;
         area_sqft: number;
     };
+    ownership_documents: string[];
     maintenance_responsibilities?: Array<{
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
@@ -128,6 +136,18 @@ interface PropertyMutationResponse {
     success: boolean;
     message: string;
     data: PropertyResponse;
+}
+
+export interface ReportListingPayload {
+    reason:
+        | 'SCAM_OR_FRAUD'
+        | 'MISLEADING_INFORMATION'
+        | 'FAKE_PHOTOS'
+        | 'DUPLICATE_LISTING'
+        | 'OFFENSIVE_CONTENT'
+        | 'UNAVAILABLE_OR_ALREADY_RENTED'
+        | 'OTHER';
+    details: string;
 }
 
 class PropertyService {
@@ -155,6 +175,14 @@ class PropertyService {
 
     async updateProperty(propertyId: string, payload: any): Promise<PropertyMutationResponse> {
         const response = await apiClient.put<PropertyMutationResponse>(`/properties/${propertyId}`, payload);
+        return response.data;
+    }
+
+    async reportProperty(propertyId: string, payload: ReportListingPayload): Promise<{ success: boolean; message: string; data: { id: string; status: string } }> {
+        const response = await apiClient.post<{ success: boolean; message: string; data: { id: string; status: string } }>(
+            `/properties/${propertyId}/report`,
+            payload
+        );
         return response.data;
     }
 }

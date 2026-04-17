@@ -34,6 +34,7 @@ import type {
     WalletTopupInitiateInput,
     WalletTopupVerifyInput,
 } from '../interfaces/contract.interfaces.js';
+import { activityLogService } from '../../../shared/services/activity-log.service.js';
 
 // ─── Duration map ─────────────────────────────────────────────────────────────
 
@@ -154,6 +155,19 @@ class ContractService {
             payment_status: ContractPaymentStatus.PENDING,
             move_in_date: rentalRequest.move_in_date,
             lease_duration_months: durationMonths,
+        });
+
+        await activityLogService.log({
+            actor: { userId: property.landlord_id, role: 'LANDLORD' },
+            action: 'CONTRACT_CREATED_FROM_APPROVAL',
+            entityType: 'CONTRACT',
+            entityId: contract.id,
+            description: 'Contract auto-created after rental request approval.',
+            metadata: {
+                rentalRequestId,
+                propertyId: property.id,
+                tenantId: rentalRequest.tenant_id,
+            },
         });
 
         return this.formatContractResponse(contract);
@@ -389,6 +403,15 @@ class ContractService {
             max_occupants: input.max_occupants,
         });
 
+        await activityLogService.log({
+            actor: { userId: landlordId, role: 'LANDLORD' },
+            action: 'CONTRACT_SIGNED_BY_LANDLORD',
+            entityType: 'CONTRACT',
+            entityId: contract.id,
+            description: 'Landlord signed contract.',
+            metadata: { propertyId: contract.property_id, tenantId: contract.tenant_id },
+        });
+
         return this.formatContractResponse(contract);
     }
 
@@ -406,6 +429,15 @@ class ContractService {
             landlord_national_id: encrypt(input.national_id),
         });
 
+        await activityLogService.log({
+            actor: { userId: tenantId, role: 'TENANT' },
+            action: 'CONTRACT_SIGNED_BY_TENANT',
+            entityType: 'CONTRACT',
+            entityId: contract.id,
+            description: 'Tenant signed contract.',
+            metadata: { propertyId: contract.property_id, landlordId: contract.landlord_id },
+        });
+
         return this.formatContractResponse(contract);
     }
 
@@ -421,6 +453,15 @@ class ContractService {
 
         await contract.update({
             property_registration_number: input.property_registration_number,
+        });
+
+        await activityLogService.log({
+            actor: { userId: tenantId, role: 'TENANT' },
+            action: 'CONTRACT_PAYMENT_VERIFIED',
+            entityType: 'CONTRACT',
+            entityId: contract.id,
+            description: 'Contract payment verified and contract activated.',
+            metadata: { transactionId: verification.transactionId, orderId: verification.orderId },
         });
 
         const updated = await Contract.findByPk(contract.id, {
@@ -671,6 +712,18 @@ class ContractService {
                 },
                 { transaction }
             );
+
+            await activityLogService.log({
+                actor: { userId: tenantId, role: 'TENANT' },
+                action: 'CONTRACT_PAID_FROM_BALANCE',
+                entityType: 'CONTRACT',
+                entityId: contract.id,
+                description: 'Contract paid from wallet balance and activated.',
+                metadata: {
+                    debitedAmount: requiredAmount,
+                    remainingBalance,
+                },
+            });
 
             await transaction.commit();
 

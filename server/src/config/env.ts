@@ -41,6 +41,10 @@ interface EnvConfig {
 
     // Client URL (for verification links)
     CLIENT_URL: string;
+    
+    // Default seeded admin account (dev/testing)
+    ADMIN_SEED_EMAIL: string;
+    ADMIN_SEED_PASSWORD: string;
 
     // Paymob
     PAYMOB_BASE_URL: string;
@@ -117,6 +121,10 @@ export const env: EnvConfig = {
 
     // Client URL (for verification links)
     CLIENT_URL: getEnvString('CLIENT_URL', 'http://localhost:5173'),
+
+    // Seeded admin account
+    ADMIN_SEED_EMAIL: getEnvString('ADMIN_SEED_EMAIL', 'Homi@admin.com'),
+    ADMIN_SEED_PASSWORD: getEnvString('ADMIN_SEED_PASSWORD', 'HomiAdmin'),
 
     // Paymob
     PAYMOB_BASE_URL: getEnvString('PAYMOB_BASE_URL', 'https://accept.paymob.com'),

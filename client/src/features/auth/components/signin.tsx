@@ -42,6 +42,10 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
       navigate('/', { state: { next: nextPath, force: true } });
     } catch (err) {
       console.error('❌ Login failed:', err);
+      if (axios.isAxiosError(err) && err.response?.data?.code === 'ACCOUNT_BANNED') {
+        navigate('/account-banned', { state: err.response.data.details || {} });
+        return;
+      }
       const errorMessage = axios.isAxiosError(err)
         ? err.response?.data?.message || 'Login failed. Please check your credentials.'
         : 'Login failed. Please check your credentials.';

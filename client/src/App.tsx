@@ -26,8 +26,12 @@ import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
 import ComingSoon from "./features/ComingSoon/pages/ComingSoon";
 import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
-
-
+import AdminLogin from "./features/admin/pages/AdminLogin";
+import AdminDashboard from "./features/admin/pages/AdminDashboard";
+import AdminPropertyApprovals from "./features/admin/pages/AdminPropertyApprovals";
+import AdminUserReports from "./features/admin/pages/AdminUserReports";
+import AdminActivityLogs from "./features/admin/pages/AdminActivityLogs";
+import AdminUserManagement from "./features/admin/pages/AdminUserManagement";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -37,6 +41,7 @@ import AuthGuard from "./components/global/AuthGuard";
 import SentRequests from "./features/SentRequests/pages/SentRequests";
 import PageNotFound from "./features/PageNotFound/pages/PageNotFound";
 import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
+import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
 function App() {
   return (
     <BrowserRouter>
@@ -101,6 +106,15 @@ function App() {
         <Route path="/guest-home"   element={<GuestHome />} />
         <Route path="/guest-search" element={<GuestSearch />} />
 
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/auth/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AuthGuard allowedRoles={['ADMIN']}><AdminDashboard /></AuthGuard>} />
+        <Route path="/admin/property-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminPropertyApprovals /></AuthGuard>} />
+        <Route path="/admin/user-reports" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserReports /></AuthGuard>} />
+        <Route path="/admin/user-management" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserManagement /></AuthGuard>} />
+        <Route path="/admin/activity-logs" element={<AuthGuard allowedRoles={['ADMIN']}><AdminActivityLogs /></AuthGuard>} />
+
         {/* Auth Routes — public */}
         <Route path="/auth"             element={<AuthPage />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
@@ -108,6 +122,7 @@ function App() {
         <Route path="/reset-password"   element={<ResetPasswordPage />} />
         <Route path="/verify-email"     element={<EmailVerificationPage />} />
         <Route path="/verify-email-callback" element={<VerifyEmailCallback />} />
+        <Route path="/account-banned" element={<AccountBannedPage />} />
       </Routes>
     </BrowserRouter>
   );

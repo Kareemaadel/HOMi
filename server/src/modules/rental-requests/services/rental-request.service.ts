@@ -6,6 +6,7 @@ import {
     Property,
     Profile,
 } from '../models/index.js';
+import { PropertyStatus } from '../../properties/models/Property.js';
 import type {
     CreateRentalRequestInput,
     UpdateRentalRequestStatusInput,
@@ -14,6 +15,7 @@ import type {
 } from '../interfaces/rental-request.interfaces.js';
 import { PropertyImage } from '../../properties/models/PropertyImage.js';
 import { PropertySpecifications } from '../../properties/models/PropertySpecifications.js';
+import { activityLogService } from '../../../shared/services/activity-log.service.js';
 
 /**
  * Custom error class for rental request errors
@@ -54,14 +56,14 @@ class RentalRequestService {
             );
         }
 
-        // Verify property exists and is published
+        // Verify property exists and is currently available for rental requests
         const property = await Property.findByPk(input.property_id);
         if (!property) {
             throw new RentalRequestError('Property not found', 404, 'PROPERTY_NOT_FOUND');
         }
-        if (property.status !== 'Published') {
+        if (property.status !== PropertyStatus.AVAILABLE) {
             throw new RentalRequestError(
-                'Rental requests can only be submitted for published properties',
+                'Rental requests can only be submitted for available properties',
                 400,
                 'PROPERTY_NOT_PUBLISHED'
             );
@@ -92,6 +94,19 @@ class RentalRequestService {
             living_situation: input.living_situation,
             message: input.message ?? null,
             status: RentalRequestStatus.PENDING,
+        });
+
+        await activityLogService.log({
+            actor: { userId: tenantId, role: user.role, email: user.email },
+            action: 'RENTAL_REQUEST_CREATED',
+            entityType: 'RENTAL_REQUEST',
+            entityId: rentalRequest.id,
+            description: `Tenant submitted rental request for property ${input.property_id}.`,
+            metadata: {
+                propertyId: input.property_id,
+                duration: input.duration,
+                occupants: input.occupants,
+            },
         });
 
         return this.formatRentalRequestResponse(rentalRequest);
@@ -146,7 +161,7 @@ class RentalRequestService {
                 {
                     model: User,
                     as: 'tenant',
-                    attributes: ['id'],
+                    attributes: ['id', 'email'],
                     include: [
                         {
                             model: Profile,
@@ -348,6 +363,20 @@ class RentalRequestService {
         }
 
         await request.update({ status: input.status });
+        const tenantEmail = request.tenant?.email || 'unknown-tenant-email';
+        await activityLogService.log({
+            actor: { userId: landlordId, role: 'LANDLORD' },
+            action: input.status === RentalRequestStatus.APPROVED ? 'RENTAL_REQUEST_APPROVED' : 'RENTAL_REQUEST_DECLINED',
+            entityType: 'RENTAL_REQUEST',
+            entityId: request.id,
+            description: `Landlord ${input.status === RentalRequestStatus.APPROVED ? 'approved' : 'declined'} rental request from ${tenantEmail}.`,
+            metadata: {
+                propertyId: request.property_id,
+                tenantId: request.tenant_id,
+                tenantEmail,
+                status: input.status,
+            },
+        });
 
         // If approved, automatically create a contract
         if (input.status === RentalRequestStatus.APPROVED) {
@@ -398,6 +427,14 @@ class RentalRequestService {
         }
 
         await request.destroy();
+        await activityLogService.log({
+            actor: { userId: tenantId, role: 'TENANT' },
+            action: 'RENTAL_REQUEST_CANCELLED',
+            entityType: 'RENTAL_REQUEST',
+            entityId: request.id,
+            description: 'Tenant cancelled pending rental request.',
+            metadata: { propertyId: request.property_id },
+        });
     }
 
     /**

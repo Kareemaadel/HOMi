@@ -96,6 +96,7 @@ export interface CreatePropertyRequest {
     maintenance_responsibilities?: PropertyMaintenanceResponsibilityInput[];
     specifications: PropertySpecificationsInput;
     detailed_location: PropertyDetailedLocationInput;
+    ownership_documents: string[];
 }
 
 /**
@@ -119,6 +120,7 @@ export interface UpdatePropertyRequest {
     maintenance_responsibilities?: PropertyMaintenanceResponsibilityInput[];
     specifications?: Partial<PropertySpecificationsInput>;
     detailed_location?: Partial<PropertyDetailedLocationInput>;
+    ownership_documents?: string[];
 }
 
 /**
@@ -184,6 +186,8 @@ export interface PropertyResponse {
     specifications: PropertySpecificationsResponse | null;
     detailedLocation: PropertyDetailedLocationResponse | null;
     landlord: PropertyLandlordResponse | null;
+    rejectionReason: string | null;
+    ownershipDocs?: { id: string; documentUrl: string }[];
 }
 
 /**

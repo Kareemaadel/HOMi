@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { propertyController } from '../controllers/property.controller.js';
 import { validate, validateQuery } from '../../../shared/middleware/validate.middleware.js';
-import { protect, requireVerified } from '../../../shared/middleware/auth.middleware.js';
+import { protect, requireVerified, restrictTo } from '../../../shared/middleware/auth.middleware.js';
 import {
     CreatePropertySchema,
     UpdatePropertySchema,
@@ -104,6 +104,9 @@ const router = Router();
  *               unit_apt: "Apt 12"
  *               location_lat: 30.0444
  *               location_long: 31.2357
+ *             ownership_documents:
+ *               - "data:image/jpeg;base64,/9j/4AAQ...."
+ *               - "https://example.com/legal-doc.pdf"
  *     responses:
  *       201:
  *         description: Property created successfully
@@ -539,6 +542,14 @@ router.delete(
     '/:id',
     protect,
     propertyController.deleteProperty.bind(propertyController)
+);
+
+router.post(
+    '/:id/report',
+    protect,
+    requireVerified,
+    restrictTo('TENANT'),
+    propertyController.reportProperty.bind(propertyController)
 );
 
 export default router;

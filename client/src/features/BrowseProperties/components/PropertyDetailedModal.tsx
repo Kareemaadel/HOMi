@@ -14,6 +14,7 @@ import {
 import ApplicationModal from './ApplicationModal';
 import AuthModal from '../../../components/global/AuthModal';
 import { messageService } from '../../../services/message.service';
+import { propertyService, type ReportListingPayload } from '../../../services/property.service';
 import './PropertyDetailedModal.css';
 
 const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequestView = false, onCancelRequest }: any) => {
@@ -23,6 +24,12 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
     const [currentImgIdx, setCurrentImgIdx] = useState(0);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isStartingChat, setIsStartingChat] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState<ReportListingPayload['reason']>('MISLEADING_INFORMATION');
+    const [reportDetails, setReportDetails] = useState('');
+    const [reportError, setReportError] = useState<string | null>(null);
+    const [reportSuccess, setReportSuccess] = useState<string | null>(null);
+    const [isSubmittingReport, setIsSubmittingReport] = useState(false);
     
     // Cancel Request States
     const [showCancelPrompt, setShowCancelPrompt] = useState(false);
@@ -119,6 +126,39 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
             onClose();
         } finally {
             setIsStartingChat(false);
+        }
+    };
+
+    const handleOpenReport = () => {
+        if (isGuest) {
+            setShowAuthModal(true);
+            return;
+        }
+        setShowReportModal(true);
+        setReportError(null);
+        setReportSuccess(null);
+    };
+
+    const handleSubmitReport = async () => {
+        const details = reportDetails.trim();
+        if (details.length < 30) {
+            setReportError('Please include at least 30 characters so our moderation team has enough context.');
+            return;
+        }
+
+        setIsSubmittingReport(true);
+        setReportError(null);
+        try {
+            const response = await propertyService.reportProperty(property.id, {
+                reason: reportReason,
+                details,
+            });
+            setReportSuccess(response.message || 'Report submitted successfully.');
+            setReportDetails('');
+        } catch (error: any) {
+            setReportError(error?.response?.data?.message || 'Unable to submit report right now. Please try again.');
+        } finally {
+            setIsSubmittingReport(false);
         }
     };
 
@@ -336,7 +376,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
 
                             <div className="secondary-actions">
                                 <button className="sec-btn"><FaCalendarAlt /> Book Viewing</button>
-                                <button className="sec-btn"><FaRegCompass /> Neighborhood Guide</button>
+                                <button className="sec-btn" onClick={handleOpenReport}><FaRegCompass /> Report Listing</button>
                             </div>
                         </div>
                     </aside>
@@ -366,6 +406,51 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                         <FaCheckCircle style={{ color: '#22c55e', fontSize: '2rem', marginBottom: '10px' }} />
                         <p style={{ marginBottom: '20px', fontWeight: 'bold' }}>Request cancelled successfully.</p>
                         <button onClick={onClose} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '100%' }}>Back to Properties</button>
+                    </div>
+                </div>
+            )}
+
+            {showReportModal && (
+                <div className="mini-modal-overlay" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }} onClick={() => setShowReportModal(false)}>
+                    <div className="mini-modal" style={{ background: 'white', padding: '22px', borderRadius: '12px', width: 'min(540px, 94vw)' }} onClick={(e) => e.stopPropagation()}>
+                        <h3 style={{ margin: '0 0 6px', fontWeight: 800, fontSize: '1.1rem' }}>Report Listing</h3>
+                        <p style={{ margin: '0 0 14px', color: '#475569', fontSize: '0.9rem' }}>
+                            Help us keep HOMi safe. Reports are reviewed by admins and can lead to listing removal.
+                        </p>
+                        <div style={{ display: 'grid', gap: '10px' }}>
+                            <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Reason</label>
+                            <select value={reportReason} onChange={(e) => setReportReason(e.target.value as ReportListingPayload['reason'])} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px', fontWeight: 600 }}>
+                                <option value="MISLEADING_INFORMATION">Misleading information</option>
+                                <option value="SCAM_OR_FRAUD">Scam or fraud</option>
+                                <option value="FAKE_PHOTOS">Fake photos</option>
+                                <option value="DUPLICATE_LISTING">Duplicate listing</option>
+                                <option value="UNAVAILABLE_OR_ALREADY_RENTED">Unavailable or already rented</option>
+                                <option value="OFFENSIVE_CONTENT">Offensive content</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+
+                            <label style={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Tell us what happened</label>
+                            <textarea
+                                value={reportDetails}
+                                onChange={(e) => setReportDetails(e.target.value)}
+                                rows={5}
+                                placeholder="Example: The listing says 2 bedrooms but photos and description show a studio. The owner also asked for payment outside HOMi before any viewing."
+                                style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px', resize: 'vertical' }}
+                            />
+                            <p style={{ margin: 0, textAlign: 'right', fontSize: '0.78rem', color: reportDetails.trim().length < 30 ? '#ef4444' : '#64748b' }}>
+                                {reportDetails.trim().length}/30 minimum
+                            </p>
+                        </div>
+
+                        {reportError && <p style={{ margin: '10px 0 0', color: '#dc2626', fontSize: '0.85rem', fontWeight: 600 }}>{reportError}</p>}
+                        {reportSuccess && <p style={{ margin: '10px 0 0', color: '#16a34a', fontSize: '0.85rem', fontWeight: 600 }}>{reportSuccess}</p>}
+
+                        <div style={{ marginTop: '16px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => setShowReportModal(false)} style={{ padding: '9px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#334155', fontWeight: 600 }}>Cancel</button>
+                            <button onClick={handleSubmitReport} disabled={isSubmittingReport} style={{ padding: '9px 14px', borderRadius: '8px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 700, opacity: isSubmittingReport ? 0.7 : 1 }}>
+                                {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

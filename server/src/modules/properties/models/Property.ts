@@ -13,9 +13,11 @@ import sequelize from '../../../config/database.js';
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
 export const PropertyStatus = {
-    DRAFT: 'Draft',
-    PUBLISHED: 'Published',
-    RENTED: 'Rented',
+    DRAFT: 'DRAFT',
+    PENDING_APPROVAL: 'PENDING_APPROVAL',
+    AVAILABLE: 'AVAILABLE',
+    REJECTED: 'REJECTED',
+    RENTED: 'RENTED',
 } as const;
 
 export type PropertyStatusType = (typeof PropertyStatus)[keyof typeof PropertyStatus];
@@ -52,6 +54,7 @@ import type { PropertyImage } from './PropertyImage.js';
 import type { Amenity } from './Amenity.js';
 import type { PropertySpecifications } from './PropertySpecifications.js';
 import type { PropertyDetailedLocation } from './PropertyDetailedLocation.js';
+import type { PropertyOwnershipDoc } from './PropertyOwnershipDoc.js';
 
 export class Property extends Model<
     InferAttributes<Property>,
@@ -75,6 +78,7 @@ export class Property extends Model<
     declare target_tenant: CreationOptional<TargetTenantType>;
     declare availability_date: Date | null;
     declare maintenance_responsibilities: CreationOptional<Array<{ area: string; responsible_party: 'LANDLORD' | 'TENANT' }>>;
+    declare rejection_reason: string | null;
 
     // Timestamps
     declare created_at: CreationOptional<Date>;
@@ -87,12 +91,14 @@ export class Property extends Model<
     declare amenities?: NonAttribute<Amenity[]>;
     declare specifications?: NonAttribute<PropertySpecifications>;
     declare detailedLocation?: NonAttribute<PropertyDetailedLocation>;
+    declare ownershipDocs?: NonAttribute<PropertyOwnershipDoc[]>;
     declare static associations: {
         landlord: Association<Property, User>;
         images: Association<Property, PropertyImage>;
         amenities: Association<Property, Amenity>;
         specifications: Association<Property, PropertySpecifications>;
         detailedLocation: Association<Property, PropertyDetailedLocation>;
+        ownershipDocs: Association<Property, PropertyOwnershipDoc>;
     };
 }
 
@@ -168,6 +174,10 @@ Property.init(
             type: DataTypes.JSONB,
             allowNull: false,
             defaultValue: [],
+        },
+        rejection_reason: {
+            type: DataTypes.TEXT,
+            allowNull: true,
         },
         created_at: {
             type: DataTypes.DATE,

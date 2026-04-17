@@ -10,6 +10,14 @@ import './DetailedPropertyCard.css';
 
 const DetailedPropertyCard = ({ property }: any) => {
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const status = String(property?.status || '').toLowerCase();
+  const isManageLocked = status === 'pending_approval' || status === 'rejected';
+  const manageLockMessage =
+    status === 'pending_approval'
+      ? 'Locked while pending admin approval'
+      : status === 'rejected'
+        ? 'Locked because listing is rejected'
+        : '';
 
   return (
     <>
@@ -83,7 +91,12 @@ const DetailedPropertyCard = ({ property }: any) => {
           </div>
           <div className="action-buttons">
             {/* TRIGGER MODAL HERE */}
-            <button className="manage-btn" onClick={() => setIsManageModalOpen(true)}>
+            <button
+              className={`manage-btn ${isManageLocked ? 'locked' : ''}`}
+              onClick={() => setIsManageModalOpen(true)}
+              disabled={isManageLocked}
+              title={manageLockMessage}
+            >
               Manage Unit
             </button>
             <button className="history-btn">View History</button>

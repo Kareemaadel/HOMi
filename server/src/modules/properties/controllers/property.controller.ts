@@ -25,7 +25,7 @@ class PropertyController {
 
             res.status(201).json({
                 success: true,
-                message: 'Property created successfully',
+                message: 'Property created successfully. It is currently under review.',
                 data: property,
             });
         } catch (error) {
@@ -111,6 +111,28 @@ class PropertyController {
             const result = await propertyService.deleteProperty(id as string, landlordId);
 
             res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/properties/:id/report
+     * Report a property listing (tenant only)
+     */
+    async reportProperty(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const reporterId = (req as any).user.userId;
+            const { reason, details } = req.body ?? {};
+
+            const report = await propertyService.reportProperty(id as string, reporterId, { reason, details });
+
+            res.status(201).json({
+                success: true,
+                message: report.message,
+                data: report,
+            });
         } catch (error) {
             next(error);
         }

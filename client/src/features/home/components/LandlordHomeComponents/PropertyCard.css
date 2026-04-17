@@ -108,6 +108,55 @@
   color: var(--warning-text);
 }
 
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pill.published, .status-pill.available {
+  color: var(--success-text);
+}
+
+.status-pill.pending_approval {
+  color: #c2410c; /* Orange */
+}
+
+.status-pill.rented {
+  color: #4f46e5; /* Indigo */
+}
+
+.status-pill.rejected {
+  color: #dc2626; /* Red */
+}
+
+.pulse-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.prop-floating-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
 /* Specs & Footer */
 .prop-card-content { padding: 10px 20px 20px; }
 

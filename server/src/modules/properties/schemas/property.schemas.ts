@@ -164,6 +164,18 @@ export const CreatePropertySchema = z.object({
         .default([]),
     specifications: PropertySpecificationsSchema,
     detailed_location: PropertyDetailedLocationSchema,
+    ownership_documents: z
+        .array(
+            z.string().refine(
+                (value) => {
+                    const isHttpUrl = /^https?:\/\/.+/i.test(value);
+                    const isDataDocument = /^data:(image\/[a-zA-Z0-9.+-]+|application\/pdf);base64,/.test(value);
+                    return isHttpUrl || isDataDocument;
+                },
+                { message: 'Document must be a valid URL or a base64 encoded document' }
+            )
+        )
+        .min(1, 'At least one ownership document is required'),
 });
 
 export type CreatePropertyInput = z.infer<typeof CreatePropertySchema>;
@@ -208,8 +220,8 @@ export const UpdatePropertySchema = z.object({
         { message: 'Furnishing must be Fully, Semi, or Unfurnished' }
     ).optional(),
     status: z.enum(
-        [PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED],
-        { message: 'Status must be Draft, Published, or Rented' }
+        [PropertyStatus.DRAFT, PropertyStatus.PENDING_APPROVAL, PropertyStatus.AVAILABLE, PropertyStatus.REJECTED, PropertyStatus.RENTED],
+        { message: 'Status is invalid' }
     ).optional(),
     target_tenant: z.enum(
         [TargetTenant.ANY, TargetTenant.STUDENTS, TargetTenant.FAMILIES, TargetTenant.TOURISTS],
@@ -243,6 +255,18 @@ export const UpdatePropertySchema = z.object({
         .optional(),
     specifications: PropertySpecificationsSchema.partial().optional(),
     detailed_location: PropertyDetailedLocationSchema.partial().optional(),
+    ownership_documents: z
+        .array(
+            z.string().refine(
+                (value) => {
+                    const isHttpUrl = /^https?:\/\/.+/i.test(value);
+                    const isDataDocument = /^data:(image\/[a-zA-Z0-9.+-]+|application\/pdf);base64,/.test(value);
+                    return isHttpUrl || isDataDocument;
+                },
+                { message: 'Document must be a valid URL or a base64 encoded document' }
+            )
+        )
+        .optional(),
 });
 
 export type UpdatePropertyInput = z.infer<typeof UpdatePropertySchema>;
@@ -254,7 +278,7 @@ export type UpdatePropertyInput = z.infer<typeof UpdatePropertySchema>;
  */
 export const PropertyQuerySchema = z.object({
     status: z
-        .enum([PropertyStatus.DRAFT, PropertyStatus.PUBLISHED, PropertyStatus.RENTED])
+        .enum([PropertyStatus.DRAFT, PropertyStatus.PENDING_APPROVAL, PropertyStatus.AVAILABLE, PropertyStatus.REJECTED, PropertyStatus.RENTED])
         .optional(),
     type: z
         .enum([PropertyType.APARTMENT, PropertyType.VILLA, PropertyType.STUDIO, PropertyType.CHALET])
