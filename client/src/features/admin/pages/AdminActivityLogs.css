@@ -1,59 +1,5 @@
-.admin-logs-layout {
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    background: #f1f5f9;
-    color: #0f172a;
-}
-
-.admin-logs-sidebar {
-    background: linear-gradient(180deg, #0b1739, #0f1c46);
-    color: #fff;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.admin-logs-brand h2 { margin: 6px 0 0; font-size: 1.6rem; }
-.admin-logs-brand h2 span { color: #38bdf8; }
-.admin-logs-team { font-size: 0.8rem; opacity: 0.75; }
-
-.admin-logs-nav { display: grid; gap: 8px; }
-.admin-logs-nav a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #cbd5e1;
-    text-decoration: none;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid transparent;
-}
-.admin-logs-nav a.active {
-    color: #fff;
-    border-color: rgba(56, 189, 248, 0.35);
-    background: rgba(56, 189, 248, 0.14);
-}
-
-.admin-logs-signout {
-    margin-top: auto;
-    background: transparent;
-    border: 1px solid rgba(251, 113, 133, 0.35);
-    color: #fecdd3;
-    border-radius: 10px;
-    padding: 10px 12px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    cursor: pointer;
-}
-
-.admin-logs-main { padding: 26px; display: grid; gap: 16px; }
-.admin-logs-header h1 { margin: 0; font-size: 1.8rem; }
-.admin-logs-header p { margin: 6px 0 0; color: #64748b; }
-
 .admin-logs-toolbar {
+    margin: 18px 26px 0;
     background: #fff;
     border: 1px solid #dbe7f5;
     border-radius: 14px;
@@ -77,6 +23,7 @@
 }
 
 .admin-logs-table-wrap {
+    margin: 0 26px;
     background: #fff;
     border: 1px solid #dbe7f5;
     border-radius: 14px;
@@ -116,6 +63,7 @@
 }
 
 .admin-logs-pagination {
+    padding: 8px 0 22px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -131,6 +79,7 @@
 .admin-logs-pagination button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .admin-logs-state {
+    margin: 22px 26px;
     background: #fff;
     border-radius: 14px;
     border: 1px solid #dbe7f5;
@@ -140,7 +89,107 @@
 }
 .admin-logs-error { color: #b91c1c; }
 
+.show-profile-btn {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-modal {
+    width: min(760px, 100%);
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #dbe7f5;
+    padding: 16px;
+    position: relative;
+}
+
+.profile-close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.profile-state {
+    text-align: center;
+    color: #475569;
+    padding: 34px;
+}
+
+.profile-error {
+    color: #b91c1c;
+}
+
+.profile-content {
+    display: grid;
+    gap: 14px;
+}
+
+.profile-top {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.profile-top img {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-top h3 {
+    margin: 0;
+}
+
+.profile-top p {
+    margin: 3px 0 0;
+    color: #475569;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.profile-grid p {
+    margin: 0;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 9px;
+    color: #334155;
+    font-size: 0.88rem;
+}
+
+.profile-bio {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.profile-bio p {
+    margin: 8px 0 0;
+    color: #334155;
+}
+
 @media (max-width: 1000px) {
-    .admin-logs-layout { grid-template-columns: 1fr; }
-    .admin-logs-sidebar { display: none; }
+    .admin-logs-toolbar,
+    .admin-logs-table-wrap,
+    .admin-logs-state {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
 }

@@ -6,7 +6,7 @@ import { PropertyReport, PropertyReportStatus } from '../../properties/models/Pr
 import { Contract, ContractStatus } from '../../contracts/models/Contract.js';
 import { Profile } from '../../auth/models/Profile.js';
 import { ActivityLog } from '../models/ActivityLog.js';
-import type { AdminStatsResponse, AdminListingReport, AdminActivityLogItem } from '../interfaces/admin.interfaces.js';
+import type { AdminStatsResponse, AdminListingReport, AdminActivityLogItem, AdminUserProfileDetails } from '../interfaces/admin.interfaces.js';
 import type { PropertyResponse } from '../../properties/interfaces/property.interfaces.js';
 import { propertyService } from '../../properties/services/property.service.js';
 import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
@@ -342,6 +342,62 @@ class AdminService {
                 limit: safeLimit,
                 totalPages: Math.ceil(count / safeLimit),
             },
+        };
+    }
+
+    async getUserProfileForAdmin(userId: string): Promise<AdminUserProfileDetails> {
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'email', 'role', 'is_verified', 'email_verified', 'created_at'],
+            include: [
+                {
+                    model: Profile,
+                    as: 'profile',
+                    attributes: [
+                        'first_name',
+                        'last_name',
+                        'phone_number',
+                        'avatar_url',
+                        'bio',
+                        'current_location',
+                        'gender',
+                        'birthdate',
+                        'national_id',
+                    ],
+                },
+            ],
+        });
+
+        if (!user) {
+            throw new AdminError('User not found', 404, 'USER_NOT_FOUND');
+        }
+
+        if (user.role === 'ADMIN') {
+            throw new AdminError('Profiles are available only for landlords and tenants', 400, 'UNSUPPORTED_ROLE');
+        }
+
+        const profile = user.profile;
+        const includeSensitiveDetails = Boolean(user.is_verified);
+
+        return {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.is_verified,
+            emailVerified: user.email_verified,
+            createdAt: user.created_at,
+            profile: profile
+                ? {
+                    firstName: profile.first_name || null,
+                    lastName: profile.last_name || null,
+                    phoneNumber: profile.phone_number || null,
+                    avatarUrl: profile.avatar_url || null,
+                    bio: includeSensitiveDetails ? profile.bio || null : null,
+                    currentLocation: includeSensitiveDetails ? profile.current_location || null : null,
+                    gender: includeSensitiveDetails ? profile.gender || null : null,
+                    birthdate: includeSensitiveDetails && profile.birthdate ? String(profile.birthdate) : null,
+                    nationalId: includeSensitiveDetails ? profile.getDecryptedNationalId() : null,
+                }
+                : null,
         };
     }
 }

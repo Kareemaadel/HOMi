@@ -57,3 +57,23 @@ export interface AdminActivityLogItem {
     metadata: Record<string, any> | null;
     createdAt: Date;
 }
+
+export interface AdminUserProfileDetails {
+    id: string;
+    email: string;
+    role: string;
+    isVerified: boolean;
+    emailVerified: boolean;
+    createdAt: Date;
+    profile: {
+        firstName: string | null;
+        lastName: string | null;
+        phoneNumber: string | null;
+        avatarUrl: string | null;
+        bio: string | null;
+        currentLocation: string | null;
+        gender: string | null;
+        birthdate: string | null;
+        nationalId: string | null;
+    } | null;
+}

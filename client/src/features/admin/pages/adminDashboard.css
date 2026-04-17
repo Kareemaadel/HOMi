@@ -1,1 +1,312 @@
+.admin-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    background: radial-gradient(circle at top right, #eef4ff 0%, #f5f8ff 45%, #f7f9fc 100%);
+    color: #0f172a;
+}
+
+.admin-sidebar {
+    background: linear-gradient(160deg, #0b1739 0%, #12265b 45%, #0f2a6e 100%);
+    color: #dbeafe;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.admin-brand-card {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.admin-brand-team {
+    margin: 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.admin-brand-card h2 {
+    margin: 8px 0 4px;
+    font-size: 1.6rem;
+}
+
+.admin-brand-card h2 span {
+    color: #67e8f9;
+}
+
+.admin-brand-card p {
+    margin: 0;
+    color: #bfdbfe;
+    font-size: 0.9rem;
+}
+
+.admin-nav {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #dbeafe;
+    text-decoration: none;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    padding: 11px 12px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.admin-nav a:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-nav a.active {
+    border-color: rgba(103, 232, 249, 0.55);
+    background: rgba(56, 189, 248, 0.18);
+    color: #ffffff;
+    box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.2);
+}
+
+.admin-signout {
+    margin-top: auto;
+    border: 1px solid rgba(251, 113, 133, 0.36);
+    background: rgba(251, 113, 133, 0.08);
+    color: #fecdd3;
+    border-radius: 12px;
+    padding: 11px 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.admin-main {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-header {
+    padding: 24px 30px;
+    border-bottom: 1px solid #dbe7f5;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 1.7rem;
+}
+
+.admin-header p {
+    margin: 7px 0 0;
+    color: #64748b;
+}
+
+.admin-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 700;
+    background: linear-gradient(145deg, #38bdf8, #2563eb);
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
+}
+
+.admin-content {
+    padding: 26px 30px;
+    display: grid;
+    gap: 18px;
+}
+
+.admin-state {
+    margin: 28px;
+    border-radius: 16px;
+    border: 1px solid #dbe7f5;
+    background: #fff;
+    color: #475569;
+    text-align: center;
+    padding: 54px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #dbe7f5;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+}
+
+.stat-card svg {
+    color: #2563eb;
+    font-size: 1.3rem;
+}
+
+.stat-card span {
+    color: #64748b;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+
+.stat-card strong {
+    display: block;
+    font-size: 1.7rem;
+    margin-top: 2px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #dbe7f5;
+    border-radius: 16px;
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.04);
+}
+
+.panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #e5eef8;
+}
+
+.panel-head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.panel-head p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 0.86rem;
+}
+
+.trend-pill {
+    background: #ecfdf3;
+    color: #166534;
+    font-weight: 700;
+    font-size: 0.78rem;
+    border-radius: 999px;
+    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bar-chart {
+    height: 250px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    padding: 18px;
+}
+
+.bar-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.bar-item .bar {
+    width: 100%;
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(180deg, #67e8f9 0%, #2563eb 100%);
+}
+
+.bar-item span {
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
+.progress-list {
+    padding: 16px 18px;
+    display: grid;
+    gap: 12px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    color: #475569;
+    font-size: 0.82rem;
+    margin-bottom: 6px;
+}
+
+.progress-track {
+    background: #e2e8f0;
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-track > div {
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #8b5cf6, #ec4899);
+}
+
+.property-curve {
+    grid-column: 1 / -1;
+}
+
+.line-chart-wrap {
+    height: 250px;
+    padding: 16px;
+}
+
+.line-chart-wrap svg {
+    width: 100%;
+    height: 100%;
+}
+
+@media (max-width: 1100px) {
+    .admin-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-sidebar {
+        display: none;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
 /* Kept as a compatibility placeholder for stale Vite HMR paths. */

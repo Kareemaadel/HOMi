@@ -6,6 +6,7 @@ import {
     Property,
     Profile,
 } from '../models/index.js';
+import { PropertyStatus } from '../../properties/models/Property.js';
 import type {
     CreateRentalRequestInput,
     UpdateRentalRequestStatusInput,
@@ -55,14 +56,14 @@ class RentalRequestService {
             );
         }
 
-        // Verify property exists and is published
+        // Verify property exists and is currently available for rental requests
         const property = await Property.findByPk(input.property_id);
         if (!property) {
             throw new RentalRequestError('Property not found', 404, 'PROPERTY_NOT_FOUND');
         }
-        if (property.status !== 'Published') {
+        if (property.status !== PropertyStatus.AVAILABLE) {
             throw new RentalRequestError(
-                'Rental requests can only be submitted for published properties',
+                'Rental requests can only be submitted for available properties',
                 400,
                 'PROPERTY_NOT_PUBLISHED'
             );

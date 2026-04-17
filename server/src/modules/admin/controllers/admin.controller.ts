@@ -162,6 +162,19 @@ class AdminController {
             next(error);
         }
     }
+
+    async getUserProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { userId } = req.params;
+            const profile = await adminService.getUserProfileForAdmin(String(userId));
+            res.status(200).json({
+                success: true,
+                data: profile,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export const adminController = new AdminController();

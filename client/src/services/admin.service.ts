@@ -73,8 +73,28 @@ export interface ActivityLogItem {
     entityType: string;
     entityId: string | null;
     description: string;
-    metadata: Record<string, any> | null;
+    metadata: Record<string, unknown> | null;
     createdAt: string;
+}
+
+export interface AdminUserProfileDetails {
+    id: string;
+    email: string;
+    role: string;
+    isVerified: boolean;
+    emailVerified: boolean;
+    createdAt: string;
+    profile: {
+        firstName: string | null;
+        lastName: string | null;
+        phoneNumber: string | null;
+        avatarUrl: string | null;
+        bio: string | null;
+        currentLocation: string | null;
+        gender: string | null;
+        birthdate: string | null;
+        nationalId: string | null;
+    } | null;
 }
 
 class AdminService {
@@ -111,6 +131,11 @@ class AdminService {
             { params }
         );
         return response.data;
+    }
+
+    async getUserProfile(userId: string) {
+        const response = await apiClient.get<{ success: boolean; data: AdminUserProfileDetails }>(`/admin/users/${userId}/profile`);
+        return response.data.data;
     }
 }
 

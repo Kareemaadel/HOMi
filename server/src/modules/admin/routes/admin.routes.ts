@@ -400,5 +400,6 @@ router.patch('/properties/:id/verify', adminController.verifyProperty.bind(admin
 router.get('/reports/listings', adminController.getListingReports.bind(adminController));
 router.delete('/reports/:reportId/remove-listing', adminController.removeReportedListing.bind(adminController));
 router.get('/activity-logs', adminController.getActivityLogs.bind(adminController));
+router.get('/users/:userId/profile', adminController.getUserProfile.bind(adminController));
 
 export default router;
