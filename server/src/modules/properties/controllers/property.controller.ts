@@ -25,7 +25,7 @@ class PropertyController {
 
             res.status(201).json({
                 success: true,
-                message: 'Property created successfully',
+                message: 'Property created successfully. It is currently under review.',
                 data: property,
             });
         } catch (error) {

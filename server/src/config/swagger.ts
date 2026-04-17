@@ -332,9 +332,23 @@ const options: Options = {
                 // ─── Property Enums ───────────────────────────────────────────────────────
                 PropertyStatus: {
                     type: 'string',
-                    enum: ['Draft', 'Published', 'Rented'],
-                    description: 'Property listing status. Newly created properties start as **Draft**. Landlords publish them (**Published**) to make them visible to tenants. Once a tenant is found, status changes to **Rented**.',
-                    example: 'Draft',
+                    enum: ['PENDING_APPROVAL', 'AVAILABLE', 'RENTED', 'REJECTED', 'Draft', 'Published', 'Rented'],
+                    description: 'Property listing status.\n- `PENDING_APPROVAL` — newly created, awaiting admin review.\n- `AVAILABLE` — admin-approved and visible to tenants.\n- `RENTED` — property currently has an active tenant.\n- `REJECTED` — admin rejected the submission (see `rejectionReason`).',
+                    example: 'PENDING_APPROVAL',
+                },
+
+                // ─── Ownership Documents ──────────────────────────────────────────────
+                PropertyOwnershipDoc: {
+                    type: 'object',
+                    description: 'A legal document uploaded by the landlord to prove property ownership. Reviewed by admins during the verification workflow.',
+                    properties: {
+                        id: { type: 'string', format: 'uuid', description: 'Unique document record ID' },
+                        documentUrl: {
+                            type: 'string',
+                            description: 'Base64-encoded document string or a public URL to the uploaded file (PDF or image)',
+                            example: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...',
+                        },
+                    },
                 },
                 PropertyType: {
                     type: 'string',
@@ -677,6 +691,28 @@ const options: Options = {
                             nullable: true,
                             description: 'Detailed location breakdown and GPS coordinates.',
                         },
+                        landlord: {
+                            type: 'object',
+                            nullable: true,
+                            description: 'Basic landlord profile included when the property is fetched with landlord association.',
+                            properties: {
+                                id: { type: 'string', format: 'uuid' },
+                                firstName: { type: 'string', example: 'Ahmed' },
+                                lastName: { type: 'string', example: 'Hassan' },
+                                avatarUrl: { type: 'string', nullable: true },
+                            },
+                        },
+                        rejectionReason: {
+                            type: 'string',
+                            nullable: true,
+                            description: 'Admin-provided reason if the property was rejected. `null` if not rejected.',
+                            example: 'The ownership documents provided do not match the property address.',
+                        },
+                        ownershipDocs: {
+                            type: 'array',
+                            description: 'Legal ownership documents uploaded by the landlord. Visible to admins during the verification review.',
+                            items: { $ref: '#/components/schemas/PropertyOwnershipDoc' },
+                        },
                     },
                 },
 
@@ -692,6 +728,7 @@ const options: Options = {
                         'furnishing',
                         'availability_date',
                         'images',
+                        'ownership_documents',
                         'specifications',
                         'detailed_location',
                     ],
@@ -782,6 +819,16 @@ const options: Options = {
                         },
                         specifications: {
                             $ref: '#/components/schemas/PropertySpecificationsInput',
+                        },
+                        ownership_documents: {
+                            type: 'array',
+                            minItems: 1,
+                            description: '**Required.** One or more legal documents proving property ownership (Base64-encoded strings or URLs). Reviewed by admin before the listing is published.',
+                            items: {
+                                type: 'string',
+                                description: 'Base64-encoded file or public URL of an ownership document (PDF, image, etc.)',
+                                example: 'data:application/pdf;base64,JVBERi0xLjQK...',
+                            },
                         },
                         detailed_location: {
                             $ref: '#/components/schemas/PropertyDetailedLocationInput',
@@ -1249,6 +1296,10 @@ const options: Options = {
             {
                 name: 'Contracts',
                 description: 'Contract lifecycle management — multi-step landlord and tenant signing workflow.',
+            },
+            {
+                name: 'Admin',
+                description: '**Admin-only** endpoints for platform management. Requires an `ADMIN` role JWT. Use `POST /api/admin/auth/login` to obtain a token.',
             },
         ],
     },

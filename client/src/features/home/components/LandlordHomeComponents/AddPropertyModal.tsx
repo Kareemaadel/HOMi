@@ -132,7 +132,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
 
   // Maintenance State
   const [maintenance, setMaintenance] = useState<Record<string, 'landlord' | 'tenant'>>({
@@ -240,6 +242,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
       if (uploadedImages.length === 0) {
         return 'Please upload at least one property photo before continuing.';
       }
+
+      if (uploadedDocuments.length === 0) {
+        return 'Please upload at least one legal ownership document before continuing.';
+      }
     }
 
     if (currentStep === 3) {
@@ -286,6 +292,22 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     const encodedImages = await Promise.all(imagesToAdd.map(readFileAsDataUrl));
 
     setUploadedImages((prev) => [...prev, ...encodedImages].slice(0, 5));
+    event.target.value = '';
+  };
+
+  const handleDocUploadClick = () => {
+    docInputRef.current?.click();
+  };
+
+  const handleDocsSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    // Limit to 3 docs for simplicity
+    const docsToAdd = files.slice(0, 3 - uploadedDocuments.length);
+    const encodedDocs = await Promise.all(docsToAdd.map(readFileAsDataUrl));
+
+    setUploadedDocuments((prev) => [...prev, ...encodedDocs].slice(0, 3));
     event.target.value = '';
   };
 
@@ -375,6 +397,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
       return;
     }
 
+    if (uploadedDocuments.length === 0) {
+      alert('Please upload at least one legal ownership document.');
+      return;
+    }
+
     if (!title.trim() || !aboutProperty.trim()) {
       setSubmitError('Please provide both property title and description.');
       return;
@@ -423,6 +450,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
         target_tenant: 'ANY',
         availability_date: availabilityDate || new Date().toISOString().slice(0, 10),
         images: imagesPayload,
+        ownership_documents: uploadedDocuments,
         specifications: {
           bedrooms: parsedBeds,
           bathrooms: parsedBaths,
@@ -446,7 +474,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
         },
       });
 
-      await propertyService.publishProperty(createResult.data.id);
       setLoading(false);
       setIsSuccess(true);
       triggerConfetti();
@@ -597,6 +624,38 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                       ))}
                       {Array.from({ length: Math.max(0, 4 - uploadedImages.length) }).map((_, i) => (
                         <div key={`empty-${i}`} className="empty-photo-slot"></div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Legal Ownership Documents Upload */}
+                  <div className="photo-upload-section" style={{ marginTop: '20px' }}>
+                    <label><FaShieldAlt /> Legal Ownership Documents</label>
+                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                        Upload files (PDFs/Images) proving your ownership. These are required for Admin verification.
+                    </p>
+                    <div className="upload-grid">
+                      <input
+                        ref={docInputRef}
+                        type="file"
+                        accept="image/*,application/pdf"
+                        multiple
+                        onChange={handleDocsSelected}
+                        style={{ display: 'none' }}
+                      />
+                      <button type="button" className="upload-placeholder" onClick={handleDocUploadClick}>
+                        <FaCloudUploadAlt />
+                        <span>Upload Docs</span>
+                      </button>
+                      {uploadedDocuments.map((doc, index) => (
+                        <div key={index} className="uploaded-photo-slot">
+                          <div style={{ backgroundColor: '#e2e8f0', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#475569', overflow: 'hidden', padding: '5px' }}>
+                             {doc.substring(0, 30)}...
+                          </div>
+                        </div>
+                      ))}
+                      {Array.from({ length: Math.max(0, 3 - uploadedDocuments.length) }).map((_, i) => (
+                        <div key={`empty-doc-${i}`} className="empty-photo-slot"></div>
                       ))}
                     </div>
                   </div>
@@ -778,8 +837,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                 </svg>
               </div>
               <div className="success-text-content">
-                <h2>Listing Live!</h2>
-                <p>Your property is now being shown to thousands of potential tenants.</p>
+                <h2>Pending Approval</h2>
+                <p>Your property has been submitted and is waiting for admin review.</p>
                 <button
                   className="final-close-btn"
                   onClick={() => {

@@ -13,6 +13,17 @@ interface ManagePropertyModalProps {
   initialTab?: string;
 }
 
+const normalizeUiStatus = (rawStatus: string | undefined): 'draft' | 'pending_approval' | 'available' | 'rented' | 'rejected' => {
+  const status = String(rawStatus || '').trim().toLowerCase();
+  if (status === 'published') return 'available';
+  if (status === 'draft') return 'draft';
+  if (status === 'pending_approval') return 'pending_approval';
+  if (status === 'available') return 'available';
+  if (status === 'rented') return 'rented';
+  if (status === 'rejected') return 'rejected';
+  return 'draft';
+};
+
 const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onClose, initialTab }) => {
   const [activeTab, setActiveTab] = useState(initialTab || 'general');
   const [loading, setLoading] = useState(false);
@@ -58,11 +69,14 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
 
   // 1. Initial State for Comparison (Dirty Checking)
   // Included the full 10-item maintenance list here
+  const initialStatus = useMemo(() => normalizeUiStatus(property.status), [property.status]);
+  const isRejected = initialStatus === 'rejected';
+
   const initialState = useMemo(() => ({
     name: property.name || '',
     price: property.price?.toString().replace(/[^0-9]/g, '') || '',
     address: property.address || '',
-    status: property.status === 'published' ? 'available' : property.status === 'rented' ? 'rented' : 'maintenance',
+    status: initialStatus,
     beds: property.beds || 0,
     baths: property.baths || 0,
     sqft: property.sqft || 0,
@@ -80,7 +94,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
         common: 'Landlord',
         security: 'Landlord'
     }
-  }), [property]);
+  }), [property, initialStatus]);
 
   // 2. Form State
   const [formData, setFormData] = useState(initialState);
@@ -132,6 +146,11 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
   };
 
   const handleUpdate = async () => {
+    if (isRejected) {
+      setSaveError('Rejected properties are locked and cannot be edited.');
+      return;
+    }
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       if (validationErrors.name || validationErrors.address) setActiveTab('general');
@@ -144,9 +163,11 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     try {
       const { propertyService } = await import('../../../services/property.service');
 
-      let backendStatus = 'Draft';
-      if (formData.status === 'available') backendStatus = 'Published';
-      if (formData.status === 'rented') backendStatus = 'Rented';
+      let backendStatus: 'DRAFT' | 'PENDING_APPROVAL' | 'AVAILABLE' | 'RENTED' | 'REJECTED' = 'DRAFT';
+      if (formData.status === 'pending_approval') backendStatus = 'PENDING_APPROVAL';
+      if (formData.status === 'available') backendStatus = 'AVAILABLE';
+      if (formData.status === 'rented') backendStatus = 'RENTED';
+      if (formData.status === 'rejected') backendStatus = 'REJECTED';
 
       const maintenanceResponsibilities = Object.entries(formData.maintenance || {}).map(([area, owner]) => ({
         area,
@@ -250,6 +271,11 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
             <div className="header-text">
               <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')}</h2>
               <p>Property ID: <span className="id-badge">#PRP-{property.id || '9921'}</span></p>
+              {isRejected && (
+                <p style={{ marginTop: 8, color: '#b91c1c', fontWeight: 700 }}>
+                  This listing is rejected and locked by admin.
+                </p>
+              )}
             </div>
             <button className="close-circle-btn" onClick={onClose}><FaTimes /></button>
           </header>
@@ -269,6 +295,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         value={formData.name} 
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                         className="m-input" 
+                        disabled={isRejected}
                       />
                     </div>
                     {errors.name && <span className="error-msg">{errors.name}</span>}
@@ -281,10 +308,13 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         className="m-select" 
                         value={formData.status}
                         onChange={(e) => setFormData({...formData, status: e.target.value})}
+                        disabled={isRejected}
                       >
+                        <option value="draft">Draft</option>
+                        <option value="pending_approval">Pending Approval</option>
                         <option value="available">Available</option>
                         <option value="rented">Rented</option>
-                        <option value="maintenance">Maintenance</option>
+                        <option value="rejected" disabled>Rejected</option>
                       </select>
                     </div>
                     <div className="manage-field">
@@ -305,6 +335,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                     value={formData.address} 
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                     rows={3}
+                    disabled={isRejected}
                   />
                   {errors.address && <span className="error-msg">{errors.address}</span>}
                 </div>
@@ -312,15 +343,15 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                 <div className="manage-card-group specs-edit-row">
                    <div className="mini-spec">
                       <FaBed />
-                      <input type="number" value={formData.beds} onChange={(e) => setFormData({...formData, beds: Number(e.target.value)})} />
+                      <input type="number" value={formData.beds} onChange={(e) => setFormData({...formData, beds: Number(e.target.value)})} disabled={isRejected} />
                    </div>
                    <div className="mini-spec">
                       <FaBath />
-                      <input type="number" value={formData.baths} onChange={(e) => setFormData({...formData, baths: Number(e.target.value)})} />
+                      <input type="number" value={formData.baths} onChange={(e) => setFormData({...formData, baths: Number(e.target.value)})} disabled={isRejected} />
                    </div>
                    <div className="mini-spec">
                       <FaRulerCombined />
-                      <input type="number" value={formData.sqft} onChange={(e) => setFormData({...formData, sqft: Number(e.target.value)})} />
+                      <input type="number" value={formData.sqft} onChange={(e) => setFormData({...formData, sqft: Number(e.target.value)})} disabled={isRejected} />
                    </div>
                 </div>
               </div>
@@ -343,6 +374,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         type="number" 
                         value={formData.price} 
                         onChange={(e) => setFormData({...formData, price: e.target.value})}
+                        disabled={isRejected}
                       />
                       <span className="period">/mo</span>
                     </div>
@@ -371,6 +403,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                               type="checkbox"
                               checked={isSelected(formData.amenities || [], perk)}
                               onChange={() => toggleSelection('amenities', perk)}
+                              disabled={isRejected}
                             />
                             <div className="indicator"></div>
                             <span>{perk}</span>
@@ -388,6 +421,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                               type="checkbox"
                               checked={isSelected(formData.houseRules || [], rule)}
                               onChange={() => toggleSelection('houseRules', rule)}
+                              disabled={isRejected}
                             />
                             <div className="indicator"></div>
                             <span>{rule}</span>
@@ -448,6 +482,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                                             ...formData, 
                                             maintenance: { ...formData.maintenance, [key]: e.target.value }
                                         })}
+                                        disabled={isRejected}
                                     >
                                         <option value="Landlord">Landlord</option>
                                         <option value="Tenant">Tenant</option>
@@ -466,14 +501,14 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
              <button 
                 className="m-btn-cancel" 
                 onClick={() => setFormData(initialState)} 
-                disabled={!isDirty || loading}
+                disabled={isRejected || !isDirty || loading}
              >
                 Discard Changes
              </button>
              <button 
                 className="m-btn-save" 
                 onClick={handleUpdate} 
-                disabled={!isDirty || loading}
+                disabled={isRejected || !isDirty || loading}
              >
                 {loading ? <div className="spinner-mini"></div> : <><FaSave /> Save Changes</>}
              </button>

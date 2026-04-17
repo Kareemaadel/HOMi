@@ -24,6 +24,11 @@ export interface PropertySpecificationsResponse {
     areaSqft: number;
 }
 
+export interface PropertyOwnershipDocResponse {
+    id: string;
+    documentUrl: string;
+}
+
 export interface PropertyLandlordResponse {
     id: string;
     firstName: string;
@@ -54,10 +59,12 @@ export interface PropertyResponse {
     }>;
     specifications: PropertySpecificationsResponse | null;
     landlord: PropertyLandlordResponse | null;
+    ownershipDocs: PropertyOwnershipDocResponse[];
+    rejectionReason?: string | null;
 }
 
 export interface PropertyQueryParams {
-    status?: 'Draft' | 'Published' | 'Rented';
+    status?: 'DRAFT' | 'PENDING_APPROVAL' | 'AVAILABLE' | 'REJECTED' | 'RENTED';
     type?: 'APARTMENT' | 'VILLA' | 'STUDIO' | 'CHALET';
     furnishing?: 'Fully' | 'Semi' | 'Unfurnished';
     target_tenant?: 'ANY' | 'STUDENTS' | 'FAMILIES' | 'TOURISTS';
@@ -108,6 +115,7 @@ export interface CreatePropertyPayload {
         bathrooms: number;
         area_sqft: number;
     };
+    ownership_documents: string[];
     maintenance_responsibilities?: Array<{
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';

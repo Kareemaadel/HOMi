@@ -104,6 +104,9 @@ const router = Router();
  *               unit_apt: "Apt 12"
  *               location_lat: 30.0444
  *               location_long: 31.2357
+ *             ownership_documents:
+ *               - "data:image/jpeg;base64,/9j/4AAQ...."
+ *               - "https://example.com/legal-doc.pdf"
  *     responses:
  *       201:
  *         description: Property created successfully

@@ -26,8 +26,9 @@ import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
 import ComingSoon from "./features/ComingSoon/pages/ComingSoon";
 import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
-
-
+import AdminLogin from "./features/admin/pages/AdminLogin";
+import AdminDashboard from "./features/admin/pages/AdminDashboard";
+import AdminPropertyApprovals from "./features/admin/pages/AdminPropertyApprovals";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -100,6 +101,12 @@ function App() {
         {/* Guest Routes — public */}
         <Route path="/guest-home"   element={<GuestHome />} />
         <Route path="/guest-search" element={<GuestSearch />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/auth/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AuthGuard allowedRoles={['ADMIN']}><AdminDashboard /></AuthGuard>} />
+        <Route path="/admin/property-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminPropertyApprovals /></AuthGuard>} />
 
         {/* Auth Routes — public */}
         <Route path="/auth"             element={<AuthPage />} />

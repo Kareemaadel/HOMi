@@ -146,7 +146,7 @@ const BrowseProperties: React.FC = () => {
         setViewingAll(null);
         try {
             const response = await propertyService.getAllProperties({
-                status: 'Published',
+                status: 'AVAILABLE',
                 page: 1,
                 limit: 60,
             });
@@ -284,7 +284,7 @@ const BrowseProperties: React.FC = () => {
                             setViewingAll(null);
                             try {
                                 const response = await propertyService.getAllProperties({
-                                    status: 'Published',
+                                    status: 'AVAILABLE',
                                     page: 1,
                                     limit: 60,
                                     ...filters

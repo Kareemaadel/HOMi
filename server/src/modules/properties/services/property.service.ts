@@ -1,11 +1,13 @@
 import { Op, Sequelize } from 'sequelize';
 import {
     Property,
+    PropertyStatus,
     PropertyImage,
     Amenity,
     PropertySpecifications,
     PropertyDetailedLocation,
     HouseRule,
+    PropertyOwnershipDoc,
     sequelize,
 } from '../models/index.js';
 import { User } from '../../auth/models/User.js';
@@ -134,7 +136,7 @@ class PropertyService {
                     target_tenant: input.target_tenant ?? 'ANY',
                     availability_date: new Date(input.availability_date),
                     maintenance_responsibilities: input.maintenance_responsibilities ?? [],
-                    status: 'Draft',
+                    status: 'PENDING_APPROVAL',
                 },
                 { transaction }
             );
@@ -176,6 +178,15 @@ class PropertyService {
                 { transaction }
             );
 
+            // Create ownership docs
+            const ownershipDocs = await PropertyOwnershipDoc.bulkCreate(
+                input.ownership_documents.map((url) => ({
+                    property_id: property.id,
+                    document_url: url,
+                })),
+                { transaction }
+            );
+
             // Associate amenities (by their resolved IDs)
             if (amenities.length > 0) {
                 await (property as any).setAmenities(
@@ -194,7 +205,7 @@ class PropertyService {
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation, ownershipDocs);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -289,6 +300,11 @@ class PropertyService {
                     model: PropertySpecifications,
                     as: 'specifications',
                 },
+                {
+                    model: PropertyOwnershipDoc,
+                    as: 'ownershipDocs',
+                    attributes: ['id', 'document_url'],
+                },
                 detailedLocationInclude,
             ],
             limit,
@@ -304,7 +320,8 @@ class PropertyService {
                 (property as any).amenities || [],
                 (property as any).houseRules || [],
                 (property as any).specifications ?? null,
-                (property as any).detailedLocation ?? null
+                (property as any).detailedLocation ?? null,
+                (property as any).ownershipDocs || []
             )
         );
 
@@ -362,6 +379,11 @@ class PropertyService {
                     model: PropertyDetailedLocation,
                     as: 'detailedLocation',
                 },
+                {
+                    model: PropertyOwnershipDoc,
+                    as: 'ownershipDocs',
+                    attributes: ['id', 'document_url'],
+                },
             ],
         });
 
@@ -375,7 +397,8 @@ class PropertyService {
             (property as any).amenities || [],
             (property as any).houseRules || [],
             (property as any).specifications ?? null,
-            (property as any).detailedLocation ?? null
+            (property as any).detailedLocation ?? null,
+            (property as any).ownershipDocs || []
         );
     }
 
@@ -402,6 +425,14 @@ class PropertyService {
                     'You do not have permission to update this property',
                     403,
                     'FORBIDDEN'
+                );
+            }
+
+            if (property.status === PropertyStatus.REJECTED) {
+                throw new PropertyError(
+                    'Rejected properties cannot be edited by landlords.',
+                    403,
+                    'PROPERTY_LOCKED'
                 );
             }
 
@@ -488,6 +519,19 @@ class PropertyService {
                 images = await PropertyImage.findAll({ where: { property_id: id }, transaction });
             }
 
+            // Update ownership docs if provided
+            let ownershipDocs = await PropertyOwnershipDoc.findAll({ where: { property_id: id }, transaction });
+            if (input.ownership_documents !== undefined) {
+                await PropertyOwnershipDoc.destroy({ where: { property_id: id }, transaction });
+                ownershipDocs = await PropertyOwnershipDoc.bulkCreate(
+                    input.ownership_documents.map((url) => ({
+                        property_id: id,
+                        document_url: url,
+                    })),
+                    { transaction }
+                );
+            }
+
             // Update amenities if provided (by name — replace strategy)
             let amenities: Amenity[] = [];
             if (input.amenity_names !== undefined) {
@@ -514,7 +558,7 @@ class PropertyService {
 
             await transaction.commit();
 
-            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation);
+            return this.formatPropertyResponse(property, images, amenities, houseRules, specifications, detailedLocation, ownershipDocs);
         } catch (error) {
             await transaction.rollback();
             throw error;
@@ -556,7 +600,8 @@ class PropertyService {
         amenities: Amenity[] = [],
         houseRules: HouseRule[] = [],
         spec: PropertySpecifications | null = null,
-        loc: PropertyDetailedLocation | null = null
+        loc: PropertyDetailedLocation | null = null,
+        docs: PropertyOwnershipDoc[] = []
     ): PropertyResponse {
         const formattedImages: PropertyImageResponse[] = images.map((img) => ({
             id: img.id,
@@ -632,6 +677,11 @@ class PropertyService {
             specifications: formattedSpec,
             detailedLocation: formattedLocation,
             landlord: formattedLandlord,
+            rejectionReason: property.rejection_reason ?? null,
+            ownershipDocs: docs.map((d) => ({
+                id: d.id,
+                documentUrl: d.document_url,
+            })),
         };
     }
 }

@@ -97,9 +97,52 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                     END IF;
                 END $$;
             `);
+            // Add new property.status enum values
+            await sequelize.query(`
+                DO $$ BEGIN
+                    -- Check and add DRAFT
+                    IF EXISTS (SELECT 1 FROM pg_type t WHERE t.typname = 'enum_properties_status') AND NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'enum_properties_status' AND e.enumlabel = 'DRAFT') THEN ALTER TYPE enum_properties_status ADD VALUE 'DRAFT'; END IF;
+                    -- Check and add PENDING_APPROVAL
+                    IF EXISTS (SELECT 1 FROM pg_type t WHERE t.typname = 'enum_properties_status') AND NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'enum_properties_status' AND e.enumlabel = 'PENDING_APPROVAL') THEN ALTER TYPE enum_properties_status ADD VALUE 'PENDING_APPROVAL'; END IF;
+                    -- Check and add AVAILABLE
+                    IF EXISTS (SELECT 1 FROM pg_type t WHERE t.typname = 'enum_properties_status') AND NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'enum_properties_status' AND e.enumlabel = 'AVAILABLE') THEN ALTER TYPE enum_properties_status ADD VALUE 'AVAILABLE'; END IF;
+                    -- Check and add REJECTED
+                    IF EXISTS (SELECT 1 FROM pg_type t WHERE t.typname = 'enum_properties_status') AND NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'enum_properties_status' AND e.enumlabel = 'REJECTED') THEN ALTER TYPE enum_properties_status ADD VALUE 'REJECTED'; END IF;
+                    -- Check and add RENTED
+                    IF EXISTS (SELECT 1 FROM pg_type t WHERE t.typname = 'enum_properties_status') AND NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'enum_properties_status' AND e.enumlabel = 'RENTED') THEN ALTER TYPE enum_properties_status ADD VALUE 'RENTED'; END IF;
+                END $$;
+            `);
             await sequelize.query(`
                 ALTER TABLE IF EXISTS "profiles"
                     ADD COLUMN IF NOT EXISTS "current_location" VARCHAR(255);
+            `);
+            // ── Safely drop any stale FK constraints that Sequelize alter-mode
+            //    may try to recreate, causing SequelizeUnknownConstraintError.
+            //    Each block is fully idempotent — safe to run on every startup.
+            await sequelize.query(`
+                DO $$ 
+                DECLARE
+                    r RECORD;
+                BEGIN
+                    FOR r IN
+                        SELECT tc.table_name, tc.constraint_name
+                        FROM information_schema.table_constraints tc
+                        WHERE tc.constraint_type = 'FOREIGN KEY'
+                          AND tc.table_name IN (
+                              'profiles', 'contracts', 'properties',
+                              'property_images', 'property_specifications',
+                              'property_detailed_locations', 'property_ownership_docs',
+                              'rental_requests', 'saved_properties',
+                              'property_amenities', 'property_house_rules',
+                              'messages', 'payment_methods', 'notifications'
+                          )
+                    LOOP
+                        EXECUTE format(
+                            'ALTER TABLE %I DROP CONSTRAINT IF EXISTS %I',
+                            r.table_name, r.constraint_name
+                        );
+                    END LOOP;
+                END $$;
             `);
         }
         // ──────────────────────────────────────────────────────────────────

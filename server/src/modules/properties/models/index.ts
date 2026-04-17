@@ -18,6 +18,7 @@ import { PropertySpecifications } from './PropertySpecifications.js';
 import { PropertyDetailedLocation } from './PropertyDetailedLocation.js';
 import { HouseRule } from './HouseRule.js';
 import { PropertyHouseRule } from './PropertyHouseRule.js';
+import { PropertyOwnershipDoc } from './PropertyOwnershipDoc.js';
 
 // ─── Associations ─────────────────────────────────────────────────────────────
 
@@ -43,6 +44,20 @@ Property.hasMany(PropertyImage, {
 
 // PropertyImage belongs to Property
 PropertyImage.belongsTo(Property, {
+    foreignKey: 'property_id',
+    as: 'property',
+});
+
+// Property has many PropertyOwnershipDocs
+Property.hasMany(PropertyOwnershipDoc, {
+    foreignKey: 'property_id',
+    as: 'ownershipDocs',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// PropertyOwnershipDoc belongs to Property
+PropertyOwnershipDoc.belongsTo(Property, {
     foreignKey: 'property_id',
     as: 'property',
 });
@@ -121,6 +136,7 @@ export {
     PropertyDetailedLocation,
     HouseRule,
     PropertyHouseRule,
+    PropertyOwnershipDoc,
 };
 
 export type { PropertyStatusType, FurnishingStatusType, PropertyTypeType, TargetTenantType };
@@ -135,4 +151,5 @@ export default {
     PropertyDetailedLocation,
     HouseRule,
     PropertyHouseRule,
+    PropertyOwnershipDoc,
 };
