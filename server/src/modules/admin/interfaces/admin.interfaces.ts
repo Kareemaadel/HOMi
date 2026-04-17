@@ -44,3 +44,16 @@ export interface AdminListingReport {
         lastName?: string;
     } | null;
 }
+
+export interface AdminActivityLogItem {
+    id: string;
+    actorUserId: string | null;
+    actorRole: string | null;
+    actorEmail: string | null;
+    action: string;
+    entityType: string;
+    entityId: string | null;
+    description: string;
+    metadata: Record<string, any> | null;
+    createdAt: Date;
+}

@@ -29,22 +29,30 @@ import {
 Contract.belongsTo(RentalRequest, {
     foreignKey: 'rental_request_id',
     as: 'rentalRequest',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
 });
 
 RentalRequest.hasOne(Contract, {
     foreignKey: 'rental_request_id',
     as: 'contract',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
 });
 
 // Contract belongs to Property
 Contract.belongsTo(Property, {
     foreignKey: 'property_id',
     as: 'property',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
 });
 
 Property.hasMany(Contract, {
     foreignKey: 'property_id',
     as: 'contracts',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
 });
 
 // Contract belongs to User (landlord)

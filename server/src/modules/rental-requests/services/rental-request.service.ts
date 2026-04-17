@@ -14,6 +14,7 @@ import type {
 } from '../interfaces/rental-request.interfaces.js';
 import { PropertyImage } from '../../properties/models/PropertyImage.js';
 import { PropertySpecifications } from '../../properties/models/PropertySpecifications.js';
+import { activityLogService } from '../../../shared/services/activity-log.service.js';
 
 /**
  * Custom error class for rental request errors
@@ -92,6 +93,19 @@ class RentalRequestService {
             living_situation: input.living_situation,
             message: input.message ?? null,
             status: RentalRequestStatus.PENDING,
+        });
+
+        await activityLogService.log({
+            actor: { userId: tenantId, role: user.role, email: user.email },
+            action: 'RENTAL_REQUEST_CREATED',
+            entityType: 'RENTAL_REQUEST',
+            entityId: rentalRequest.id,
+            description: `Tenant submitted rental request for property ${input.property_id}.`,
+            metadata: {
+                propertyId: input.property_id,
+                duration: input.duration,
+                occupants: input.occupants,
+            },
         });
 
         return this.formatRentalRequestResponse(rentalRequest);
@@ -348,6 +362,18 @@ class RentalRequestService {
         }
 
         await request.update({ status: input.status });
+        await activityLogService.log({
+            actor: { userId: landlordId, role: 'LANDLORD' },
+            action: input.status === RentalRequestStatus.APPROVED ? 'RENTAL_REQUEST_APPROVED' : 'RENTAL_REQUEST_DECLINED',
+            entityType: 'RENTAL_REQUEST',
+            entityId: request.id,
+            description: `Landlord ${input.status === RentalRequestStatus.APPROVED ? 'approved' : 'declined'} rental request.`,
+            metadata: {
+                propertyId: request.property_id,
+                tenantId: request.tenant_id,
+                status: input.status,
+            },
+        });
 
         // If approved, automatically create a contract
         if (input.status === RentalRequestStatus.APPROVED) {
@@ -398,6 +424,14 @@ class RentalRequestService {
         }
 
         await request.destroy();
+        await activityLogService.log({
+            actor: { userId: tenantId, role: 'TENANT' },
+            action: 'RENTAL_REQUEST_CANCELLED',
+            entityType: 'RENTAL_REQUEST',
+            entityId: request.id,
+            description: 'Tenant cancelled pending rental request.',
+            metadata: { propertyId: request.property_id },
+        });
     }
 
     /**

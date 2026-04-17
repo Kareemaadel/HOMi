@@ -4,6 +4,7 @@ import { VerifyPropertySchema } from '../schemas/admin.schemas.js';
 import { AuthError } from '../../auth/services/auth.service.js';
 import { UserRole, User } from '../../auth/models/User.js';
 import { generateTokenPair } from '../../../shared/utils/jwt.util.js';
+import { activityLogService } from '../../../shared/services/activity-log.service.js';
 
 class AdminController {
     /**
@@ -53,6 +54,14 @@ class AdminController {
                 message: 'Admin logged in successfully',
                 data,
             });
+
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'ADMIN_LOGIN',
+                entityType: 'USER',
+                entityId: user.id,
+                description: 'Admin logged into admin panel.',
+            });
         } catch (error) {
             next(error);
         }
@@ -97,8 +106,9 @@ class AdminController {
         try {
             const { id } = req.params;
             const validated = VerifyPropertySchema.parse(req.body);
+            const adminId = (req as any).user?.userId;
 
-            const property = await adminService.verifyProperty(id as string, validated.action, validated.rejectionReason);
+            const property = await adminService.verifyProperty(id as string, validated.action, validated.rejectionReason, adminId);
 
             res.status(200).json({
                 success: true,
@@ -132,6 +142,21 @@ class AdminController {
                 success: true,
                 message: 'Reported listing removed successfully.',
                 data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getActivityLogs(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const page = Number(req.query.page ?? 1);
+            const limit = Number(req.query.limit ?? 50);
+            const result = await adminService.getActivityLogs(page, limit);
+            res.status(200).json({
+                success: true,
+                data: result.logs,
+                pagination: result.pagination,
             });
         } catch (error) {
             next(error);

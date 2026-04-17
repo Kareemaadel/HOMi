@@ -399,5 +399,6 @@ router.get('/properties/pending', adminController.getPendingProperties.bind(admi
 router.patch('/properties/:id/verify', adminController.verifyProperty.bind(adminController));
 router.get('/reports/listings', adminController.getListingReports.bind(adminController));
 router.delete('/reports/:reportId/remove-listing', adminController.removeReportedListing.bind(adminController));
+router.get('/activity-logs', adminController.getActivityLogs.bind(adminController));
 
 export default router;

@@ -30,12 +30,16 @@ User.hasMany(RentalRequest, {
 RentalRequest.belongsTo(Property, {
     foreignKey: 'property_id',
     as: 'property',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
 });
 
 // Property has many RentalRequests
 Property.hasMany(RentalRequest, {
     foreignKey: 'property_id',
     as: 'rentalRequests',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
 });
 
 // ─── Exports ──────────────────────────────────────────────────────────────────

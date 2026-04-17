@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FiCheck, FiCheckCircle, FiFileText, FiHome, FiLogOut, FiX, FiClock, FiAlertTriangle } from 'react-icons/fi';
+import { FiCheck, FiCheckCircle, FiFileText, FiHome, FiLogOut, FiX, FiClock, FiAlertTriangle, FiActivity } from 'react-icons/fi';
 import adminService, { type PendingApprovalProperty } from '../../../services/admin.service';
 
 const openDocument = async (documentUrl: string) => {
@@ -164,6 +164,18 @@ const AdminPropertyApprovals = () => {
                         }
                     >
                         <FiAlertTriangle /> <span>User Reports</span>
+                    </NavLink>
+                    <NavLink
+                        to="/admin/activity-logs"
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                                isActive
+                                    ? 'border-sky-400/40 bg-sky-500/20 text-white shadow-[0_0_0_1px_rgba(56,189,248,0.2)]'
+                                    : 'border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white'
+                            }`
+                        }
+                    >
+                        <FiActivity /> <span>Activity Logs</span>
                     </NavLink>
                 </nav>
                 <div className="mt-auto border-t border-white/10 p-4">

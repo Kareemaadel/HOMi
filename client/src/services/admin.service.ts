@@ -64,6 +64,19 @@ export interface ListingReport {
     } | null;
 }
 
+export interface ActivityLogItem {
+    id: string;
+    actorUserId: string | null;
+    actorRole: string | null;
+    actorEmail: string | null;
+    action: string;
+    entityType: string;
+    entityId: string | null;
+    description: string;
+    metadata: Record<string, any> | null;
+    createdAt: string;
+}
+
 class AdminService {
     async getDashboardStats() {
         const response = await apiClient.get<{ success: boolean; data: AdminStatsResponse }>('/admin/dashboard/stats');
@@ -88,6 +101,14 @@ class AdminService {
     async removeListingFromReport(reportId: string) {
         const response = await apiClient.delete<{ success: boolean; message: string; data: { reportId: string; propertyId: string } }>(
             `/admin/reports/${reportId}/remove-listing`
+        );
+        return response.data;
+    }
+
+    async getActivityLogs(params?: { page?: number; limit?: number }) {
+        const response = await apiClient.get<{ success: boolean; data: ActivityLogItem[]; pagination: { total: number; page: number; limit: number; totalPages: number } }>(
+            '/admin/activity-logs',
+            { params }
         );
         return response.data;
     }

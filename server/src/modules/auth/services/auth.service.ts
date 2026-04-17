@@ -30,6 +30,7 @@ import type {
     ChangePasswordRequest,
     UpdateRoleRequest,
 } from '../interfaces/auth.interfaces.js';
+import { activityLogService } from '../../../shared/services/activity-log.service.js';
 
 /** Returned with 409 when DELETE /auth/account is blocked by related records */
 export type AccountDeleteBlockers = {
@@ -118,6 +119,15 @@ export class AuthService {
             // Commit transaction
             await transaction.commit();
 
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'AUTH_REGISTERED',
+                entityType: 'USER',
+                entityId: user.id,
+                description: `New ${user.role.toLowerCase()} account registered.`,
+                metadata: { email: user.email },
+            });
+
             return {
                 success: true,
                 message: 'Registration successful. Please complete your profile verification to access all features.',
@@ -195,6 +205,13 @@ export class AuthService {
 
             // Send welcome email
             await emailService.sendWelcomeEmail(user.email, profile.first_name);
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'AUTH_VERIFICATION_COMPLETED',
+                entityType: 'USER',
+                entityId: user.id,
+                description: 'User completed profile verification.',
+            });
 
             return {
                 success: true,
@@ -298,6 +315,13 @@ export class AuthService {
 
         // Generate tokens
         const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
+        await activityLogService.log({
+            actor: { userId: user.id, role: user.role, email: user.email },
+            action: 'AUTH_LOGIN',
+            entityType: 'USER',
+            entityId: user.id,
+            description: 'User logged in.',
+        });
 
         // Build sanitized response
         const userResponse: UserResponse = {
@@ -739,6 +763,14 @@ export class AuthService {
             await user.update({ role: input.role }, { transaction });
 
             await transaction.commit();
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'AUTH_ROLE_UPDATED',
+                entityType: 'USER',
+                entityId: user.id,
+                description: `User role updated to ${user.role}.`,
+                metadata: { role: user.role },
+            });
 
             // Return updated user and profile, with new tokens (since token embeds role)
             const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);

@@ -486,6 +486,14 @@ class PropertyService {
                 );
             }
 
+            if (property.status === PropertyStatus.PENDING_APPROVAL) {
+                throw new PropertyError(
+                    'Pending-approval properties are locked until admin approves or rejects them.',
+                    403,
+                    'PROPERTY_LOCKED'
+                );
+            }
+
             if (property.status === PropertyStatus.REJECTED) {
                 throw new PropertyError(
                     'Rejected properties cannot be edited by landlords.',
@@ -503,7 +511,17 @@ class PropertyService {
             if (input.address !== undefined) updateData.address = input.address;
             if (input.type !== undefined) updateData.type = input.type;
             if (input.furnishing !== undefined) updateData.furnishing = input.furnishing;
-            if (input.status !== undefined) updateData.status = input.status;
+            if (input.status !== undefined) {
+                const allowedLandlordStatuses = [PropertyStatus.DRAFT, PropertyStatus.AVAILABLE];
+                if (!allowedLandlordStatuses.includes(input.status)) {
+                    throw new PropertyError(
+                        'Landlords can only set status to DRAFT or AVAILABLE.',
+                        400,
+                        'INVALID_STATUS_TRANSITION'
+                    );
+                }
+                updateData.status = input.status;
+            }
             if (input.target_tenant !== undefined) updateData.target_tenant = input.target_tenant;
             if (input.availability_date !== undefined)
                 updateData.availability_date = new Date(input.availability_date);

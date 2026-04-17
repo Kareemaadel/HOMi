@@ -70,7 +70,9 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
   // 1. Initial State for Comparison (Dirty Checking)
   // Included the full 10-item maintenance list here
   const initialStatus = useMemo(() => normalizeUiStatus(property.status), [property.status]);
+  const isPendingApproval = initialStatus === 'pending_approval';
   const isRejected = initialStatus === 'rejected';
+  const isLocked = isPendingApproval || isRejected;
 
   const initialState = useMemo(() => ({
     name: property.name || '',
@@ -146,8 +148,12 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
   };
 
   const handleUpdate = async () => {
-    if (isRejected) {
-      setSaveError('Rejected properties are locked and cannot be edited.');
+    if (isLocked) {
+      setSaveError(
+        isPendingApproval
+          ? 'This listing is pending admin review and is locked until approval or rejection.'
+          : 'Rejected properties are locked and cannot be edited.'
+      );
       return;
     }
 
@@ -271,9 +277,11 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
             <div className="header-text">
               <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')}</h2>
               <p>Property ID: <span className="id-badge">#PRP-{property.id || '9921'}</span></p>
-              {isRejected && (
+              {isLocked && (
                 <p style={{ marginTop: 8, color: '#b91c1c', fontWeight: 700 }}>
-                  This listing is rejected and locked by admin.
+                  {isPendingApproval
+                    ? 'This listing is pending admin approval and cannot be edited right now.'
+                    : 'This listing is rejected and locked by admin.'}
                 </p>
               )}
             </div>
@@ -295,7 +303,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         value={formData.name} 
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                         className="m-input" 
-                        disabled={isRejected}
+                        disabled={isLocked}
                       />
                     </div>
                     {errors.name && <span className="error-msg">{errors.name}</span>}
@@ -308,13 +316,10 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         className="m-select" 
                         value={formData.status}
                         onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        disabled={isRejected}
+                        disabled={isLocked}
                       >
                         <option value="draft">Draft</option>
-                        <option value="pending_approval">Pending Approval</option>
                         <option value="available">Available</option>
-                        <option value="rented">Rented</option>
-                        <option value="rejected" disabled>Rejected</option>
                       </select>
                     </div>
                     <div className="manage-field">
@@ -335,7 +340,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                     value={formData.address} 
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                     rows={3}
-                    disabled={isRejected}
+                    disabled={isLocked}
                   />
                   {errors.address && <span className="error-msg">{errors.address}</span>}
                 </div>
@@ -343,15 +348,15 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                 <div className="manage-card-group specs-edit-row">
                    <div className="mini-spec">
                       <FaBed />
-                      <input type="number" value={formData.beds} onChange={(e) => setFormData({...formData, beds: Number(e.target.value)})} disabled={isRejected} />
+                      <input type="number" value={formData.beds} onChange={(e) => setFormData({...formData, beds: Number(e.target.value)})} disabled={isLocked} />
                    </div>
                    <div className="mini-spec">
                       <FaBath />
-                      <input type="number" value={formData.baths} onChange={(e) => setFormData({...formData, baths: Number(e.target.value)})} disabled={isRejected} />
+                      <input type="number" value={formData.baths} onChange={(e) => setFormData({...formData, baths: Number(e.target.value)})} disabled={isLocked} />
                    </div>
                    <div className="mini-spec">
                       <FaRulerCombined />
-                      <input type="number" value={formData.sqft} onChange={(e) => setFormData({...formData, sqft: Number(e.target.value)})} disabled={isRejected} />
+                      <input type="number" value={formData.sqft} onChange={(e) => setFormData({...formData, sqft: Number(e.target.value)})} disabled={isLocked} />
                    </div>
                 </div>
               </div>
@@ -374,7 +379,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         type="number" 
                         value={formData.price} 
                         onChange={(e) => setFormData({...formData, price: e.target.value})}
-                        disabled={isRejected}
+                        disabled={isLocked}
                       />
                       <span className="period">/mo</span>
                     </div>
@@ -403,7 +408,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                               type="checkbox"
                               checked={isSelected(formData.amenities || [], perk)}
                               onChange={() => toggleSelection('amenities', perk)}
-                              disabled={isRejected}
+                              disabled={isLocked}
                             />
                             <div className="indicator"></div>
                             <span>{perk}</span>
@@ -421,7 +426,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                               type="checkbox"
                               checked={isSelected(formData.houseRules || [], rule)}
                               onChange={() => toggleSelection('houseRules', rule)}
-                              disabled={isRejected}
+                              disabled={isLocked}
                             />
                             <div className="indicator"></div>
                             <span>{rule}</span>
@@ -482,7 +487,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                                             ...formData, 
                                             maintenance: { ...formData.maintenance, [key]: e.target.value }
                                         })}
-                                        disabled={isRejected}
+                                        disabled={isLocked}
                                     >
                                         <option value="Landlord">Landlord</option>
                                         <option value="Tenant">Tenant</option>
@@ -501,14 +506,14 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
              <button 
                 className="m-btn-cancel" 
                 onClick={() => setFormData(initialState)} 
-                disabled={isRejected || !isDirty || loading}
+                disabled={isLocked || !isDirty || loading}
              >
                 Discard Changes
              </button>
              <button 
                 className="m-btn-save" 
                 onClick={handleUpdate} 
-                disabled={isRejected || !isDirty || loading}
+                disabled={isLocked || !isDirty || loading}
              >
                 {loading ? <div className="spinner-mini"></div> : <><FaSave /> Save Changes</>}
              </button>

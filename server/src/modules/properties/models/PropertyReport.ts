@@ -42,6 +42,12 @@ export class PropertyReport extends Model<
     declare reason: PropertyReportReasonType;
     declare details: string;
     declare status: CreationOptional<PropertyReportStatusType>;
+    declare snapshot_property_title: string | null;
+    declare snapshot_property_address: string | null;
+    declare snapshot_property_monthly_price: number | null;
+    declare snapshot_property_thumbnail_url: string | null;
+    declare snapshot_landlord_name: string | null;
+    declare snapshot_landlord_email: string | null;
     declare reviewed_by_admin_id: ForeignKey<string> | null;
     declare reviewed_at: Date | null;
     declare created_at: CreationOptional<Date>;
@@ -86,6 +92,30 @@ PropertyReport.init(
         details: {
             type: DataTypes.TEXT,
             allowNull: false,
+        },
+        snapshot_property_title: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        snapshot_property_address: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        snapshot_property_monthly_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+        },
+        snapshot_property_thumbnail_url: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        snapshot_landlord_name: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        snapshot_landlord_email: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
         },
         status: {
             type: DataTypes.ENUM(...Object.values(PropertyReportStatus)),
