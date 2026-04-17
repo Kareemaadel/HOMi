@@ -62,24 +62,29 @@ const AdminUserManagement = () => {
     const renderUserRows = (users: AdminManagedUser[]) =>
         users.map((user) => (
             <tr key={user.id}>
+                <td>
+                    <div className="user-row-avatar">
+                        {user.profile?.avatarUrl ? (
+                            <img src={user.profile.avatarUrl} alt={`${user.profile.firstName} ${user.profile.lastName}`} />
+                        ) : (
+                            <span>{(user.profile?.firstName?.[0] || user.email[0] || 'U').toUpperCase()}</span>
+                        )}
+                    </div>
+                </td>
                 <td>{user.id}</td>
+                <td>{user.profile?.firstName || '-'}</td>
+                <td>{user.profile?.lastName || '-'}</td>
                 <td>{user.email}</td>
                 <td>{user.role}</td>
-                <td>{user.isVerified ? 'Yes' : 'No'}</td>
                 <td>{user.emailVerified ? 'Yes' : 'No'}</td>
-                <td>{user.resetTokenHash || '-'}</td>
-                <td>{user.resetTokenExpires ? new Date(user.resetTokenExpires).toLocaleString() : '-'}</td>
-                <td>{user.emailVerificationTokenHash || '-'}</td>
+                <td>{user.isVerified ? 'Yes' : 'No'}</td>
                 <td>{user.emailVerificationTokenExpires ? new Date(user.emailVerificationTokenExpires).toLocaleString() : '-'}</td>
                 <td>{new Date(user.createdAt).toLocaleString()}</td>
                 <td>{new Date(user.updatedAt).toLocaleString()}</td>
                 <td>{user.deletedAt ? new Date(user.deletedAt).toLocaleString() : '-'}</td>
                 <td>{user.profile?.id || '-'}</td>
-                <td>{user.profile?.firstName || '-'}</td>
-                <td>{user.profile?.lastName || '-'}</td>
                 <td>{user.profile?.phoneNumber || '-'}</td>
                 <td>{user.profile?.bio || '-'}</td>
-                <td>{user.profile?.avatarUrl || '-'}</td>
                 <td>{user.profile?.currentLocation || '-'}</td>
                 <td>{user.profile?.gender || '-'}</td>
                 <td>{user.profile?.birthdate || '-'}</td>
@@ -138,9 +143,9 @@ const AdminUserManagement = () => {
                                 <table className="user-management-table">
                                     <thead>
                                         <tr>
-                                            <th>User ID</th><th>Email</th><th>Role</th><th>Verified</th><th>Email Verified</th><th>Reset Token Hash</th><th>Reset Token Expires</th>
-                                            <th>Email Verify Hash</th><th>Email Verify Expires</th><th>User Created</th><th>User Updated</th><th>User Deleted</th>
-                                            <th>Profile ID</th><th>First Name</th><th>Last Name</th><th>Phone</th><th>Bio</th><th>Avatar</th><th>Location</th><th>Gender</th>
+                                            <th>Avatar</th><th>User ID</th><th>First Name</th><th>Last Name</th><th>Email</th><th>Role</th><th>Email Verified</th><th>Account Verified</th>
+                                            <th>Email Verify Expires</th><th>User Created</th><th>User Updated</th><th>User Deleted</th>
+                                            <th>Profile ID</th><th>Phone</th><th>Bio</th><th>Location</th><th>Gender</th>
                                             <th>Birthdate</th><th>National ID (Encrypted)</th><th>National ID (Decrypted)</th><th>Gamification Points</th><th>Budget Min</th><th>Budget Max</th>
                                             <th>Wallet Balance</th><th>Wallet Pending Order</th><th>Wallet Pending Amount Cents</th><th>Wallet Pending Save Card</th><th>Profile Created</th><th>Profile Updated</th>
                                         </tr>
@@ -158,9 +163,9 @@ const AdminUserManagement = () => {
                                 <table className="user-management-table">
                                     <thead>
                                         <tr>
-                                            <th>User ID</th><th>Email</th><th>Role</th><th>Verified</th><th>Email Verified</th><th>Reset Token Hash</th><th>Reset Token Expires</th>
-                                            <th>Email Verify Hash</th><th>Email Verify Expires</th><th>User Created</th><th>User Updated</th><th>User Deleted</th>
-                                            <th>Profile ID</th><th>First Name</th><th>Last Name</th><th>Phone</th><th>Bio</th><th>Avatar</th><th>Location</th><th>Gender</th>
+                                            <th>Avatar</th><th>User ID</th><th>First Name</th><th>Last Name</th><th>Email</th><th>Role</th><th>Email Verified</th><th>Account Verified</th>
+                                            <th>Email Verify Expires</th><th>User Created</th><th>User Updated</th><th>User Deleted</th>
+                                            <th>Profile ID</th><th>Phone</th><th>Bio</th><th>Location</th><th>Gender</th>
                                             <th>Birthdate</th><th>National ID (Encrypted)</th><th>National ID (Decrypted)</th><th>Gamification Points</th><th>Budget Min</th><th>Budget Max</th>
                                             <th>Wallet Balance</th><th>Wallet Pending Order</th><th>Wallet Pending Amount Cents</th><th>Wallet Pending Save Card</th><th>Profile Created</th><th>Profile Updated</th>
                                         </tr>
