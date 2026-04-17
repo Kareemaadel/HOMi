@@ -3,16 +3,32 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { FiCheck, FiCheckCircle, FiFileText, FiHome, FiLogOut, FiX, FiClock } from 'react-icons/fi';
 import adminService, { type PendingApprovalProperty } from '../../../services/admin.service';
 
-const openDocument = (documentUrl: string) => {
+const openDocument = async (documentUrl: string) => {
     if (!documentUrl) return;
+
+    // Standard URL documents can be opened directly.
     if (documentUrl.startsWith('http://') || documentUrl.startsWith('https://')) {
         window.open(documentUrl, '_blank', 'noopener,noreferrer');
         return;
     }
-    const popup = window.open('', '_blank', 'noopener,noreferrer');
-    if (!popup) return;
-    popup.document.write(`<iframe src="${documentUrl}" style="border:0;width:100%;height:100vh;" title="Ownership Document"></iframe>`);
-    popup.document.close();
+
+    // Browsers often block direct window.open(data:...) and keep about:blank.
+    // Convert to Blob URL first, then open.
+    if (documentUrl.startsWith('data:')) {
+        try {
+            const response = await fetch(documentUrl);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank', 'noopener,noreferrer');
+            return;
+        } catch (error) {
+            console.error('Failed to open base64 document', error);
+            alert('Could not open this document. Please try again.');
+            return;
+        }
+    }
+
+    window.open(documentUrl, '_blank', 'noopener,noreferrer');
 };
 
 const PROPERTY_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80';
@@ -278,7 +294,7 @@ const AdminPropertyApprovals = () => {
                                                 type="button"
                                                 className="flex w-full items-center gap-2 rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-3 text-left text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                                                 key={doc.id || i}
-                                                onClick={() => openDocument(doc.documentUrl)}
+                                                onClick={() => void openDocument(doc.documentUrl)}
                                             >
                                                 <FiFileText /> View Document {i + 1}
                                             </button>
