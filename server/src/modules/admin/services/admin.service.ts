@@ -6,7 +6,7 @@ import { PropertyReport, PropertyReportStatus } from '../../properties/models/Pr
 import { Contract, ContractStatus } from '../../contracts/models/Contract.js';
 import { Profile } from '../../auth/models/Profile.js';
 import { ActivityLog } from '../models/ActivityLog.js';
-import type { AdminStatsResponse, AdminListingReport, AdminActivityLogItem, AdminUserProfileDetails } from '../interfaces/admin.interfaces.js';
+import type { AdminStatsResponse, AdminListingReport, AdminActivityLogItem, AdminUserProfileDetails, AdminPropertyDetails } from '../interfaces/admin.interfaces.js';
 import type { PropertyResponse } from '../../properties/interfaces/property.interfaces.js';
 import { propertyService } from '../../properties/services/property.service.js';
 import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
@@ -396,6 +396,61 @@ class AdminService {
                     gender: includeSensitiveDetails ? profile.gender || null : null,
                     birthdate: includeSensitiveDetails && profile.birthdate ? String(profile.birthdate) : null,
                     nationalId: includeSensitiveDetails ? profile.getDecryptedNationalId() : null,
+                }
+                : null,
+        };
+    }
+
+    async getPropertyDetailsForAdmin(propertyId: string): Promise<AdminPropertyDetails> {
+        const property = await Property.findByPk(propertyId, {
+            paranoid: false,
+            attributes: ['id', 'title', 'description', 'status', 'address', 'monthly_price', 'landlord_id', 'deleted_at'],
+            include: [
+                {
+                    model: User,
+                    as: 'landlord',
+                    attributes: ['id', 'email'],
+                    include: [
+                        {
+                            model: Profile,
+                            as: 'profile',
+                            attributes: ['first_name', 'last_name', 'avatar_url'],
+                        },
+                    ],
+                },
+            ],
+        });
+
+        if (!property) {
+            return {
+                id: propertyId,
+                title: 'Property not found (removed or missing)',
+                description: 'This property no longer exists in the main property records, but it is still referenced in activity logs.',
+                status: 'REMOVED_OR_MISSING',
+                address: 'Address unavailable',
+                monthlyPrice: 0,
+                landlordId: 'Unknown',
+                deletedAt: null,
+                landlord: null,
+            };
+        }
+
+        return {
+            id: property.id,
+            title: property.title,
+            description: property.description,
+            status: property.status,
+            address: property.address,
+            monthlyPrice: Number(property.monthly_price ?? 0),
+            landlordId: property.landlord_id,
+            deletedAt: property.deleted_at ?? null,
+            landlord: property.landlord
+                ? {
+                    id: property.landlord.id,
+                    email: property.landlord.email,
+                    firstName: property.landlord.profile?.first_name || null,
+                    lastName: property.landlord.profile?.last_name || null,
+                    avatarUrl: property.landlord.profile?.avatar_url || null,
                 }
                 : null,
         };

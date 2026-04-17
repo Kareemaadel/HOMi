@@ -97,6 +97,24 @@ export interface AdminUserProfileDetails {
     } | null;
 }
 
+export interface AdminPropertyDetails {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    address: string;
+    monthlyPrice: number;
+    landlordId: string;
+    deletedAt: string | null;
+    landlord: {
+        id: string;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        avatarUrl: string | null;
+    } | null;
+}
+
 class AdminService {
     async getDashboardStats() {
         const response = await apiClient.get<{ success: boolean; data: AdminStatsResponse }>('/admin/dashboard/stats');
@@ -135,6 +153,11 @@ class AdminService {
 
     async getUserProfile(userId: string) {
         const response = await apiClient.get<{ success: boolean; data: AdminUserProfileDetails }>(`/admin/users/${userId}/profile`);
+        return response.data.data;
+    }
+
+    async getPropertyDetails(propertyId: string) {
+        const response = await apiClient.get<{ success: boolean; data: AdminPropertyDetails }>(`/admin/properties/${propertyId}/details`);
         return response.data.data;
     }
 }

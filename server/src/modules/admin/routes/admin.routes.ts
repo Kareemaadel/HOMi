@@ -401,5 +401,6 @@ router.get('/reports/listings', adminController.getListingReports.bind(adminCont
 router.delete('/reports/:reportId/remove-listing', adminController.removeReportedListing.bind(adminController));
 router.get('/activity-logs', adminController.getActivityLogs.bind(adminController));
 router.get('/users/:userId/profile', adminController.getUserProfile.bind(adminController));
+router.get('/properties/:propertyId/details', adminController.getPropertyDetails.bind(adminController));
 
 export default router;

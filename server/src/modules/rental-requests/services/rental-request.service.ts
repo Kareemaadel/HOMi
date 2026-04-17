@@ -161,7 +161,7 @@ class RentalRequestService {
                 {
                     model: User,
                     as: 'tenant',
-                    attributes: ['id'],
+                    attributes: ['id', 'email'],
                     include: [
                         {
                             model: Profile,
@@ -363,15 +363,17 @@ class RentalRequestService {
         }
 
         await request.update({ status: input.status });
+        const tenantEmail = request.tenant?.email || 'unknown-tenant-email';
         await activityLogService.log({
             actor: { userId: landlordId, role: 'LANDLORD' },
             action: input.status === RentalRequestStatus.APPROVED ? 'RENTAL_REQUEST_APPROVED' : 'RENTAL_REQUEST_DECLINED',
             entityType: 'RENTAL_REQUEST',
             entityId: request.id,
-            description: `Landlord ${input.status === RentalRequestStatus.APPROVED ? 'approved' : 'declined'} rental request.`,
+            description: `Landlord ${input.status === RentalRequestStatus.APPROVED ? 'approved' : 'declined'} rental request from ${tenantEmail}.`,
             metadata: {
                 propertyId: request.property_id,
                 tenantId: request.tenant_id,
+                tenantEmail,
                 status: input.status,
             },
         });

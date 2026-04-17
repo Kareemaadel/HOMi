@@ -77,3 +77,21 @@ export interface AdminUserProfileDetails {
         nationalId: string | null;
     } | null;
 }
+
+export interface AdminPropertyDetails {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    address: string;
+    monthlyPrice: number;
+    landlordId: string;
+    deletedAt: Date | null;
+    landlord: {
+        id: string;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        avatarUrl: string | null;
+    } | null;
+}

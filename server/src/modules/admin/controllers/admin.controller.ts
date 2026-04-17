@@ -175,6 +175,19 @@ class AdminController {
             next(error);
         }
     }
+
+    async getPropertyDetails(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { propertyId } = req.params;
+            const property = await adminService.getPropertyDetailsForAdmin(String(propertyId));
+            res.status(200).json({
+                success: true,
+                data: property,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export const adminController = new AdminController();

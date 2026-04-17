@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FiActivity, FiAlertTriangle, FiFileText, FiHome, FiLogOut, FiSearch, FiX } from 'react-icons/fi';
-import adminService, { type ActivityLogItem, type AdminUserProfileDetails } from '../../../services/admin.service';
+import adminService, { type ActivityLogItem, type AdminPropertyDetails, type AdminUserProfileDetails } from '../../../services/admin.service';
 import './adminDashboard.css';
 import './AdminActivityLogs.css';
 
@@ -25,6 +25,10 @@ const AdminActivityLogs = () => {
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileError, setProfileError] = useState<string | null>(null);
     const [selectedProfile, setSelectedProfile] = useState<AdminUserProfileDetails | null>(null);
+    const [propertyModalOpen, setPropertyModalOpen] = useState(false);
+    const [propertyLoading, setPropertyLoading] = useState(false);
+    const [propertyError, setPropertyError] = useState<string | null>(null);
+    const [selectedProperty, setSelectedProperty] = useState<AdminPropertyDetails | null>(null);
 
     const hasValidAdminSession = () => {
         const token = localStorage.getItem('accessToken');
@@ -104,6 +108,33 @@ const AdminActivityLogs = () => {
         }
     };
 
+    const getPropertyIdFromLog = (log: ActivityLogItem): string | null => {
+        const metadataPropertyId = log.metadata && typeof log.metadata.propertyId === 'string'
+            ? log.metadata.propertyId
+            : null;
+        if (metadataPropertyId) return metadataPropertyId;
+        if (log.action === 'RENTAL_REQUEST_CREATED' && log.description.includes('property')) {
+            const match = log.description.match(/[a-f0-9-]{36}/i);
+            return match?.[0] || null;
+        }
+        return null;
+    };
+
+    const handleOpenProperty = async (propertyId: string) => {
+        setPropertyModalOpen(true);
+        setPropertyLoading(true);
+        setPropertyError(null);
+        setSelectedProperty(null);
+        try {
+            const property = await adminService.getPropertyDetails(propertyId);
+            setSelectedProperty(property);
+        } catch (fetchError: unknown) {
+            setPropertyError(getErrorMessage(fetchError, 'Failed to load property details'));
+        } finally {
+            setPropertyLoading(false);
+        }
+    };
+
     return (
         <div className="admin-shell">
             <aside className="admin-sidebar">
@@ -176,7 +207,22 @@ const AdminActivityLogs = () => {
                                                 <span>{log.entityType}{log.entityId ? ` · ${log.entityId.slice(0, 8)}` : ''}</span>
                                             )}
                                         </td>
-                                        <td>{log.description}</td>
+                                        <td>
+                                            {log.action === 'RENTAL_REQUEST_CREATED' && getPropertyIdFromLog(log) ? (
+                                                <div className="log-description-with-link">
+                                                    <span>Tenant submitted rental request for property</span>
+                                                    <button
+                                                        type="button"
+                                                        className="property-link-btn"
+                                                        onClick={() => void handleOpenProperty(getPropertyIdFromLog(log) as string)}
+                                                    >
+                                                        {getPropertyIdFromLog(log)}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                log.description
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -234,6 +280,37 @@ const AdminActivityLogs = () => {
                                         <p>{selectedProfile.profile.bio}</p>
                                     </div>
                                 )}
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+            )}
+
+            {propertyModalOpen && (
+                <div className="modal-backdrop" onClick={() => setPropertyModalOpen(false)}>
+                    <div className="profile-modal property-modal" onClick={(event) => event.stopPropagation()}>
+                        <button type="button" className="profile-close" onClick={() => setPropertyModalOpen(false)}><FiX /></button>
+                        {propertyLoading ? (
+                            <div className="profile-state">Loading property...</div>
+                        ) : propertyError ? (
+                            <div className="profile-state profile-error">{propertyError}</div>
+                        ) : selectedProperty ? (
+                            <div className="property-content">
+                                <h3>{selectedProperty.title}</h3>
+                                <p><b>Property ID:</b> {selectedProperty.id}</p>
+                                <p><b>Status:</b> {selectedProperty.status}</p>
+                                <p><b>Address:</b> {selectedProperty.address}</p>
+                                <p><b>Price:</b> ${Number(selectedProperty.monthlyPrice || 0).toLocaleString()}/month</p>
+                                <p><b>Description:</b> {selectedProperty.description}</p>
+                                {selectedProperty.deletedAt && (
+                                    <p><b>Deleted At:</b> {new Date(selectedProperty.deletedAt).toLocaleString()}</p>
+                                )}
+                                <div className="property-landlord-box">
+                                    <h4>Landlord Info</h4>
+                                    <p><b>Name:</b> {selectedProperty.landlord ? `${selectedProperty.landlord.firstName || ''} ${selectedProperty.landlord.lastName || ''}`.trim() || 'Unavailable' : 'Unavailable'}</p>
+                                    <p><b>Email:</b> {selectedProperty.landlord?.email || 'Unavailable'}</p>
+                                    <p><b>Landlord ID:</b> {selectedProperty.landlordId}</p>
+                                </div>
                             </div>
                         ) : null}
                     </div>

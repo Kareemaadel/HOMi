@@ -100,6 +100,25 @@
     cursor: pointer;
 }
 
+.log-description-with-link {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.property-link-btn {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    word-break: break-all;
+}
+
 .profile-modal {
     width: min(760px, 100%);
     background: #fff;
@@ -107,6 +126,31 @@
     border: 1px solid #dbe7f5;
     padding: 16px;
     position: relative;
+}
+
+.property-modal {
+    max-width: 760px;
+}
+
+.property-content h3 {
+    margin: 4px 0 10px;
+}
+
+.property-content p {
+    margin: 0 0 9px;
+    color: #334155;
+}
+
+.property-landlord-box {
+    margin-top: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.property-landlord-box h4 {
+    margin: 0 0 8px;
 }
 
 .profile-close {
