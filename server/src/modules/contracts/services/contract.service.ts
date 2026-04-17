@@ -430,12 +430,12 @@ class ContractService {
         });
 
         await activityLogService.log({
-            actor: { userId: tenantId, role: 'TENANT' },
-            action: 'CONTRACT_SIGNED_BY_TENANT',
+            actor: { userId: landlordId, role: 'LANDLORD' },
+            action: 'LANDLORD_IDENTITY_SUBMITTED',
             entityType: 'CONTRACT',
             entityId: contract.id,
-            description: 'Tenant signed contract.',
-            metadata: { propertyId: contract.property_id, landlordId: contract.landlord_id },
+            description: 'Landlord submitted identity verification details.',
+            metadata: { propertyId: contract.property_id, tenantId: contract.tenant_id },
         });
 
         return this.formatContractResponse(contract);
@@ -456,12 +456,12 @@ class ContractService {
         });
 
         await activityLogService.log({
-            actor: { userId: tenantId, role: 'TENANT' },
-            action: 'CONTRACT_PAYMENT_VERIFIED',
+            actor: { userId: landlordId, role: 'LANDLORD' },
+            action: 'LANDLORD_PROPERTY_CONFIRMED',
             entityType: 'CONTRACT',
             entityId: contract.id,
-            description: 'Contract payment verified and contract activated.',
-            metadata: { transactionId: verification.transactionId, orderId: verification.orderId },
+            description: 'Landlord confirmed property ownership and registration.',
+            metadata: { propertyId: contract.property_id, tenantId: contract.tenant_id },
         });
 
         const updated = await Contract.findByPk(contract.id, {
