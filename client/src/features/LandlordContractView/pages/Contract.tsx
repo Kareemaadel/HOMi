@@ -64,7 +64,9 @@ const LandlordContract: React.FC = () => {
         landlord: `${contract.landlord?.firstName || ''} ${contract.landlord?.lastName || ''}`.trim() || 'Landlord',
         amount: contract.rentAmount || 0,
         deposit: contract.securityDeposit || 0,
-        status: contract.status === 'TERMINATED' ? 'EXPIRED' : contract.status,
+        status: (contract.status === 'TERMINATED' ? 'EXPIRED' : 
+                 contract.status === 'PENDING_PAYMENT' ? 'PENDING_TENANT' : 
+                 contract.status) as LeaseContract['status'],
         startDate: formatDate(contract.moveInDate),
         duration: `${contract.leaseDurationMonths} Months`,
         rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',

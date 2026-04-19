@@ -10,7 +10,7 @@ import ContractDetailView from '../components/ContractDetailView';
 import contractService, { type LandlordContract as ContractApi } from '../../../services/contract.service';
 import './Contract.css';
 
-export type ContractStatus = 'PENDING_TENANT' | 'ACTIVE' | 'EXPIRED';
+export type ContractStatus = 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'EXPIRED';
 
 export interface LeaseContract {
     id: string;
@@ -55,6 +55,7 @@ const Contract: React.FC = () => {
     const mapStatus = (status: ContractApi['status']): ContractStatus => {
         if (status === 'ACTIVE') return 'ACTIVE';
         if (status === 'TERMINATED' || status === 'EXPIRED') return 'EXPIRED';
+        if (status === 'PENDING_PAYMENT') return 'PENDING_PAYMENT';
         return 'PENDING_TENANT';
     };
 
@@ -90,7 +91,7 @@ const Contract: React.FC = () => {
             const response = await contractService.getTenantContracts({ page: 1, limit: 50 });
             const mapped = (response.data || [])
                 .map(mapContract)
-                .filter((c) => c.status === 'PENDING_TENANT' || c.status === 'ACTIVE');
+                .filter((c) => c.status === 'PENDING_TENANT' || c.status === 'PENDING_PAYMENT' || c.status === 'ACTIVE');
             setContracts(mapped);
         } catch {
             setContracts([]);
@@ -106,6 +107,7 @@ const Contract: React.FC = () => {
     const getStatusInfo = (status: ContractStatus) => {
         const map = {
             PENDING_TENANT: { label: 'Pending Signature', color: 'blue' },
+            PENDING_PAYMENT: { label: 'Pending Payment', color: 'yellow' },
             ACTIVE: { label: 'Active Lease', color: 'green' },
             EXPIRED: { label: 'Expired', color: 'gray' },
         };
@@ -152,9 +154,15 @@ const Contract: React.FC = () => {
                                             </div>
                                             <button 
                                                 className="btn-view-contract"
-                                                onClick={() => setSelectedContract(contract)}
+                                                onClick={() => {
+                                                    if (contract.status === 'PENDING_PAYMENT') {
+                                                        globalThis.location.href = '/tenant-payment?tab=pending';
+                                                    } else {
+                                                        setSelectedContract(contract);
+                                                    }
+                                                }}
                                             >
-                                                View Details <ChevronRight size={16}/>
+                                                {contract.status === 'PENDING_PAYMENT' ? 'Pay Now' : 'View Details'} <ChevronRight size={16}/>
                                             </button>
                                         </div>
                                     </div>
