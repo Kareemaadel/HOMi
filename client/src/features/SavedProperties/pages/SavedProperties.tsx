@@ -13,6 +13,7 @@ import './SavedProperties.css';
 
 interface SavedPropertyUI {
     id: string;
+    ownerId: string;
     title: string;
     address: string;
     price: number;
@@ -31,6 +32,7 @@ interface SavedPropertyUI {
     description: string;
     ownerName: string;
     ownerImage: string;
+    ownerVerified: boolean;
     maintenanceResponsibilities: Array<{
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
@@ -66,6 +68,7 @@ const mapPropertyToUI = (property: PropertyResponse): SavedPropertyUI => {
 
     return {
         id: property.id,
+        ownerId: property.landlordId,
         title: property.title,
         address: property.address,
         price: property.monthlyPrice,
@@ -92,6 +95,7 @@ const mapPropertyToUI = (property: PropertyResponse): SavedPropertyUI => {
                     ? `${property.landlord.firstName} ${property.landlord.lastName}`.trim() || 'Owner'
                     : 'Owner'
             )}&background=0f172a&color=ffffff&size=128`,
+        ownerVerified: Boolean(property.landlord?.isVerified),
         maintenanceResponsibilities: property.maintenanceResponsibilities ?? [],
     };
 };

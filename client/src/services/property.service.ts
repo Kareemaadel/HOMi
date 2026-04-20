@@ -34,6 +34,7 @@ export interface PropertyLandlordResponse {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    isVerified: boolean;
 }
 
 export interface PropertyResponse {
@@ -183,6 +184,20 @@ class PropertyService {
             `/properties/${propertyId}/report`,
             payload
         );
+        return response.data;
+    }
+
+    async getPublicLandlordProfile(landlordId: string): Promise<{
+        success: boolean;
+        data: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+            isVerified: boolean;
+        };
+    }> {
+        const response = await apiClient.get(`/properties/landlords/${landlordId}/public-profile`);
         return response.data;
     }
 }

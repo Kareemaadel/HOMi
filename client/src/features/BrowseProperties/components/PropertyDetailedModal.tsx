@@ -355,14 +355,35 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                             <div className="sidebar-divider"></div>
 
                             <div className="owner-profile">
-                                <div className="avatar-wrapper">
-                                    <img src={property.ownerImage} alt={property.ownerName || 'Owner'} />
-                                    <span className="online-indicator"></span>
-                                </div>
-                                <div className="owner-details">
-                                    <span className="name">{property.ownerName || 'Owner'}</span>
-                                    <span className="role">Verified Owner • 4.9★</span>
-                                </div>
+                                <button
+                                    type="button"
+                                    className="owner-profile-main"
+                                    onClick={() => {
+                                        if (property?.ownerId) {
+                                            navigate(`/landlords/${property.ownerId}`);
+                                            onClose();
+                                        }
+                                    }}
+                                    disabled={!property?.ownerId}
+                                    aria-label="View landlord profile"
+                                >
+                                    <div className="avatar-wrapper">
+                                        <img src={property.ownerImage} alt={property.ownerName || 'Owner'} />
+                                        <span className="online-indicator"></span>
+                                    </div>
+                                    <div className="owner-details">
+                                        <span className="name">{property.ownerName || 'Owner'}</span>
+                                        <span className="role">
+                                            {property.ownerVerified ? (
+                                                <span className="owner-verified-inline">
+                                                    <FaCheckCircle aria-hidden /> Verified on HOMi
+                                                </span>
+                                            ) : (
+                                                'Property owner'
+                                            )}
+                                        </span>
+                                    </div>
+                                </button>
                                 <button
                                     type="button"
                                     className="chat-btn"

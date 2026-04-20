@@ -1,8 +1,9 @@
 // client/src/features/Messages/components/ChatWindow.tsx
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
-import { FiMoreHorizontal } from 'react-icons/fi';
+import { FiMoreHorizontal, FiHeadphones } from 'react-icons/fi';
 import type { ConversationDto, MessageDto } from '../../../services/message.service';
 import './ChatWindow.css';
 
@@ -29,11 +30,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onClearDraft,
   isLoading,
 }) => {
+  const navigate = useNavigate();
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+
+  const isSupportThread = Boolean(conversation?.isSupport);
 
   const counterpartName = useMemo(() => {
     if (!conversation) {
       return 'Select a conversation';
+    }
+    if (conversation.isSupport) {
+      return 'HOMi Help Center';
     }
     return `${conversation.counterpart.firstName} ${conversation.counterpart.lastName}`.trim();
   }, [conversation]);
@@ -41,6 +48,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const counterpartSubtitle = useMemo(() => {
     if (!conversation) {
       return 'Choose a chat from the left panel';
+    }
+    if (conversation.isSupport) {
+      return 'Official support — we reply as soon as we can';
     }
     return conversation.counterpart.role === 'LANDLORD' ? 'Landlord' : 'Tenant';
   }, [conversation]);
@@ -57,19 +67,48 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const openCounterpartProfile = () => {
+    if (!conversation || conversation.isSupport) return;
+    if (conversation.counterpart.role === 'LANDLORD') {
+      navigate(`/landlords/${conversation.counterpart.id}`);
+    }
+  };
+
+  const canOpenLandlordProfile =
+    Boolean(conversation) &&
+    !conversation!.isSupport &&
+    conversation!.counterpart.role === 'LANDLORD';
+
   return (
-  <div className="chat-window">
-    <div className="chat-header">
-      <div className="user-meta">
-        <img
-          src={conversation?.counterpart.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(counterpartName || 'User')}&background=6366f1&color=fff&size=80`}
-          alt={counterpartName}
-        />
-        <div>
-          <h4>{counterpartName}</h4>
-          <p>{counterpartSubtitle}</p>
+  <div className={`chat-window ${isSupportThread ? 'chat-window--support' : ''}`}>
+    <div className={`chat-header ${isSupportThread ? 'chat-header--support' : ''}`}>
+      {isSupportThread ? (
+        <div className="user-meta user-meta--support-brand" aria-label="HOMi Help Center">
+          <div className="support-header-icon" aria-hidden>
+            <FiHeadphones />
+          </div>
+          <div>
+            <h4>{counterpartName}</h4>
+            <p>{counterpartSubtitle}</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <button
+          type="button"
+          className={`user-meta ${canOpenLandlordProfile ? 'user-meta--clickable' : ''}`}
+          onClick={openCounterpartProfile}
+          disabled={!conversation || !canOpenLandlordProfile}
+        >
+          <img
+            src={conversation?.counterpart.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(counterpartName || 'User')}&background=6366f1&color=fff&size=80`}
+            alt=""
+          />
+          <div>
+            <h4>{counterpartName}</h4>
+            <p>{counterpartSubtitle}</p>
+          </div>
+        </button>
+      )}
       <div className="header-actions">
         <div className="header-menu-wrap">
           <button

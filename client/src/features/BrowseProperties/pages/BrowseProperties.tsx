@@ -10,7 +10,7 @@ import PropertyDetailModal from '../components/PropertyDetailedModal';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
 import savedPropertiesService from '../../../services/saved-properties.service';
 
-interface BrowsePropertyUI {
+export interface BrowsePropertyUI {
     id: string;
     ownerId: string;
     title: string;
@@ -31,6 +31,8 @@ interface BrowsePropertyUI {
     description: string;
     ownerName: string;
     ownerImage: string;
+    /** HOMi profile verification for the listing owner */
+    ownerVerified: boolean;
     maintenanceResponsibilities: Array<{
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
@@ -56,7 +58,7 @@ const mapFurnishingLabel = (furnishing: string | null): string => {
     return 'Unfurnished';
 };
 
-const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
+export const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
     const mainImage = property.images.find((image) => image.isMain)?.imageUrl;
     const fallbackImage = property.images[0]?.imageUrl;
     const image = mainImage || fallbackImage || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80';
@@ -93,6 +95,7 @@ const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
                     ? `${property.landlord.firstName} ${property.landlord.lastName}`.trim() || 'Owner'
                     : 'Owner'
             )}&background=0f172a&color=ffffff&size=128`,
+        ownerVerified: Boolean(property.landlord?.isVerified),
         maintenanceResponsibilities: property.maintenanceResponsibilities ?? [],
     };
 };

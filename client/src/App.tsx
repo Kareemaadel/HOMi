@@ -41,6 +41,7 @@ import GuestSearch from "./features/Guest/pages/GuestSearch";
 import AuthGuard from "./components/global/AuthGuard";
 import SentRequests from "./features/SentRequests/pages/SentRequests";
 import PageNotFound from "./features/PageNotFound/pages/PageNotFound";
+import LandlordPublicProfile from "./features/LandlordPublicProfile/pages/LandlordPublicProfile";
 import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
 import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
 function App() {
@@ -53,6 +54,7 @@ function App() {
         {/* Tenant Routes — protected */}
         <Route path="/tenant-home"   element={<AuthGuard allowedRoles={['TENANT']}><TenantHome /></AuthGuard>} />
         <Route path="/browse-properties" element={<BrowseProperties />} /> {/* guests can browse; Apply Now button guards itself */}
+        <Route path="/landlords/:landlordId" element={<LandlordPublicProfile />} />
         <Route path="/active-rental" element={<AuthGuard allowedRoles={['TENANT']}><ActiveRental /></AuthGuard>} />
         <Route path="/prepayment-page" element={<AuthGuard allowedRoles={['TENANT']}><PrePayment /></AuthGuard>} />
         <Route path="/payment/verify" element={<AuthGuard allowedRoles={['TENANT']}><PaymobVerify /></AuthGuard>} />

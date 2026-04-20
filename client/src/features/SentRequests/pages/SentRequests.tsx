@@ -96,8 +96,18 @@ const mapRequestToModalProperty = (req: MyRentalRequest) => {
         beds:            req.property.specifications?.bedrooms   ?? '—',
         baths:           req.property.specifications?.bathrooms  ?? '—',
         sqft:            req.property.specifications?.areaSqft   ?? '—',
+        ownerId:         req.property.landlordId ?? '',
         ownerName:  landlord ? `${landlord.firstName} ${landlord.lastName}`.trim() : 'Property Owner',
         ownerImage: landlord?.avatarUrl ?? undefined,
+        ownerVerified: Boolean(landlord?.isVerified),
+        maintenanceResponsibilities: [],
+        petsAllowed: false,
+        targetTenant: 'Any Tenant',
+        furnishing: 'Unfurnished',
+        availableDate: 'Not specified',
+        description: '',
+        tags: [],
+        rating: 4.8,
         // Pass the original rental-request data so ApplicationModal can pre-fill read-only fields
         rentalRequest: {
             id:              req.id,

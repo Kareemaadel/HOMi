@@ -45,6 +45,7 @@ export interface MyRentalRequest {
         id: string;
         title: string;
         address: string;
+        landlordId?: string;
         monthlyPrice: number;
         securityDeposit: number;
         images: { imageUrl: string; isMain: boolean }[];
@@ -52,6 +53,7 @@ export interface MyRentalRequest {
             firstName: string;
             lastName: string;
             avatarUrl: string | null;
+            isVerified?: boolean;
         } | null;
         specifications: {
             bedrooms: number;

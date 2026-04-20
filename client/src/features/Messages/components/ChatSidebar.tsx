@@ -1,6 +1,6 @@
 // client/src/features/Messages/components/ChatSidebar.tsx
 import React, { useState } from 'react';
-import { FiSearch, FiPlus, FiCheck } from 'react-icons/fi';
+import { FiSearch, FiPlus, FiCheck, FiHeadphones } from 'react-icons/fi';
 import type { ConversationDto } from '../../../services/message.service';
 import './ChatSidebar.css';
 
@@ -51,9 +51,12 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       return true;
     }
 
-    const fullName = `${chat.counterpart.firstName} ${chat.counterpart.lastName}`.trim().toLowerCase();
+    const isSupport = Boolean(chat.isSupport);
+    const nameHaystack = isSupport
+      ? 'homi help center official support help'
+      : `${chat.counterpart.firstName} ${chat.counterpart.lastName}`.trim().toLowerCase();
     const messageBody = (chat.lastMessage?.body ?? '').toLowerCase();
-    return fullName.includes(normalizedSearch) || messageBody.includes(normalizedSearch);
+    return nameHaystack.includes(normalizedSearch) || messageBody.includes(normalizedSearch);
   });
 
   return (
@@ -118,22 +121,34 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           </div>
         )}
         {filteredConversations.map((chat) => {
-          const fullName = `${chat.counterpart.firstName} ${chat.counterpart.lastName}`.trim() || 'User';
+          const isSupport = Boolean(chat.isSupport);
+          const fullName = isSupport
+            ? 'HOMi Help Center'
+            : `${chat.counterpart.firstName} ${chat.counterpart.lastName}`.trim() || 'User';
           const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=6366f1&color=fff&size=80`;
 
           return (
             <button
               key={chat.id}
               type="button"
-              className={`contact-item ${activeId === chat.id ? 'active' : ''}`}
+              className={`contact-item ${activeId === chat.id ? 'active' : ''} ${isSupport ? 'contact-item--support' : ''}`}
               onClick={() => onSelectConversation(chat.id)}
             >
-              <div className="avatar-wrapper">
-                <img src={chat.counterpart.avatarUrl || fallbackAvatar} alt={fullName} />
+              <div className={`avatar-wrapper ${isSupport ? 'avatar-wrapper--support' : ''}`}>
+                {isSupport ? (
+                  <span className="support-sidebar-icon" aria-hidden>
+                    <FiHeadphones />
+                  </span>
+                ) : (
+                  <img src={chat.counterpart.avatarUrl || fallbackAvatar} alt="" />
+                )}
               </div>
               <div className="contact-info">
                 <div className="contact-top">
-                  <span className="name">{fullName}</span>
+                  <span className="name">
+                    {fullName}
+                    {isSupport ? <span className="support-list-pill">Support</span> : null}
+                  </span>
                   <span className="time">{formatRelativeTime(chat.lastMessageAt)}</span>
                 </div>
                 <div className="contact-bottom">

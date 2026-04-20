@@ -235,6 +235,30 @@
     margin-bottom: 24px;
     min-width: 0;
 }
+
+.owner-profile-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.owner-profile-main:hover:not(:disabled) .name {
+    color: #2563eb;
+}
+
+.owner-profile-main:disabled {
+    cursor: default;
+    opacity: 0.85;
+}
+
 .avatar-wrapper { position: relative; }
 .avatar-wrapper img { width: 48px; height: 48px; border-radius: 50%; }
 .online-indicator {
@@ -249,6 +273,14 @@
 
 .owner-details .name { display: block; font-weight: 700; font-size: 15px; }
 .owner-details .role { font-size: 12px; color: var(--neutral-500); }
+
+.owner-verified-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+    color: #15803d;
+}
 
 .chat-btn {
     margin-left: auto;

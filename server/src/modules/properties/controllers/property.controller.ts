@@ -56,6 +56,23 @@ class PropertyController {
     }
 
     /**
+     * GET /api/properties/landlords/:landlordId/public-profile
+     * Public landlord card (name, avatar, verification). Listed separately from listings.
+     */
+    async getPublicLandlordProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { landlordId } = req.params;
+            const data = await propertyService.getPublicLandlordProfile(landlordId as string);
+            res.status(200).json({
+                success: true,
+                data,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * GET /api/properties/:id
      * Get a single property by ID
      * Public endpoint

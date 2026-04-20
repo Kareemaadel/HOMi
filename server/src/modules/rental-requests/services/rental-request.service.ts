@@ -215,12 +215,12 @@ class RentalRequestService {
                 {
                     model: Property,
                     as: 'property',
-                    attributes: ['id', 'title', 'address', 'monthly_price', 'security_deposit'],
+                    attributes: ['id', 'title', 'address', 'monthly_price', 'security_deposit', 'landlord_id'],
                     include: [
                         {
                             model: User,
                             as: 'landlord',
-                            attributes: ['id'],
+                            attributes: ['id', 'is_verified'],
                             include: [
                                 {
                                     model: Profile,
@@ -475,6 +475,7 @@ class RentalRequestService {
                 id: request.property.id,
                 title: request.property.title,
                 address: request.property.address,
+                landlordId: (request.property as any).landlord_id,
                 monthlyPrice: Number((request.property as any).monthly_price) || 0,
                 securityDeposit: Number((request.property as any).security_deposit) || 0,
             };
@@ -492,7 +493,8 @@ class RentalRequestService {
                 response.property.landlord = {
                     firstName: pLandlord.profile.first_name ?? '',
                     lastName: pLandlord.profile.last_name ?? '',
-                    avatarUrl: pLandlord.profile.avatar_url ?? null
+                    avatarUrl: pLandlord.profile.avatar_url ?? null,
+                    isVerified: Boolean(pLandlord.is_verified),
                 };
             }
 
