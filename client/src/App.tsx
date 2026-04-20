@@ -125,6 +125,9 @@ function App() {
         <Route path="/verify-email"     element={<EmailVerificationPage />} />
         <Route path="/verify-email-callback" element={<VerifyEmailCallback />} />
         <Route path="/account-banned" element={<AccountBannedPage />} />
+
+        {/* Unknown routes — must be last */}
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </BrowserRouter>
   );
