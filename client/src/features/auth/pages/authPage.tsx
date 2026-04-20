@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import SignIn from '../components/signin.tsx';
 import SignUp from '../components/signup.tsx';
 import { GoogleLoginBtn } from '../components/GoogleLoginBtn.tsx';
-import { FaFacebookF } from "react-icons/fa";
 import { authService } from '../../../services/auth.service';
-import { passkeyService } from '../../../services/passkey.service';
 import './authPage.css';
 
 const AuthPage = () => {
@@ -15,7 +13,6 @@ const AuthPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   /** false until we know there is no restorable session (logout clears tokens). */
   const [sessionResolved, setSessionResolved] = useState(false);
-  const [hasSavedPasskey, setHasSavedPasskey] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,20 +20,14 @@ const AuthPage = () => {
       const ok = await authService.tryRestoreSession();
       if (cancelled) return;
       if (ok) {
-        const passkeyEnabled = passkeyService.hasSavedPasskeyForCurrentUser();
-        if (passkeyEnabled) {
-          const passkeyOk = await passkeyService.authenticateSavedPasskeyForCurrentUser();
-          if (!passkeyOk) {
-            setHasSavedPasskey(true);
-            setSessionResolved(true);
-            return;
-          }
+        try {
+          await authService.getProfile();
+        } catch {
+          /* still allow redirect using cached user */
         }
 
         const currentUser = authService.getCurrentUser();
-        
-        // Intercept: If user logs in (e.g. via Google) but lacks a specific role setup,
-        // redirect them to complete their profile before accessing any dashboard.
+
         const userRole = currentUser?.user?.role;
         if (!userRole || userRole === 'USER' || userRole === '') {
            navigate('/complete-profile', { replace: true });
@@ -47,7 +38,6 @@ const AuthPage = () => {
         navigate('/', { state: { next: nextPath, force: true }, replace: true });
         return;
       }
-      setHasSavedPasskey(passkeyService.hasSavedPasskeyForCachedUser());
       setSessionResolved(true);
     })();
     return () => {
@@ -67,7 +57,6 @@ const AuthPage = () => {
 
   return (
     <div className="auth-split-wrapper">
-      {/* Visual Side */}
       <div className="auth-hero-side">
         <img
           src={heroImageUrl}
@@ -81,7 +70,6 @@ const AuthPage = () => {
         </div>
       </div>
 
-      {/* Form Side */}
       <div className="auth-form-side">
         <div className="auth-content-container">
           <header className="auth-brand-header">
@@ -92,7 +80,6 @@ const AuthPage = () => {
 
           <div className="social-auth-grid">
             <GoogleLoginBtn rememberMe={rememberMe} />
-
           </div>
 
           <div className="auth-ui-divider">
@@ -120,7 +107,6 @@ const AuthPage = () => {
               <SignIn
                 rememberMe={rememberMe}
                 onRememberMeChange={setRememberMe}
-                passkeyEnabled={hasSavedPasskey}
               />
             ) : (
               <SignUp />

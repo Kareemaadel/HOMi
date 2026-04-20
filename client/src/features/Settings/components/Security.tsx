@@ -69,11 +69,11 @@ const Security: React.FC = () => {
                 const profile = await authService.getProfile();
                 if (!mounted) return;
                 setIsProfileComplete(Boolean(profile.profile?.isVerificationComplete));
-                setIsPasskeyEnabled(passkeyService.hasSavedPasskeyForCurrentUser());
+                setIsPasskeyEnabled(Boolean(profile.passkeyEnabled));
             } catch {
                 if (!mounted) return;
                 setIsProfileComplete(Boolean(authService.getCurrentUser()?.profile?.isVerificationComplete));
-                setIsPasskeyEnabled(passkeyService.hasSavedPasskeyForCurrentUser());
+                setIsPasskeyEnabled(localStorage.getItem('passkeyEnabled') === '1');
             }
         };
 
@@ -114,10 +114,19 @@ const Security: React.FC = () => {
         }
     };
 
-    const handlePasskeyDisable = () => {
-        passkeyService.disablePasskeyForCurrentUser();
-        setIsPasskeyEnabled(false);
-        setPasskeyMessage({ type: 'success', text: 'Biometric authentication has been disabled for this device.' });
+    const handlePasskeyDisable = async () => {
+        setPasskeyMessage(null);
+        setPasskeyBusy(true);
+        try {
+            await passkeyService.disablePasskeyForCurrentUser();
+            setIsPasskeyEnabled(false);
+            setPasskeyMessage({ type: 'success', text: 'Passkeys have been removed from your account.' });
+        } catch (err) {
+            const text = err instanceof Error ? err.message : 'Failed to disable passkeys.';
+            setPasskeyMessage({ type: 'error', text });
+        } finally {
+            setPasskeyBusy(false);
+        }
     };
 
     const resetForm = () => {

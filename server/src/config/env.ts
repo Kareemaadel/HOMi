@@ -41,6 +41,11 @@ interface EnvConfig {
 
     // Client URL (for verification links)
     CLIENT_URL: string;
+
+    /** WebAuthn / passkey — RP ID (hostname only, e.g. app.example.com). Defaults to hostname of CLIENT_URL. */
+    WEBAUTHN_RP_ID: string | undefined;
+    /** Allowed origin(s) for WebAuthn ceremonies — full URL, e.g. https://app.example.com. Defaults to CLIENT_URL. */
+    WEBAUTHN_ORIGIN: string | undefined;
     
     // Default seeded admin account (dev/testing)
     ADMIN_SEED_EMAIL: string;
@@ -121,6 +126,9 @@ export const env: EnvConfig = {
 
     // Client URL (for verification links)
     CLIENT_URL: getEnvString('CLIENT_URL', 'http://localhost:5173'),
+
+    WEBAUTHN_RP_ID: process.env['WEBAUTHN_RP_ID'],
+    WEBAUTHN_ORIGIN: process.env['WEBAUTHN_ORIGIN'],
 
     // Seeded admin account
     ADMIN_SEED_EMAIL: getEnvString('ADMIN_SEED_EMAIL', 'Homi@admin.com'),

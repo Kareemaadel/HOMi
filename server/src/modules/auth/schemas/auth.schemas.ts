@@ -275,6 +275,28 @@ export const UpdateRoleSchema = z.object({
 
 export type UpdateRoleInput = z.infer<typeof UpdateRoleSchema>;
 
+/** Passkey login — same identifier rules as password login (email or phone). */
+export const PasskeyIdentifierBodySchema = z.object({
+    identifier: z.string().min(1, 'Email or phone number is required').max(255),
+});
+
+export type PasskeyIdentifierBodyInput = z.infer<typeof PasskeyIdentifierBodySchema>;
+
+/** WebAuthn registration response JSON from the browser */
+export const PasskeyRegistrationVerifySchema = z.object({
+    response: z.any(),
+});
+
+export type PasskeyRegistrationVerifyInput = z.infer<typeof PasskeyRegistrationVerifySchema>;
+
+export const PasskeyAuthenticationVerifySchema = z.object({
+    identifier: z.string().min(1).max(255),
+    response: z.any(),
+    rememberMe: z.boolean().optional(),
+});
+
+export type PasskeyAuthenticationVerifyInput = z.infer<typeof PasskeyAuthenticationVerifySchema>;
+
 export default {
     RegisterSchema,
     CompleteVerificationSchema,
@@ -288,4 +310,7 @@ export default {
     VerifyEmailSchema,
     ChangePasswordSchema,
     UpdateRoleSchema,
+    PasskeyIdentifierBodySchema,
+    PasskeyRegistrationVerifySchema,
+    PasskeyAuthenticationVerifySchema,
 };

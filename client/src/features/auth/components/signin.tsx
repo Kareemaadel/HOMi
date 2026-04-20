@@ -9,10 +9,9 @@ import { passkeyService } from '../../../services/passkey.service';
 interface SignInProps {
   rememberMe: boolean;
   onRememberMeChange: (value: boolean) => void;
-  passkeyEnabled?: boolean;
 }
 
-const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange, passkeyEnabled = false }) => {
+const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +26,6 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange, passkey
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Clear error when user types
     if (error) setError(null);
   };
 
@@ -38,8 +36,6 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange, passkey
 
     try {
       const response = await authService.login({ ...formData, rememberMe });
-      
-      console.log('✅ Login successful!', response);
 
       const nextPath = authService.resolvePostAuthRoute(response);
       navigate('/', { state: { next: nextPath, force: true } });
@@ -58,27 +54,34 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange, passkey
     }
   };
 
+  const identifierTrimmed = formData.identifier.trim();
+  const canTryPasskey = identifierTrimmed.length > 0 && passkeyService.isSupported();
+
   const handlePasskeySignIn = async () => {
+    if (!identifierTrimmed) {
+      setError('Enter your email or phone first.');
+      return;
+    }
+
     setPasskeyLoading(true);
     setError(null);
 
     try {
-      const restored = await authService.tryRestoreSession();
-      if (!restored) {
-        setError('No saved secure session found. Sign in with password first, then you can use biometrics next time.');
-        return;
-      }
-
-      const ok = await passkeyService.authenticateSavedPasskeyForCurrentUser();
-      if (!ok) {
-        setError('Biometric verification failed. Please try again or use your password.');
-        return;
-      }
-
+      await passkeyService.authenticateWithPasskey(identifierTrimmed, rememberMe);
       const nextPath = authService.resolvePostAuthRoute();
       navigate('/', { state: { next: nextPath, force: true } });
-    } catch {
-      setError('Biometric sign in failed. Please use your password.');
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.data?.code === 'NO_PASSKEYS') {
+        setError('No passkey is registered for this account. Sign in with your password and enable biometrics in Settings.');
+        return;
+      }
+      if (axios.isAxiosError(err) && err.response?.data?.code === 'INVALID_CREDENTIALS') {
+        setError('Account not found for this email or phone.');
+        return;
+      }
+      const msg =
+        err instanceof Error ? err.message : 'Passkey sign-in failed. Use your password or try again.';
+      setError(msg);
     } finally {
       setPasskeyLoading(false);
     }
@@ -144,14 +147,14 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange, passkey
         <span>{loading ? 'Signing in...' : 'Sign In'}</span>
       </button>
 
-      {passkeyEnabled && (
+      {canTryPasskey && (
         <button
           type="button"
           className="btn-secondary-v2"
           disabled={passkeyLoading || loading}
           onClick={handlePasskeySignIn}
         >
-          <span>{passkeyLoading ? 'Verifying fingerprint/Face ID...' : 'Use fingerprint / Face ID'}</span>
+          <span>{passkeyLoading ? 'Verifying fingerprint / Face ID...' : 'Use fingerprint / Face ID'}</span>
         </button>
       )}
     </form>

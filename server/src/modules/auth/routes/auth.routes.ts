@@ -13,6 +13,9 @@ import {
     ChangePasswordSchema,
     UpdateRoleSchema,
     RefreshTokenBodySchema,
+    PasskeyIdentifierBodySchema,
+    PasskeyRegistrationVerifySchema,
+    PasskeyAuthenticationVerifySchema,
 } from '../schemas/auth.schemas.js';
 
 const router = Router();
@@ -912,6 +915,49 @@ router.delete(
     '/account',
     protect,
     authController.deleteAccount.bind(authController)
+);
+
+/**
+ * WebAuthn / passkey — registration (authenticated)
+ */
+router.post(
+    '/passkey/registration-options',
+    protect,
+    authController.passkeyRegistrationOptions.bind(authController)
+);
+
+router.post(
+    '/passkey/registration-verify',
+    protect,
+    validate(PasskeyRegistrationVerifySchema),
+    authController.passkeyRegistrationVerify.bind(authController)
+);
+
+/**
+ * WebAuthn / passkey — authentication (sign-in with passkey)
+ */
+router.post(
+    '/passkey/authentication-options',
+    validate(PasskeyIdentifierBodySchema),
+    authController.passkeyAuthenticationOptions.bind(authController)
+);
+
+router.post(
+    '/passkey/authentication-verify',
+    validate(PasskeyAuthenticationVerifySchema),
+    authController.passkeyAuthenticationVerify.bind(authController)
+);
+
+router.get(
+    '/passkeys',
+    protect,
+    authController.listPasskeys.bind(authController)
+);
+
+router.delete(
+    '/passkeys',
+    protect,
+    authController.deletePasskeys.bind(authController)
 );
 
 export default router;

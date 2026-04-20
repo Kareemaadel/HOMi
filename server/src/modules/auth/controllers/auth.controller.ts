@@ -17,6 +17,8 @@ import type {
     ChangePasswordRequest,
     UpdateRoleRequest,
 } from '../interfaces/auth.interfaces.js';
+import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/server';
+import { webauthnService } from '../services/webauthn.service.js';
 
 /**
  * Authentication Controller
@@ -431,6 +433,108 @@ export class AuthController {
             const result = await authService.deleteAccount(userId);
             clearRefreshCookie(res);
             res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/passkey/registration-options
+     */
+    async passkeyRegistrationOptions(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+            const options = await webauthnService.registrationOptions(userId);
+            res.status(200).json(options);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/passkey/registration-verify
+     */
+    async passkeyRegistrationVerify(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+            const response = req.body.response as RegistrationResponseJSON;
+            await webauthnService.registrationVerify(userId, response);
+            res.status(200).json({ success: true, message: 'Passkey registered successfully.' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/passkey/authentication-options
+     */
+    async passkeyAuthenticationOptions(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { identifier } = req.body as { identifier: string };
+            const options = await webauthnService.authenticationOptions(identifier);
+            res.status(200).json(options);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/passkey/authentication-verify
+     */
+    async passkeyAuthenticationVerify(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { identifier, response, rememberMe } = req.body as {
+                identifier: string;
+                response: AuthenticationResponseJSON;
+                rememberMe?: boolean;
+            };
+            const result = await webauthnService.authenticationVerify(identifier, response);
+
+            if (rememberMe === true) {
+                setRefreshCookie(res, result.refreshToken!);
+                res.status(200).json({ ...result, refreshToken: undefined });
+            } else {
+                clearRefreshCookie(res);
+                res.status(200).json(result);
+            }
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /auth/passkeys
+     */
+    async listPasskeys(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+            const credentials = await webauthnService.listPasskeys(userId);
+            res.status(200).json({ credentials });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * DELETE /auth/passkeys
+     */
+    async deletePasskeys(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+            await webauthnService.deleteAllPasskeys(userId);
+            res.status(200).json({ success: true, message: 'Passkeys removed from your account.' });
         } catch (error) {
             next(error);
         }
