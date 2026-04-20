@@ -188,7 +188,6 @@ const Messages: React.FC = () => {
     return () => {
       socketService.offConversationUpdated(handleConversationUpdated);
       socketService.offConversationRead(handleConversationRead);
-      socketService.disconnect();
     };
   }, [currentUserId]);
 

@@ -177,6 +177,27 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
         // ──────────────────────────────────────────────────────────────────
 
         await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });
+
+        // One DM thread per participant pair (legacy rows were split by property_id).
+        try {
+            const { messageService } = await import('../modules/messages/services/message.service.js');
+            await messageService.mergeDuplicateConversations();
+        } catch (mergeError) {
+            console.warn('⚠️ Conversation merge skipped:', mergeError);
+        }
+
+        if (sequelize.getDialect() === 'postgres') {
+            await sequelize.query(`
+                ALTER TABLE conversations DROP CONSTRAINT IF EXISTS uniq_conversation_participants_property;
+            `);
+            await sequelize.query(`DROP INDEX IF EXISTS uniq_conversation_participants_property;`);
+            await sequelize.query(`
+                CREATE UNIQUE INDEX IF NOT EXISTS uniq_conversation_participants_active
+                ON conversations (participant_one_id, participant_two_id)
+                WHERE deleted_at IS NULL;
+            `);
+        }
+
         console.log('✅ Database synchronized successfully.');
     } catch (error) {
         console.error('❌ Database synchronization failed:', error);

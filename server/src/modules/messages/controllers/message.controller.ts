@@ -24,6 +24,20 @@ class MessageController {
         }
     }
 
+    async getUnreadBadge(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = (req as any).user.userId as string;
+            const summary = await messageService.getUnreadBadge(userId);
+
+            res.status(200).json({
+                success: true,
+                data: summary,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async listConversations(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userId = (req as any).user.userId as string;

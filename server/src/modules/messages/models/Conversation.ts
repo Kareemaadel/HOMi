@@ -112,11 +112,6 @@ Conversation.init(
             {
                 fields: ['last_message_at'],
             },
-            {
-                unique: true,
-                fields: ['participant_one_id', 'participant_two_id', 'property_id'],
-                name: 'uniq_conversation_participants_property',
-            },
         ],
     }
 );

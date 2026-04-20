@@ -1,4 +1,4 @@
-import { Op, fn, col } from 'sequelize';
+import { Op, fn, col, QueryTypes } from 'sequelize';
 import { Conversation, Message, User, Profile, Property } from '../models/index.js';
 import type {
     ConversationListQuery,
@@ -156,51 +156,41 @@ class MessageService {
 
         const [participantOne, participantTwo] = this.normalizeParticipants(currentUserId, input.participantId);
 
+        const participantInclude = [
+            {
+                model: User,
+                as: 'participantOne' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+            {
+                model: User,
+                as: 'participantTwo' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+        ];
+
         let conversation = await Conversation.findOne({
             where: {
                 participant_one_id: participantOne,
                 participant_two_id: participantTwo,
-                property_id: input.propertyId ?? null,
             },
-            include: [
-                {
-                    model: User,
-                    as: 'participantOne',
-                    attributes: ['id', 'email', 'role'],
-                    include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                },
-                {
-                    model: User,
-                    as: 'participantTwo',
-                    attributes: ['id', 'email', 'role'],
-                    include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                },
-            ],
+            include: participantInclude,
         });
 
         if (!conversation) {
-            conversation = await Conversation.create({
+            const created = await Conversation.create({
                 participant_one_id: participantOne,
                 participant_two_id: participantTwo,
                 property_id: input.propertyId ?? null,
             });
-
-            conversation = await Conversation.findByPk(conversation.id, {
-                include: [
-                    {
-                        model: User,
-                        as: 'participantOne',
-                        attributes: ['id', 'email', 'role'],
-                        include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                    },
-                    {
-                        model: User,
-                        as: 'participantTwo',
-                        attributes: ['id', 'email', 'role'],
-                        include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                    },
-                ],
+            conversation = await Conversation.findByPk(created.id, {
+                include: participantInclude,
             });
+        } else if (input.propertyId && !conversation.property_id) {
+            conversation.property_id = input.propertyId;
+            await conversation.save();
         }
 
         if (!conversation) {
@@ -212,10 +202,99 @@ class MessageService {
         const initialMessage = input.initialMessage?.trim();
         if (initialMessage) {
             lastMessage = await this.sendMessage(currentUserId, conversation.id, { body: initialMessage });
-            await conversation.reload();
         }
 
-        return this.formatConversation(conversation, currentUserId, 0, lastMessage);
+        const conversationForResponse = await Conversation.findByPk(conversation.id, {
+            include: participantInclude,
+        });
+
+        if (!conversationForResponse) {
+            throw new MessageError('Could not start conversation', 500, 'CONVERSATION_CREATE_FAILED');
+        }
+
+        return this.formatConversation(conversationForResponse, currentUserId, 0, lastMessage);
+    }
+
+    async getUnreadBadge(userId: string): Promise<{ hasUnread: boolean; unreadCount: number }> {
+        const unreadCount = await Message.count({
+            where: {
+                sender_id: { [Op.ne]: userId },
+                read_at: null,
+            },
+            include: [
+                {
+                    model: Conversation,
+                    as: 'conversation',
+                    required: true,
+                    attributes: [],
+                    where: {
+                        [Op.or]: [
+                            { participant_one_id: userId },
+                            { participant_two_id: userId },
+                        ],
+                    },
+                },
+            ],
+        });
+
+        return { hasUnread: unreadCount > 0, unreadCount };
+    }
+
+    /** Merge rows that share the same participant pair (legacy per-property threads). */
+    async mergeDuplicateConversations(): Promise<void> {
+        const sequelize = Conversation.sequelize!;
+        type DupRow = { participant_one_id: string; participant_two_id: string };
+
+        const duplicatePairs = (await sequelize.query(
+            `
+            SELECT participant_one_id, participant_two_id
+            FROM conversations
+            WHERE deleted_at IS NULL
+            GROUP BY participant_one_id, participant_two_id
+            HAVING COUNT(*) > 1
+            `,
+            { type: QueryTypes.SELECT }
+        )) as DupRow[];
+
+        for (const row of duplicatePairs) {
+            await this.mergeOneParticipantPair(row.participant_one_id, row.participant_two_id);
+        }
+    }
+
+    private async mergeOneParticipantPair(participantOneId: string, participantTwoId: string): Promise<void> {
+        const sequelize = Conversation.sequelize!;
+        const conversations = await Conversation.findAll({
+            where: {
+                participant_one_id: participantOneId,
+                participant_two_id: participantTwoId,
+            },
+            order: [[sequelize.literal('COALESCE(last_message_at, created_at)'), 'DESC']],
+        });
+
+        if (conversations.length <= 1) {
+            return;
+        }
+
+        const keeper = conversations[0];
+        const rest = conversations.slice(1);
+        if (!keeper) {
+            return;
+        }
+        const restIds = rest.map((c) => c.id);
+
+        await Message.update({ conversation_id: keeper.id }, { where: { conversation_id: restIds } });
+
+        const latest = await Message.findOne({
+            where: { conversation_id: keeper.id },
+            order: [['created_at', 'DESC']],
+        });
+
+        if (latest) {
+            keeper.last_message_at = latest.created_at;
+            await keeper.save();
+        }
+
+        await Conversation.destroy({ where: { id: restIds }, force: true });
     }
 
     async listConversations(userId: string, query: ConversationListQuery): Promise<ConversationListResponse> {
@@ -371,11 +450,19 @@ class MessageService {
 
         try {
             const io = getIO();
-            io.to(`conversation:${conversationId}`).emit('conversation:read', {
+            const payload = {
                 conversationId,
                 readerUserId: userId,
                 markedCount,
+            };
+            io.to(`conversation:${conversationId}`).emit('conversation:read', payload);
+            const participants = await Conversation.findByPk(conversationId, {
+                attributes: ['participant_one_id', 'participant_two_id'],
             });
+            if (participants) {
+                io.to(`user:${participants.participant_one_id}`).emit('conversation:read', payload);
+                io.to(`user:${participants.participant_two_id}`).emit('conversation:read', payload);
+            }
         } catch {
             // Ignore if socket server is unavailable.
         }

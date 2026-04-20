@@ -18,6 +18,8 @@ router.post(
     messageController.startConversation.bind(messageController)
 );
 
+router.get('/unread-badge', protect, messageController.getUnreadBadge.bind(messageController));
+
 router.get(
     '/conversations',
     protect,

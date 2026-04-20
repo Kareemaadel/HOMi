@@ -57,7 +57,17 @@ interface MarkReadApiResponse {
     data: { markedCount: number };
 }
 
+interface UnreadBadgeApiResponse {
+    success: boolean;
+    data: { hasUnread: boolean; unreadCount: number };
+}
+
 class MessageService {
+    async getUnreadBadge() {
+        const response = await apiClient.get<UnreadBadgeApiResponse>('/messages/unread-badge');
+        return response.data;
+    }
+
     async listConversations(params?: { page?: number; limit?: number }) {
         const response = await apiClient.get<ConversationsApiResponse>('/messages/conversations', { params });
         return response.data;
