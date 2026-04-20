@@ -37,6 +37,13 @@ export interface PropertyLandlordResponse {
     isVerified: boolean;
 }
 
+/** Present when API includes detailed location (browse / detail). */
+export interface PropertyDetailedLocationResponse {
+    id: string;
+    locationLat: number;
+    locationLong: number;
+}
+
 export interface PropertyResponse {
     id: string;
     landlordId: string;
@@ -59,6 +66,7 @@ export interface PropertyResponse {
         responsible_party: 'LANDLORD' | 'TENANT';
     }>;
     specifications: PropertySpecificationsResponse | null;
+    detailedLocation?: PropertyDetailedLocationResponse | null;
     landlord: PropertyLandlordResponse | null;
     ownershipDocs: PropertyOwnershipDocResponse[];
     rejectionReason?: string | null;

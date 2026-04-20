@@ -58,7 +58,7 @@ const PageNotFound = () => {
                     </button>
                 </div>
 
-                <p className="pnf-code" aria-hidden="true">404</p>
+                <p className="pnf-code" aria-hidden="true">404m </p>
             </div>
         </div>
     );

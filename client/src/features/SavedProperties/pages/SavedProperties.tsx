@@ -37,6 +37,10 @@ interface SavedPropertyUI {
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
     }>;
+    locationLat: number | null;
+    locationLng: number | null;
+    availabilityDateISO: string | null;
+    listedAtISO: string;
 }
 
 const mapTargetTenant = (targetTenant: string) => {
@@ -83,6 +87,16 @@ const mapPropertyToUI = (property: PropertyResponse): SavedPropertyUI => {
         furnishing: normalizedFurnishing,
         targetTenant: mapTargetTenant(property.targetTenant),
         availableDate: property.availabilityDate ? new Date(property.availabilityDate).toLocaleDateString() : 'Not specified',
+        availabilityDateISO: property.availabilityDate ?? null,
+        listedAtISO: property.createdAt,
+        locationLat:
+            property.detailedLocation != null && Number.isFinite(property.detailedLocation.locationLat)
+                ? property.detailedLocation.locationLat
+                : null,
+        locationLng:
+            property.detailedLocation != null && Number.isFinite(property.detailedLocation.locationLong)
+                ? property.detailedLocation.locationLong
+                : null,
         petsAllowed: property.houseRules.some((rule) => rule.name === 'Pets Allowed'),
         description: property.description,
         ownerName: property.landlord
@@ -165,6 +179,10 @@ const SavedProperties: React.FC = () => {
         try {
             await savedPropertiesService.removeSavedProperty(normalized);
             setSavedItems((prev) => prev.filter((item) => item.id !== normalized));
+            if (selectedProperty?.id === normalized) {
+                setIsModalOpen(false);
+                setSelectedProperty(null);
+            }
         } catch {
             // Keep UI stable if API fails.
         }
@@ -332,8 +350,10 @@ const SavedProperties: React.FC = () => {
             {isModalOpen && selectedProperty && (
                 <PropertyDetailModal
                     property={selectedProperty}
-                    isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
+                    isGuest={false}
+                    isSaved
+                    onToggleSave={handleToggleSave}
                 />
             )}
         </div>

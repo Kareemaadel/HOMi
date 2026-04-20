@@ -7,6 +7,7 @@ import LandlordSidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import { authService } from '../../../services/auth.service';
 import propertyService from '../../../services/property.service';
+import savedPropertiesService from '../../../services/saved-properties.service';
 import { mapPropertyToUI, type BrowsePropertyUI } from '../../BrowseProperties/pages/BrowseProperties';
 import PropertyCard from '../../BrowseProperties/components/PropertyCard';
 import PropertyDetailModal from '../../BrowseProperties/components/PropertyDetailedModal';
@@ -29,6 +30,39 @@ const LandlordPublicProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<BrowsePropertyUI | null>(null);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadSaved = async () => {
+      if (!authService.getCurrentUser()) {
+        setSavedIds([]);
+        return;
+      }
+      try {
+        const ids = await savedPropertiesService.getSavedIds();
+        setSavedIds(ids);
+      } catch {
+        setSavedIds([]);
+      }
+    };
+    void loadSaved();
+  }, []);
+
+  const handleToggleSave = async (propertyId: string) => {
+    const normalized = String(propertyId);
+    const currentlySaved = savedIds.includes(normalized);
+    try {
+      if (currentlySaved) {
+        await savedPropertiesService.removeSavedProperty(propertyId);
+        setSavedIds((prev) => prev.filter((id) => id !== normalized));
+      } else {
+        await savedPropertiesService.saveProperty(propertyId);
+        setSavedIds((prev) => Array.from(new Set([...prev, normalized])));
+      }
+    } catch {
+      // no-op
+    }
+  };
 
   const load = useCallback(async () => {
     if (!landlordId) {
@@ -137,6 +171,8 @@ const LandlordPublicProfile = () => {
           property={selectedProperty}
           onClose={() => setSelectedProperty(null)}
           isGuest={!authService.getCurrentUser()}
+          isSaved={savedIds.includes(String(selectedProperty.id))}
+          onToggleSave={authService.getCurrentUser() ? handleToggleSave : undefined}
         />
       )}
     </div>
