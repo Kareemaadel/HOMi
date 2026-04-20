@@ -19,3 +19,10 @@ export const VerifyPropertySchema = z.object({
 );
 
 export type VerifyPropertyInput = z.infer<typeof VerifyPropertySchema>;
+
+export const SupportInboxQuerySchema = z.object({
+    filter: z.enum(['all', 'unread', 'read']).default('all'),
+    sort: z.enum(['oldest', 'newest']).default('newest'),
+});
+
+export type SupportInboxQuery = z.infer<typeof SupportInboxQuerySchema>;

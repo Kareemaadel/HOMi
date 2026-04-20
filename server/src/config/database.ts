@@ -174,6 +174,15 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
         await sequelize.query(`
             CREATE INDEX IF NOT EXISTS "webauthn_challenges_user_kind" ON "webauthn_challenges" ("user_id", "kind");
         `);
+        await sequelize.query(`
+            ALTER TABLE IF EXISTS "conversations"
+                ADD COLUMN IF NOT EXISTS "is_support" BOOLEAN NOT NULL DEFAULT false;
+        `);
+        await sequelize.query(`
+            CREATE INDEX IF NOT EXISTS "conversations_is_support_last_message"
+                ON "conversations" ("is_support", "last_message_at")
+                WHERE "deleted_at" IS NULL;
+        `);
         // ──────────────────────────────────────────────────────────────────
 
         await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FiActivity, FiAlertTriangle, FiFileText, FiHome, FiLogOut, FiSearch, FiX, FiUsers } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiFileText, FiHome, FiLogOut, FiMessageCircle, FiSearch, FiX, FiUsers } from 'react-icons/fi';
 import adminService, { type ActivityLogItem, type AdminPropertyDetails, type AdminUserProfileDetails } from '../../../services/admin.service';
 import './adminDashboard.css';
 import './AdminActivityLogs.css';
@@ -148,6 +148,7 @@ const AdminActivityLogs = () => {
                     <NavLink to="/admin/property-approvals"><FiFileText /> Property Approvals</NavLink>
                     <NavLink to="/admin/user-reports"><FiAlertTriangle /> User Reports</NavLink>
                     <NavLink to="/admin/user-management"><FiUsers /> User Management</NavLink>
+                    <NavLink to="/admin/support-inbox"><FiMessageCircle /> Help Center</NavLink>
                     <NavLink to="/admin/activity-logs"><FiActivity /> Activity Logs</NavLink>
                 </nav>
                 <button className="admin-signout" onClick={handleSignOut} type="button">

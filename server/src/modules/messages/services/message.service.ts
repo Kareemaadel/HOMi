@@ -1,4 +1,5 @@
 import { Op, fn, col, QueryTypes } from 'sequelize';
+import type { UserRoleType } from '../../auth/models/User.js';
 import { Conversation, Message, User, Profile, Property } from '../models/index.js';
 import type {
     ConversationListQuery,
@@ -58,6 +59,7 @@ class MessageService {
         return {
             id: conversation.id,
             propertyId: conversation.property_id ?? null,
+            isSupport: Boolean(conversation.is_support),
             counterpart: {
                 id: counterpart.id,
                 email: counterpart.email,
@@ -131,6 +133,49 @@ class MessageService {
         return Boolean(conversation);
     }
 
+    /**
+     * Participant or any ADMIN (for shared access to support inbox threads).
+     */
+    async assertConversationAccess(
+        userId: string,
+        conversationId: string,
+        requesterRole?: UserRoleType
+    ): Promise<Conversation> {
+        const conversation = await Conversation.findOne({
+            where: { id: conversationId },
+        });
+
+        if (!conversation) {
+            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+        }
+
+        const isParticipant =
+            conversation.participant_one_id === userId || conversation.participant_two_id === userId;
+        const isAdminOnSupport = Boolean(conversation.is_support && requesterRole === 'ADMIN');
+
+        if (!isParticipant && !isAdminOnSupport) {
+            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+        }
+
+        return conversation;
+    }
+
+    private assertCanSendMessage(
+        conversation: Conversation,
+        userId: string,
+        requesterRole?: UserRoleType
+    ): void {
+        const isParticipant =
+            conversation.participant_one_id === userId || conversation.participant_two_id === userId;
+        if (isParticipant) {
+            return;
+        }
+        if (conversation.is_support && requesterRole === 'ADMIN') {
+            return;
+        }
+        throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+    }
+
     async startConversation(currentUserId: string, input: StartConversationInput): Promise<ConversationResponse> {
         if (currentUserId === input.participantId) {
             throw new MessageError('You cannot start a conversation with yourself', 400, 'INVALID_PARTICIPANT');
@@ -184,6 +229,7 @@ class MessageService {
                 participant_one_id: participantOne,
                 participant_two_id: participantTwo,
                 property_id: input.propertyId ?? null,
+                is_support: false,
             });
             conversation = await Conversation.findByPk(created.id, {
                 include: participantInclude,
@@ -297,6 +343,50 @@ class MessageService {
         await Conversation.destroy({ where: { id: restIds }, force: true });
     }
 
+    async getConversationWithUnreadForUser(
+        currentUserId: string,
+        conversationId: string,
+        requesterRole?: UserRoleType
+    ): Promise<ConversationResponse> {
+        await this.assertConversationAccess(currentUserId, conversationId, requesterRole);
+
+        const participantInclude = [
+            {
+                model: User,
+                as: 'participantOne' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+            {
+                model: User,
+                as: 'participantTwo' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+        ];
+
+        const conversation = await Conversation.findByPk(conversationId, {
+            include: participantInclude,
+        });
+
+        if (!conversation) {
+            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+        }
+
+        const unreadMap = await this.getUnreadCountMap([conversationId], currentUserId);
+        const lastMessage = await Message.findOne({
+            where: { conversation_id: conversationId },
+            order: [['created_at', 'DESC']],
+        });
+
+        return this.formatConversation(
+            conversation,
+            currentUserId,
+            unreadMap.get(conversationId) ?? 0,
+            lastMessage
+        );
+    }
+
     async listConversations(userId: string, query: ConversationListQuery): Promise<ConversationListResponse> {
         const page = query.page ?? 1;
         const limit = query.limit ?? 20;
@@ -371,12 +461,10 @@ class MessageService {
     async getConversationMessages(
         userId: string,
         conversationId: string,
-        query: ConversationMessagesQuery
+        query: ConversationMessagesQuery,
+        requesterRole?: UserRoleType
     ): Promise<ConversationMessagesResponse> {
-        const canAccess = await this.canUserAccessConversation(userId, conversationId);
-        if (!canAccess) {
-            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
-        }
+        await this.assertConversationAccess(userId, conversationId, requesterRole);
 
         const page = query.page ?? 1;
         const limit = query.limit ?? 50;
@@ -402,20 +490,14 @@ class MessageService {
         };
     }
 
-    async sendMessage(userId: string, conversationId: string, input: SendMessageInput): Promise<Message> {
-        const conversation = await Conversation.findOne({
-            where: {
-                id: conversationId,
-                [Op.or]: [
-                    { participant_one_id: userId },
-                    { participant_two_id: userId },
-                ],
-            },
-        });
-
-        if (!conversation) {
-            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
-        }
+    async sendMessage(
+        userId: string,
+        conversationId: string,
+        input: SendMessageInput,
+        requesterRole?: UserRoleType
+    ): Promise<Message> {
+        const conversation = await this.assertConversationAccess(userId, conversationId, requesterRole);
+        this.assertCanSendMessage(conversation, userId, requesterRole);
 
         const message = await Message.create({
             conversation_id: conversation.id,
@@ -431,11 +513,12 @@ class MessageService {
         return message;
     }
 
-    async markConversationRead(userId: string, conversationId: string): Promise<{ markedCount: number }> {
-        const canAccess = await this.canUserAccessConversation(userId, conversationId);
-        if (!canAccess) {
-            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
-        }
+    async markConversationRead(
+        userId: string,
+        conversationId: string,
+        requesterRole?: UserRoleType
+    ): Promise<{ markedCount: number }> {
+        await this.assertConversationAccess(userId, conversationId, requesterRole);
 
         const [markedCount] = await Message.update(
             { read_at: new Date() },

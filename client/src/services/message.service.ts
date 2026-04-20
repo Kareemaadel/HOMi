@@ -21,6 +21,8 @@ export interface ConversationCounterpart {
 export interface ConversationDto {
     id: string;
     propertyId: string | null;
+    /** True for Help Center / admin support threads */
+    isSupport?: boolean;
     counterpart: ConversationCounterpart;
     lastMessage: MessageDto | null;
     unreadCount: number;
@@ -55,6 +57,22 @@ interface SendMessageApiResponse {
 interface MarkReadApiResponse {
     success: boolean;
     data: { markedCount: number };
+}
+
+interface SupportThreadApiResponse {
+    success: boolean;
+    data: {
+        conversation: ConversationDto;
+        messages: MessageDto[];
+    };
+}
+
+interface SupportSendApiResponse {
+    success: boolean;
+    data: {
+        userMessage: MessageDto;
+        autoReply: MessageDto;
+    };
 }
 
 interface UnreadBadgeApiResponse {
@@ -95,6 +113,16 @@ class MessageService {
     async startConversation(payload: { participantId: string; propertyId?: string; initialMessage?: string }) {
         const response = await apiClient.post<{ success: boolean; data: ConversationDto }>('/messages/conversations', payload);
         return response.data;
+    }
+
+    async getSupportThread() {
+        const response = await apiClient.get<SupportThreadApiResponse>('/messages/support');
+        return response.data.data;
+    }
+
+    async sendSupportMessage(body: string) {
+        const response = await apiClient.post<SupportSendApiResponse>('/messages/support/messages', { body });
+        return response.data.data;
     }
 }
 

@@ -32,6 +32,7 @@ import AdminPropertyApprovals from "./features/admin/pages/AdminPropertyApproval
 import AdminUserReports from "./features/admin/pages/AdminUserReports";
 import AdminActivityLogs from "./features/admin/pages/AdminActivityLogs";
 import AdminUserManagement from "./features/admin/pages/AdminUserManagement";
+import AdminSupportInbox from "./features/admin/pages/AdminSupportInbox";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -114,6 +115,7 @@ function App() {
         <Route path="/admin/user-reports" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserReports /></AuthGuard>} />
         <Route path="/admin/user-management" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserManagement /></AuthGuard>} />
         <Route path="/admin/activity-logs" element={<AuthGuard allowedRoles={['ADMIN']}><AdminActivityLogs /></AuthGuard>} />
+        <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
 
         {/* Auth Routes — public */}
         <Route path="/auth"             element={<AuthPage />} />

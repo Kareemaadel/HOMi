@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import TenantSidebar from '../../../components/global/Tenant/sidebar';
 import LandlordSidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
 import authService from '../../../services/auth.service';
+import SupportHelpChat from '../components/SupportHelpChat';
 import { 
   Search, 
   MessageSquare, 
@@ -27,8 +29,23 @@ interface FAQItem {
 const GetHelp: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const role = authService.getCurrentUser()?.user?.role;
-  const SidebarComponent = role === 'LANDLORD' ? LandlordSidebar : TenantSidebar;
+  const [supportChatOpen, setSupportChatOpen] = useState(false);
+  const navigate = useNavigate();
+  const user = authService.getCurrentUser()?.user;
+  const role = user?.role;
+  const SidebarComponent =
+    role === 'LANDLORD' ? LandlordSidebar : role === 'TENANT' ? TenantSidebar : null;
+
+  const openSupportChat = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    if (role !== 'LANDLORD' && role !== 'TENANT') {
+      return;
+    }
+    setSupportChatOpen(true);
+  };
 
   const categories = [
     { id: 'All', icon: <LifeBuoy size={18} /> },
@@ -57,9 +74,9 @@ const GetHelp: React.FC = () => {
 
   return (
     <div className="help-page-layout">
-      <SidebarComponent />
-      
-      <div className="help-main-content">
+      {SidebarComponent ? <SidebarComponent /> : null}
+
+      <div className={`help-main-content ${!SidebarComponent ? 'help-main-fullwidth' : ''}`}>
         <Header />
 
         {/* Search Hero */}
@@ -86,8 +103,10 @@ const GetHelp: React.FC = () => {
             <div className="channel-card">
               <div className="channel-icon chat"><MessageSquare /></div>
               <h3>Live Chat</h3>
-              <p>Average response: 5 mins</p>
-              <button className="channel-link">Start Chat <ChevronRight size={16} /></button>
+              <p>Message our team — we typically respond within 24 hours</p>
+              <button type="button" className="channel-link" onClick={openSupportChat}>
+                Start Chat <ChevronRight size={16} />
+              </button>
             </div>
             <div className="channel-card">
               <div className="channel-icon documentation"><BookOpen /></div>
@@ -99,7 +118,9 @@ const GetHelp: React.FC = () => {
               <div className="channel-icon contact"><Mail /></div>
               <h3>Email Support</h3>
               <p>Get a reply within 24 hours</p>
-              <button className="channel-link">Submit Ticket <ChevronRight size={16} /></button>
+              <button type="button" className="channel-link" onClick={openSupportChat}>
+                Message support <ChevronRight size={16} />
+              </button>
             </div>
           </div>
 
@@ -147,6 +168,8 @@ const GetHelp: React.FC = () => {
 
         <Footer />
       </div>
+
+      <SupportHelpChat isOpen={supportChatOpen} onClose={() => setSupportChatOpen(false)} />
     </div>
   );
 };
