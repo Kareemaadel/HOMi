@@ -49,7 +49,7 @@ class SupportController {
                 success: true,
                 data: {
                     userMessage: toMessageResponse(userMessage),
-                    autoReply: toMessageResponse(autoReply),
+                    autoReply: autoReply ? toMessageResponse(autoReply) : null,
                 },
             });
         } catch (error) {

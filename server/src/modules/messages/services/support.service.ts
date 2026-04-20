@@ -1,6 +1,5 @@
 import { User, UserRole } from '../../auth/models/User.js';
-import type { Message } from '../models/Message.js';
-import { Conversation } from '../models/index.js';
+import { Conversation, Message } from '../models/index.js';
 import { messageService, MessageError } from './message.service.js';
 
 export const SUPPORT_AUTO_REPLY =
@@ -55,12 +54,20 @@ export async function getOrCreateSupportConversation(userId: string, inboxAdminI
 export async function sendSupportUserMessage(
     userId: string,
     body: string
-): Promise<{ userMessage: Message; autoReply: Message }> {
+): Promise<{ userMessage: Message; autoReply: Message | null }> {
     const inboxAdminId = await resolveSupportInboxAdminId();
     const conversation = await getOrCreateSupportConversation(userId, inboxAdminId);
 
-    const userMsg = await messageService.sendMessage(userId, conversation.id, { body });
-    const autoReply = await messageService.sendMessage(inboxAdminId, conversation.id, { body: SUPPORT_AUTO_REPLY });
+    const messageCountBefore = await Message.count({
+        where: { conversation_id: conversation.id },
+    });
 
-    return { userMessage: userMsg, autoReply };
+    const userMsg = await messageService.sendMessage(userId, conversation.id, { body });
+
+    if (messageCountBefore === 0) {
+        const autoReply = await messageService.sendMessage(inboxAdminId, conversation.id, { body: SUPPORT_AUTO_REPLY });
+        return { userMessage: userMsg, autoReply };
+    }
+
+    return { userMessage: userMsg, autoReply: null };
 }

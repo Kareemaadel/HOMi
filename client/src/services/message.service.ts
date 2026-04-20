@@ -71,7 +71,7 @@ interface SupportSendApiResponse {
     success: boolean;
     data: {
         userMessage: MessageDto;
-        autoReply: MessageDto;
+        autoReply: MessageDto | null;
     };
 }
 

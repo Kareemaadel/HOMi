@@ -56,7 +56,7 @@ const SupportHelpChat: React.FC<Props> = ({ isOpen, onClose }) => {
         try {
             const { userMessage, autoReply } = await messageService.sendSupportMessage(text);
             setInput('');
-            setMessages((prev) => [...prev, userMessage, autoReply]);
+            setMessages((prev) => [...prev, userMessage, ...(autoReply ? [autoReply] : [])]);
             if (conversationId) {
                 await messageService.markConversationRead(conversationId);
             }
