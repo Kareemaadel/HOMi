@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Security.css';
 import { FaShieldVirus, FaFingerprint, FaHistory, FaKey, FaTimes, FaEye, FaEyeSlash, FaCheck, FaTimesCircle, FaGoogle } from 'react-icons/fa';
 import { authService } from '../../../services/auth.service';
+import { passkeyService } from '../../../services/passkey.service';
 
 // Password requirement checks
 const checks = [
@@ -56,6 +57,9 @@ const Security: React.FC = () => {
     const [isProfileComplete, setIsProfileComplete] = useState<boolean>(
         Boolean(authService.getCurrentUser()?.profile?.isVerificationComplete)
     );
+    const [isPasskeyEnabled, setIsPasskeyEnabled] = useState<boolean>(false);
+    const [passkeyBusy, setPasskeyBusy] = useState(false);
+    const [passkeyMessage, setPasskeyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -65,9 +69,11 @@ const Security: React.FC = () => {
                 const profile = await authService.getProfile();
                 if (!mounted) return;
                 setIsProfileComplete(Boolean(profile.profile?.isVerificationComplete));
+                setIsPasskeyEnabled(passkeyService.hasSavedPasskeyForCurrentUser());
             } catch {
                 if (!mounted) return;
                 setIsProfileComplete(Boolean(authService.getCurrentUser()?.profile?.isVerificationComplete));
+                setIsPasskeyEnabled(passkeyService.hasSavedPasskeyForCurrentUser());
             }
         };
 
@@ -81,6 +87,38 @@ const Security: React.FC = () => {
     // Track whether the user has started typing the new password (to show checklist)
     const newPasswordTouched = newPassword.length > 0;
     const allChecksPassed = checks.every(c => c.test(newPassword));
+    const isPasswordProtected = true; // Password flow already implemented for both email and Google users.
+
+    const securityScore = (isPasswordProtected ? 45 : 0) + (isProfileComplete ? 40 : 0) + (isPasskeyEnabled ? 15 : 0);
+    const scoreLabel = securityScore >= 100 ? 'Excellent' : securityScore >= 70 ? 'Good' : 'Needs attention';
+    const isPerfectScore = securityScore === 100;
+    const scoreStrokeColor = isPerfectScore ? '#22c55e' : '#2563eb';
+
+    const handlePasskeySetup = async () => {
+        setPasskeyMessage(null);
+        if (!passkeyService.isSupported()) {
+            setPasskeyMessage({ type: 'error', text: 'This browser/device does not support biometric/passkey auth.' });
+            return;
+        }
+
+        setPasskeyBusy(true);
+        try {
+            await passkeyService.registerPasskeyForCurrentUser();
+            setIsPasskeyEnabled(true);
+            setPasskeyMessage({ type: 'success', text: 'Biometric authentication is now enabled for this device.' });
+        } catch (err) {
+            const text = err instanceof Error ? err.message : 'Failed to enable biometric authentication.';
+            setPasskeyMessage({ type: 'error', text });
+        } finally {
+            setPasskeyBusy(false);
+        }
+    };
+
+    const handlePasskeyDisable = () => {
+        passkeyService.disablePasskeyForCurrentUser();
+        setIsPasskeyEnabled(false);
+        setPasskeyMessage({ type: 'success', text: 'Biometric authentication has been disabled for this device.' });
+    };
 
     const resetForm = () => {
         setCurrentPassword('');
@@ -141,13 +179,24 @@ const Security: React.FC = () => {
                 <div className="safety-meter">
                     <svg viewBox="0 0 36 36" className="circular-chart blue">
                         <path className="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        <path className="circle" strokeDasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path
+                            className="circle"
+                            stroke={scoreStrokeColor}
+                            strokeDasharray={`${securityScore}, 100`}
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
                     </svg>
-                    <div className="percentage">85%</div>
+                    <div className="percentage">{securityScore}%</div>
                 </div>
                 <div className="status-meta">
-                    <h3>Security Score: Good</h3>
-                    <p>Your account is well protected. Enable 2FA to reach 100%.</p>
+                    <h3>Security Score: {scoreLabel}</h3>
+                    <p>
+                        {isPerfectScore
+                            ? 'Excellent! Your account protections are fully enabled.'
+                            : isPasskeyEnabled
+                                ? 'Great progress. Finish remaining steps to reach 100%.'
+                                : 'Your account is well protected. Enable biometric auth to reach 100%.'}
+                    </p>
                 </div>
             </div>
 
@@ -176,13 +225,26 @@ const Security: React.FC = () => {
                         </>
                     )}
                 </div>
-                <div className="tool-card active">
+                <div className={`tool-card ${isPasskeyEnabled ? 'tool-card-complete' : ''}`}>
                     <div className="tool-icon-box"><FaFingerprint /></div>
                     <h4>2FA Auth</h4>
-                    <p>Biometric or SMS verification</p>
-                    <button className="tool-btn">Manage</button>
+                    <p>
+                        {isPasskeyEnabled
+                            ? 'Fingerprint/Face ID enabled on this device.'
+                            : 'Use fingerprint or Face ID via secure passkey.'}
+                    </p>
+                    <button
+                        className="tool-btn"
+                        disabled={passkeyBusy}
+                        onClick={isPasskeyEnabled ? handlePasskeyDisable : handlePasskeySetup}
+                    >
+                        {passkeyBusy ? 'Please wait...' : isPasskeyEnabled ? 'Disable' : 'Enable'}
+                    </button>
+                    {passkeyMessage && (
+                        <p className={`security-inline-note ${passkeyMessage.type}`}>{passkeyMessage.text}</p>
+                    )}
                 </div>
-                <div className="tool-card">
+                <div className={`tool-card ${isProfileComplete ? 'tool-card-complete' : ''}`}>
                     <div className="tool-icon-box"><FaHistory /></div>
                     <h4>{isProfileComplete ? 'Profile Complete' : 'Complete Profile'}</h4>
                     <p>{isProfileComplete ? 'Your verification details are already completed.' : 'Finish setting up your account'}</p>

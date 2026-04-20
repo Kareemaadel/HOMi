@@ -265,6 +265,33 @@
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
+.btn-secondary-v2 {
+    background: #ffffff;
+    color: #0f172a;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid #cbd5e1;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: all 0.2s;
+}
+
+.btn-secondary-v2:hover {
+    border-color: var(--auth-primary);
+    color: var(--auth-primary);
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.1);
+}
+
+.btn-secondary-v2:disabled,
+.btn-primary-v2:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 /* --- Sign-in extras: Remember me + forgot password --- */
 .form-extras {
     display: flex;

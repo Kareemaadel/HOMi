@@ -4,16 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { authService } from '../../../services/auth.service';
 import type { LoginRequest } from '../../../types/auth.types';
+import { passkeyService } from '../../../services/passkey.service';
 
 interface SignInProps {
   rememberMe: boolean;
   onRememberMeChange: (value: boolean) => void;
+  passkeyEnabled?: boolean;
 }
 
-const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
+const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange, passkeyEnabled = false }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [formData, setFormData] = useState<LoginRequest>({
     identifier: '',
     password: '',
@@ -52,6 +55,32 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasskeySignIn = async () => {
+    setPasskeyLoading(true);
+    setError(null);
+
+    try {
+      const restored = await authService.tryRestoreSession();
+      if (!restored) {
+        setError('No saved secure session found. Sign in with password first, then you can use biometrics next time.');
+        return;
+      }
+
+      const ok = await passkeyService.authenticateSavedPasskeyForCurrentUser();
+      if (!ok) {
+        setError('Biometric verification failed. Please try again or use your password.');
+        return;
+      }
+
+      const nextPath = authService.resolvePostAuthRoute();
+      navigate('/', { state: { next: nextPath, force: true } });
+    } catch {
+      setError('Biometric sign in failed. Please use your password.');
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -114,6 +143,17 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
         <LogIn size={18}/> 
         <span>{loading ? 'Signing in...' : 'Sign In'}</span>
       </button>
+
+      {passkeyEnabled && (
+        <button
+          type="button"
+          className="btn-secondary-v2"
+          disabled={passkeyLoading || loading}
+          onClick={handlePasskeySignIn}
+        >
+          <span>{passkeyLoading ? 'Verifying fingerprint/Face ID...' : 'Use fingerprint / Face ID'}</span>
+        </button>
+      )}
     </form>
   );
 };
