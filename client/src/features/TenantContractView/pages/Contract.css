@@ -8,8 +8,8 @@
   --saas-text-muted: #666666;
   --saas-primary: #000000;
   --saas-accent-blue: #0070f3;
-  --saas-shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
-  --saas-shadow-md: 0 12px 24px -10px rgba(0,0,0,0.08);
+  --saas-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+  --saas-shadow-md: 0 12px 24px -10px rgba(0, 0, 0, 0.08);
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
@@ -111,9 +111,17 @@
   left: 0;
 }
 
-.card-status-bar[data-status='active'] { background: #10b981; }
-.card-status-bar[data-status='signing'] { background: var(--saas-accent-blue); }
-.card-status-bar[data-status='payment'] { background: #f59e0b; }
+.card-status-bar[data-status='active'] {
+  background: #10b981;
+}
+
+.card-status-bar[data-status='signing'] {
+  background: var(--saas-accent-blue);
+}
+
+.card-status-bar[data-status='pending_payment'] {
+  background: #d0009f;
+}
 
 .tenant-card-body {
   padding: 32px;
@@ -147,9 +155,20 @@
   letter-spacing: 0.04em;
 }
 
-.status-tag.active { background: #e6fcf5; color: #0ca678; }
-.status-tag.signing { background: #e7f5ff; color: #1c7ed6; }
-.status-tag.payment { background: #fff9db; color: #f08c00; }
+.status-tag.active {
+  background: #e6fcf5;
+  color: #0ca678;
+}
+
+.status-tag.signing {
+  background: #e7f5ff;
+  color: #1c7ed6;
+}
+
+.status-tag.pending_payment {
+  background: #fff9db;
+  color: #d0009f;
+}
 
 .tenant-contract-card h3 {
   font-size: 22px;
@@ -264,5 +283,5 @@
   background: #000;
   color: #fff;
   border-color: #000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
