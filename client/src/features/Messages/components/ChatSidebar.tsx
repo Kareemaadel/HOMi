@@ -8,7 +8,8 @@ interface ChatSidebarProps {
   conversations: ConversationDto[];
   activeId: string | null;
   onSelectConversation: (conversationId: string) => void;
-  onCreateConversation: () => void;
+  /** Omitted for landlords (e.g. new chats start from tenant browse flow). */
+  onCreateConversation?: () => void;
   isLoading: boolean;
 }
 
@@ -69,14 +70,16 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             >
               <FiSearch />
             </button>
-            <button
-              type="button"
-              className="icon-btn primary"
-              onClick={onCreateConversation}
-              aria-label="Start a new conversation"
-            >
-              <FiPlus />
-            </button>
+            {onCreateConversation ? (
+              <button
+                type="button"
+                className="icon-btn primary"
+                onClick={onCreateConversation}
+                aria-label="Start a new conversation"
+              >
+                <FiPlus />
+              </button>
+            ) : null}
           </div>
         </div>
 

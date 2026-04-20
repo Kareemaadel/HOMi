@@ -282,7 +282,7 @@ const Messages: React.FC = () => {
             conversations={conversations}
             activeId={selectedConversationId}
             onSelectConversation={setSelectedConversationId}
-            onCreateConversation={handleCreateConversation}
+            onCreateConversation={userRole === 'TENANT' ? handleCreateConversation : undefined}
             isLoading={isConversationsLoading}
           />
           <ChatWindow
