@@ -331,6 +331,90 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: block;
 }
 
+/* Photo / doc tile with remove (X) control */
+.upload-attachment-tile {
+    position: relative;
+    aspect-ratio: 1;
+}
+
+.uploaded-photo-slot-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid #dbeafe;
+    background: #ffffff;
+}
+
+.uploaded-photo-slot-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.uploaded-doc-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px;
+    background: #e2e8f0;
+    text-align: center;
+}
+
+.uploaded-doc-preview-text {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #2563eb;
+}
+
+.uploaded-doc-preview-snippet {
+    font-size: 0.62rem;
+    line-height: 1.25;
+    color: #475569;
+    word-break: break-all;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.upload-attachment-remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #fff;
+    background: rgba(15, 23, 42, 0.82);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.upload-attachment-remove:hover {
+    background: #dc2626;
+    transform: scale(1.06);
+}
+
+.upload-attachment-remove:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.upload-attachment-remove svg {
+    font-size: 0.75rem;
+}
+
 .upload-placeholder svg {
     font-size: 1.5rem;
     margin-bottom: 4px;

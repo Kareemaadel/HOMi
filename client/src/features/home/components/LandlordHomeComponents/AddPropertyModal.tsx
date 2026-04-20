@@ -311,6 +311,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     event.target.value = '';
   };
 
+  const removeUploadedImage = (index: number) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeUploadedDocument = (index: number) => {
+    setUploadedDocuments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const toggleMaintenance = (type: string, role: 'landlord' | 'tenant') => {
     setMaintenance(prev => ({ ...prev, [type]: role }));
   };
@@ -618,8 +626,18 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                         <span>Upload</span>
                       </button>
                       {uploadedImages.map((img, index) => (
-                        <div key={index} className="uploaded-photo-slot">
-                          <img src={img} alt={`Property ${index + 1}`} />
+                        <div key={`property-img-${index}`} className="upload-attachment-tile">
+                          <div className="uploaded-photo-slot-inner">
+                            <img src={img} alt={`Property ${index + 1}`} />
+                          </div>
+                          <button
+                            type="button"
+                            className="upload-attachment-remove"
+                            onClick={() => removeUploadedImage(index)}
+                            aria-label={`Remove property photo ${index + 1}`}
+                          >
+                            <FaTimes aria-hidden />
+                          </button>
                         </div>
                       ))}
                       {Array.from({ length: Math.max(0, 4 - uploadedImages.length) }).map((_, i) => (
@@ -648,10 +666,21 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                         <span>Upload Docs</span>
                       </button>
                       {uploadedDocuments.map((doc, index) => (
-                        <div key={index} className="uploaded-photo-slot">
-                          <div style={{ backgroundColor: '#e2e8f0', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#475569', overflow: 'hidden', padding: '5px' }}>
-                             {doc.substring(0, 30)}...
+                        <div key={`ownership-doc-${index}`} className="upload-attachment-tile">
+                          <div className="uploaded-photo-slot-inner uploaded-doc-preview">
+                            <span className="uploaded-doc-preview-text">
+                              {doc.startsWith('data:application/pdf') ? 'PDF' : doc.startsWith('data:image') ? 'Image' : 'File'}
+                            </span>
+                            <span className="uploaded-doc-preview-snippet">{doc.substring(0, 28)}…</span>
                           </div>
+                          <button
+                            type="button"
+                            className="upload-attachment-remove"
+                            onClick={() => removeUploadedDocument(index)}
+                            aria-label={`Remove ownership document ${index + 1}`}
+                          >
+                            <FaTimes aria-hidden />
+                          </button>
                         </div>
                       ))}
                       {Array.from({ length: Math.max(0, 3 - uploadedDocuments.length) }).map((_, i) => (
