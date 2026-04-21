@@ -115,6 +115,21 @@ export interface AdminPropertyDetails {
     } | null;
 }
 
+export interface AdminSupportInboxRow {
+    conversationId: string;
+    user: {
+        id: string;
+        email: string;
+        role: string;
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+    };
+    lastMessagePreview: string | null;
+    lastMessageAt: string | null;
+    unreadFromUser: number;
+}
+
 export interface AdminManagedUser {
     id: string;
     email: string;
@@ -223,6 +238,16 @@ class AdminService {
     async unbanUser(userId: string) {
         const response = await apiClient.patch<{ success: boolean; message: string }>(`/admin/users/${userId}/unban`);
         return response.data;
+    }
+
+    async getSupportInbox(params?: { filter?: 'all' | 'unread' | 'read'; sort?: 'oldest' | 'newest' }) {
+        const response = await apiClient.get<{ success: boolean; data: AdminSupportInboxRow[] }>('/admin/support/inbox', {
+            params: {
+                filter: params?.filter ?? 'all',
+                sort: params?.sort ?? 'newest',
+            },
+        });
+        return response.data.data;
     }
 }
 

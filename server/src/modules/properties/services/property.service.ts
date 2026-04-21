@@ -13,7 +13,7 @@ import {
     PropertyReportStatus,
     sequelize,
 } from '../models/index.js';
-import { User } from '../../auth/models/User.js';
+import { User, UserRole } from '../../auth/models/User.js';
 import { Profile } from '../../auth/models/Profile.js';
 import type {
     CreatePropertyRequest,
@@ -345,7 +345,7 @@ class PropertyService {
                 {
                     model: User,
                     as: 'landlord',
-                    attributes: ['id'],
+                    attributes: ['id', 'is_verified'],
                     include: [
                         {
                             model: Profile,
@@ -420,7 +420,7 @@ class PropertyService {
                 {
                     model: User,
                     as: 'landlord',
-                    attributes: ['id'],
+                    attributes: ['id', 'is_verified'],
                     include: [
                         {
                             model: Profile,
@@ -512,8 +512,7 @@ class PropertyService {
             if (input.type !== undefined) updateData.type = input.type;
             if (input.furnishing !== undefined) updateData.furnishing = input.furnishing;
             if (input.status !== undefined) {
-                const allowedLandlordStatuses = [PropertyStatus.DRAFT, PropertyStatus.AVAILABLE];
-                if (!allowedLandlordStatuses.includes(input.status)) {
+                if (input.status !== PropertyStatus.DRAFT && input.status !== PropertyStatus.AVAILABLE) {
                     throw new PropertyError(
                         'Landlords can only set status to DRAFT or AVAILABLE.',
                         400,
@@ -668,6 +667,45 @@ class PropertyService {
     }
 
     /**
+     * Public card for a landlord (tenants / guests). No email or sensitive fields.
+     */
+    async getPublicLandlordProfile(landlordId: string): Promise<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+        isVerified: boolean;
+    }> {
+        const user = await User.findByPk(landlordId, {
+            attributes: ['id', 'role', 'is_verified'],
+            include: [
+                {
+                    model: Profile,
+                    as: 'profile',
+                    attributes: ['first_name', 'last_name', 'avatar_url'],
+                },
+            ],
+        });
+
+        if (!user || user.role !== UserRole.LANDLORD) {
+            throw new PropertyError('Landlord not found', 404, 'LANDLORD_NOT_FOUND');
+        }
+
+        const profile = user.profile;
+        if (!profile) {
+            throw new PropertyError('Landlord not found', 404, 'LANDLORD_NOT_FOUND');
+        }
+
+        return {
+            id: user.id,
+            firstName: profile.first_name ?? '',
+            lastName: profile.last_name ?? '',
+            avatarUrl: profile.avatar_url ?? null,
+            isVerified: Boolean(user.is_verified),
+        };
+    }
+
+    /**
      * Helper method to format property response
      */
     private formatPropertyResponse(
@@ -720,12 +758,14 @@ class PropertyService {
             : null;
 
         const landlordProfile = property.landlord?.profile;
+        const landlordUser = property.landlord as { is_verified?: boolean } | undefined;
         const formattedLandlord: PropertyLandlordResponse | null = landlordProfile
             ? {
                 id: property.landlord_id,
                 firstName: landlordProfile.first_name,
                 lastName: landlordProfile.last_name,
                 avatarUrl: landlordProfile.avatar_url ?? null,
+                isVerified: Boolean(landlordUser?.is_verified),
             }
             : null;
 

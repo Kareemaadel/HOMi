@@ -39,6 +39,7 @@ export interface ConversationCounterpart {
 export interface ConversationResponse {
     id: string;
     propertyId: string | null;
+    isSupport: boolean;
     counterpart: ConversationCounterpart;
     lastMessage: MessageResponse | null;
     unreadCount: number;

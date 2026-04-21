@@ -13,6 +13,10 @@ vi.mock('../../../../src/modules/auth/models/index.js', () => ({
     sequelize: { transaction: vi.fn() },
     User: { findOne: vi.fn(), create: vi.fn(), findByPk: vi.fn() },
     Profile: { findOne: vi.fn(), create: vi.fn() },
+    UserPasskey: { count: vi.fn().mockResolvedValue(0), destroy: vi.fn(), findAll: vi.fn(), findOne: vi.fn(), create: vi.fn() },
+    UserRole: { ADMIN: 'ADMIN', LANDLORD: 'LANDLORD', TENANT: 'TENANT', MAINTENANCE_PROVIDER: 'MAINTENANCE_PROVIDER' },
+    Habit: {},
+    UserHabit: { destroy: vi.fn(), bulkCreate: vi.fn(), findAll: vi.fn() },
 }));
 
 vi.mock('../../../../src/shared/utils/jwt.util.js', () => ({
@@ -84,7 +88,11 @@ describe('AuthService', () => {
         it('should register user successfully', async () => {
             vi.mocked(User.findOne).mockResolvedValue(null);
             vi.mocked(Profile.findOne).mockResolvedValue(null);
-            vi.mocked(User.create).mockResolvedValue({ id: 'u1' } as any);
+            vi.mocked(User.create).mockResolvedValue({
+                id: 'u1',
+                role: 'TENANT',
+                email: 'test@example.com',
+            } as any);
             vi.mocked(Profile.create).mockResolvedValue({ id: 'p1' } as any);
 
             const res = await authService.register(regInput);
@@ -225,6 +233,7 @@ describe('AuthService', () => {
             const res = await authService.getCurrentUser('u1');
             expect(res.user.id).toBe('u1');
             expect(res.profile.id).toBe('p1');
+            expect(res.passkeyEnabled).toBe(false);
         });
     });
 

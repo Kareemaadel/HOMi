@@ -21,6 +21,8 @@ export interface ConversationCounterpart {
 export interface ConversationDto {
     id: string;
     propertyId: string | null;
+    /** True for Help Center / admin support threads */
+    isSupport?: boolean;
     counterpart: ConversationCounterpart;
     lastMessage: MessageDto | null;
     unreadCount: number;
@@ -57,7 +59,33 @@ interface MarkReadApiResponse {
     data: { markedCount: number };
 }
 
+interface SupportThreadApiResponse {
+    success: boolean;
+    data: {
+        conversation: ConversationDto;
+        messages: MessageDto[];
+    };
+}
+
+interface SupportSendApiResponse {
+    success: boolean;
+    data: {
+        userMessage: MessageDto;
+        autoReply: MessageDto | null;
+    };
+}
+
+interface UnreadBadgeApiResponse {
+    success: boolean;
+    data: { hasUnread: boolean; unreadCount: number };
+}
+
 class MessageService {
+    async getUnreadBadge() {
+        const response = await apiClient.get<UnreadBadgeApiResponse>('/messages/unread-badge');
+        return response.data;
+    }
+
     async listConversations(params?: { page?: number; limit?: number }) {
         const response = await apiClient.get<ConversationsApiResponse>('/messages/conversations', { params });
         return response.data;
@@ -85,6 +113,16 @@ class MessageService {
     async startConversation(payload: { participantId: string; propertyId?: string; initialMessage?: string }) {
         const response = await apiClient.post<{ success: boolean; data: ConversationDto }>('/messages/conversations', payload);
         return response.data;
+    }
+
+    async getSupportThread() {
+        const response = await apiClient.get<SupportThreadApiResponse>('/messages/support');
+        return response.data.data;
+    }
+
+    async sendSupportMessage(body: string) {
+        const response = await apiClient.post<SupportSendApiResponse>('/messages/support/messages', { body });
+        return response.data.data;
     }
 }
 

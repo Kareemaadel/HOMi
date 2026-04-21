@@ -4,7 +4,6 @@ import {
   FaLinkedinIn, 
   FaInstagram, 
   FaFacebookF, 
-  FaPaperPlane,
   FaEnvelope,
   FaPhoneAlt
 } from 'react-icons/fa';

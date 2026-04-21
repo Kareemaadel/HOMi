@@ -24,7 +24,7 @@ import authService from '../../../../services/auth.service';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -45,15 +45,15 @@ interface AddPropertyModalProps {
 const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   const map = useMap();
   useEffect(() => {
-    // @ts-ignore
+    // @ts-expect-error — leaflet-control-geocoder augments L.Control at runtime
     const geocoder = L.Control.Geocoder.nominatim();
-    // @ts-ignore
+    // @ts-expect-error — geocoder control factory is not in @types/leaflet
     const control = L.Control.geocoder({
       geocoder,
       defaultMarkGeocode: false,
       placeholder: "Search in Egypt...",
     })
-      .on('markgeocode', (e: any) => {
+      .on('markgeocode', (e: { geocode: { center: L.LatLng } }) => {
         const { center } = e.geocode;
         if (EGYPT_BOUNDS.contains(center)) {
           map.setView(center, 16);
@@ -311,13 +311,21 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     event.target.value = '';
   };
 
+  const removeUploadedImage = (index: number) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeUploadedDocument = (index: number) => {
+    setUploadedDocuments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const toggleMaintenance = (type: string, role: 'landlord' | 'tenant') => {
     setMaintenance(prev => ({ ...prev, [type]: role }));
   };
 
   const toggleChip = (
     value: string,
-    selected: string[],
+    _selected: string[],
     setter: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     setter((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
@@ -439,7 +447,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     try {
       const address = `${streetName}, ${area}, ${city}, Egypt`;
 
-      const createResult = await propertyService.createProperty({
+      await propertyService.createProperty({
         title: title.trim(),
         description: aboutProperty.trim(),
         monthly_price: parsedMonthlyPrice,
@@ -477,9 +485,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
       setLoading(false);
       setIsSuccess(true);
       triggerConfetti();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setLoading(false);
-      setSubmitError(error?.response?.data?.message || 'Failed to publish property. Please try again.');
+      const ex = error as { response?: { data?: { message?: string } } };
+      setSubmitError(ex.response?.data?.message || 'Failed to publish property. Please try again.');
     }
   };
 
@@ -618,8 +627,18 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                         <span>Upload</span>
                       </button>
                       {uploadedImages.map((img, index) => (
-                        <div key={index} className="uploaded-photo-slot">
-                          <img src={img} alt={`Property ${index + 1}`} />
+                        <div key={`property-img-${index}`} className="upload-attachment-tile">
+                          <div className="uploaded-photo-slot-inner">
+                            <img src={img} alt={`Property ${index + 1}`} />
+                          </div>
+                          <button
+                            type="button"
+                            className="upload-attachment-remove"
+                            onClick={() => removeUploadedImage(index)}
+                            aria-label={`Remove property photo ${index + 1}`}
+                          >
+                            <FaTimes aria-hidden />
+                          </button>
                         </div>
                       ))}
                       {Array.from({ length: Math.max(0, 4 - uploadedImages.length) }).map((_, i) => (
@@ -648,10 +667,21 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                         <span>Upload Docs</span>
                       </button>
                       {uploadedDocuments.map((doc, index) => (
-                        <div key={index} className="uploaded-photo-slot">
-                          <div style={{ backgroundColor: '#e2e8f0', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#475569', overflow: 'hidden', padding: '5px' }}>
-                             {doc.substring(0, 30)}...
+                        <div key={`ownership-doc-${index}`} className="upload-attachment-tile">
+                          <div className="uploaded-photo-slot-inner uploaded-doc-preview">
+                            <span className="uploaded-doc-preview-text">
+                              {doc.startsWith('data:application/pdf') ? 'PDF' : doc.startsWith('data:image') ? 'Image' : 'File'}
+                            </span>
+                            <span className="uploaded-doc-preview-snippet">{doc.substring(0, 28)}…</span>
                           </div>
+                          <button
+                            type="button"
+                            className="upload-attachment-remove"
+                            onClick={() => removeUploadedDocument(index)}
+                            aria-label={`Remove ownership document ${index + 1}`}
+                          >
+                            <FaTimes aria-hidden />
+                          </button>
                         </div>
                       ))}
                       {Array.from({ length: Math.max(0, 3 - uploadedDocuments.length) }).map((_, i) => (

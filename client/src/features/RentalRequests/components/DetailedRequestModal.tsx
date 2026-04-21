@@ -1,17 +1,29 @@
 // client\src\features\RentalRequests\components\DetailedRequestModal.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    FaTimes, FaWallet, FaChartLine, 
-    FaCalendarCheck, FaHourglassHalf, FaUsers, 
-    FaQuoteLeft, FaCheckCircle, FaUserFriends, FaCommentDots,
-    FaExclamationTriangle, FaCheck
+import {
+    FaTimes,
+    FaTimesCircle,
+    FaWallet,
+    FaChartLine,
+    FaCalendarCheck,
+    FaHourglassHalf,
+    FaUsers,
+    FaQuoteLeft,
+    FaCheckCircle,
+    FaUserFriends,
+    FaCommentDots,
+    FaExclamationTriangle,
+    FaCheck,
 } from 'react-icons/fa';
 import rentalRequestService from '../../../services/rental-request.service';
+import { messageService } from '../../../services/message.service';
 import './DetailedRequestModal.css';
 
 interface DetailedRequestModalProps {
     data: {
+        tenantId?: string;
+        propertyId?: string;
         status?: string;
         applicant?: {
             name?: string;
@@ -51,10 +63,21 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
         data?.status === 'approved' ? 'approved' : data?.status === 'declined' ? 'declined' : 'pending'
     );
     const [actionLoading, setActionLoading] = useState(false);
+    const [isChatLoading, setIsChatLoading] = useState(false);
 
-    const { 
-        applicant, property, moveInDate, duration, occupants, 
-        message, habits, livingSituation, appliedOnDate, propertyName
+    const {
+        applicant,
+        property,
+        moveInDate,
+        duration,
+        occupants,
+        message,
+        habits,
+        livingSituation,
+        appliedOnDate,
+        propertyName,
+        tenantId,
+        propertyId,
     } = data;
     const applyingForName = [property?.title, property?.name, propertyName, property?.unit]
         .map((value) => value?.trim())
@@ -82,6 +105,7 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
             setActionLoading(true);
             await rentalRequestService.updateRequestStatus(requestId, 'DECLINED');
             setApplicationState('declined');
+            onStatusChange?.();
         } catch (error) {
             console.error('Failed to decline rental request', error);
         } finally {
@@ -94,9 +118,35 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
         navigate('/landlord-contracts');
     };
 
-    const handleDeclinedClose = () => {
-        onStatusChange?.();
-        onClose();
+    const handleMessageTenant = async () => {
+        const participantId = tenantId?.trim();
+        if (!participantId) {
+            navigate('/messages');
+            return;
+        }
+        setIsChatLoading(true);
+        try {
+            const response = await messageService.startConversation({
+                participantId,
+                propertyId: propertyId?.trim() || undefined,
+            });
+            navigate('/messages', {
+                state: {
+                    conversationId: response.data.id,
+                    participantId,
+                    propertyId: propertyId?.trim(),
+                },
+            });
+            onClose();
+        } catch (error) {
+            console.error('Failed to start conversation with tenant', error);
+            navigate('/messages', {
+                state: { participantId, propertyId: propertyId?.trim() },
+            });
+            onClose();
+        } finally {
+            setIsChatLoading(false);
+        }
     };
 
     return (
@@ -140,8 +190,8 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                 )}
 
                 {applicationState === 'approved' && (
-                    <div className="action-overlay success">
-                        <div className="action-card">
+                    <div className="action-overlay outcome-approved">
+                        <div className="action-card outcome-card">
                             <div className="success-circle"><FaCheck size={32} color="#10b981" /></div>
                             <h3>Application Approved!</h3>
                             <p>Great news! The next step is to draft and send the official lease agreement to the tenant.</p>
@@ -153,14 +203,13 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                 )}
 
                 {applicationState === 'declined' && (
-                    <div className="action-overlay declined">
-                        <div className="action-card">
-                            <FaTimes size={40} color="#ef4444" style={{ marginBottom: '16px' }} />
+                    <div className="action-overlay outcome-declined">
+                        <div className="action-card outcome-card">
+                            <div className="decline-outcome-circle" aria-hidden>
+                                <FaTimesCircle size={32} color="#dc2626" />
+                            </div>
                             <h3>Application Declined</h3>
-                            <p>The applicant will be notified safely. You can now focus on other prospective tenants.</p>
-                            <button className="btn-cancel" style={{ width: '100%', border: '1px solid #cbd5e1' }} onClick={handleDeclinedClose}>
-                                Close Window
-                            </button>
+                            <p>The applicant will be notified. Use the close control when you are ready to return to your requests.</p>
                         </div>
                     </div>
                 )}
@@ -292,22 +341,29 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                             
                             {/* Wrapper to put Message and Decline on the same row */}
                             <div className="sticky-actions-row">
-                                <button className="btn-secondary-main" onClick={() => navigate('/messages')} style={{
-                                    background: '#eff6ff', 
-                                    color: '#3b82f6', 
-                                    border: 'none', 
-                                    padding: '16px', 
-                                    borderRadius: '12px', 
-                                    fontWeight: '600', 
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    transition: '0.2s',
-                                    flex: 1 // Takes up half the row
-                                }}>
-                                    <FaCommentDots size={18} /> Message
+                                <button
+                                    type="button"
+                                    className="btn-secondary-main"
+                                    disabled={isChatLoading}
+                                    onClick={() => void handleMessageTenant()}
+                                    style={{
+                                        background: '#eff6ff',
+                                        color: '#3b82f6',
+                                        border: 'none',
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
+                                        cursor: isChatLoading ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        transition: '0.2s',
+                                        flex: 1,
+                                        opacity: isChatLoading ? 0.75 : 1,
+                                    }}
+                                >
+                                    <FaCommentDots size={18} /> {isChatLoading ? 'Opening…' : 'Message'}
                                 </button>
                                 
                                 <button 

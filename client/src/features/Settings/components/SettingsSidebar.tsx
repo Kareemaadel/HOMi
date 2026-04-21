@@ -2,7 +2,7 @@
 import React from 'react';
 import './SettingsSidebar.css';
 import { 
-  FaUser, FaShieldAlt, FaCog, FaInfoCircle, FaTrashAlt, 
+  FaUser, FaShieldAlt, FaCog, FaTrashAlt, 
   FaBell, FaCreditCard, FaUserShield 
 } from 'react-icons/fa';
 

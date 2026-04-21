@@ -145,9 +145,68 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 END $$;
             `);
         }
+        // ─── WebAuthn / passkey tables (idempotent; required when alter: false in production) ─
+        await sequelize.query(`
+            CREATE TABLE IF NOT EXISTS "user_passkeys" (
+                "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                "user_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+                "credential_id" VARCHAR(512) NOT NULL UNIQUE,
+                "public_key" TEXT NOT NULL,
+                "counter" BIGINT NOT NULL DEFAULT 0,
+                "transports" JSONB,
+                "created_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+                "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL
+            );
+        `);
+        await sequelize.query(`
+            CREATE INDEX IF NOT EXISTS "user_passkeys_user_id" ON "user_passkeys" ("user_id");
+        `);
+        await sequelize.query(`
+            CREATE TABLE IF NOT EXISTS "webauthn_challenges" (
+                "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                "user_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+                "challenge" TEXT NOT NULL,
+                "kind" VARCHAR(32) NOT NULL,
+                "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+                "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+            );
+        `);
+        await sequelize.query(`
+            CREATE INDEX IF NOT EXISTS "webauthn_challenges_user_kind" ON "webauthn_challenges" ("user_id", "kind");
+        `);
+        await sequelize.query(`
+            ALTER TABLE IF EXISTS "conversations"
+                ADD COLUMN IF NOT EXISTS "is_support" BOOLEAN NOT NULL DEFAULT false;
+        `);
+        await sequelize.query(`
+            CREATE INDEX IF NOT EXISTS "conversations_is_support_last_message"
+                ON "conversations" ("is_support", "last_message_at")
+                WHERE "deleted_at" IS NULL;
+        `);
         // ──────────────────────────────────────────────────────────────────
 
         await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });
+
+        // One DM thread per participant pair (legacy rows were split by property_id).
+        try {
+            const { messageService } = await import('../modules/messages/services/message.service.js');
+            await messageService.mergeDuplicateConversations();
+        } catch (mergeError) {
+            console.warn('⚠️ Conversation merge skipped:', mergeError);
+        }
+
+        if (sequelize.getDialect() === 'postgres') {
+            await sequelize.query(`
+                ALTER TABLE conversations DROP CONSTRAINT IF EXISTS uniq_conversation_participants_property;
+            `);
+            await sequelize.query(`DROP INDEX IF EXISTS uniq_conversation_participants_property;`);
+            await sequelize.query(`
+                CREATE UNIQUE INDEX IF NOT EXISTS uniq_conversation_participants_active
+                ON conversations (participant_one_id, participant_two_id)
+                WHERE deleted_at IS NULL;
+            `);
+        }
+
         console.log('✅ Database synchronized successfully.');
     } catch (error) {
         console.error('❌ Database synchronization failed:', error);

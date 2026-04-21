@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { authService } from '../../../services/auth.service';
 import type { LoginRequest } from '../../../types/auth.types';
+import { passkeyService } from '../../../services/passkey.service';
 
 interface SignInProps {
   rememberMe: boolean;
@@ -14,6 +15,7 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [formData, setFormData] = useState<LoginRequest>({
     identifier: '',
     password: '',
@@ -24,7 +26,6 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Clear error when user types
     if (error) setError(null);
   };
 
@@ -35,8 +36,6 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
 
     try {
       const response = await authService.login({ ...formData, rememberMe });
-      
-      console.log('✅ Login successful!', response);
 
       const nextPath = authService.resolvePostAuthRoute(response);
       navigate('/', { state: { next: nextPath, force: true } });
@@ -52,6 +51,39 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const identifierTrimmed = formData.identifier.trim();
+  const canTryPasskey = identifierTrimmed.length > 0 && passkeyService.isSupported();
+
+  const handlePasskeySignIn = async () => {
+    if (!identifierTrimmed) {
+      setError('Enter your email or phone first.');
+      return;
+    }
+
+    setPasskeyLoading(true);
+    setError(null);
+
+    try {
+      await passkeyService.authenticateWithPasskey(identifierTrimmed, rememberMe);
+      const nextPath = authService.resolvePostAuthRoute();
+      navigate('/', { state: { next: nextPath, force: true } });
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.data?.code === 'NO_PASSKEYS') {
+        setError('No passkey is registered for this account. Sign in with your password and enable biometrics in Settings.');
+        return;
+      }
+      if (axios.isAxiosError(err) && err.response?.data?.code === 'INVALID_CREDENTIALS') {
+        setError('Account not found for this email or phone.');
+        return;
+      }
+      const msg =
+        err instanceof Error ? err.message : 'Passkey sign-in failed. Use your password or try again.';
+      setError(msg);
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -114,6 +146,17 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
         <LogIn size={18}/> 
         <span>{loading ? 'Signing in...' : 'Sign In'}</span>
       </button>
+
+      {canTryPasskey && (
+        <button
+          type="button"
+          className="btn-secondary-v2"
+          disabled={passkeyLoading || loading}
+          onClick={handlePasskeySignIn}
+        >
+          <span>{passkeyLoading ? 'Verifying fingerprint / Face ID...' : 'Use fingerprint / Face ID'}</span>
+        </button>
+      )}
     </form>
   );
 };

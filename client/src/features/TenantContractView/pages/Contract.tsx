@@ -99,7 +99,10 @@ const Contract: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        void fetchContracts();
+        const timer = window.setTimeout(() => {
+            void fetchContracts();
+        }, 0);
+        return () => window.clearTimeout(timer);
     }, [fetchContracts]);
 
     const hasContracts = contracts.length > 0;

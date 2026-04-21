@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Op } from 'sequelize';
-import { User, Profile, Habit, UserHabit, sequelize, UserRole } from '../models/index.js';
+import { User, Profile, Habit, UserHabit, UserPasskey, sequelize, UserRole } from '../models/index.js';
 import { Property } from '../../properties/models/Property.js';
 import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
 import { Contract } from '../../contracts/models/Contract.js';
@@ -88,6 +88,123 @@ export class AuthService {
             }
         );
     }
+
+    /**
+     * Find user by login identifier (email or phone). Returns null if not found.
+     */
+    async findUserByLoginIdentifier(identifier: string): Promise<User | null> {
+        const isEmail = identifier.includes('@');
+        let user: User | null = null;
+
+        if (isEmail) {
+            user = await User.findOne({
+                where: { email: identifier.toLowerCase() },
+                include: [{ model: Profile, as: 'profile' }],
+            });
+        } else {
+            const phoneInput = identifier.trim();
+            let profile;
+
+            if (phoneInput.startsWith('+')) {
+                const digitsOnly = phoneInput.slice(1);
+                const possibleVariants: string[] = [phoneInput];
+                for (let i = 1; i <= Math.min(4, digitsOnly.length - 1); i++) {
+                    const localPart = digitsOnly.slice(i);
+                    if (localPart.length >= 9) {
+                        possibleVariants.push('0' + localPart);
+                    }
+                }
+                profile = await Profile.findOne({
+                    where: {
+                        phone_number: { [Op.in]: possibleVariants },
+                    },
+                });
+            } else if (phoneInput.startsWith('0')) {
+                const digitsAfterZero = phoneInput.slice(1);
+                profile = await Profile.findOne({
+                    where: {
+                        [Op.or]: [
+                            { phone_number: phoneInput },
+                            { phone_number: { [Op.like]: `+%${digitsAfterZero}` } },
+                        ],
+                    },
+                });
+            } else {
+                profile = await Profile.findOne({
+                    where: { phone_number: phoneInput },
+                });
+            }
+
+            if (profile) {
+                user = await User.findOne({
+                    where: { id: profile.user_id },
+                    include: [{ model: Profile, as: 'profile' }],
+                });
+            }
+        }
+
+        return user;
+    }
+
+    private buildLoginResponse(user: User, tokens: TokenPair): LoginResponse {
+        const profile = user.profile;
+        if (!profile) {
+            throw new AuthError('User profile not found', 500, 'PROFILE_NOT_FOUND');
+        }
+
+        const userResponse: UserResponse = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.is_verified,
+            emailVerified: user.email_verified,
+            createdAt: user.created_at,
+        };
+
+        const profileResponse: ProfileResponse = {
+            id: profile.id,
+            userId: profile.user_id,
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            phoneNumber: profile.phone_number,
+            bio: profile.bio ?? null,
+            avatarUrl: profile.avatar_url ?? null,
+            gender: profile.gender ?? null,
+            birthdate: profile.birthdate ? String(profile.birthdate) : null,
+            gamificationPoints: profile.gamification_points,
+            preferredBudgetMin: profile.preferred_budget_min ?? null,
+            preferredBudgetMax: profile.preferred_budget_max ?? null,
+            currentLocation: profile.current_location ?? null,
+            isVerificationComplete: profile.isVerificationComplete(),
+        };
+
+        return {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            user: userResponse,
+            profile: profileResponse,
+        };
+    }
+
+    /**
+     * Issue a full login response after a verified WebAuthn / passkey assertion.
+     */
+    async loginWithPasskey(user: User): Promise<LoginResponse> {
+        await this.enforceBanPolicy(user);
+        const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
+        await activityLogService.log({
+            actor: { userId: user.id, role: user.role, email: user.email },
+            action: 'AUTH_LOGIN',
+            entityType: 'USER',
+            entityId: user.id,
+            description: 'User logged in with passkey.',
+        });
+        return {
+            ...this.buildLoginResponse(user, tokens),
+            passkeyEnabled: true,
+        };
+    }
+
     /**
      * Register a new user with profile
      * Creates User and Profile atomically within a transaction
@@ -264,87 +381,18 @@ export class AuthService {
      * Identifier can be either email or phone number - auto-detected
      */
     async login(input: LoginRequest): Promise<LoginResponse> {
-        // Auto-detect if identifier is email or phone
-        // Email contains '@', phone number doesn't
-        const isEmail = input.identifier.includes('@');
-        let user;
-
-        if (isEmail) {
-            // Search by email
-            user = await User.findOne({
-                where: { email: input.identifier.toLowerCase() },
-                include: [{ model: Profile, as: 'profile' }],
-            });
-        } else {
-            // Search by phone number - handle both local and international formats for any country
-            const phoneInput = input.identifier.trim();
-
-            let profile;
-
-            if (phoneInput.startsWith('+')) {
-                // International format provided (e.g., +201234567890)
-                // Search for both:
-                // 1. Exact match: +201234567890
-                // 2. Local format: extract digits after country code and prefix with 0
-
-                // Extract country code and local number
-                const digitsOnly = phoneInput.slice(1); // Remove the '+'
-
-                // Try to intelligently split country code from local number
-                // Most country codes are 1-3 digits, mobile numbers typically start after that
-                const possibleVariants: string[] = [phoneInput];
-
-                // Generate local variants by trying different country code lengths (1-4 digits)
-                for (let i = 1; i <= Math.min(4, digitsOnly.length - 1); i++) {
-                    const localPart = digitsOnly.slice(i);
-                    if (localPart.length >= 9) { // Ensure reasonable phone number length
-                        possibleVariants.push('0' + localPart);
-                    }
-                }
-
-                profile = await Profile.findOne({
-                    where: {
-                        phone_number: { [Op.in]: possibleVariants }
-                    },
-                });
-            } else if (phoneInput.startsWith('0')) {
-
-                const digitsAfterZero = phoneInput.slice(1);
-                profile = await Profile.findOne({
-                    where: {
-                        [Op.or]: [
-                            { phone_number: phoneInput },
-                            { phone_number: { [Op.like]: `+%${digitsAfterZero}` } }
-                        ]
-                    },
-                });
-            } else {
-                profile = await Profile.findOne({
-                    where: { phone_number: phoneInput },
-                });
-            }
-
-            if (profile) {
-                user = await User.findOne({
-                    where: { id: profile.user_id },
-                    include: [{ model: Profile, as: 'profile' }],
-                });
-            }
-        }
-
+        const user = await this.findUserByLoginIdentifier(input.identifier);
         if (!user) {
             throw new AuthError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
         }
 
         await this.enforceBanPolicy(user);
 
-        // Verify password
         const isPasswordValid = await user.comparePassword(input.password);
         if (!isPasswordValid) {
             throw new AuthError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
         }
 
-        // Generate tokens
         const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
         await activityLogService.log({
             actor: { userId: user.id, role: user.role, email: user.email },
@@ -354,44 +402,7 @@ export class AuthService {
             description: 'User logged in.',
         });
 
-        // Build sanitized response
-        const userResponse: UserResponse = {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            isVerified: user.is_verified,
-            emailVerified: user.email_verified,
-            createdAt: user.created_at,
-        };
-
-        const profile = user.profile;
-        if (!profile) {
-            throw new AuthError('User profile not found', 500, 'PROFILE_NOT_FOUND');
-        }
-
-        const profileResponse: ProfileResponse = {
-            id: profile.id,
-            userId: profile.user_id,
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            phoneNumber: profile.phone_number,
-            bio: profile.bio ?? null,
-            avatarUrl: profile.avatar_url ?? null,
-            gender: profile.gender ?? null,
-            birthdate: profile.birthdate ? String(profile.birthdate) : null,
-            gamificationPoints: profile.gamification_points,
-            preferredBudgetMin: profile.preferred_budget_min ?? null,
-            preferredBudgetMax: profile.preferred_budget_max ?? null,
-            currentLocation: profile.current_location ?? null,
-            isVerificationComplete: profile.isVerificationComplete(),
-        };
-
-        return {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-            user: userResponse,
-            profile: profileResponse,
-        };
+        return this.buildLoginResponse(user, tokens);
     }
 
     /**
@@ -665,9 +676,12 @@ export class AuthService {
             isVerificationComplete: profile.isVerificationComplete(),
         };
 
+        const passkeyCount = await UserPasskey.count({ where: { user_id: userId } });
+
         return {
             user: userResponse,
             profile: profileResponse,
+            passkeyEnabled: passkeyCount > 0,
         };
     }
 
@@ -750,9 +764,12 @@ export class AuthService {
                 isVerificationComplete: profile.isVerificationComplete(),
             };
 
+            const passkeyCount = await UserPasskey.count({ where: { user_id: userId } });
+
             return {
                 user: userResponse,
                 profile: profileResponse,
+                passkeyEnabled: passkeyCount > 0,
             };
         } catch (error) {
             await transaction.rollback();

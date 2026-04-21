@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './MyProfile.css';
 import { FaCamera, FaIdBadge, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUserCircle } from 'react-icons/fa';
 import { authService } from '../../../services/auth.service';
-import type { UserResponse, ProfileResponse } from '../../../types/auth.types';
+import type { UserResponse, ProfileResponse, UpdateProfileRequest } from '../../../types/auth.types';
 
 const MyProfile: React.FC = () => {
     const [user, setUser] = useState<UserResponse | null>(null);
@@ -146,19 +146,16 @@ const MyProfile: React.FC = () => {
             // and avoids sending an empty phone (Google OAuth users may have none).
             const cached = authService.getCurrentUser();
             const orig = cached?.profile;
-            const payload: {
-                firstName?: string;
-                lastName?: string;
-                phone?: string;
-                bio?: string | null;
-                currentLocation?: string | null;
-            } = {};
+            const payload: UpdateProfileRequest = {};
 
             if (firstName !== (orig?.firstName ?? '')) payload.firstName = firstName;
             if (lastName !== (orig?.lastName ?? '')) payload.lastName = lastName;
             // Only include phone if it's non-empty AND different from original
             if (phone && phone !== (orig?.phoneNumber ?? '')) payload.phone = phone;
-            if (bio !== (orig?.bio ?? '')) payload.bio = bio.trim() || null;
+            if (bio !== (orig?.bio ?? '')) {
+                const nextBio = bio.trim();
+                payload.bio = nextBio === '' ? undefined : nextBio;
+            }
             if (currentLocation !== (orig?.currentLocation ?? '')) {
                 payload.currentLocation = currentLocation.trim() || null;
             }

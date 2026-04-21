@@ -29,8 +29,9 @@ const AdminLogin = () => {
                 }
                 navigate('/admin/dashboard');
             }
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Login failed. Are you an admin?');
+        } catch (err: unknown) {
+            const ex = err as { response?: { data?: { message?: string } } };
+            setError(ex.response?.data?.message || 'Login failed. Are you an admin?');
         } finally {
             setLoading(false);
         }

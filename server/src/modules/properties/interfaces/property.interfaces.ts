@@ -160,6 +160,8 @@ export interface PropertyLandlordResponse {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    /** HOMi profile verification (national ID flow), not email-only */
+    isVerified: boolean;
 }
 
 /**

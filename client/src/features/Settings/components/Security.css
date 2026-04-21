@@ -64,6 +64,15 @@
 }
 
 .tool-btn:hover { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+.tool-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+.tool-btn:disabled:hover {
+    background: #f8fafc;
+    color: inherit;
+    border-color: #e2e8f0;
+}
 
 .security-tools-grid {
     display: flex;
@@ -83,4 +92,40 @@
     transition: 0.3s;
     width: 340px;
     flex: 1 1 340px; 
+}
+
+.tool-card-complete {
+    border-color: #22c55e !important;
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.tool-card-complete .tool-icon-box {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.tool-card-complete .tool-btn {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #ffffff;
+}
+
+.tool-card-complete .tool-btn:hover {
+    background: #16a34a;
+    border-color: #16a34a;
+}
+
+.security-inline-note {
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.security-inline-note.success {
+    color: #166534;
+}
+
+.security-inline-note.error {
+    color: #b91c1c;
 }

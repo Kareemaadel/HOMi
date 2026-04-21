@@ -1,5 +1,5 @@
 // client\src\features\MyProperties\components\DetailedPropertyCard.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, 
@@ -8,7 +8,26 @@ import {
 import ManagePropertyModal from './ManagePropertyModal'; // Import the new modal
 import './DetailedPropertyCard.css';
 
-const DetailedPropertyCard = ({ property }: any) => {
+export type LandlordPropertyRow = {
+  id: string;
+  name: string;
+  address: string;
+  status: string;
+  price: string;
+  beds: number;
+  baths: number;
+  sqft: number;
+  tenantName: null;
+  leaseEnd: null;
+  yield: string;
+  occupancyRate: number;
+  images: Array<{ image_url?: string; imageUrl?: string }>;
+  amenities: string[];
+  houseRules: string[];
+  onUpdate: () => void;
+};
+
+const DetailedPropertyCard = ({ property }: { property: LandlordPropertyRow }) => {
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const status = String(property?.status || '').toLowerCase();
   const isManageLocked = status === 'pending_approval' || status === 'rejected';

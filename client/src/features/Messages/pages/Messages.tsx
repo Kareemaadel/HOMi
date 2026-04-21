@@ -101,6 +101,9 @@ const Messages: React.FC = () => {
       }
     | null;
   const preferredConversationId = locationState?.conversationId ?? null;
+  const participantIdFromState = locationState?.participantId ?? null;
+  const propertyIdFromState = locationState?.propertyId;
+
   const currentUser = authService.getCurrentUser();
   const currentUserId = currentUser?.user?.id ?? null;
   const userRole = currentUser?.user?.role;
@@ -154,6 +157,38 @@ const Messages: React.FC = () => {
     void loadConversations();
   }, [loadConversations]);
 
+  /** Open (or resume) a DM when navigation only included tenant id (e.g. catch path from property / rental flows). */
+  useEffect(() => {
+    if (preferredConversationId || !participantIdFromState) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await messageService.startConversation({
+          participantId: participantIdFromState,
+          propertyId: propertyIdFromState,
+        });
+        if (cancelled) return;
+        navigate('/messages', {
+          replace: true,
+          state: {
+            conversationId: response.data.id,
+            participantId: participantIdFromState,
+            propertyId: propertyIdFromState,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to bootstrap conversation from participant id:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, participantIdFromState, preferredConversationId, propertyIdFromState]);
+
   useEffect(() => {
     selectedConversationRef.current = selectedConversationId;
   }, [refreshNonce, selectedConversationId]);
@@ -188,7 +223,6 @@ const Messages: React.FC = () => {
     return () => {
       socketService.offConversationUpdated(handleConversationUpdated);
       socketService.offConversationRead(handleConversationRead);
-      socketService.disconnect();
     };
   }, [currentUserId]);
 
@@ -283,7 +317,7 @@ const Messages: React.FC = () => {
             conversations={conversations}
             activeId={selectedConversationId}
             onSelectConversation={setSelectedConversationId}
-            onCreateConversation={handleCreateConversation}
+            onCreateConversation={userRole === 'TENANT' ? handleCreateConversation : undefined}
             isLoading={isConversationsLoading}
           />
           <ChatWindow

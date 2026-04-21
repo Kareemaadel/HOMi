@@ -113,6 +113,8 @@ export interface LoginResponse {
     user: UserResponse;
     profile: ProfileResponse;
     isNewUser?: boolean;
+    /** Present after passkey login; otherwise client may use GET /auth/me */
+    passkeyEnabled?: boolean;
 }
 
 /**
@@ -150,6 +152,8 @@ export interface AuthenticatedUser {
 export interface UserProfileResponse {
     user: UserResponse;
     profile: ProfileResponse;
+    /** True when the user has at least one registered WebAuthn passkey */
+    passkeyEnabled: boolean;
 }
 
 /**

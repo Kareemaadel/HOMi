@@ -25,6 +25,18 @@ vi.mock('../../../../src/modules/properties/models/index.js', () => ({
     PropertySpecifications: { create: vi.fn(), findOrCreate: vi.fn(), findOne: vi.fn() },
     PropertyDetailedLocation: { create: vi.fn(), findOrCreate: vi.fn(), findOne: vi.fn() },
     HouseRule: { findAll: vi.fn() },
+    PropertyOwnershipDoc: {
+        bulkCreate: vi.fn().mockResolvedValue([]),
+        findAll: vi.fn().mockResolvedValue([]),
+        destroy: vi.fn().mockResolvedValue(0),
+    },
+    PropertyStatus: {
+        DRAFT: 'DRAFT',
+        PENDING_APPROVAL: 'PENDING_APPROVAL',
+        AVAILABLE: 'AVAILABLE',
+        REJECTED: 'REJECTED',
+        RENTED: 'RENTED',
+    },
 }));
 
 vi.mock('../../../../src/modules/auth/models/User.js', () => ({
@@ -75,7 +87,8 @@ describe('PropertyService', () => {
                 city: 'City', area: 'Area', street_name: 'St', building_number: '1', 
                 floor: 1, unit_apt: '1', location_lat: 0, location_long: 0 
             },
-            images: [{ image_url: 'url', is_main: true }]
+            images: [{ image_url: 'url', is_main: true }],
+            ownership_documents: [],
         };
 
         it('throws when user not found', async () => {

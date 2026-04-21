@@ -24,6 +24,9 @@ export class Conversation extends Model<
     declare participant_two_id: ForeignKey<string>;
     declare property_id: ForeignKey<string | null>;
 
+    /** True when this thread is the HOMi Help / admin support inbox (not a property DM). */
+    declare is_support: CreationOptional<boolean>;
+
     declare last_message_at: CreationOptional<Date | null>;
 
     declare created_at: CreationOptional<Date>;
@@ -74,6 +77,11 @@ Conversation.init(
                 key: 'id',
             },
         },
+        is_support: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
         last_message_at: {
             type: DataTypes.DATE,
             allowNull: true,
@@ -111,11 +119,6 @@ Conversation.init(
             },
             {
                 fields: ['last_message_at'],
-            },
-            {
-                unique: true,
-                fields: ['participant_one_id', 'participant_two_id', 'property_id'],
-                name: 'uniq_conversation_participants_property',
             },
         ],
     }

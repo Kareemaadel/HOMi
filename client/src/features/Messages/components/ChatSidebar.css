@@ -165,6 +165,54 @@
     border-left-color: #2084e1;
 }
 
+/* Help Center / live support thread */
+.contact-item--support {
+    background: linear-gradient(90deg, #f0fdf4 0%, #f8fafc 40%);
+    border-left-color: transparent;
+}
+
+.contact-item--support:hover {
+    background: linear-gradient(90deg, #dcfce7 0%, #f1f5f9 45%);
+}
+
+.contact-item--support.active {
+    background: linear-gradient(90deg, #d1fae5 0%, #e0f2fe 55%);
+    border-left-color: #059669;
+}
+
+.avatar-wrapper--support {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.support-sidebar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #059669 0%, #0d9488 100%);
+    color: #fff;
+    font-size: 1.35rem;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+}
+
+.support-list-pill {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #047857;
+    background: #d1fae5;
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
 .avatar-wrapper {
     position: relative;
     flex-shrink: 0;

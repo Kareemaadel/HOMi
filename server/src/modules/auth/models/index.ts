@@ -3,6 +3,8 @@ import { User, UserRole, type UserRoleType } from './User.js';
 import { Profile, Gender, type GenderType } from './Profile.js';
 import { Habit } from './Habit.js';
 import { UserHabit } from './UserHabit.js';
+import { UserPasskey } from './UserPasskey.js';
+import { WebAuthnChallenge } from './WebAuthnChallenge.js';
 
 // ─── User ↔ Profile Associations ──────────────────────────────────────────────
 User.hasOne(Profile, {
@@ -32,6 +34,12 @@ Habit.belongsToMany(User, {
     as: 'users',
 });
 
+User.hasMany(UserPasskey, { foreignKey: 'user_id', as: 'passkeys', onDelete: 'CASCADE' });
+UserPasskey.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+User.hasMany(WebAuthnChallenge, { foreignKey: 'user_id', as: 'webauthnChallenges', onDelete: 'CASCADE' });
+WebAuthnChallenge.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 // Export all models and types
 export {
     sequelize,
@@ -41,6 +49,8 @@ export {
     Gender,
     Habit,
     UserHabit,
+    UserPasskey,
+    WebAuthnChallenge,
 };
 
 export type { UserRoleType, GenderType };
@@ -52,4 +62,6 @@ export default {
     Profile,
     Habit,
     UserHabit,
+    UserPasskey,
+    WebAuthnChallenge,
 };

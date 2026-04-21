@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { adminService, AdminError } from '../services/admin.service.js';
-import { VerifyPropertySchema } from '../schemas/admin.schemas.js';
+import { VerifyPropertySchema, type SupportInboxQuery } from '../schemas/admin.schemas.js';
 import { AuthError } from '../../auth/services/auth.service.js';
 import { UserRole, User } from '../../auth/models/User.js';
 import { generateTokenPair } from '../../../shared/utils/jwt.util.js';
@@ -77,6 +77,19 @@ class AdminController {
             res.status(200).json({
                 success: true,
                 data: stats,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getSupportInbox(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const query = ((req as any).validatedQuery || req.query) as SupportInboxQuery;
+            const rows = await adminService.getSupportInbox(query);
+            res.status(200).json({
+                success: true,
+                data: rows,
             });
         } catch (error) {
             next(error);

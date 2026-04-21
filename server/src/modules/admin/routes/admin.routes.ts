@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { adminController } from '../controllers/admin.controller.js';
 import { requireAdmin } from '../../../shared/middleware/admin.middleware.js';
+import { validateQuery } from '../../../shared/middleware/validate.middleware.js';
+import { SupportInboxQuerySchema } from '../schemas/admin.schemas.js';
 
 const router = Router();
 
@@ -171,6 +173,12 @@ router.use(requireAdmin);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/dashboard/stats', adminController.getDashboardStats.bind(adminController));
+
+router.get(
+    '/support/inbox',
+    validateQuery(SupportInboxQuerySchema),
+    adminController.getSupportInbox.bind(adminController)
+);
 
 /**
  * @swagger

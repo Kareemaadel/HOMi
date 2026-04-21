@@ -27,7 +27,8 @@ const CreditCardModal: React.FC<ModalProps> = ({ isOpen, onClose, onSaved }) => 
     if (!isOpen) return null;
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let { name, value } = e.target;
+        const { name } = e.target;
+        let { value } = e.target;
         setErrorMessage(null);
 
         // Auto-format Card Number: Add space after every 4 digits

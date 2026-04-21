@@ -93,6 +93,8 @@ export interface LoginResponse {
     user: UserResponse;
     profile: ProfileResponse;
     isNewUser?: boolean;
+    /** Set after passkey login; otherwise refresh via GET /auth/me */
+    passkeyEnabled?: boolean;
 }
 
 export interface AuthSuccessResponse {
@@ -103,6 +105,7 @@ export interface AuthSuccessResponse {
 export interface UserProfileResponse {
     user: UserResponse;
     profile: ProfileResponse;
+    passkeyEnabled: boolean;
 }
 
 export interface EmailVerificationResponse {

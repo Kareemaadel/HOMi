@@ -1,4 +1,5 @@
-import { Op, fn, col } from 'sequelize';
+import { Op, fn, col, QueryTypes } from 'sequelize';
+import type { UserRoleType } from '../../auth/models/User.js';
 import { Conversation, Message, User, Profile, Property } from '../models/index.js';
 import type {
     ConversationListQuery,
@@ -58,6 +59,7 @@ class MessageService {
         return {
             id: conversation.id,
             propertyId: conversation.property_id ?? null,
+            isSupport: Boolean(conversation.is_support),
             counterpart: {
                 id: counterpart.id,
                 email: counterpart.email,
@@ -131,6 +133,49 @@ class MessageService {
         return Boolean(conversation);
     }
 
+    /**
+     * Participant or any ADMIN (for shared access to support inbox threads).
+     */
+    async assertConversationAccess(
+        userId: string,
+        conversationId: string,
+        requesterRole?: UserRoleType
+    ): Promise<Conversation> {
+        const conversation = await Conversation.findOne({
+            where: { id: conversationId },
+        });
+
+        if (!conversation) {
+            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+        }
+
+        const isParticipant =
+            conversation.participant_one_id === userId || conversation.participant_two_id === userId;
+        const isAdminOnSupport = Boolean(conversation.is_support && requesterRole === 'ADMIN');
+
+        if (!isParticipant && !isAdminOnSupport) {
+            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+        }
+
+        return conversation;
+    }
+
+    private assertCanSendMessage(
+        conversation: Conversation,
+        userId: string,
+        requesterRole?: UserRoleType
+    ): void {
+        const isParticipant =
+            conversation.participant_one_id === userId || conversation.participant_two_id === userId;
+        if (isParticipant) {
+            return;
+        }
+        if (conversation.is_support && requesterRole === 'ADMIN') {
+            return;
+        }
+        throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+    }
+
     async startConversation(currentUserId: string, input: StartConversationInput): Promise<ConversationResponse> {
         if (currentUserId === input.participantId) {
             throw new MessageError('You cannot start a conversation with yourself', 400, 'INVALID_PARTICIPANT');
@@ -156,51 +201,42 @@ class MessageService {
 
         const [participantOne, participantTwo] = this.normalizeParticipants(currentUserId, input.participantId);
 
+        const participantInclude = [
+            {
+                model: User,
+                as: 'participantOne' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+            {
+                model: User,
+                as: 'participantTwo' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+        ];
+
         let conversation = await Conversation.findOne({
             where: {
                 participant_one_id: participantOne,
                 participant_two_id: participantTwo,
-                property_id: input.propertyId ?? null,
             },
-            include: [
-                {
-                    model: User,
-                    as: 'participantOne',
-                    attributes: ['id', 'email', 'role'],
-                    include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                },
-                {
-                    model: User,
-                    as: 'participantTwo',
-                    attributes: ['id', 'email', 'role'],
-                    include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                },
-            ],
+            include: participantInclude,
         });
 
         if (!conversation) {
-            conversation = await Conversation.create({
+            const created = await Conversation.create({
                 participant_one_id: participantOne,
                 participant_two_id: participantTwo,
                 property_id: input.propertyId ?? null,
+                is_support: false,
             });
-
-            conversation = await Conversation.findByPk(conversation.id, {
-                include: [
-                    {
-                        model: User,
-                        as: 'participantOne',
-                        attributes: ['id', 'email', 'role'],
-                        include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                    },
-                    {
-                        model: User,
-                        as: 'participantTwo',
-                        attributes: ['id', 'email', 'role'],
-                        include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
-                    },
-                ],
+            conversation = await Conversation.findByPk(created.id, {
+                include: participantInclude,
             });
+        } else if (input.propertyId && !conversation.property_id) {
+            conversation.property_id = input.propertyId;
+            await conversation.save();
         }
 
         if (!conversation) {
@@ -212,10 +248,143 @@ class MessageService {
         const initialMessage = input.initialMessage?.trim();
         if (initialMessage) {
             lastMessage = await this.sendMessage(currentUserId, conversation.id, { body: initialMessage });
-            await conversation.reload();
         }
 
-        return this.formatConversation(conversation, currentUserId, 0, lastMessage);
+        const conversationForResponse = await Conversation.findByPk(conversation.id, {
+            include: participantInclude,
+        });
+
+        if (!conversationForResponse) {
+            throw new MessageError('Could not start conversation', 500, 'CONVERSATION_CREATE_FAILED');
+        }
+
+        return this.formatConversation(conversationForResponse, currentUserId, 0, lastMessage);
+    }
+
+    async getUnreadBadge(userId: string): Promise<{ hasUnread: boolean; unreadCount: number }> {
+        const unreadCount = await Message.count({
+            where: {
+                sender_id: { [Op.ne]: userId },
+                read_at: null,
+            },
+            include: [
+                {
+                    model: Conversation,
+                    as: 'conversation',
+                    required: true,
+                    attributes: [],
+                    where: {
+                        [Op.or]: [
+                            { participant_one_id: userId },
+                            { participant_two_id: userId },
+                        ],
+                    },
+                },
+            ],
+        });
+
+        return { hasUnread: unreadCount > 0, unreadCount };
+    }
+
+    /** Merge rows that share the same participant pair (legacy per-property threads). */
+    async mergeDuplicateConversations(): Promise<void> {
+        const sequelize = Conversation.sequelize!;
+        type DupRow = { participant_one_id: string; participant_two_id: string };
+
+        const duplicatePairs = (await sequelize.query(
+            `
+            SELECT participant_one_id, participant_two_id
+            FROM conversations
+            WHERE deleted_at IS NULL
+            GROUP BY participant_one_id, participant_two_id
+            HAVING COUNT(*) > 1
+            `,
+            { type: QueryTypes.SELECT }
+        )) as DupRow[];
+
+        for (const row of duplicatePairs) {
+            await this.mergeOneParticipantPair(row.participant_one_id, row.participant_two_id);
+        }
+    }
+
+    private async mergeOneParticipantPair(participantOneId: string, participantTwoId: string): Promise<void> {
+        const sequelize = Conversation.sequelize!;
+        const conversations = await Conversation.findAll({
+            where: {
+                participant_one_id: participantOneId,
+                participant_two_id: participantTwoId,
+            },
+            order: [[sequelize.literal('COALESCE(last_message_at, created_at)'), 'DESC']],
+        });
+
+        if (conversations.length <= 1) {
+            return;
+        }
+
+        const keeper = conversations[0];
+        const rest = conversations.slice(1);
+        if (!keeper) {
+            return;
+        }
+        const restIds = rest.map((c) => c.id);
+
+        await Message.update({ conversation_id: keeper.id }, { where: { conversation_id: restIds } });
+
+        const latest = await Message.findOne({
+            where: { conversation_id: keeper.id },
+            order: [['created_at', 'DESC']],
+        });
+
+        if (latest) {
+            keeper.last_message_at = latest.created_at;
+            await keeper.save();
+        }
+
+        await Conversation.destroy({ where: { id: restIds }, force: true });
+    }
+
+    async getConversationWithUnreadForUser(
+        currentUserId: string,
+        conversationId: string,
+        requesterRole?: UserRoleType
+    ): Promise<ConversationResponse> {
+        await this.assertConversationAccess(currentUserId, conversationId, requesterRole);
+
+        const participantInclude = [
+            {
+                model: User,
+                as: 'participantOne' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+            {
+                model: User,
+                as: 'participantTwo' as const,
+                attributes: ['id', 'email', 'role'],
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+            },
+        ];
+
+        const conversation = await Conversation.findByPk(conversationId, {
+            include: participantInclude,
+        });
+
+        if (!conversation) {
+            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
+        }
+
+        const unreadMap = await this.getUnreadCountMap([conversationId], currentUserId);
+        const lastMessage = await Message.findOne({
+            where: { conversation_id: conversationId },
+            order: [['created_at', 'DESC']],
+        });
+
+        return this.formatConversation(
+            conversation,
+            currentUserId,
+            unreadMap.get(conversationId) ?? 0,
+            lastMessage
+        );
     }
 
     async listConversations(userId: string, query: ConversationListQuery): Promise<ConversationListResponse> {
@@ -292,12 +461,10 @@ class MessageService {
     async getConversationMessages(
         userId: string,
         conversationId: string,
-        query: ConversationMessagesQuery
+        query: ConversationMessagesQuery,
+        requesterRole?: UserRoleType
     ): Promise<ConversationMessagesResponse> {
-        const canAccess = await this.canUserAccessConversation(userId, conversationId);
-        if (!canAccess) {
-            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
-        }
+        await this.assertConversationAccess(userId, conversationId, requesterRole);
 
         const page = query.page ?? 1;
         const limit = query.limit ?? 50;
@@ -323,20 +490,14 @@ class MessageService {
         };
     }
 
-    async sendMessage(userId: string, conversationId: string, input: SendMessageInput): Promise<Message> {
-        const conversation = await Conversation.findOne({
-            where: {
-                id: conversationId,
-                [Op.or]: [
-                    { participant_one_id: userId },
-                    { participant_two_id: userId },
-                ],
-            },
-        });
-
-        if (!conversation) {
-            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
-        }
+    async sendMessage(
+        userId: string,
+        conversationId: string,
+        input: SendMessageInput,
+        requesterRole?: UserRoleType
+    ): Promise<Message> {
+        const conversation = await this.assertConversationAccess(userId, conversationId, requesterRole);
+        this.assertCanSendMessage(conversation, userId, requesterRole);
 
         const message = await Message.create({
             conversation_id: conversation.id,
@@ -352,11 +513,12 @@ class MessageService {
         return message;
     }
 
-    async markConversationRead(userId: string, conversationId: string): Promise<{ markedCount: number }> {
-        const canAccess = await this.canUserAccessConversation(userId, conversationId);
-        if (!canAccess) {
-            throw new MessageError('Conversation not found', 404, 'CONVERSATION_NOT_FOUND');
-        }
+    async markConversationRead(
+        userId: string,
+        conversationId: string,
+        requesterRole?: UserRoleType
+    ): Promise<{ markedCount: number }> {
+        await this.assertConversationAccess(userId, conversationId, requesterRole);
 
         const [markedCount] = await Message.update(
             { read_at: new Date() },
@@ -371,11 +533,19 @@ class MessageService {
 
         try {
             const io = getIO();
-            io.to(`conversation:${conversationId}`).emit('conversation:read', {
+            const payload = {
                 conversationId,
                 readerUserId: userId,
                 markedCount,
+            };
+            io.to(`conversation:${conversationId}`).emit('conversation:read', payload);
+            const participants = await Conversation.findByPk(conversationId, {
+                attributes: ['participant_one_id', 'participant_two_id'],
             });
+            if (participants) {
+                io.to(`user:${participants.participant_one_id}`).emit('conversation:read', payload);
+                io.to(`user:${participants.participant_two_id}`).emit('conversation:read', payload);
+            }
         } catch {
             // Ignore if socket server is unavailable.
         }

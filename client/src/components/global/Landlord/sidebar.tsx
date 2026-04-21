@@ -4,12 +4,12 @@ import {
   FaHome, FaBuilding,
   FaTools, FaCreditCard, FaEnvelope,
   FaSignOutAlt,
-  FaCog,
   FaInbox,
   FaSignature
 } from 'react-icons/fa';
 import './sidebar.css';
 import { authService } from '../../../services/auth.service';
+import { useMessagingUnreadDot } from '../../../hooks/useMessagingUnreadDot';
 import ConfirmModal from '../ConfirmModal';
 
 const Sidebar = () => {
@@ -22,6 +22,7 @@ const Sidebar = () => {
     'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=80'
   );
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const hasMessagingUnread = useMessagingUnreadDot();
 
   useEffect(() => {
     const load = () => {
@@ -74,7 +75,7 @@ const Sidebar = () => {
           <li><a href="/maintenance-requests" className={location.pathname === "/maintenance-requests" ? "active" : ""}><FaTools /> <span>Maintenance</span></a></li>
           <li><a href="/landlord-payment" className={location.pathname === "/landlord-payment" ? "active" : ""}><FaCreditCard /> <span>Payments</span></a></li>
           <li><a href="/landlord-contracts" className={location.pathname === "/landlord-contracts" ? "active" : ""}><FaSignature /> <span>Contracts</span></a></li>
-          <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages <em className="notif-dot"></em></span></a></li>
+          <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages {hasMessagingUnread ? <em className="notif-dot" aria-hidden /> : null}</span></a></li>
           
         </ul>
       </nav>

@@ -309,6 +309,11 @@ router.get(
     propertyController.getAllProperties.bind(propertyController)
 );
 
+router.get(
+    '/landlords/:landlordId/public-profile',
+    propertyController.getPublicLandlordProfile.bind(propertyController)
+);
+
 /**
  * @swagger
  * /properties/{id}:

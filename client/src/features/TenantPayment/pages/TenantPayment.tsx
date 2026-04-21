@@ -275,8 +275,9 @@ const TenantPayment: React.FC = () => {
             setShowSuccessToast(true);
             await loadPaymentData();
             setActiveTab('history');
-        } catch (error: any) {
-            const message = error?.response?.data?.message || 'Could not complete payment from balance.';
+        } catch (error: unknown) {
+            const ex = error as { response?: { data?: { message?: string } } };
+            const message = ex.response?.data?.message || 'Could not complete payment from balance.';
             setPaymentActionError(message);
         } finally {
             setIsProcessingPayment(false);
@@ -297,8 +298,9 @@ const TenantPayment: React.FC = () => {
         try {
             const checkout = await contractService.initiateWalletTopup(amount, topupMethod, topupSaveCard);
             globalThis.location.href = checkout.checkoutUrl;
-        } catch (error: any) {
-            const backendMessage = error?.response?.data?.message;
+        } catch (error: unknown) {
+            const ex = error as { response?: { data?: { message?: string } } };
+            const backendMessage = ex.response?.data?.message;
             const fallback = 'Could not start Paymob top-up. Please try again.';
             setTopupError(typeof backendMessage === 'string' && backendMessage.trim() ? backendMessage : fallback);
         } finally {

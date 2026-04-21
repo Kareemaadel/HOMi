@@ -1,5 +1,11 @@
 //client\src\services\auth.service.ts
 import axios from 'axios';
+import type {
+    PublicKeyCredentialCreationOptionsJSON,
+    PublicKeyCredentialRequestOptionsJSON,
+    RegistrationResponseJSON,
+    AuthenticationResponseJSON,
+} from '@simplewebauthn/browser';
 import apiClient from '../config/api';
 import type {
     RegisterRequest,
@@ -57,6 +63,10 @@ function persistLoginSession(data: LoginResponse, rememberMe: boolean): void {
 
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('profile', JSON.stringify(data.profile));
+
+    if (typeof data.passkeyEnabled === 'boolean') {
+        localStorage.setItem('passkeyEnabled', data.passkeyEnabled ? '1' : '0');
+    }
 }
 
 /**
@@ -125,6 +135,7 @@ class AuthService {
         localStorage.removeItem('user');
         localStorage.removeItem('profile');
         localStorage.removeItem('authProvider');
+        localStorage.removeItem('passkeyEnabled');
     }
 
     /**
@@ -214,6 +225,7 @@ class AuthService {
         // Update localStorage
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('profile', JSON.stringify(response.data.profile));
+        localStorage.setItem('passkeyEnabled', response.data.passkeyEnabled ? '1' : '0');
 
         return response.data;
     }
@@ -240,6 +252,7 @@ class AuthService {
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('profile', JSON.stringify(response.data.profile));
+        localStorage.setItem('passkeyEnabled', response.data.passkeyEnabled ? '1' : '0');
 
         return response.data;
     }
@@ -376,8 +389,52 @@ class AuthService {
         localStorage.removeItem('user');
         localStorage.removeItem('profile');
         localStorage.removeItem('authProvider');
+        localStorage.removeItem('passkeyEnabled');
 
         return response.data;
+    }
+
+    /** WebAuthn — registration ceremony (authenticated) */
+    async getPasskeyRegistrationOptions(): Promise<PublicKeyCredentialCreationOptionsJSON> {
+        const response = await apiClient.post<PublicKeyCredentialCreationOptionsJSON>(
+            '/auth/passkey/registration-options',
+            {}
+        );
+        return response.data;
+    }
+
+    async verifyPasskeyRegistration(response: RegistrationResponseJSON): Promise<void> {
+        await apiClient.post('/auth/passkey/registration-verify', { response });
+        await this.getProfile();
+    }
+
+    async getPasskeyAuthenticationOptions(identifier: string): Promise<PublicKeyCredentialRequestOptionsJSON> {
+        const res = await apiClient.post<PublicKeyCredentialRequestOptionsJSON>(
+            '/auth/passkey/authentication-options',
+            { identifier }
+        );
+        return res.data;
+    }
+
+    async verifyPasskeyAuthentication(
+        identifier: string,
+        response: AuthenticationResponseJSON,
+        rememberMe?: boolean
+    ): Promise<LoginResponse> {
+        const res = await apiClient.post<LoginResponse>('/auth/passkey/authentication-verify', {
+            identifier,
+            response,
+            rememberMe,
+        });
+        if (res.data.accessToken) {
+            persistLoginSession(res.data, rememberMe === true);
+        }
+        return res.data;
+    }
+
+    async deletePasskeys(): Promise<void> {
+        await apiClient.delete('/auth/passkeys');
+        await this.getProfile();
     }
 }
 

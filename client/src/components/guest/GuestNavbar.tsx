@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
@@ -11,21 +11,10 @@ const GuestNavbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const signedInRole = useMemo(() => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return null;
-      const parsed = JSON.parse(userStr) as { role?: string } | null;
-      return parsed?.role ?? null;
-    } catch {
-      return null;
-    }
-  }, []);
+  const howItWorksLink = '/how-it-works-choose';
 
-  const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
-  // Keep the "no sidebar" variant when users are on the guest How It Works experience.
-  const howItWorksLink = {
-    pathname: howItWorksPath,
+  const getHelpFromGuest = {
+    pathname: '/get-help',
     state: { fromGuestHome: true },
   };
 
@@ -36,7 +25,8 @@ const GuestNavbar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setMobileMenuOpen(false);
+    const timer = window.setTimeout(() => setMobileMenuOpen(false), 0);
+    return () => window.clearTimeout(timer);
   }, [location.pathname]);
 
   return (
@@ -49,7 +39,7 @@ const GuestNavbar: React.FC = () => {
         <div className="nav-links desktop-only">
           <Link to="/guest-search">Browse Homes</Link>
           <Link to={howItWorksLink}>How it Works</Link>
-          <Link to="/help">Help Center</Link>
+          <Link to={getHelpFromGuest}>Help Center</Link>
         </div>
 
         <div className="nav-actions desktop-only">
@@ -70,6 +60,40 @@ const GuestNavbar: React.FC = () => {
           {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
+
+      {mobileMenuOpen ? (
+        <div className="mobile-nav-panel">
+          <Link to="/guest-search" onClick={() => setMobileMenuOpen(false)}>
+            Browse Homes
+          </Link>
+          <Link to={howItWorksLink} onClick={() => setMobileMenuOpen(false)}>
+            How it Works
+          </Link>
+          <Link to={getHelpFromGuest} onClick={() => setMobileMenuOpen(false)}>
+            Help Center
+          </Link>
+          <button
+            type="button"
+            className="btn-text mobile-nav-login"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/auth');
+            }}
+          >
+            Log in
+          </button>
+          <button
+            type="button"
+            className="btn-primary-pill mobile-nav-signup"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/auth');
+            }}
+          >
+            Sign up
+          </button>
+        </div>
+      ) : null}
     </nav>
   );
 };

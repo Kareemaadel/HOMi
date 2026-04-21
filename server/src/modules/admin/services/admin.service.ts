@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { User } from '../../auth/models/User.js';
 import { Property, PropertyStatus } from '../../properties/models/Property.js';
 import { PropertyOwnershipDoc } from '../../properties/models/PropertyOwnershipDoc.js';
@@ -6,7 +7,18 @@ import { PropertyReport, PropertyReportStatus } from '../../properties/models/Pr
 import { Contract, ContractStatus } from '../../contracts/models/Contract.js';
 import { Profile } from '../../auth/models/Profile.js';
 import { ActivityLog } from '../models/ActivityLog.js';
-import type { AdminStatsResponse, AdminListingReport, AdminActivityLogItem, AdminUserProfileDetails, AdminPropertyDetails, AdminManagedUser } from '../interfaces/admin.interfaces.js';
+import type {
+    AdminStatsResponse,
+    AdminListingReport,
+    AdminActivityLogItem,
+    AdminUserProfileDetails,
+    AdminPropertyDetails,
+    AdminManagedUser,
+    AdminSupportInboxItem,
+} from '../interfaces/admin.interfaces.js';
+import { Conversation, Message } from '../../messages/models/index.js';
+import { resolveSupportInboxAdminId } from '../../messages/services/support.service.js';
+import type { SupportInboxQuery } from '../schemas/admin.schemas.js';
 import { UserRole } from '../../auth/models/User.js';
 import type { PropertyResponse } from '../../properties/interfaces/property.interfaces.js';
 import { propertyService } from '../../properties/services/property.service.js';
@@ -47,7 +59,28 @@ class AdminService {
     /**
      * Get pending properties with landlord and doc details
      */
-    async getPendingProperties() {
+    async getPendingProperties(): Promise<
+        Array<{
+            thumbnailUrl: string | null;
+            id: string;
+            title: string;
+            description: string;
+            monthlyPrice: number;
+            address: string;
+            type: string;
+            furnishing: string;
+            status: string;
+            createdAt: Date;
+            landlord: {
+                id: string;
+                email: string;
+                firstName: string | undefined;
+                lastName: string | undefined;
+                phone: string | null | undefined;
+            } | null;
+            ownershipDocs: Array<{ id: string; documentUrl: string }>;
+        }>
+    > {
         const properties = await Property.findAll({
             where: { status: PropertyStatus.PENDING_APPROVAL },
             include: [
@@ -85,24 +118,29 @@ class AdminService {
                 (property as any).images?.find((img: any) => img.is_main)?.image_url ||
                 (property as any).images?.[0]?.image_url ||
                 null,
-            id: property.id,
+            id: String(property.id),
             title: property.title,
             description: property.description,
             monthlyPrice: Number(property.monthly_price ?? 0),
             address: property.address,
-            type: property.type,
-            furnishing: property.furnishing,
-            status: property.status,
-            createdAt: property.created_at,
-            landlord: property.landlord ? {
-                id: property.landlord.id,
-                email: property.landlord.email,
-                firstName: property.landlord.profile?.first_name,
-                lastName: property.landlord.profile?.last_name,
-                phone: property.landlord.profile?.phone_number,
-            } : null,
+            type: property.type ?? '',
+            furnishing: String(property.furnishing ?? ''),
+            status: String(property.status),
+            createdAt:
+                property.created_at instanceof Date
+                    ? property.created_at
+                    : new Date(String(property.created_at)),
+            landlord: property.landlord
+                ? {
+                      id: String(property.landlord.id),
+                      email: property.landlord.email,
+                      firstName: property.landlord.profile?.first_name,
+                      lastName: property.landlord.profile?.last_name,
+                      phone: property.landlord.profile?.phone_number,
+                  }
+                : null,
             ownershipDocs: (property as any).ownershipDocs?.map((doc: any) => ({
-                id: doc.id,
+                id: String(doc.id),
                 documentUrl: doc.document_url,
             })) || [],
         }));
@@ -559,6 +597,92 @@ class AdminService {
             banned_by_admin_id: null,
             ban_created_at: null,
         });
+    }
+
+    /**
+     * Help Center threads: one row per tenant/landlord who messaged the support inbox admin.
+     */
+    async getSupportInbox(query: SupportInboxQuery): Promise<AdminSupportInboxItem[]> {
+        const inboxAdminId = await resolveSupportInboxAdminId();
+
+        const conversations = await Conversation.findAll({
+            where: {
+                is_support: true,
+                [Op.or]: [{ participant_one_id: inboxAdminId }, { participant_two_id: inboxAdminId }],
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'participantOne',
+                    attributes: ['id', 'email', 'role'],
+                    include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+                },
+                {
+                    model: User,
+                    as: 'participantTwo',
+                    attributes: ['id', 'email', 'role'],
+                    include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'avatar_url'] }],
+                },
+            ],
+        });
+
+        const rows: AdminSupportInboxItem[] = [];
+
+        for (const conv of conversations) {
+            const one = (conv as any).participantOne as User | undefined;
+            const two = (conv as any).participantTwo as User | undefined;
+            const endUser = one?.id === inboxAdminId ? two : one;
+            if (!endUser) {
+                continue;
+            }
+            const endProfile = (endUser as User & { profile?: Profile }).profile;
+
+            const unreadFromUser = await Message.count({
+                where: {
+                    conversation_id: conv.id,
+                    sender_id: { [Op.ne]: inboxAdminId },
+                    read_at: null,
+                },
+            });
+
+            const lastMessage = await Message.findOne({
+                where: { conversation_id: conv.id },
+                order: [['created_at', 'DESC']],
+            });
+
+            rows.push({
+                conversationId: conv.id,
+                user: {
+                    id: endUser.id,
+                    email: endUser.email,
+                    role: endUser.role,
+                    firstName: endProfile?.first_name ?? 'User',
+                    lastName: endProfile?.last_name ?? '',
+                    avatarUrl: endProfile?.avatar_url ?? null,
+                },
+                lastMessagePreview: lastMessage?.body ?? null,
+                lastMessageAt: conv.last_message_at ? new Date(conv.last_message_at).toISOString() : null,
+                unreadFromUser,
+            });
+        }
+
+        let filtered = rows;
+        if (query.filter === 'unread') {
+            filtered = rows.filter((r) => r.unreadFromUser > 0);
+        } else if (query.filter === 'read') {
+            filtered = rows.filter((r) => r.unreadFromUser === 0);
+        }
+
+        filtered.sort((a, b) => {
+            const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+            const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+            if (query.sort === 'oldest') {
+                return ta - tb;
+            }
+            return tb - ta;
+        });
+
+        return filtered;
     }
 }
 

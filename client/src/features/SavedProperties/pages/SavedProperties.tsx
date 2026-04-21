@@ -6,13 +6,14 @@ import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import PropertyCard from '../../BrowseProperties/components/PropertyCard';
 import PropertyDetailModal from '../../BrowseProperties/components/PropertyDetailedModal';
-import type { PropertyResponse } from '../../../services/property.service';
+import { resolveLandlordUserIdFromPropertyResponse, type PropertyResponse } from '../../../services/property.service';
 import savedPropertiesService from '../../../services/saved-properties.service';
 
 import './SavedProperties.css';
 
 interface SavedPropertyUI {
     id: string;
+    ownerId: string;
     title: string;
     address: string;
     price: number;
@@ -31,10 +32,15 @@ interface SavedPropertyUI {
     description: string;
     ownerName: string;
     ownerImage: string;
+    ownerVerified: boolean;
     maintenanceResponsibilities: Array<{
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
     }>;
+    locationLat: number | null;
+    locationLng: number | null;
+    availabilityDateISO: string | null;
+    listedAtISO: string;
 }
 
 const mapTargetTenant = (targetTenant: string) => {
@@ -66,6 +72,7 @@ const mapPropertyToUI = (property: PropertyResponse): SavedPropertyUI => {
 
     return {
         id: property.id,
+        ownerId: resolveLandlordUserIdFromPropertyResponse(property),
         title: property.title,
         address: property.address,
         price: property.monthlyPrice,
@@ -80,6 +87,16 @@ const mapPropertyToUI = (property: PropertyResponse): SavedPropertyUI => {
         furnishing: normalizedFurnishing,
         targetTenant: mapTargetTenant(property.targetTenant),
         availableDate: property.availabilityDate ? new Date(property.availabilityDate).toLocaleDateString() : 'Not specified',
+        availabilityDateISO: property.availabilityDate ?? null,
+        listedAtISO: property.createdAt,
+        locationLat:
+            property.detailedLocation != null && Number.isFinite(property.detailedLocation.locationLat)
+                ? property.detailedLocation.locationLat
+                : null,
+        locationLng:
+            property.detailedLocation != null && Number.isFinite(property.detailedLocation.locationLong)
+                ? property.detailedLocation.locationLong
+                : null,
         petsAllowed: property.houseRules.some((rule) => rule.name === 'Pets Allowed'),
         description: property.description,
         ownerName: property.landlord
@@ -92,6 +109,7 @@ const mapPropertyToUI = (property: PropertyResponse): SavedPropertyUI => {
                     ? `${property.landlord.firstName} ${property.landlord.lastName}`.trim() || 'Owner'
                     : 'Owner'
             )}&background=0f172a&color=ffffff&size=128`,
+        ownerVerified: Boolean(property.landlord?.isVerified),
         maintenanceResponsibilities: property.maintenanceResponsibilities ?? [],
     };
 };
@@ -161,6 +179,10 @@ const SavedProperties: React.FC = () => {
         try {
             await savedPropertiesService.removeSavedProperty(normalized);
             setSavedItems((prev) => prev.filter((item) => item.id !== normalized));
+            if (selectedProperty?.id === normalized) {
+                setIsModalOpen(false);
+                setSelectedProperty(null);
+            }
         } catch {
             // Keep UI stable if API fails.
         }
@@ -328,8 +350,10 @@ const SavedProperties: React.FC = () => {
             {isModalOpen && selectedProperty && (
                 <PropertyDetailModal
                     property={selectedProperty}
-                    isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
+                    isGuest={false}
+                    isSaved
+                    onToggleSave={handleToggleSave}
                 />
             )}
         </div>

@@ -6,8 +6,55 @@ import {
   MapPin, Bed, Bath, Maximize, Zap, PlayCircle
 } from 'lucide-react';
 import './GuestHome.css';
-import PropertyDetailedModal from '../../BrowseProperties/components/PropertyDetailedModal';
+import PropertyDetailedModal, {
+    type PropertyDetailModalProperty,
+} from '../../BrowseProperties/components/PropertyDetailedModal';
 import AuthModal from '../../../components/global/AuthModal';
+
+type GuestHomeListing = {
+    id: number;
+    title: string;
+    price: number;
+    currency?: string;
+    location?: string;
+    type?: string;
+    beds: number;
+    baths: number;
+    sqft: number;
+    rating: number;
+    reviews?: number;
+    image: string;
+    hostImg?: string;
+    badge?: string;
+};
+
+const mapGuestHomeListingToModal = (p: GuestHomeListing): PropertyDetailModalProperty => ({
+    id: p.id,
+    title: p.title,
+    address: p.location,
+    price: p.price,
+    securityDeposit: 0,
+    image: p.image,
+    allImages: [p.image],
+    beds: p.beds,
+    baths: p.baths,
+    sqft: p.sqft,
+    ownerName: 'Host',
+    ownerImage: p.hostImg,
+    ownerVerified: false,
+    locationLat: null,
+    locationLng: null,
+    availabilityDateISO: null,
+    listedAtISO: new Date().toISOString(),
+    maintenanceResponsibilities: [],
+    petsAllowed: false,
+    targetTenant: 'Any Tenant',
+    furnishing: 'Unfurnished',
+    availableDate: 'Not specified',
+    description: '',
+    tags: p.badge ? [p.badge] : [],
+    rating: p.rating,
+});
 
 const GuestHome: React.FC = () => {
   const navigate = useNavigate();
@@ -15,27 +62,13 @@ const GuestHome: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const getSignedInRole = (): string | null => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return null;
-      const parsed = JSON.parse(userStr) as { role?: string } | null;
-      return parsed?.role ?? null;
-    } catch {
-      return null;
-    }
-  };
-
-  // If a signed-in user is on GuestHome, show the correct "How it Works" page.
-  const signedInRole = getSignedInRole();
-  const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
-  const howItWorksTo = {
-    pathname: howItWorksPath,
+  const getHelpFromGuest = {
+    pathname: '/get-help',
     state: { fromGuestHome: true },
   };
   
   // Modal State
-  const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyDetailModalProperty | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -48,13 +81,13 @@ const GuestHome: React.FC = () => {
     setShowAuthModal(true);
   };
 
-  const handlePropertyClick = (property: any) => {
-    setSelectedProperty(property);
+  const handlePropertyClick = (property: GuestHomeListing) => {
+    setSelectedProperty(mapGuestHomeListingToModal(property));
     setIsModalOpen(true);
   };
 
   // Expanded to 5 properties
-  const mockProperties = [
+  const mockProperties: GuestHomeListing[] = [
     { 
       id: 1, 
       title: 'Modern Loft with Nile View', 
@@ -107,8 +140,8 @@ const GuestHome: React.FC = () => {
 
           <div className="nav-links desktop-only">
             <Link to="/guest-search">Browse Homes</Link>
-            <Link to={howItWorksTo}>How it Works</Link>
-            <Link to="/help">Help Center</Link>
+            <Link to="/how-it-works-choose">How it Works</Link>
+            <Link to={getHelpFromGuest}>Help Center</Link>
           </div>
 
           <div className="nav-actions desktop-only">
@@ -124,8 +157,8 @@ const GuestHome: React.FC = () => {
         {mobileMenuOpen && (
           <div className="mobile-nav-panel">
             <Link to="/guest-search" onClick={() => setMobileMenuOpen(false)}>Browse Homes</Link>
-            <Link to={howItWorksTo} onClick={() => setMobileMenuOpen(false)}>How it Works</Link>
-            <Link to="/help" onClick={() => setMobileMenuOpen(false)}>Help Center</Link>
+            <Link to="/how-it-works-choose" onClick={() => setMobileMenuOpen(false)}>How it Works</Link>
+            <Link to={getHelpFromGuest} onClick={() => setMobileMenuOpen(false)}>Help Center</Link>
             <button className="btn-text mobile-nav-login" onClick={() => { setMobileMenuOpen(false); navigate('/auth'); }}>
               Log in
             </button>
@@ -408,7 +441,7 @@ const GuestHome: React.FC = () => {
             <div className="footer-links">
               <h4>Resources</h4>
               <Link to="/about">About Us</Link>
-              <Link to="/help">Help Center</Link>
+              <Link to={getHelpFromGuest}>Help Center</Link>
               <Link to="/blog">Real Estate Blog</Link>
             </div>
             <div className="footer-links">

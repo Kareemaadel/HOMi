@@ -139,3 +139,18 @@ export interface AdminManagedUser {
         updatedAt: Date;
     } | null;
 }
+
+export interface AdminSupportInboxItem {
+    conversationId: string;
+    user: {
+        id: string;
+        email: string;
+        role: string;
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+    };
+    lastMessagePreview: string | null;
+    lastMessageAt: string | null;
+    unreadFromUser: number;
+}

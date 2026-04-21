@@ -1,0 +1,212 @@
+.admin-support-shell .admin-support-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+}
+
+.admin-support-shell .admin-support-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.admin-support-shell .admin-support-toolbar select {
+  min-width: 180px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.admin-support-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 20px;
+  align-items: stretch;
+  min-height: 420px;
+}
+
+@media (max-width: 960px) {
+  .admin-support-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-support-thread-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: min(560px, 70vh);
+  overflow-y: auto;
+}
+
+.admin-support-thread-btn {
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 0.15s ease;
+}
+
+.admin-support-thread-btn:hover {
+  background: #f8fafc;
+}
+
+.admin-support-thread-btn.active {
+  background: #eff6ff;
+  border-left: 3px solid #2563eb;
+  padding-left: 13px;
+}
+
+.admin-support-thread-name {
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-support-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.admin-support-thread-meta {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.admin-support-thread-preview {
+  font-size: 0.82rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-support-empty {
+  padding: 24px 16px;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.admin-support-placeholder {
+  padding: 32px 20px;
+  color: #64748b;
+  text-align: center;
+}
+
+.admin-support-msg-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  min-height: 200px;
+  max-height: min(420px, 55vh);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-support-msg {
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.admin-support-msg p {
+  margin: 0 0 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-support-msg time {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.admin-support-msg--user {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-support-msg--admin {
+  align-self: flex-end;
+  background: #2563eb;
+  color: #fff;
+}
+
+.admin-support-msg--admin time {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.admin-support-detail.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-support-detail .panel-head {
+  flex-shrink: 0;
+}
+
+.admin-support-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: auto;
+}
+
+.admin-support-reply textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 72px;
+}
+
+.admin-support-send-btn {
+  align-self: flex-end;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-support-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

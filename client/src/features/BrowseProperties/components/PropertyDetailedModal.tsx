@@ -1,5 +1,5 @@
 // client/src/features/BrowseProperties/components/PropertyDetailModal.tsx
-import { useState } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,13 +11,136 @@ import {
     FaShieldAlt, FaChair, FaUsers, FaRegCompass,
     FaChevronLeft, FaChevronRight, FaCheckCircle
 } from 'react-icons/fa';
-import ApplicationModal from './ApplicationModal';
+import ApplicationModal, { type PrefillData } from './ApplicationModal';
 import AuthModal from '../../../components/global/AuthModal';
 import { messageService } from '../../../services/message.service';
-import { propertyService, type ReportListingPayload } from '../../../services/property.service';
+import {
+    propertyService,
+    type ReportListingPayload,
+    resolveLandlordUserIdForPublicProfile,
+} from '../../../services/property.service';
+import { buildListingShareUrl } from '../utils/listingShare';
 import './PropertyDetailedModal.css';
 
-const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequestView = false, onCancelRequest }: any) => {
+function openGoogleMapsForProperty(property: {
+    locationLat?: number | null;
+    locationLng?: number | null;
+    address?: string;
+}): void {
+    const lat = property.locationLat;
+    const lng = property.locationLng;
+    let url: string;
+    if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)) {
+        url = `https://www.google.com/maps?q=${lat},${lng}&hl=en`;
+    } else {
+        const q = (property.address || '').trim() || 'Address';
+        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+export interface PropertyDetailRentalRequest {
+    id: string;
+    status?: string;
+    moveInDate?: string;
+    duration?: string;
+    occupants?: number;
+    livingSituation?: string;
+    message?: string;
+}
+
+/** Data shown in the listing detail modal; callers map API or mock shapes into this. */
+export interface PropertyDetailModalProperty {
+    id: string | number;
+    title: string;
+    address?: string;
+    price: number;
+    securityDeposit?: number;
+    image: string;
+    allImages?: string[];
+    beds?: number | string;
+    baths?: number | string;
+    sqft?: number | string;
+    ownerId?: string;
+    ownerName?: string;
+    ownerImage?: string;
+    ownerVerified?: boolean;
+    locationLat?: number | null;
+    locationLng?: number | null;
+    availabilityDateISO?: string | null;
+    listedAtISO?: string;
+    createdAt?: string;
+    maintenanceResponsibilities?: Array<{ area: string; responsible_party: 'LANDLORD' | 'TENANT' }>;
+    petsAllowed?: boolean;
+    targetTenant?: string;
+    furnishing?: string;
+    availableDate?: string;
+    description?: string;
+    tags?: string[];
+    rating?: number;
+    rentalRequest?: PropertyDetailRentalRequest;
+}
+
+function availabilityRibbon(property: PropertyDetailModalProperty): { label: string; dateLine: string; tag: string } {
+    const iso = property.availabilityDateISO;
+    const listedRaw = property.listedAtISO || property.createdAt;
+
+    let dateLine = 'The landlord has not set a fixed date — message them to confirm.';
+    if (iso) {
+        const d = new Date(iso);
+        if (!Number.isNaN(d.getTime())) {
+            dateLine = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        }
+    } else if (property.availableDate && String(property.availableDate) !== 'Not specified') {
+        dateLine = String(property.availableDate);
+    }
+
+    let tag = 'Active listing';
+    if (iso) {
+        const move = new Date(iso);
+        move.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diff = Math.round((move.getTime() - today.getTime()) / 86400000);
+        if (diff < 0) tag = 'Available now';
+        else if (diff === 0) tag = 'Move-in from today';
+        else if (diff <= 14) tag = 'Move-in soon';
+        else if (diff <= 60) tag = 'Within two months';
+        else tag = 'Flexible timing';
+    } else if (listedRaw) {
+        const age = Math.floor((Date.now() - new Date(listedRaw).getTime()) / 86400000);
+        if (age <= 3) tag = 'Just listed';
+        else if (age <= 14) tag = 'New on HOMi';
+    }
+
+    const label =
+        iso || (property.availableDate && String(property.availableDate) !== 'Not specified')
+            ? 'Move-in availability'
+            : 'Availability';
+
+    return { label, dateLine, tag };
+}
+
+interface PropertyDetailModalProps {
+    property: PropertyDetailModalProperty;
+    onClose: () => void;
+    isGuest?: boolean;
+    isSentRequestView?: boolean;
+    onCancelRequest?: (requestId: string) => Promise<void>;
+    /** When false / missing, heart still opens auth for guests */
+    isSaved?: boolean;
+    onToggleSave?: (propertyId: string) => void | Promise<void>;
+}
+
+const PropertyDetailModal = ({
+    property,
+    onClose,
+    isGuest = false,
+    isSentRequestView = false,
+    onCancelRequest,
+    isSaved = false,
+    onToggleSave,
+}: PropertyDetailModalProps) => {
     const navigate = useNavigate();
     const [showApplication, setShowApplication] = useState(false);
     const [showGallery, setShowGallery] = useState(false);
@@ -30,6 +153,28 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
     const [reportError, setReportError] = useState<string | null>(null);
     const [reportSuccess, setReportSuccess] = useState<string | null>(null);
     const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+    const [shareMenuOpen, setShareMenuOpen] = useState(false);
+    const [shareToast, setShareToast] = useState<string | null>(null);
+    const shareWrapRef = useRef<HTMLDivElement>(null);
+
+    const landlordProfileUserId = useMemo(
+        () => resolveLandlordUserIdForPublicProfile(property),
+        [property]
+    );
+
+    const ribbon = useMemo(() => availabilityRibbon(property), [property]);
+
+    useEffect(() => {
+        if (!shareMenuOpen) return undefined;
+        const onDocMouseDown = (event: MouseEvent) => {
+            const el = shareWrapRef.current;
+            if (el && !el.contains(event.target as Node)) {
+                setShareMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', onDocMouseDown);
+        return () => document.removeEventListener('mousedown', onDocMouseDown);
+    }, [shareMenuOpen]);
     
     // Cancel Request States
     const [showCancelPrompt, setShowCancelPrompt] = useState(false);
@@ -37,12 +182,13 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
     const canCancelSentRequest = property?.rentalRequest?.status === 'PENDING';
     
     // Use only real property images, with a single safe fallback
-    const images = (property.allImages && property.allImages.length > 0)
-        ? property.allImages
-        : [
-            property.image ||
-            "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800",
-        ];
+    const images: string[] =
+        property.allImages && property.allImages.length > 0
+            ? property.allImages
+            : [
+                  property.image ||
+                      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800',
+              ];
 
     const houseRules = [
         { icon: <FaSmokingBan />, text: "No Smoking", active: true },
@@ -78,10 +224,11 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
             await onCancelRequest(requestId);
             setShowCancelPrompt(false);
             setShowCancelSuccess(true);
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const ex = error as { response?: { data?: { message?: string } }; message?: string };
             const message =
-                error?.response?.data?.message ||
-                error?.message ||
+                ex.response?.data?.message ||
+                ex.message ||
                 'Could not cancel this request right now. Please try again.';
             setCancelError(message);
         }
@@ -93,7 +240,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
             return;
         }
 
-        const participantId = property?.ownerId;
+        const participantId = landlordProfileUserId;
         if (!participantId) {
             navigate('/messages');
             onClose();
@@ -104,14 +251,14 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
         try {
             const response = await messageService.startConversation({
                 participantId,
-                propertyId: property?.id,
+                propertyId: property?.id != null ? String(property.id) : undefined,
             });
 
             navigate('/messages', {
                 state: {
                     conversationId: response.data.id,
                     participantId,
-                    propertyId: property?.id,
+                    propertyId: property?.id != null ? String(property.id) : undefined,
                 },
             });
             onClose();
@@ -120,7 +267,7 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
             navigate('/messages', {
                 state: {
                     participantId,
-                    propertyId: property?.id,
+                    propertyId: property?.id != null ? String(property.id) : undefined,
                 },
             });
             onClose();
@@ -139,6 +286,86 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
         setReportSuccess(null);
     };
 
+    const handleSaveClick = (event: React.MouseEvent) => {
+        event.stopPropagation();
+        if (isGuest) {
+            setShowAuthModal(true);
+            return;
+        }
+        if (property?.id && onToggleSave) {
+            void Promise.resolve(onToggleSave(String(property.id)));
+        }
+    };
+
+    const shareUrl = property?.id ? buildListingShareUrl(String(property.id)) : '';
+    const shareTitle = (property?.title as string) || 'HOMi listing';
+
+    const copyShareLink = async () => {
+        if (!shareUrl) return;
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setShareToast('Link copied to clipboard.');
+            setShareMenuOpen(false);
+            window.setTimeout(() => setShareToast(null), 3200);
+        } catch {
+            setShareToast('Could not copy link.');
+            window.setTimeout(() => setShareToast(null), 3200);
+        }
+    };
+
+    const shareWhatsApp = () => {
+        if (!shareUrl) return;
+        const text = `${shareTitle}\n${shareUrl}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+        setShareMenuOpen(false);
+    };
+
+    const shareSms = () => {
+        if (!shareUrl) return;
+        const body = `${shareTitle}\n${shareUrl}`;
+        window.location.href = `sms:?&body=${encodeURIComponent(body)}`;
+        setShareMenuOpen(false);
+    };
+
+    const shareInstagramDm = async () => {
+        if (!shareUrl) return;
+        setShareMenuOpen(false);
+
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            copied = true;
+        } catch {
+            /* user may still paste from Share → Copy link */
+        }
+
+        // Instagram does not expose a stable web URL to pre-select a recipient; open DMs so the user picks who to message.
+        const inboxWeb = 'https://www.instagram.com/direct/inbox/';
+        const inboxApp = 'instagram://direct-inbox';
+
+        const opened = window.open(inboxWeb, '_blank', 'noopener,noreferrer');
+        if (!opened || opened.closed) {
+            window.open(inboxApp, '_blank', 'noopener,noreferrer');
+        }
+
+        setShareToast(
+            copied
+                ? 'Instagram messages opened — choose who to DM, then paste the listing link (already copied).'
+                : 'Instagram messages opened — choose who to DM. Use Share → Copy link if you still need the listing URL.'
+        );
+        window.setTimeout(() => setShareToast(null), 7500);
+    };
+
+    const tryNativeShare = async () => {
+        if (!navigator.share || !shareUrl) return;
+        try {
+            await navigator.share({ title: shareTitle, text: shareTitle, url: shareUrl });
+            setShareMenuOpen(false);
+        } catch {
+            /* user cancelled */
+        }
+    };
+
     const handleSubmitReport = async () => {
         const details = reportDetails.trim();
         if (details.length < 30) {
@@ -149,14 +376,15 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
         setIsSubmittingReport(true);
         setReportError(null);
         try {
-            const response = await propertyService.reportProperty(property.id, {
+            const response = await propertyService.reportProperty(String(property.id), {
                 reason: reportReason,
                 details,
             });
             setReportSuccess(response.message || 'Report submitted successfully.');
             setReportDetails('');
-        } catch (error: any) {
-            setReportError(error?.response?.data?.message || 'Unable to submit report right now. Please try again.');
+        } catch (error: unknown) {
+            const ex = error as { response?: { data?: { message?: string } } };
+            setReportError(ex.response?.data?.message || 'Unable to submit report right now. Please try again.');
         } finally {
             setIsSubmittingReport(false);
         }
@@ -164,13 +392,27 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
 
     if (showApplication) {
         return (
-            <ApplicationModal 
-                property={property} 
-                onClose={onClose} 
-                onBack={() => setShowApplication(false)} 
+            <ApplicationModal
+                property={{
+                    id: String(property.id),
+                    title: String(property.title ?? ''),
+                    price: Number(property.price ?? 0),
+                    image: String(
+                        property.allImages && property.allImages.length > 0
+                            ? property.allImages[0]
+                            : property.image || ''
+                    ),
+                    ownerName: property.ownerName,
+                    ownerImage: property.ownerImage,
+                }}
+                onClose={onClose}
+                onBack={() => setShowApplication(false)}
                 isReadOnly={isSentRequestView}
-                // Pass the pre-filled rental request data when in sent-request view
-                prefillData={isSentRequestView ? property.rentalRequest : undefined}
+                prefillData={
+                    isSentRequestView && property.rentalRequest
+                        ? (property.rentalRequest as PrefillData)
+                        : undefined
+                }
             />
         );
     }
@@ -197,10 +439,57 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                         <div className="status-pill"><span className="pulse-dot"></span> Active Listing</div>
                     </div>
                     <div className="nav-controls">
-                        <button className="icon-action-btn"><FaHeart /></button>
-                        <button className="icon-action-btn"><FaShareAlt /></button>
+                        <button
+                            type="button"
+                            className={`icon-action-btn ${isSaved ? 'icon-action-btn--saved' : ''}`}
+                            onClick={handleSaveClick}
+                            aria-label={isSaved ? 'Remove from saved properties' : 'Save property'}
+                            aria-pressed={isSaved}
+                        >
+                            <FaHeart />
+                        </button>
+                        <div className="share-menu-wrap" ref={shareWrapRef}>
+                            <button
+                                type="button"
+                                className={`icon-action-btn ${shareMenuOpen ? 'icon-action-btn--active' : ''}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShareMenuOpen((open) => !open);
+                                }}
+                                aria-expanded={shareMenuOpen}
+                                aria-haspopup="true"
+                                aria-label="Share listing"
+                            >
+                                <FaShareAlt />
+                            </button>
+                            {shareMenuOpen ? (
+                                <div className="share-dropdown" role="menu" onClick={(e) => e.stopPropagation()}>
+                                    {typeof navigator !== 'undefined' && typeof navigator.share === 'function' ? (
+                                        <button type="button" role="menuitem" className="share-dropdown-item" onClick={() => void tryNativeShare()}>
+                                            Share using device…
+                                        </button>
+                                    ) : null}
+                                    <button type="button" role="menuitem" className="share-dropdown-item" onClick={() => void copyShareLink()}>
+                                        Copy link
+                                    </button>
+                                    <button type="button" role="menuitem" className="share-dropdown-item" onClick={shareWhatsApp}>
+                                        WhatsApp
+                                    </button>
+                                    <button type="button" role="menuitem" className="share-dropdown-item" onClick={shareSms}>
+                                        SMS
+                                    </button>
+                                    <button type="button" role="menuitem" className="share-dropdown-item" onClick={() => void shareInstagramDm()}>
+                                        Instagram DM
+                                    </button>
+                                    <p className="share-dropdown-hint">
+                                        Instagram: opens your DMs so you can pick who to message; the listing link is copied when possible.
+                                    </p>
+                                    <p className="share-dropdown-hint share-dropdown-hint--muted">Anyone with the link can open this listing on HOMi.</p>
+                                </div>
+                            ) : null}
+                        </div>
                         <div className="nav-separator"></div>
-                        <button className="close-trigger" onClick={onClose}><FaTimes /></button>
+                        <button type="button" className="close-trigger" onClick={onClose}><FaTimes /></button>
                     </div>
                 </nav>
 
@@ -234,17 +523,26 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                             <div className="availability-highlight-bar">
                                 <FaCalendarAlt className="calendar-pulse" />
                                 <div className="availability-text">
-                                    <span className="label">Earliest Move-in Date</span>
-                                    <span className="date-value">{property.availableDate || 'August 15th, 2024'}</span>
+                                    <span className="label">{ribbon.label}</span>
+                                    <span className="date-value">{ribbon.dateLine}</span>
                                 </div>
-                                <span className="urgency-tag">High Demand</span>
+                                <span className="urgency-tag urgency-tag--realistic">{ribbon.tag}</span>
                             </div>
 
                             <header className="content-header">
                                 <h1 className="property-h1">{property.title}</h1>
                                 <div className="location-link">
                                     <FaMapMarkerAlt /> {property.address}
-                                    <button className="inline-map-btn">View on Map</button>
+                                    <button
+                                        type="button"
+                                        className="inline-map-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openGoogleMapsForProperty(property as { locationLat?: number | null; locationLng?: number | null; address?: string });
+                                        }}
+                                    >
+                                        View on Map
+                                    </button>
                                 </div>
                             </header>
 
@@ -260,7 +558,8 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                             <section className="description-box">
                                 <h3 className="section-h3"><FaInfoCircle /> Property Overview</h3>
                                 <p className="description-p">
-                                    {property.description?.trim() || `No description has been provided for ${property.title}.`}
+                                    {String(property.description ?? '').trim() ||
+                                        `No description has been provided for ${property.title ?? 'this property'}.`}
                                 </p>
                             </section>
 
@@ -281,14 +580,17 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                                 </h3>
                                 <div className="responsibility-box scrollable">
                                     {maintenanceResponsibilities.length > 0 ? (
-                                        maintenanceResponsibilities.map((item: any, index: number) => (
-                                            <div className="resp-row" key={`${item.area}-${index}`}>
-                                                <span>{item.area}</span>
-                                                <span className={`owner-badge ${(item.responsible_party || '').toLowerCase()}`}>
-                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
-                                                </span>
-                                            </div>
-                                        ))
+                                        maintenanceResponsibilities.map(
+                                            (item: { area: string; responsible_party?: string }, index: number) => (
+                                                <div className="resp-row" key={`${item.area}-${index}`}>
+                                                    <span>{item.area}</span>
+                                                    <span
+                                                        className={`owner-badge ${(item.responsible_party || '').toLowerCase()}`}
+                                                    >
+                                                        {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                    </span>
+                                                </div>
+                                            ))
                                     ) : (
                                         <div className="resp-row">
                                             <span>No maintenance responsibilities configured for this property.</span>
@@ -355,14 +657,42 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                             <div className="sidebar-divider"></div>
 
                             <div className="owner-profile">
-                                <div className="avatar-wrapper">
-                                    <img src={property.ownerImage} alt={property.ownerName || 'Owner'} />
-                                    <span className="online-indicator"></span>
-                                </div>
-                                <div className="owner-details">
-                                    <span className="name">{property.ownerName || 'Owner'}</span>
-                                    <span className="role">Verified Owner • 4.9★</span>
-                                </div>
+                                <button
+                                    type="button"
+                                    className="owner-profile-main"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (!landlordProfileUserId) return;
+                                        // Do not call onClose here: it runs setSearchParams on /browse-properties and can
+                                        // race with this navigate, leaving the user on browse instead of the profile.
+                                        navigate(`/landlords/${landlordProfileUserId}`);
+                                    }}
+                                    disabled={!landlordProfileUserId}
+                                    aria-label="View landlord profile"
+                                >
+                                    <div className="avatar-wrapper">
+                                        <img
+                                            src={
+                                                property.ownerImage ||
+                                                `https://ui-avatars.com/api/?name=${encodeURIComponent(property.ownerName || 'Owner')}&background=0f172a&color=ffffff&size=128`
+                                            }
+                                            alt={property.ownerName || 'Owner'}
+                                        />
+                                        <span className="online-indicator"></span>
+                                    </div>
+                                    <div className="owner-details">
+                                        <span className="name">{property.ownerName || 'Owner'}</span>
+                                        <span className="role">
+                                            {property.ownerVerified ? (
+                                                <span className="owner-verified-inline">
+                                                    <FaCheckCircle aria-hidden /> Verified on HOMi
+                                                </span>
+                                            ) : (
+                                                'Property owner'
+                                            )}
+                                        </span>
+                                    </div>
+                                </button>
                                 <button
                                     type="button"
                                     className="chat-btn"
@@ -382,6 +712,12 @@ const PropertyDetailModal = ({ property, onClose, isGuest = false, isSentRequest
                     </aside>
                 </div>
             </div>
+
+            {shareToast ? (
+                <div className="share-toast" role="status">
+                    {shareToast}
+                </div>
+            ) : null}
 
             {/* Auth Modal for Guests */}
             {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}

@@ -1,5 +1,6 @@
 // client\src\features\BrowseProperties\pages\BrowseProperties.tsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './BrowseProperties.css';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
@@ -7,10 +8,16 @@ import Footer from '../../../components/global/footer';
 import PropertyCard from '../components/PropertyCard';
 import SearchHero from '../components/SearchHero';
 import PropertyDetailModal from '../components/PropertyDetailedModal';
-import { propertyService, type PropertyResponse } from '../../../services/property.service';
+import {
+    propertyService,
+    type PropertyResponse,
+    type PropertyQueryParams,
+    resolveLandlordUserIdFromPropertyResponse,
+} from '../../../services/property.service';
 import savedPropertiesService from '../../../services/saved-properties.service';
+import { authService } from '../../../services/auth.service';
 
-interface BrowsePropertyUI {
+export interface BrowsePropertyUI {
     id: string;
     ownerId: string;
     title: string;
@@ -31,10 +38,19 @@ interface BrowsePropertyUI {
     description: string;
     ownerName: string;
     ownerImage: string;
+    /** HOMi profile verification for the listing owner */
+    ownerVerified: boolean;
     maintenanceResponsibilities: Array<{
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
     }>;
+    /** WGS84 when listing has coordinates */
+    locationLat: number | null;
+    locationLng: number | null;
+    /** ISO date string for move-in logic */
+    availabilityDateISO: string | null;
+    /** ISO created time for listing-age copy */
+    listedAtISO: string;
 }
 
 const mapTargetTenant = (targetTenant: string) => {
@@ -56,7 +72,7 @@ const mapFurnishingLabel = (furnishing: string | null): string => {
     return 'Unfurnished';
 };
 
-const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
+export const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
     const mainImage = property.images.find((image) => image.isMain)?.imageUrl;
     const fallbackImage = property.images[0]?.imageUrl;
     const image = mainImage || fallbackImage || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80';
@@ -66,7 +82,7 @@ const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
 
     return {
         id: property.id,
-        ownerId: property.landlordId,
+        ownerId: resolveLandlordUserIdFromPropertyResponse(property),
         title: property.title,
         address: property.address,
         price: property.monthlyPrice,
@@ -81,6 +97,16 @@ const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
         furnishing: normalizedFurnishing,
         targetTenant: mapTargetTenant(property.targetTenant),
         availableDate: property.availabilityDate ? new Date(property.availabilityDate).toLocaleDateString() : 'Not specified',
+        availabilityDateISO: property.availabilityDate ?? null,
+        listedAtISO: property.createdAt,
+        locationLat:
+            property.detailedLocation != null && Number.isFinite(property.detailedLocation.locationLat)
+                ? property.detailedLocation.locationLat
+                : null,
+        locationLng:
+            property.detailedLocation != null && Number.isFinite(property.detailedLocation.locationLong)
+                ? property.detailedLocation.locationLong
+                : null,
         petsAllowed: property.houseRules.some((rule) => rule.name === 'Pets Allowed'),
         description: property.description,
         ownerName: property.landlord
@@ -93,11 +119,15 @@ const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI => {
                     ? `${property.landlord.firstName} ${property.landlord.lastName}`.trim() || 'Owner'
                     : 'Owner'
             )}&background=0f172a&color=ffffff&size=128`,
+        ownerVerified: Boolean(property.landlord?.isVerified),
         maintenanceResponsibilities: property.maintenanceResponsibilities ?? [],
     };
 };
 
 const BrowseProperties: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const listingFromUrl = searchParams.get('listing');
+
     const [selectedProperty, setSelectedProperty] = useState<BrowsePropertyUI | null>(null);
     const [properties, setProperties] = useState<BrowsePropertyUI[]>([]);
     const [loading, setLoading] = useState(true);
@@ -165,6 +195,54 @@ const BrowseProperties: React.FC = () => {
         void fetchDefaultProperties();
     }, []);
 
+    /** Open listing from shared link ?listing=<propertyId> */
+    useEffect(() => {
+        if (!listingFromUrl) {
+            return undefined;
+        }
+
+        const fromList = properties.find((p) => p.id === listingFromUrl);
+        if (fromList) {
+            setSelectedProperty(fromList);
+            return undefined;
+        }
+
+        if (loading) {
+            return undefined;
+        }
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await propertyService.getPropertyById(listingFromUrl);
+                if (cancelled || !res.data) return;
+                if (String(res.data.status).toUpperCase() !== 'AVAILABLE') {
+                    setSearchParams({}, { replace: true });
+                    setSelectedProperty(null);
+                    return;
+                }
+                setSelectedProperty(mapPropertyToUI(res.data));
+            } catch {
+                setSearchParams({}, { replace: true });
+                setSelectedProperty(null);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [listingFromUrl, properties, loading, setSearchParams]);
+
+    const openPropertyDetails = (property: BrowsePropertyUI) => {
+        setSelectedProperty(property);
+        setSearchParams({ listing: property.id }, { replace: true });
+    };
+
+    const closePropertyDetails = () => {
+        setSelectedProperty(null);
+        setSearchParams({}, { replace: true });
+    };
+
     const newListings = useMemo(() => properties.slice(0, 8), [properties]);
     const popularProperties = useMemo(() => {
         const nextBucket = properties.slice(8, 16);
@@ -184,7 +262,7 @@ const BrowseProperties: React.FC = () => {
         <PropertyCard
             key={property.id}
             property={property}
-            onOpenDetails={() => setSelectedProperty(property)}
+            onOpenDetails={() => openPropertyDetails(property)}
             isSaved={isPropertySaved(property.id)}
             onToggleSave={handleToggleSave}
         />
@@ -287,8 +365,8 @@ const BrowseProperties: React.FC = () => {
                                     status: 'AVAILABLE',
                                     page: 1,
                                     limit: 60,
-                                    ...filters
-                                } as any);
+                                    ...filters,
+                                } as PropertyQueryParams);
                 
                                 const mapped = response.data.map(mapPropertyToUI);
                                 setProperties(mapped);
@@ -340,9 +418,12 @@ const BrowseProperties: React.FC = () => {
             </div>
 
             {selectedProperty && (
-                <PropertyDetailModal 
-                    property={selectedProperty} 
-                    onClose={() => setSelectedProperty(null)} 
+                <PropertyDetailModal
+                    property={selectedProperty}
+                    onClose={closePropertyDetails}
+                    isGuest={!authService.getCurrentUser()}
+                    isSaved={isPropertySaved(selectedProperty.id)}
+                    onToggleSave={handleToggleSave}
                 />
             )}
         </div>

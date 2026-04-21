@@ -34,7 +34,8 @@ const PropCard: React.FC<PropCardProps> = ({ property, onOpenDetails }) => {
   const currency = property.currency || 'EGP';
   const displayBadge = property.badge || (property.tags && property.tags[0]);
   const hostImage = property.hostImg || `https://i.pravatar.cc/150?u=${property.id}`;
-  const reviewsCount = property.reviews || Math.floor(Math.random() * 50) + 5;
+  const reviewsCount =
+    property.reviews ?? (Math.abs(Number(property.id)) * 13) % 45 + 5;
 
   const handleClick = () => {
     if (onOpenDetails) {

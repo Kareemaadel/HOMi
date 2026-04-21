@@ -19,6 +19,7 @@ import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import GuestNavbar from '../../../components/guest/GuestNavbar';
+import AuthModal from '../../../components/global/AuthModal';
 import './ForTenants.css';
 
 type FaqItem = {
@@ -29,6 +30,7 @@ type FaqItem = {
 
 const ForTenants: React.FC = () => {
   const [openFaqId, setOpenFaqId] = useState<string | null>('apply');
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -169,9 +171,19 @@ const ForTenants: React.FC = () => {
               </p>
 
               <div className="how-cta-row">
-                <Link to="/browse-properties" className="how-btn-primary">
-                  Explore properties
-                </Link>
+                {isSignedIn ? (
+                  <Link to="/browse-properties" className="how-btn-primary">
+                    Explore properties
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="how-btn-primary"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    Explore properties
+                  </button>
+                )}
                 <Link to="/get-help" className="how-btn-secondary">
                   See tenant support
                 </Link>
@@ -312,9 +324,19 @@ const ForTenants: React.FC = () => {
                   <Link to="/auth" className="how-btn-primary how-btn-primary--big">
                     Create tenant account
                   </Link>
-                  <Link to="/browse-properties" className="how-btn-secondary how-btn-secondary--big">
-                    Browse properties
-                  </Link>
+                  {isSignedIn ? (
+                    <Link to="/browse-properties" className="how-btn-secondary how-btn-secondary--big">
+                      Browse properties
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      className="how-btn-secondary how-btn-secondary--big"
+                      onClick={() => setShowAuthModal(true)}
+                    >
+                      Browse properties
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -323,6 +345,8 @@ const ForTenants: React.FC = () => {
 
         <Footer />
       </div>
+
+      {showAuthModal ? <AuthModal onClose={() => setShowAuthModal(false)} /> : null}
     </div>
   );
 };

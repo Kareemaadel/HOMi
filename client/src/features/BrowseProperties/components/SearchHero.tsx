@@ -10,7 +10,7 @@ import './SearchHero.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -26,15 +26,15 @@ const EGYPT_BOUNDS = L.latLngBounds(
 const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   const map = useMap();
   useEffect(() => {
-    // @ts-ignore
+    // @ts-expect-error — leaflet-control-geocoder augments L.Control at runtime
     const geocoder = L.Control.Geocoder.nominatim();
-    // @ts-ignore
+    // @ts-expect-error — geocoder control factory is not in @types/leaflet
     const control = L.Control.geocoder({
       geocoder,
       defaultMarkGeocode: false,
       placeholder: "Search in Egypt...",
     })
-      .on('markgeocode', (e: any) => {
+      .on('markgeocode', (e: { geocode: { center: L.LatLng } }) => {
         const { center } = e.geocode;
         if (EGYPT_BOUNDS.contains(center)) {
           map.setView(center, 12);
@@ -49,7 +49,13 @@ const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng
   return null;
 };
 
-const MapEventsHandler = ({ position, onLocationSelect, radiusKm }: any) => {
+interface MapEventsHandlerProps {
+  position: { lat: number; lng: number };
+  onLocationSelect: (lat: number, lng: number) => void;
+  radiusKm: number;
+}
+
+const MapEventsHandler = ({ position, onLocationSelect, radiusKm }: MapEventsHandlerProps) => {
   const map = useMap();
   useEffect(() => {
     map.invalidateSize();
@@ -383,7 +389,13 @@ const SearchHero: React.FC<SearchHeroProps> = ({ onSearch }) => {
                                               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                                               {position && <MapCenterUpdater center={[position.lat, position.lng]} />}
                                               <SearchField onLocationSelect={(lat, lng) => setPosition({lat, lng})} />
-                                              <MapEventsHandler position={position} onLocationSelect={(lat: number, lng: number) => setPosition({lat, lng})} radiusKm={radiusKm} />
+                                              {position ? (
+                                                  <MapEventsHandler
+                                                      position={position}
+                                                      onLocationSelect={(lat: number, lng: number) => setPosition({ lat, lng })}
+                                                      radiusKm={radiusKm}
+                                                  />
+                                              ) : null}
                                             </MapContainer>
                                         </div>
                                     )}

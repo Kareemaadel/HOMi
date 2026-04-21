@@ -127,6 +127,44 @@
     justify-content: center;
     margin: 0 auto 24px auto;
 }
+
+.decline-outcome-circle {
+    width: 80px;
+    height: 80px;
+    background: #fee2e2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px auto;
+}
+
+.action-card.outcome-card {
+    border-width: 1px;
+}
+
+.action-overlay.outcome-approved {
+    background: rgba(240, 253, 244, 0.97);
+}
+
+.action-overlay.outcome-approved .action-card {
+    border-color: #bbf7d0;
+    box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.12);
+}
+
+.action-overlay.outcome-declined {
+    background: rgba(254, 242, 242, 0.97);
+}
+
+.action-overlay.outcome-declined .action-card {
+    border-color: #fecaca;
+    box-shadow: 0 25px 50px -12px rgba(220, 38, 38, 0.1);
+}
+
+.action-overlay.outcome-declined .action-card h3 {
+    color: #991b1b;
+}
+
 /* --- END OVERLAY STYLES --- */
 
 

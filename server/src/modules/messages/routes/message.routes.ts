@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { protect } from '../../../shared/middleware/auth.middleware.js';
+import { protect, restrictTo } from '../../../shared/middleware/auth.middleware.js';
 import { validate, validateQuery } from '../../../shared/middleware/validate.middleware.js';
 import { messageController } from '../controllers/message.controller.js';
+import { supportController } from '../controllers/support.controller.js';
+import { UserRole } from '../../auth/models/User.js';
 import {
     ConversationListQuerySchema,
     ConversationMessagesQuerySchema,
@@ -16,6 +18,23 @@ router.post(
     protect,
     validate(StartConversationSchema),
     messageController.startConversation.bind(messageController)
+);
+
+router.get('/unread-badge', protect, messageController.getUnreadBadge.bind(messageController));
+
+router.get(
+    '/support',
+    protect,
+    restrictTo(UserRole.LANDLORD, UserRole.TENANT),
+    supportController.getSupportThread.bind(supportController)
+);
+
+router.post(
+    '/support/messages',
+    protect,
+    restrictTo(UserRole.LANDLORD, UserRole.TENANT),
+    validate(SendMessageSchema),
+    supportController.sendSupportMessage.bind(supportController)
 );
 
 router.get(

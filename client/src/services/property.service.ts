@@ -34,6 +34,14 @@ export interface PropertyLandlordResponse {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    isVerified: boolean;
+}
+
+/** Present when API includes detailed location (browse / detail). */
+export interface PropertyDetailedLocationResponse {
+    id: string;
+    locationLat: number;
+    locationLong: number;
 }
 
 export interface PropertyResponse {
@@ -58,9 +66,40 @@ export interface PropertyResponse {
         responsible_party: 'LANDLORD' | 'TENANT';
     }>;
     specifications: PropertySpecificationsResponse | null;
+    detailedLocation?: PropertyDetailedLocationResponse | null;
     landlord: PropertyLandlordResponse | null;
     ownershipDocs: PropertyOwnershipDocResponse[];
     rejectionReason?: string | null;
+}
+
+/** Minimal shape to resolve landlord UUID from API or UI-mapped listing (browse modal, cards, etc.). */
+export interface LandlordIdCarrier {
+    ownerId?: string | number;
+    landlordId?: string;
+    landlord_id?: string;
+    landlord?: { id?: string } | null;
+}
+
+/** Landlord UUID for `/landlords/:id` — tolerates camelCase or snake_case API fields and nested `landlord.id`. */
+export function resolveLandlordUserIdFromFields(property: LandlordIdCarrier): string {
+    const raw = property.landlordId ?? property.landlord_id ?? property.landlord?.id;
+    return raw != null ? String(raw).trim() : '';
+}
+
+export function resolveLandlordUserIdFromPropertyResponse(property: PropertyResponse): string {
+    const p = property as PropertyResponse & { landlord_id?: string };
+    return resolveLandlordUserIdFromFields(p);
+}
+
+/**
+ * Same as {@link resolveLandlordUserIdFromFields} but prefers `ownerId` when present
+ * (e.g. `BrowsePropertyUI` / modal payloads mapped from listings).
+ */
+export function resolveLandlordUserIdForPublicProfile(property: LandlordIdCarrier): string {
+    if (property.ownerId != null && String(property.ownerId).trim() !== '') {
+        return String(property.ownerId).trim();
+    }
+    return resolveLandlordUserIdFromFields(property);
 }
 
 export interface PropertyQueryParams {
@@ -173,7 +212,7 @@ class PropertyService {
         return response.data;
     }
 
-    async updateProperty(propertyId: string, payload: any): Promise<PropertyMutationResponse> {
+    async updateProperty(propertyId: string, payload: Record<string, unknown>): Promise<PropertyMutationResponse> {
         const response = await apiClient.put<PropertyMutationResponse>(`/properties/${propertyId}`, payload);
         return response.data;
     }
@@ -183,6 +222,20 @@ class PropertyService {
             `/properties/${propertyId}/report`,
             payload
         );
+        return response.data;
+    }
+
+    async getPublicLandlordProfile(landlordId: string): Promise<{
+        success: boolean;
+        data: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+            isVerified: boolean;
+        };
+    }> {
+        const response = await apiClient.get(`/properties/landlords/${landlordId}/public-profile`);
         return response.data;
     }
 }

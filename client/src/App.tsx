@@ -23,6 +23,7 @@ import MyActives from "./features/ActiveRental/pages/MyActives";
 import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
+import HowItWorksChoose from "./features/HowItWorks/pages/HowItWorksChoose";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
 import ComingSoon from "./features/ComingSoon/pages/ComingSoon";
 import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
@@ -32,6 +33,7 @@ import AdminPropertyApprovals from "./features/admin/pages/AdminPropertyApproval
 import AdminUserReports from "./features/admin/pages/AdminUserReports";
 import AdminActivityLogs from "./features/admin/pages/AdminActivityLogs";
 import AdminUserManagement from "./features/admin/pages/AdminUserManagement";
+import AdminSupportInbox from "./features/admin/pages/AdminSupportInbox";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -40,6 +42,7 @@ import GuestSearch from "./features/Guest/pages/GuestSearch";
 import AuthGuard from "./components/global/AuthGuard";
 import SentRequests from "./features/SentRequests/pages/SentRequests";
 import PageNotFound from "./features/PageNotFound/pages/PageNotFound";
+import LandlordPublicProfile from "./features/LandlordPublicProfile/pages/LandlordPublicProfile";
 import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
 import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
 function App() {
@@ -52,6 +55,7 @@ function App() {
         {/* Tenant Routes — protected */}
         <Route path="/tenant-home"   element={<AuthGuard allowedRoles={['TENANT']}><TenantHome /></AuthGuard>} />
         <Route path="/browse-properties" element={<BrowseProperties />} /> {/* guests can browse; Apply Now button guards itself */}
+        <Route path="/landlords/:landlordId" element={<LandlordPublicProfile />} />
         <Route path="/active-rental" element={<AuthGuard allowedRoles={['TENANT']}><ActiveRental /></AuthGuard>} />
         <Route path="/prepayment-page" element={<AuthGuard allowedRoles={['TENANT']}><PrePayment /></AuthGuard>} />
         <Route path="/payment/verify" element={<AuthGuard allowedRoles={['TENANT']}><PaymobVerify /></AuthGuard>} />
@@ -90,6 +94,7 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/get-help" element={<GetHelp />} />
+        <Route path="/how-it-works-choose" element={<HowItWorksChoose />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/for-landlords"  element={<HowItWorks />} />
         <Route path="/for-tenants" element={<ForTenants />} />
@@ -99,7 +104,6 @@ function App() {
         <Route path="/settings"  element={<Settings />} /> {/* has its own guard */}
         <Route path="/messages"  element={<AuthGuard><Messages /></AuthGuard>} />
         <Route path="/about-us"  element={<AboutUs />} />
-        <Route path="/get-help"  element={<GetHelp />} />
         <Route path="/not-found"  element={<PageNotFound />} />
 
         {/* Guest Routes — public */}
@@ -114,6 +118,7 @@ function App() {
         <Route path="/admin/user-reports" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserReports /></AuthGuard>} />
         <Route path="/admin/user-management" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserManagement /></AuthGuard>} />
         <Route path="/admin/activity-logs" element={<AuthGuard allowedRoles={['ADMIN']}><AdminActivityLogs /></AuthGuard>} />
+        <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
 
         {/* Auth Routes — public */}
         <Route path="/auth"             element={<AuthPage />} />
@@ -123,6 +128,9 @@ function App() {
         <Route path="/verify-email"     element={<EmailVerificationPage />} />
         <Route path="/verify-email-callback" element={<VerifyEmailCallback />} />
         <Route path="/account-banned" element={<AccountBannedPage />} />
+
+        {/* Unknown routes — must be last */}
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </BrowserRouter>
   );
