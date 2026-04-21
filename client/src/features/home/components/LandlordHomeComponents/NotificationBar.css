@@ -1,6 +1,6 @@
 .notif-sidebar-overlay {
     position: fixed;
-    top: 88px;
+    top: 0;
     right: 0;
     bottom: 0;
     left: 0;
@@ -50,7 +50,7 @@
 
 @media (max-width: 768px) {
     .notif-sidebar-overlay {
-        top: 76px;
+        top: 0;
     }
     .notif-sidebar {
         width: 100vw;

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiBell, FiTrash2 } from 'react-icons/fi';
 import './NotificationBar.css';
 
@@ -24,6 +25,11 @@ const labelMap: Record<ActivityAlert['type'], string> = {
 
 const NotificationBar: React.FC<Props> = ({ isOpen, onClose, alerts }) => {
   const [dismissedIds, setDismissedIds] = React.useState<string[]>([]);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const visibleAlerts = React.useMemo(
     () => alerts.filter((item) => !dismissedIds.includes(item.id)),
@@ -38,7 +44,9 @@ const NotificationBar: React.FC<Props> = ({ isOpen, onClose, alerts }) => {
     setDismissedIds(alerts.map((item) => item.id));
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className={`notif-sidebar-overlay ${isOpen ? 'open' : ''}`}
       onClick={onClose}
@@ -75,7 +83,8 @@ const NotificationBar: React.FC<Props> = ({ isOpen, onClose, alerts }) => {
           <button className="clear-btn" onClick={handleClearAll}><FiTrash2 /> Clear All History</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
