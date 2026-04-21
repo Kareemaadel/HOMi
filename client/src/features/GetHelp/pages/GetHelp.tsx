@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Header from '../../../components/global/header';
+import GuestNavbar from '../../../components/guest/GuestNavbar';
 import TenantSidebar from '../../../components/global/Tenant/sidebar';
 import LandlordSidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
+import AuthModal from '../../../components/global/AuthModal';
 import authService from '../../../services/auth.service';
 import SupportHelpChat from '../components/SupportHelpChat';
 import { 
@@ -30,15 +32,21 @@ const GetHelp: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [supportChatOpen, setSupportChatOpen] = useState(false);
-  const navigate = useNavigate();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const location = useLocation();
+  const fromGuestHome = Boolean(
+    (location.state as { fromGuestHome?: boolean } | null)?.fromGuestHome
+  );
   const user = authService.getCurrentUser()?.user;
   const role = user?.role;
-  const SidebarComponent =
-    role === 'LANDLORD' ? LandlordSidebar : role === 'TENANT' ? TenantSidebar : null;
+  /** Guest marketing chrome: no session, or explicit entry from guest pages (e.g. Help Center link). */
+  const useGuestChrome = !user || fromGuestHome;
+  const showDashboardSidebar =
+    Boolean(user) && (role === 'LANDLORD' || role === 'TENANT') && !useGuestChrome;
 
   const openSupportChat = () => {
     if (!user) {
-      navigate('/auth');
+      setShowAuthModal(true);
       return;
     }
     if (role !== 'LANDLORD' && role !== 'TENANT') {
@@ -74,10 +82,15 @@ const GetHelp: React.FC = () => {
 
   return (
     <div className="help-page-layout">
-      {SidebarComponent ? <SidebarComponent /> : null}
+      {showDashboardSidebar && role === 'LANDLORD' ? <LandlordSidebar /> : null}
+      {showDashboardSidebar && role === 'TENANT' ? <TenantSidebar /> : null}
 
-      <div className={`help-main-content ${!SidebarComponent ? 'help-main-fullwidth' : ''}`}>
-        <Header />
+      <div
+        className={`help-main-content ${!showDashboardSidebar ? 'help-main-fullwidth' : ''} ${
+          useGuestChrome ? 'help-main-with-guest-nav' : ''
+        }`}
+      >
+        {useGuestChrome ? <GuestNavbar /> : <Header />}
 
         {/* Search Hero */}
         <section className="help-hero">
@@ -170,6 +183,7 @@ const GetHelp: React.FC = () => {
       </div>
 
       <SupportHelpChat isOpen={supportChatOpen} onClose={() => setSupportChatOpen(false)} />
+      {showAuthModal ? <AuthModal onClose={() => setShowAuthModal(false)} /> : null}
     </div>
   );
 };

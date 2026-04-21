@@ -62,22 +62,8 @@ const GuestHome: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const getSignedInRole = (): string | null => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return null;
-      const parsed = JSON.parse(userStr) as { role?: string } | null;
-      return parsed?.role ?? null;
-    } catch {
-      return null;
-    }
-  };
-
-  // If a signed-in user is on GuestHome, show the correct "How it Works" page.
-  const signedInRole = getSignedInRole();
-  const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
-  const howItWorksTo = {
-    pathname: howItWorksPath,
+  const getHelpFromGuest = {
+    pathname: '/get-help',
     state: { fromGuestHome: true },
   };
   
@@ -154,8 +140,8 @@ const GuestHome: React.FC = () => {
 
           <div className="nav-links desktop-only">
             <Link to="/guest-search">Browse Homes</Link>
-            <Link to={howItWorksTo}>How it Works</Link>
-            <Link to="/help">Help Center</Link>
+            <Link to="/how-it-works-choose">How it Works</Link>
+            <Link to={getHelpFromGuest}>Help Center</Link>
           </div>
 
           <div className="nav-actions desktop-only">
@@ -171,8 +157,8 @@ const GuestHome: React.FC = () => {
         {mobileMenuOpen && (
           <div className="mobile-nav-panel">
             <Link to="/guest-search" onClick={() => setMobileMenuOpen(false)}>Browse Homes</Link>
-            <Link to={howItWorksTo} onClick={() => setMobileMenuOpen(false)}>How it Works</Link>
-            <Link to="/help" onClick={() => setMobileMenuOpen(false)}>Help Center</Link>
+            <Link to="/how-it-works-choose" onClick={() => setMobileMenuOpen(false)}>How it Works</Link>
+            <Link to={getHelpFromGuest} onClick={() => setMobileMenuOpen(false)}>Help Center</Link>
             <button className="btn-text mobile-nav-login" onClick={() => { setMobileMenuOpen(false); navigate('/auth'); }}>
               Log in
             </button>
@@ -455,7 +441,7 @@ const GuestHome: React.FC = () => {
             <div className="footer-links">
               <h4>Resources</h4>
               <Link to="/about">About Us</Link>
-              <Link to="/help">Help Center</Link>
+              <Link to={getHelpFromGuest}>Help Center</Link>
               <Link to="/blog">Real Estate Blog</Link>
             </div>
             <div className="footer-links">

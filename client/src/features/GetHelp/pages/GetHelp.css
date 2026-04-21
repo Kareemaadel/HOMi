@@ -236,6 +236,12 @@
   width: 100% !important;
 }
 
+/* Fixed guest navbar (GuestHome.css) — offset main column so hero is not covered */
+.help-main-with-guest-nav {
+  margin-top: 0;
+  padding-top: 76px;
+}
+
 /* --- Support chat popup --- */
 .support-chat-overlay {
   position: fixed;

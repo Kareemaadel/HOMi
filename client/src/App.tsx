@@ -23,6 +23,7 @@ import MyActives from "./features/ActiveRental/pages/MyActives";
 import TenantPayment from "./features/TenantPayment/pages/TenantPayment";
 import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
+import HowItWorksChoose from "./features/HowItWorks/pages/HowItWorksChoose";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
 import ComingSoon from "./features/ComingSoon/pages/ComingSoon";
 import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
@@ -93,6 +94,7 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/get-help" element={<GetHelp />} />
+        <Route path="/how-it-works-choose" element={<HowItWorksChoose />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/for-landlords"  element={<HowItWorks />} />
         <Route path="/for-tenants" element={<ForTenants />} />
@@ -102,7 +104,6 @@ function App() {
         <Route path="/settings"  element={<Settings />} /> {/* has its own guard */}
         <Route path="/messages"  element={<AuthGuard><Messages /></AuthGuard>} />
         <Route path="/about-us"  element={<AboutUs />} />
-        <Route path="/get-help"  element={<GetHelp />} />
         <Route path="/not-found"  element={<PageNotFound />} />
 
         {/* Guest Routes — public */}

@@ -28,6 +28,11 @@ const Header = () => {
   const signedInRole = getSignedInRole();
   const isSignedIn = Boolean(localStorage.getItem('accessToken')) && signedInRole !== null;
   const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
+  const howItWorksBrowsePath = isSignedIn ? howItWorksPath : '/how-it-works-choose';
+  const howItWorksNavActive =
+    location.pathname === '/how-it-works-choose' ||
+    location.pathname === '/for-tenants' ||
+    location.pathname === '/for-landlords';
   const dashboardPath = signedInRole === 'LANDLORD' ? '/landlord-home' : '/tenant-home';
 
   const tenantMobileLinks = [
@@ -120,8 +125,8 @@ const Header = () => {
             Home
           </Link>
           <Link
-            to={howItWorksPath}
-            className={`nav-link ${location.pathname === howItWorksPath ? 'active' : ''}`}
+            to={howItWorksBrowsePath}
+            className={`nav-link ${howItWorksNavActive ? 'active' : ''}`}
             onClick={(e) => {
               if (!isSignedIn) return;
               e.preventDefault();
@@ -169,8 +174,8 @@ const Header = () => {
             Home
           </Link>
           <Link
-            to={howItWorksPath}
-            className={`mobile-nav-link ${location.pathname === howItWorksPath ? 'active' : ''}`}
+            to={howItWorksBrowsePath}
+            className={`mobile-nav-link ${howItWorksNavActive ? 'active' : ''}`}
             onClick={(e) => {
               if (!isSignedIn) return;
               e.preventDefault();
