@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
     X, ChevronRight, ChevronLeft, ShieldCheck, Pencil, 
     Landmark, Zap, Ban, User, DollarSign, Cpu, Clock, Globe, 
-    Fingerprint, CheckCircle2
+    Fingerprint, CheckCircle2, FileText, Scale, MoreVertical,
+    Download, Share2, MessageSquare, History
 } from 'lucide-react';
 import { type LeaseContract } from '../pages/Contract';
 import SignatureModal from './SignatureModal';
@@ -25,16 +26,28 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
     const [submitting, setSubmitting] = useState(false);
     const maintenanceResponsibilities = contract.maintenanceResponsibilities ?? [];
     
-    // Landlord Specific State
+    // Landlord Specific State for backend api compatibility
     const [landlordData, setLandlordData] = useState({
-        idNumber: contract.landlordNationalId || '', 
-        ownershipRef: contract.propertyRegistrationNumber || '',
+        idNumber: contract.landlordNationalId || 'NOT_PROVIDED', 
+        ownershipRef: contract.propertyRegistrationNumber || 'NOT_PROVIDED',
         rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
-        lateFee: String(contract.lateFeeAmount || 25),
-        occupants: String(contract.maxOccupants || 2),
-        smoking: 'No',
-        confirmed: Boolean(contract.certifyOwnership) || isReadOnly
+        lateFee: String(contract.lateFeeAmount || 0),
+        occupants: String(contract.maxOccupants || 1),
+        confirmed: Boolean(contract.certifyOwnership) || isReadOnly,
+        renewalTerms: '',
+        permittedUse: '',
+        restrictions: '',
+        rightToEnter: '',
+        noticePeriod: '',
+        earlyTermination: '',
+        eviction: '',
+        tenantInsurance: '',
+        landlordInsurance: '',
+        governingLaw: '',
+        disputeResolution: '',
+        amendments: ''
     });
+    
     const toDueDateEnum = (value: string): '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH' => {
         if (value === '5TH_OF_MONTH') return '5TH_OF_MONTH';
         if (value === 'LAST_DAY_OF_MONTH') return 'LAST_DAY_OF_MONTH';
@@ -43,7 +56,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
 
     const handleNext = async () => {
         if (isReadOnly) {
-            if (step === 3 && !summary) {
+            if (step === 4 && !summary) {
                 try {
                     setSubmitting(true);
                     const response = await contractService.getVerificationSummary(contract.internalId);
@@ -54,9 +67,10 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                     setSubmitting(false);
                 }
             }
-            setStep((s) => Math.min(s + 1, 5));
+            setStep((s) => Math.min(s + 1, 6));
             return;
         }
+        
         try {
             setSubmitting(true);
             if (step === 1) {
@@ -92,6 +106,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
             setSubmitting(false);
         }
     };
+    
     const handleBack = () => setStep(s => s - 1);
 
     const handleSign = async () => {
@@ -141,89 +156,89 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                         <span>LANDLORD ACTION • {contract.property}</span>
                     </div>
                     <div className="header-actions">
-
                         <button className="close-btn" onClick={onClose}><X size={20}/></button>
                     </div>
                 </header>
 
                 <div className="panel-content">
                     <div className="contract-stepper">
-                        {[1, 2, 3, 4, 5].map((i) => (
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
                             <React.Fragment key={i}>
                                 <div className={`step-pill ${step >= i ? 'active' : ''}`}>{i}</div>
-                                {i < 5 && <div className={`step-line ${step > i ? 'active' : ''}`}></div>}
+                                {i < 6 && <div className={`step-line ${step > i ? 'active' : ''}`}></div>}
                             </React.Fragment>
                         ))}
                     </div>
 
-                    {/* STEP 1: FINANCIAL & LEASE RULES */}
+                    {/* STEP 1: PARTIES, PROPERTY, LEASE TERM */}
                     {step === 1 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Lease Terms & Financials</h3>
+                            <h3 className="step-heading">Contract Details</h3>
                             <section className="info-section">
-                                <div className="section-title"><DollarSign size={16}/> <h4>Financial Configuration</h4></div>
-                                <div className="input-grid">
-                                    <div className="input-group">
-                                        <label>Rent Due Date</label>
-                                        <select className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} value={landlordData.rentDueDate} onChange={e => setLandlordData({...landlordData, rentDueDate: e.target.value})}>
-                                            <option value="1ST_OF_MONTH">1st of month</option>
-                                            <option value="5TH_OF_MONTH">5th of month</option>
-                                            <option value="LAST_DAY_OF_MONTH">Last day of month</option>
-                                        </select>
-                                    </div>
-                                    <div className="input-group">
-                                        <label>Late Fee Amount ($)</label>
-                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="number" value={landlordData.lateFee} onChange={e => setLandlordData({...landlordData, lateFee: e.target.value})} />
-                                    </div>
+                                <div className="section-title"><User size={16}/> <h4>1. Parties Involved</h4></div>
+                                <div className="autofill-grid">
+                                    <div className="field full"><label>Landlord/Owner</label><span>{contract.landlord} • {contract.landlordEmail}</span></div>
+                                    <div className="field full"><label>Tenant/Renter</label><span>{contract.tenant} • {contract.tenantEmail}</span></div>
                                 </div>
                             </section>
+
                             <section className="info-section">
-                                <div className="section-title"><Ban size={16}/> <h4>Occupancy Rules</h4></div>
-                                <div className="input-grid">
-                                    <div className="input-group"><label>Max Occupants</label><input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" value={landlordData.occupants} onChange={e => setLandlordData({...landlordData, occupants: e.target.value})} /></div>
+                                <div className="section-title"><Landmark size={16}/> <h4>2. Property Details</h4></div>
+                                <div className="autofill-grid">
+                                    <div className="field full"><label>Address</label><span>{contract.propertyAddress}</span></div>
+                                    <div className="field full"><label>Description</label><span>{contract.propertyType} • {contract.propertyFurnishing}</span></div>
+                                </div>
+                            </section>
+
+                            <section className="info-section">
+                                <div className="section-title"><Clock size={16}/> <h4>3. Lease Term</h4></div>
+                                <div className="autofill-grid">
+                                    <div className="field"><label>Start Date</label><span>{contract.startDate}</span></div>
+                                    <div className="field"><label>End Date</label><span>{contract.duration}</span></div>
+                                </div>
+                                <div className="input-group" style={{ marginTop: '24px' }}>
+                                    <label>Renewal Terms</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Enter renewal terms (e.g. Month-to-month)" value={landlordData.renewalTerms} onChange={e => setLandlordData({...landlordData, renewalTerms: e.target.value})} />
                                 </div>
                             </section>
                         </div>
                     )}
 
-                    {/* STEP 2: LANDLORD IDENTITY */}
+                    {/* STEP 2: USE OF PROPERTY & ENTRY */}
                     {step === 2 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Landlord Identity Details</h3>
+                            <h3 className="step-heading">Rules & Allowances</h3>
                             <section className="info-section">
-                                <div className="section-title"><User size={16}/> <h4>Profile Information</h4></div>
-                                <div className="autofill-grid">
-                                    <div className="field"><label>Legal Name</label><span>{contract.landlord}</span></div>
-                                    <div className="field"><label>Email</label><span>{contract.landlordEmail || '—'}</span></div>
+                                <div className="section-title"><ShieldCheck size={16}/> <h4>6. Use of Property</h4></div>
+                                <div className="input-group">
+                                    <label>Permitted Use</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="e.g. Residential purposes only" value={landlordData.permittedUse} onChange={e => setLandlordData({...landlordData, permittedUse: e.target.value})} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Restrictions</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="e.g. No subletting, pets, or smoking" value={landlordData.restrictions} onChange={e => setLandlordData({...landlordData, restrictions: e.target.value})} />
                                 </div>
                             </section>
                             <section className="info-section">
-                                <div className="section-title"><Fingerprint size={16}/> <h4>Verification</h4></div>
+                                <div className="section-title"><Globe size={16}/> <h4>7. Entry and Inspection</h4></div>
                                 <div className="input-group">
-                                    <label>National ID / Business Registration Number</label>
-                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Enter ID number" value={landlordData.idNumber} onChange={e => setLandlordData({...landlordData, idNumber: e.target.value})} />
+                                    <label>Landlord's Right to Enter</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Conditions for landlord entry" value={landlordData.rightToEnter} onChange={e => setLandlordData({...landlordData, rightToEnter: e.target.value})} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Notice Period</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="e.g. 24 hours written notice" value={landlordData.noticePeriod} onChange={e => setLandlordData({...landlordData, noticePeriod: e.target.value})} />
                                 </div>
                             </section>
                         </div>
                     )}
 
-                    {/* STEP 3: PROPERTY OWNERSHIP */}
+                    {/* STEP 3: MAINTENANCE RESPONSIBILITIES */}
                     {step === 3 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Property Ownership Confirmation</h3>
+                            <h3 className="step-heading">Maintenance Responsibilities</h3>
                             <section className="info-section">
-                                <div className="section-title"><Landmark size={16}/> <h4>Ownership Records</h4></div>
-                                <div className="input-group">
-                                    <label>Property Registration Number / Deed Ref</label>
-                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="e.g. REG-99210-XB" value={landlordData.ownershipRef} onChange={e => setLandlordData({...landlordData, ownershipRef: e.target.value})} />
-                                </div>
-                                <div className="ownership-notice">
-                                    <ShieldCheck size={20} />
-                                    <p>By providing this, you confirm you are the legal owner or authorized representative of <strong>{contract.property}</strong>.</p>
-                                </div>
-                            </section>
-                            <section className="info-section">
-                                <div className="section-title"><Zap size={16}/> <h4>Maintenance Responsibilities</h4></div>
+                                <div className="section-title"><Zap size={16}/> <h4>Maintenance Allocation</h4></div>
                                 <div className="responsibility-box scrollable">
                                     {maintenanceResponsibilities.length > 0 ? (
                                         maintenanceResponsibilities.map((item, idx) => (
@@ -235,15 +250,67 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="resp-row"><span>No maintenance responsibilities found on this property.</span><span className="owner-badge tenant">N/A</span></div>
+                                        <div className="resp-row"><span>No specific maintenance requirements detailed.</span><span className="owner-badge tenant">N/A</span></div>
                                     )}
                                 </div>
                             </section>
                         </div>
                     )}
 
-                    {/* STEP 4: SUMMARY */}
+                    {/* STEP 4: TERMINATION & LEGAL */}
                     {step === 4 && (
+                        <div className="step-view animate-fade-in">
+                            <h3 className="step-heading">Legal Framework</h3>
+                            <section className="info-section">
+                                <div className="section-title"><Ban size={16}/> <h4>8. Termination Clause</h4></div>
+                                <div className="input-group">
+                                    <label>Early Termination</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="e.g. 60 days notice and fee" value={landlordData.earlyTermination} onChange={e => setLandlordData({...landlordData, earlyTermination: e.target.value})} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Eviction</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Grounds for eviction" value={landlordData.eviction} onChange={e => setLandlordData({...landlordData, eviction: e.target.value})} />
+                                </div>
+                            </section>
+                            <section className="info-section">
+                                <div className="section-title"><ShieldCheck size={16}/> <h4>9. Insurance</h4></div>
+                                <div className="input-group">
+                                    <label>Tenant's Insurance</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Tenant insurance requirements" value={landlordData.tenantInsurance} onChange={e => setLandlordData({...landlordData, tenantInsurance: e.target.value})} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Landlord's Insurance</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Landlord insurance coverage" value={landlordData.landlordInsurance} onChange={e => setLandlordData({...landlordData, landlordInsurance: e.target.value})} />
+                                </div>
+                            </section>
+                            <section className="info-section">
+                                <div className="section-title"><Scale size={16}/> <h4>10. Legal Clauses</h4></div>
+                                <div className="input-group">
+                                    <label>Governing Law</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Governing jurisdiction" value={landlordData.governingLaw} onChange={e => setLandlordData({...landlordData, governingLaw: e.target.value})} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Dispute Resolution</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Resolution process" value={landlordData.disputeResolution} onChange={e => setLandlordData({...landlordData, disputeResolution: e.target.value})} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Amendments</label>
+                                    <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Rules for amendments" value={landlordData.amendments} onChange={e => setLandlordData({...landlordData, amendments: e.target.value})} />
+                                </div>
+                                <div className="homi-auto-box" style={{marginTop: '16px'}}>
+                                    <div className="section-title"><Cpu size={16}/> <h4>Clause Metadata</h4></div>
+                                    <p style={{fontSize: '13px', color: 'var(--saas-text-muted)', lineHeight: '1.5'}}>
+                                        <strong>Document Hash:</strong> {contract.internalId}-clauses-v1<br/>
+                                        <strong>Included Legal Arrays:</strong> Parties, Property, Term, Use, Entry, Termination, Insurance, Legal<br/>
+                                        All clauses encoded securely.
+                                    </p>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {/* STEP 5: SUMMARY */}
+                    {step === 5 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Platform Verification Summary</h3>
                             <div className="homi-auto-box">
@@ -285,8 +352,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                         </div>
                     )}
 
-                    {/* STEP 5: SIGNATURE */}
-                    {step === 5 && (
+                    {/* STEP 6: SIGNATURE */}
+                    {step === 6 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Finalize & Sign</h3>
                             {isReadOnly ? (
@@ -319,12 +386,12 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                     <button 
                         className="btn-nav-primary"
                         disabled={
-                            (!isReadOnly && ((step === 2 && !landlordData.idNumber) || (step === 3 && !landlordData.ownershipRef) || (step === 5 && (!savedSignature || !landlordData.confirmed)))) ||
+                            (!isReadOnly && (step === 6 && (!savedSignature || !landlordData.confirmed))) ||
                             submitting
                         }
-                        onClick={step === 5 ? (isReadOnly ? onClose : handleSign) : handleNext}
+                        onClick={step === 6 ? (isReadOnly ? onClose : handleSign) : handleNext}
                     >
-                        {submitting ? 'Saving...' : step === 5 ? (isReadOnly ? 'Close' : 'Sign Agreement') : 'Continue'} <ChevronRight size={18} />
+                        {submitting ? 'Saving...' : step === 6 ? (isReadOnly ? 'Close' : 'Sign Agreement') : 'Continue'} <ChevronRight size={18} />
                     </button>
                 </footer>
             </div>

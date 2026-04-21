@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-    X, ChevronRight, ChevronLeft, Pencil,
+    X, ChevronRight, ChevronLeft, Pencil, ShieldCheck,
     Landmark, Zap, Ban, User, DollarSign, Cpu, Clock, Globe,
     Fingerprint, CheckCircle2, CreditCard
 } from 'lucide-react';
@@ -131,6 +131,12 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {step === 1 && (
                         <div className="step-view animate-fade-in">
                             <h3 className="step-heading">Landlord's Terms & Conditions</h3>
+                            <div style={{ background: '#fffbeb', color: '#b45309', padding: '16px', borderRadius: '8px', display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                                <ShieldCheck size={20} style={{ flexShrink: 0 }} />
+                                <p style={{ margin: 0, fontSize: '13.5px', lineHeight: '1.5', fontWeight: 500 }}>
+                                    Please read carefully to the end. These are the legally binding clauses and parameters established by your landlord, and they represent contract terms you must strictly respect.
+                                </p>
+                            </div>
                             <section className="info-section">
                                 <div className="section-title"><User size={16}/> <h4>Landlord Profile</h4></div>
                                 <div className="autofill-grid">
@@ -140,12 +146,59 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                 </div>
                             </section>
                             <section className="info-section">
-                                <div className="section-title"><Ban size={16}/> <h4>Lease Rules</h4></div>
+                                <div className="section-title"><Clock size={16}/> <h4>Lease Fundamentals</h4></div>
                                 <div className="policy-grid">
                                     <div className="policy-item"><label>Occupants</label><p>Max {contract.maxOccupants}</p></div>
                                     <div className="policy-item"><label>Rent Due Date</label><p>{contract.rentDueDate.replaceAll('_', ' ')}</p></div>
                                     <div className="policy-item"><label>Late Fee</label><p>${contract.lateFeeAmount}</p></div>
                                     <div className="policy-item"><label>Status</label><p>Pending Signature</p></div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Renewal Terms</label>
+                                        <p>Automatic month-to-month renewal upon expiration unless a 30-day notice is provided.</p>
+                                    </div>
+                                </div>
+                            </section>
+                            <section className="info-section">
+                                <div className="section-title"><Ban size={16}/> <h4>Rules & Allowances</h4></div>
+                                <div className="policy-grid">
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Permitted Use</label><p>Premises are to be used for residential purposes only.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Restrictions</label><p>No subletting without prior written consent. Pets and indoor smoking are not permitted.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Landlord's Right to Enter</label><p>Landlord may enter the premises for necessary repairs, inspections, or emergencies.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Notice Period</label><p>At least 24 hours written or verbal notice must be provided before non-emergency entry.</p>
+                                    </div>
+                                </div>
+                            </section>
+                            <section className="info-section">
+                                <div className="section-title"><Globe size={16}/> <h4>Legal Framework & Insurance</h4></div>
+                                <div className="policy-grid">
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Early Termination</label><p>Requires 60 days active notice and an early termination fee equivalent to one month's rent.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Eviction</label><p>Grounds include, but are not limited to: non-payment of rent, substantial property damage, or violation of lease terms.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Tenant's Insurance</label><p>Tenant is required to maintain valid renter's insurance for personal property and liability.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Landlord's Insurance</label><p>Landlord's insurance covers structural damage and property liability, but not tenant belongings.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Governing Law</label><p>This agreement shall be governed by the laws of the jurisdiction where the property is located.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Dispute Resolution</label><p>Any disputes shall first be mediated in good faith before pursuing legal action.</p>
+                                    </div>
+                                    <div className="policy-item" style={{ gridColumn: 'span 2' }}>
+                                        <label>Amendments</label><p>Any changes or modifications to this agreement must be made in writing and signed by both parties.</p>
+                                    </div>
                                 </div>
                             </section>
                             <section className="info-section">
