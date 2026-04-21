@@ -72,6 +72,36 @@ export interface PropertyResponse {
     rejectionReason?: string | null;
 }
 
+/** Minimal shape to resolve landlord UUID from API or UI-mapped listing (browse modal, cards, etc.). */
+export interface LandlordIdCarrier {
+    ownerId?: string | number;
+    landlordId?: string;
+    landlord_id?: string;
+    landlord?: { id?: string } | null;
+}
+
+/** Landlord UUID for `/landlords/:id` — tolerates camelCase or snake_case API fields and nested `landlord.id`. */
+export function resolveLandlordUserIdFromFields(property: LandlordIdCarrier): string {
+    const raw = property.landlordId ?? property.landlord_id ?? property.landlord?.id;
+    return raw != null ? String(raw).trim() : '';
+}
+
+export function resolveLandlordUserIdFromPropertyResponse(property: PropertyResponse): string {
+    const p = property as PropertyResponse & { landlord_id?: string };
+    return resolveLandlordUserIdFromFields(p);
+}
+
+/**
+ * Same as {@link resolveLandlordUserIdFromFields} but prefers `ownerId` when present
+ * (e.g. `BrowsePropertyUI` / modal payloads mapped from listings).
+ */
+export function resolveLandlordUserIdForPublicProfile(property: LandlordIdCarrier): string {
+    if (property.ownerId != null && String(property.ownerId).trim() !== '') {
+        return String(property.ownerId).trim();
+    }
+    return resolveLandlordUserIdFromFields(property);
+}
+
 export interface PropertyQueryParams {
     status?: 'DRAFT' | 'PENDING_APPROVAL' | 'AVAILABLE' | 'REJECTED' | 'RENTED';
     type?: 'APARTMENT' | 'VILLA' | 'STUDIO' | 'CHALET';
@@ -182,7 +212,7 @@ class PropertyService {
         return response.data;
     }
 
-    async updateProperty(propertyId: string, payload: any): Promise<PropertyMutationResponse> {
+    async updateProperty(propertyId: string, payload: Record<string, unknown>): Promise<PropertyMutationResponse> {
         const response = await apiClient.put<PropertyMutationResponse>(`/properties/${propertyId}`, payload);
         return response.data;
     }

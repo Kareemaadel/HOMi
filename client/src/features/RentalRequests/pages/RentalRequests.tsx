@@ -29,12 +29,17 @@ const RentalRequests: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        void refreshRequests();
+        const timer = window.setTimeout(() => {
+            void refreshRequests();
+        }, 0);
+        return () => window.clearTimeout(timer);
     }, [refreshRequests]);
 
     const mappedRequests = useMemo(() => {
         return requests.map((req) => ({
             id: req.id,
+            tenantId: req.tenant.id,
+            propertyId: req.property.id,
             applicant: {
                 name: `${req.tenant.firstName} ${req.tenant.lastName}`.trim(),
                 image: req.tenant.avatarUrl || 'https://i.pravatar.cc/150?u=fallback',

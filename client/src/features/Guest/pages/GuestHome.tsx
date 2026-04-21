@@ -6,8 +6,55 @@ import {
   MapPin, Bed, Bath, Maximize, Zap, PlayCircle
 } from 'lucide-react';
 import './GuestHome.css';
-import PropertyDetailedModal from '../../BrowseProperties/components/PropertyDetailedModal';
+import PropertyDetailedModal, {
+    type PropertyDetailModalProperty,
+} from '../../BrowseProperties/components/PropertyDetailedModal';
 import AuthModal from '../../../components/global/AuthModal';
+
+type GuestHomeListing = {
+    id: number;
+    title: string;
+    price: number;
+    currency?: string;
+    location?: string;
+    type?: string;
+    beds: number;
+    baths: number;
+    sqft: number;
+    rating: number;
+    reviews?: number;
+    image: string;
+    hostImg?: string;
+    badge?: string;
+};
+
+const mapGuestHomeListingToModal = (p: GuestHomeListing): PropertyDetailModalProperty => ({
+    id: p.id,
+    title: p.title,
+    address: p.location,
+    price: p.price,
+    securityDeposit: 0,
+    image: p.image,
+    allImages: [p.image],
+    beds: p.beds,
+    baths: p.baths,
+    sqft: p.sqft,
+    ownerName: 'Host',
+    ownerImage: p.hostImg,
+    ownerVerified: false,
+    locationLat: null,
+    locationLng: null,
+    availabilityDateISO: null,
+    listedAtISO: new Date().toISOString(),
+    maintenanceResponsibilities: [],
+    petsAllowed: false,
+    targetTenant: 'Any Tenant',
+    furnishing: 'Unfurnished',
+    availableDate: 'Not specified',
+    description: '',
+    tags: p.badge ? [p.badge] : [],
+    rating: p.rating,
+});
 
 const GuestHome: React.FC = () => {
   const navigate = useNavigate();
@@ -35,7 +82,7 @@ const GuestHome: React.FC = () => {
   };
   
   // Modal State
-  const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyDetailModalProperty | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -48,13 +95,13 @@ const GuestHome: React.FC = () => {
     setShowAuthModal(true);
   };
 
-  const handlePropertyClick = (property: any) => {
-    setSelectedProperty(property);
+  const handlePropertyClick = (property: GuestHomeListing) => {
+    setSelectedProperty(mapGuestHomeListingToModal(property));
     setIsModalOpen(true);
   };
 
   // Expanded to 5 properties
-  const mockProperties = [
+  const mockProperties: GuestHomeListing[] = [
     { 
       id: 1, 
       title: 'Modern Loft with Nile View', 

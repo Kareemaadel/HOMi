@@ -1,4 +1,5 @@
 // client\src\features\MyProperties\components\ManagePropertyModal.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any -- landlord editor accepts loosely-shaped property rows */
 import React, { useState, useMemo } from 'react';
 import { 
   FaTimes, FaSave, FaTrashAlt, FaHome, FaDollarSign, 
@@ -315,7 +316,12 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                       <select 
                         className="m-select" 
                         value={formData.status}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            status: e.target.value === 'available' ? 'available' : 'draft',
+                          })
+                        }
                         disabled={isLocked}
                       >
                         <option value="draft">Draft</option>

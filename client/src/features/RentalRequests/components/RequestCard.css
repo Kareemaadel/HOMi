@@ -216,3 +216,27 @@
     gap: 8px;
     font-weight: 700;
 }
+
+.rc-declined-card {
+    border-color: #fca5a5;
+    background: linear-gradient(180deg, #fef2f2 0%, #ffffff 70%);
+}
+
+.rc-declined-banner {
+    margin-top: auto;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 700;
+}
+
+.rc-btn-secondary:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}

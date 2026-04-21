@@ -9,7 +9,7 @@ import type { PropertyResponse } from '../../../../services/property.service';
 
 interface RentalSpecs {
   label: string;
-  icon: React.ReactNode;
+  icon: React.ReactElement;
 }
 
 interface ActiveRentalsCardProps {
@@ -44,13 +44,18 @@ const buildSpecs = (contract: LandlordContract | null, propertyDetails: Property
   const furnishing = formatFurnishing(propertyDetails?.furnishing ?? contract?.property?.furnishing);
   const petFriendly = Boolean(propertyDetails?.houseRules?.some((rule) => rule.name.toLowerCase() === 'pets allowed'));
 
-  const detailSpecs: RentalSpecs[] = [
-    typeof bedrooms === 'number' && bedrooms > 0 ? { label: `${bedrooms} Bed`, icon: <FaBed /> } : null,
-    typeof bathrooms === 'number' && bathrooms > 0 ? { label: `${bathrooms} Bath`, icon: <FaBath /> } : null,
-    typeof areaSqft === 'number' && areaSqft > 0 ? { label: `${areaSqft} sqft`, icon: <FaRulerCombined /> } : null,
-    { label: furnishing, icon: <FaCouch /> },
-    { label: petFriendly ? 'Pets Friendly' : 'No Pets', icon: <FaPaw /> },
-  ].filter((item): item is RentalSpecs => item !== null);
+  const detailSpecs: RentalSpecs[] = [];
+  if (typeof bedrooms === 'number' && bedrooms > 0) {
+    detailSpecs.push({ label: `${bedrooms} Bed`, icon: <FaBed /> });
+  }
+  if (typeof bathrooms === 'number' && bathrooms > 0) {
+    detailSpecs.push({ label: `${bathrooms} Bath`, icon: <FaBath /> });
+  }
+  if (typeof areaSqft === 'number' && areaSqft > 0) {
+    detailSpecs.push({ label: `${areaSqft} sqft`, icon: <FaRulerCombined /> });
+  }
+  detailSpecs.push({ label: furnishing, icon: <FaCouch /> });
+  detailSpecs.push({ label: petFriendly ? 'Pets Friendly' : 'No Pets', icon: <FaPaw /> });
 
   const fallbackSpecs: RentalSpecs[] = [
     { label: formatPropertyType(propertyDetails?.type ?? contract?.property?.type), icon: <FaHome /> },

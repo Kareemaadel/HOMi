@@ -21,7 +21,10 @@ export function useMessagingUnreadDot(): boolean {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    const timer = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [refresh]);
 
   useEffect(() => {

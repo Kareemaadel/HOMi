@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const VerifyPropertySchema = z.object({
     action: z.enum(['APPROVE', 'REJECT'], {
-        errorMap: () => ({ message: "Action must be either 'APPROVE' or 'REJECT'" }),
+        message: "Action must be either 'APPROVE' or 'REJECT'",
     }),
     rejectionReason: z.string().optional(),
 }).refine(

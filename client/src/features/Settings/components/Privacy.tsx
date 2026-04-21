@@ -1,6 +1,6 @@
 import React from 'react';
 import './Privacy.css';
-import { FaUserShield, FaDownload, FaEyeSlash, FaGoogle } from 'react-icons/fa';
+import { FaDownload, FaGoogle } from 'react-icons/fa';
 
 const Privacy: React.FC = () => {
   return (

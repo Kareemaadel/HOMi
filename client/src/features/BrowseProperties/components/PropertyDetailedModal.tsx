@@ -11,10 +11,14 @@ import {
     FaShieldAlt, FaChair, FaUsers, FaRegCompass,
     FaChevronLeft, FaChevronRight, FaCheckCircle
 } from 'react-icons/fa';
-import ApplicationModal from './ApplicationModal';
+import ApplicationModal, { type PrefillData } from './ApplicationModal';
 import AuthModal from '../../../components/global/AuthModal';
 import { messageService } from '../../../services/message.service';
-import { propertyService, type ReportListingPayload } from '../../../services/property.service';
+import {
+    propertyService,
+    type ReportListingPayload,
+    resolveLandlordUserIdForPublicProfile,
+} from '../../../services/property.service';
 import { buildListingShareUrl } from '../utils/listingShare';
 import './PropertyDetailedModal.css';
 
@@ -35,9 +39,51 @@ function openGoogleMapsForProperty(property: {
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-function availabilityRibbon(property: Record<string, unknown>): { label: string; dateLine: string; tag: string } {
-    const iso = property.availabilityDateISO as string | null | undefined;
-    const listedRaw = (property.listedAtISO || property.createdAt) as string | undefined;
+export interface PropertyDetailRentalRequest {
+    id: string;
+    status?: string;
+    moveInDate?: string;
+    duration?: string;
+    occupants?: number;
+    livingSituation?: string;
+    message?: string;
+}
+
+/** Data shown in the listing detail modal; callers map API or mock shapes into this. */
+export interface PropertyDetailModalProperty {
+    id: string | number;
+    title: string;
+    address?: string;
+    price: number;
+    securityDeposit?: number;
+    image: string;
+    allImages?: string[];
+    beds?: number | string;
+    baths?: number | string;
+    sqft?: number | string;
+    ownerId?: string;
+    ownerName?: string;
+    ownerImage?: string;
+    ownerVerified?: boolean;
+    locationLat?: number | null;
+    locationLng?: number | null;
+    availabilityDateISO?: string | null;
+    listedAtISO?: string;
+    createdAt?: string;
+    maintenanceResponsibilities?: Array<{ area: string; responsible_party: 'LANDLORD' | 'TENANT' }>;
+    petsAllowed?: boolean;
+    targetTenant?: string;
+    furnishing?: string;
+    availableDate?: string;
+    description?: string;
+    tags?: string[];
+    rating?: number;
+    rentalRequest?: PropertyDetailRentalRequest;
+}
+
+function availabilityRibbon(property: PropertyDetailModalProperty): { label: string; dateLine: string; tag: string } {
+    const iso = property.availabilityDateISO;
+    const listedRaw = property.listedAtISO || property.createdAt;
 
     let dateLine = 'The landlord has not set a fixed date — message them to confirm.';
     if (iso) {
@@ -76,7 +122,7 @@ function availabilityRibbon(property: Record<string, unknown>): { label: string;
 }
 
 interface PropertyDetailModalProps {
-    property: Record<string, unknown> & { id?: string; title?: string };
+    property: PropertyDetailModalProperty;
     onClose: () => void;
     isGuest?: boolean;
     isSentRequestView?: boolean;
@@ -111,6 +157,11 @@ const PropertyDetailModal = ({
     const [shareToast, setShareToast] = useState<string | null>(null);
     const shareWrapRef = useRef<HTMLDivElement>(null);
 
+    const landlordProfileUserId = useMemo(
+        () => resolveLandlordUserIdForPublicProfile(property),
+        [property]
+    );
+
     const ribbon = useMemo(() => availabilityRibbon(property), [property]);
 
     useEffect(() => {
@@ -131,12 +182,13 @@ const PropertyDetailModal = ({
     const canCancelSentRequest = property?.rentalRequest?.status === 'PENDING';
     
     // Use only real property images, with a single safe fallback
-    const images = (property.allImages && property.allImages.length > 0)
-        ? property.allImages
-        : [
-            property.image ||
-            "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800",
-        ];
+    const images: string[] =
+        property.allImages && property.allImages.length > 0
+            ? property.allImages
+            : [
+                  property.image ||
+                      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800',
+              ];
 
     const houseRules = [
         { icon: <FaSmokingBan />, text: "No Smoking", active: true },
@@ -172,10 +224,11 @@ const PropertyDetailModal = ({
             await onCancelRequest(requestId);
             setShowCancelPrompt(false);
             setShowCancelSuccess(true);
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const ex = error as { response?: { data?: { message?: string } }; message?: string };
             const message =
-                error?.response?.data?.message ||
-                error?.message ||
+                ex.response?.data?.message ||
+                ex.message ||
                 'Could not cancel this request right now. Please try again.';
             setCancelError(message);
         }
@@ -187,7 +240,7 @@ const PropertyDetailModal = ({
             return;
         }
 
-        const participantId = property?.ownerId;
+        const participantId = landlordProfileUserId;
         if (!participantId) {
             navigate('/messages');
             onClose();
@@ -198,14 +251,14 @@ const PropertyDetailModal = ({
         try {
             const response = await messageService.startConversation({
                 participantId,
-                propertyId: property?.id,
+                propertyId: property?.id != null ? String(property.id) : undefined,
             });
 
             navigate('/messages', {
                 state: {
                     conversationId: response.data.id,
                     participantId,
-                    propertyId: property?.id,
+                    propertyId: property?.id != null ? String(property.id) : undefined,
                 },
             });
             onClose();
@@ -214,7 +267,7 @@ const PropertyDetailModal = ({
             navigate('/messages', {
                 state: {
                     participantId,
-                    propertyId: property?.id,
+                    propertyId: property?.id != null ? String(property.id) : undefined,
                 },
             });
             onClose();
@@ -323,14 +376,15 @@ const PropertyDetailModal = ({
         setIsSubmittingReport(true);
         setReportError(null);
         try {
-            const response = await propertyService.reportProperty(property.id, {
+            const response = await propertyService.reportProperty(String(property.id), {
                 reason: reportReason,
                 details,
             });
             setReportSuccess(response.message || 'Report submitted successfully.');
             setReportDetails('');
-        } catch (error: any) {
-            setReportError(error?.response?.data?.message || 'Unable to submit report right now. Please try again.');
+        } catch (error: unknown) {
+            const ex = error as { response?: { data?: { message?: string } } };
+            setReportError(ex.response?.data?.message || 'Unable to submit report right now. Please try again.');
         } finally {
             setIsSubmittingReport(false);
         }
@@ -338,13 +392,27 @@ const PropertyDetailModal = ({
 
     if (showApplication) {
         return (
-            <ApplicationModal 
-                property={property} 
-                onClose={onClose} 
-                onBack={() => setShowApplication(false)} 
+            <ApplicationModal
+                property={{
+                    id: String(property.id),
+                    title: String(property.title ?? ''),
+                    price: Number(property.price ?? 0),
+                    image: String(
+                        property.allImages && property.allImages.length > 0
+                            ? property.allImages[0]
+                            : property.image || ''
+                    ),
+                    ownerName: property.ownerName,
+                    ownerImage: property.ownerImage,
+                }}
+                onClose={onClose}
+                onBack={() => setShowApplication(false)}
                 isReadOnly={isSentRequestView}
-                // Pass the pre-filled rental request data when in sent-request view
-                prefillData={isSentRequestView ? property.rentalRequest : undefined}
+                prefillData={
+                    isSentRequestView && property.rentalRequest
+                        ? (property.rentalRequest as PrefillData)
+                        : undefined
+                }
             />
         );
     }
@@ -512,14 +580,17 @@ const PropertyDetailModal = ({
                                 </h3>
                                 <div className="responsibility-box scrollable">
                                     {maintenanceResponsibilities.length > 0 ? (
-                                        maintenanceResponsibilities.map((item: any, index: number) => (
-                                            <div className="resp-row" key={`${item.area}-${index}`}>
-                                                <span>{item.area}</span>
-                                                <span className={`owner-badge ${(item.responsible_party || '').toLowerCase()}`}>
-                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
-                                                </span>
-                                            </div>
-                                        ))
+                                        maintenanceResponsibilities.map(
+                                            (item: { area: string; responsible_party?: string }, index: number) => (
+                                                <div className="resp-row" key={`${item.area}-${index}`}>
+                                                    <span>{item.area}</span>
+                                                    <span
+                                                        className={`owner-badge ${(item.responsible_party || '').toLowerCase()}`}
+                                                    >
+                                                        {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                    </span>
+                                                </div>
+                                            ))
                                     ) : (
                                         <div className="resp-row">
                                             <span>No maintenance responsibilities configured for this property.</span>
@@ -589,17 +660,24 @@ const PropertyDetailModal = ({
                                 <button
                                     type="button"
                                     className="owner-profile-main"
-                                    onClick={() => {
-                                        if (property?.ownerId) {
-                                            navigate(`/landlords/${property.ownerId}`);
-                                            onClose();
-                                        }
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (!landlordProfileUserId) return;
+                                        // Do not call onClose here: it runs setSearchParams on /browse-properties and can
+                                        // race with this navigate, leaving the user on browse instead of the profile.
+                                        navigate(`/landlords/${landlordProfileUserId}`);
                                     }}
-                                    disabled={!property?.ownerId}
+                                    disabled={!landlordProfileUserId}
                                     aria-label="View landlord profile"
                                 >
                                     <div className="avatar-wrapper">
-                                        <img src={property.ownerImage} alt={property.ownerName || 'Owner'} />
+                                        <img
+                                            src={
+                                                property.ownerImage ||
+                                                `https://ui-avatars.com/api/?name=${encodeURIComponent(property.ownerName || 'Owner')}&background=0f172a&color=ffffff&size=128`
+                                            }
+                                            alt={property.ownerName || 'Owner'}
+                                        />
                                         <span className="online-indicator"></span>
                                     </div>
                                     <div className="owner-details">

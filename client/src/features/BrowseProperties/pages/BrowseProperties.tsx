@@ -8,7 +8,12 @@ import Footer from '../../../components/global/footer';
 import PropertyCard from '../components/PropertyCard';
 import SearchHero from '../components/SearchHero';
 import PropertyDetailModal from '../components/PropertyDetailedModal';
-import { propertyService, type PropertyResponse } from '../../../services/property.service';
+import {
+    propertyService,
+    type PropertyResponse,
+    type PropertyQueryParams,
+    resolveLandlordUserIdFromPropertyResponse,
+} from '../../../services/property.service';
 import savedPropertiesService from '../../../services/saved-properties.service';
 import { authService } from '../../../services/auth.service';
 
@@ -77,7 +82,7 @@ export const mapPropertyToUI = (property: PropertyResponse): BrowsePropertyUI =>
 
     return {
         id: property.id,
-        ownerId: property.landlordId,
+        ownerId: resolveLandlordUserIdFromPropertyResponse(property),
         title: property.title,
         address: property.address,
         price: property.monthlyPrice,
@@ -360,8 +365,8 @@ const BrowseProperties: React.FC = () => {
                                     status: 'AVAILABLE',
                                     page: 1,
                                     limit: 60,
-                                    ...filters
-                                } as any);
+                                    ...filters,
+                                } as PropertyQueryParams);
                 
                                 const mapped = response.data.map(mapPropertyToUI);
                                 setProperties(mapped);

@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { 
     X, ChevronRight, ChevronLeft, ShieldCheck, Pencil, 
     Landmark, Zap, Ban, User, DollarSign, Cpu, Clock, Globe, 
-    Fingerprint, CheckCircle2, FileText, Scale, MoreVertical,
-    Download, Share2, MessageSquare, History
+    Fingerprint, CheckCircle2
 } from 'lucide-react';
 import { type LeaseContract } from '../pages/Contract';
 import SignatureModal from './SignatureModal';
@@ -22,7 +21,6 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(null);
     const [isFinalized, setIsFinalized] = useState(false);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [summary, setSummary] = useState<VerificationSummary | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const maintenanceResponsibilities = contract.maintenanceResponsibilities ?? [];

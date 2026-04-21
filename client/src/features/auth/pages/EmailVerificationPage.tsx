@@ -78,10 +78,7 @@ const EmailVerificationPage: React.FC = () => {
                 // Wakes other tabs only (StorageEvent does not fire in this tab).
                 localStorage.setItem('WAKE_UP_TAB_1_STEP_3', Date.now().toString());
 
-                navigate(
-                    { pathname: '/verify-email', search: '', state: location.state },
-                    { replace: true }
-                );
+                navigate('/verify-email', { replace: true, state: location.state });
             } catch (err) {
                 if (cancelled) return;
 
@@ -96,10 +93,7 @@ const EmailVerificationPage: React.FC = () => {
                         if (user.emailVerified) {
                             setVerifyPhase('success');
                             localStorage.setItem('WAKE_UP_TAB_1_STEP_3', Date.now().toString());
-                            navigate(
-                                { pathname: '/verify-email', search: '', state: location.state },
-                                { replace: true }
-                            );
+                            navigate('/verify-email', { replace: true, state: location.state });
                             return;
                         }
                     } catch {

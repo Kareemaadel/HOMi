@@ -8,10 +8,11 @@ import { FiPlus, FiHome } from 'react-icons/fi'; // Icons for the button
 import propertyService from '../../../services/property.service';
 import authService from '../../../services/auth.service';
 import './MyProperties.css';
+import type { LandlordPropertyRow } from '../components/DetailedPropertyCard';
 
 const MyProperties = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<LandlordPropertyRow[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [refreshKey, setRefreshKey] = useState(0);
@@ -45,8 +46,8 @@ const MyProperties = () => {
               yield: "5.0", // Placeholder for now
               occupancyRate: prop.status === 'Rented' ? 100 : 0,
               images: prop.images || [],
-                amenities: (prop.amenities || []).map((amenity: any) => amenity.name),
-                houseRules: (prop.houseRules || []).map((rule: any) => rule.name),
+                amenities: (prop.amenities || []).map((amenity) => amenity.name),
+                houseRules: (prop.houseRules || []).map((rule) => rule.name),
               onUpdate: () => setRefreshKey(prev => prev + 1)
            }));
            setProperties(mappedProperties);

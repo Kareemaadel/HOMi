@@ -1,4 +1,3 @@
-import React from 'react';
 import { FaSearch, FaUserFriends, FaPlusCircle, FaCalendarCheck } from 'react-icons/fa';
 import './QuickActions.css';
 

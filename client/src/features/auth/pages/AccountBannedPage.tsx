@@ -14,11 +14,13 @@ const AccountBannedPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const state = (location.state || {}) as BannedState;
-    const [now, setNow] = useState(Date.now());
+    const [now, setNow] = useState(0);
 
     useEffect(() => {
         if (state.isUnlimited) return;
-        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        const tick = () => setNow(Date.now());
+        tick();
+        const timer = window.setInterval(tick, 1000);
         return () => window.clearInterval(timer);
     }, [state.isUnlimited]);
 

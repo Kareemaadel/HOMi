@@ -73,7 +73,8 @@ const Header = () => {
 
   // Close mobile menu when route changes
   useEffect(() => {
-    setIsMobileMenuOpen(false);
+    const timer = window.setTimeout(() => setIsMobileMenuOpen(false), 0);
+    return () => window.clearTimeout(timer);
   }, [location.pathname]);
 
   // Immediately route correctly for "How It Works"

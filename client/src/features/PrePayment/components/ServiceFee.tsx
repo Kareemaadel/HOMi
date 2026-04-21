@@ -1,6 +1,5 @@
 // Combined into two files logically, but keeping logic separate as requested
 import React from 'react';
-import { FaInfoCircle } from 'react-icons/fa';
 
 const ServiceFee: React.FC<{ fee: number }> = ({ fee }) => (
     <div className="premium-fee-row">

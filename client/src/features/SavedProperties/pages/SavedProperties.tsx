@@ -6,7 +6,7 @@ import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import PropertyCard from '../../BrowseProperties/components/PropertyCard';
 import PropertyDetailModal from '../../BrowseProperties/components/PropertyDetailedModal';
-import type { PropertyResponse } from '../../../services/property.service';
+import { resolveLandlordUserIdFromPropertyResponse, type PropertyResponse } from '../../../services/property.service';
 import savedPropertiesService from '../../../services/saved-properties.service';
 
 import './SavedProperties.css';
@@ -72,7 +72,7 @@ const mapPropertyToUI = (property: PropertyResponse): SavedPropertyUI => {
 
     return {
         id: property.id,
-        ownerId: property.landlordId,
+        ownerId: resolveLandlordUserIdFromPropertyResponse(property),
         title: property.title,
         address: property.address,
         price: property.monthlyPrice,

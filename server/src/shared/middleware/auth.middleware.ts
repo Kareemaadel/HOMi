@@ -17,7 +17,7 @@ declare global {
 /**
  * Authentication Error Response
  */
-interface AuthErrorResponse {
+export interface AuthErrorResponse {
     success: false;
     message: string;
     code: string;

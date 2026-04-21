@@ -84,7 +84,7 @@ const Notifications: React.FC = () => {
             id: `contract-${contract.id}`,
             type: 'payment',
             title: contract.status === 'ACTIVE' ? 'Lease Active' : `Contract ${contract.status}`,
-            desc: `${propertyTitle} • Payment ${contract.paymentStatus}`,
+            desc: `${propertyTitle} • ${contract.status === 'PENDING_PAYMENT' ? 'Payment pending' : `Contract ${contract.status.replace(/_/g, ' ')}`}`,
             time: relativeTime(contract.createdAt),
             unread: contract.status === 'PENDING_LANDLORD' || contract.status === 'PENDING_TENANT',
             createdAt: contract.createdAt,

@@ -349,7 +349,6 @@ const SentRequests: React.FC = () => {
             {isModalOpen && selectedRequest && (
                 <PropertyDetailModal
                     property={mapRequestToModalProperty(selectedRequest)}
-                    isOpen={isModalOpen}
                     onClose={handleModalClose}
                     isSentRequestView={true}
                     onCancelRequest={handleCancelRequest}

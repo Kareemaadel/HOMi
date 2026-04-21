@@ -512,8 +512,7 @@ class PropertyService {
             if (input.type !== undefined) updateData.type = input.type;
             if (input.furnishing !== undefined) updateData.furnishing = input.furnishing;
             if (input.status !== undefined) {
-                const allowedLandlordStatuses = [PropertyStatus.DRAFT, PropertyStatus.AVAILABLE];
-                if (!allowedLandlordStatuses.includes(input.status)) {
+                if (input.status !== PropertyStatus.DRAFT && input.status !== PropertyStatus.AVAILABLE) {
                     throw new PropertyError(
                         'Landlords can only set status to DRAFT or AVAILABLE.',
                         400,

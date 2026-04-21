@@ -2,8 +2,38 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, SlidersHorizontal, Search, ArrowRight } from 'lucide-react';
 import PropCard, { type Property } from '../components/PropCard';
-import PropertyDetailedModal from '../../BrowseProperties/components/PropertyDetailedModal';
+import PropertyDetailedModal, {
+    type PropertyDetailModalProperty,
+} from '../../BrowseProperties/components/PropertyDetailedModal';
 import './GuestSearch.css';
+
+const mapGuestPropertyToModal = (p: Property): PropertyDetailModalProperty => ({
+    id: p.id,
+    title: p.title,
+    address: p.address ?? p.location,
+    price: p.price,
+    securityDeposit: 0,
+    image: p.image,
+    allImages: [p.image],
+    beds: p.beds,
+    baths: p.baths,
+    sqft: p.sqft,
+    ownerName: 'Host',
+    ownerImage: p.hostImg,
+    ownerVerified: false,
+    locationLat: null,
+    locationLng: null,
+    availabilityDateISO: null,
+    listedAtISO: new Date().toISOString(),
+    maintenanceResponsibilities: [],
+    petsAllowed: Boolean(p.tags?.some((t) => t.toLowerCase().includes('pet'))),
+    targetTenant: 'Any Tenant',
+    furnishing: 'Unfurnished',
+    availableDate: 'Not specified',
+    description: '',
+    tags: p.tags ?? [],
+    rating: p.rating,
+});
 
 const GuestSearch: React.FC = () => {
     const navigate = useNavigate();
@@ -136,10 +166,10 @@ const GuestSearch: React.FC = () => {
             </main>
 
             {selectedProperty && (
-                <PropertyDetailedModal 
-                    property={selectedProperty} 
-                    onClose={() => setSelectedProperty(null)} 
-                    isGuest={true} /* <--- Added this to trigger guest behavior */
+                <PropertyDetailedModal
+                    property={mapGuestPropertyToModal(selectedProperty)}
+                    onClose={() => setSelectedProperty(null)}
+                    isGuest={true}
                 />
             )}
         </div>

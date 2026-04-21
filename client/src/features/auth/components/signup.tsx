@@ -54,6 +54,7 @@ const SignUp: React.FC = () => {
     }
 
     // Must match the backend RegisterSchema password regex exactly
+    // eslint-disable-next-line no-useless-escape -- mirrors server Joi pattern literally
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/]).{8,}$/;
     if (!passwordRegex.test(formData.password)) {
       setFormError(

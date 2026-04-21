@@ -59,7 +59,28 @@ class AdminService {
     /**
      * Get pending properties with landlord and doc details
      */
-    async getPendingProperties() {
+    async getPendingProperties(): Promise<
+        Array<{
+            thumbnailUrl: string | null;
+            id: string;
+            title: string;
+            description: string;
+            monthlyPrice: number;
+            address: string;
+            type: string;
+            furnishing: string;
+            status: string;
+            createdAt: Date;
+            landlord: {
+                id: string;
+                email: string;
+                firstName: string | undefined;
+                lastName: string | undefined;
+                phone: string | null | undefined;
+            } | null;
+            ownershipDocs: Array<{ id: string; documentUrl: string }>;
+        }>
+    > {
         const properties = await Property.findAll({
             where: { status: PropertyStatus.PENDING_APPROVAL },
             include: [
@@ -97,24 +118,29 @@ class AdminService {
                 (property as any).images?.find((img: any) => img.is_main)?.image_url ||
                 (property as any).images?.[0]?.image_url ||
                 null,
-            id: property.id,
+            id: String(property.id),
             title: property.title,
             description: property.description,
             monthlyPrice: Number(property.monthly_price ?? 0),
             address: property.address,
-            type: property.type,
-            furnishing: property.furnishing,
-            status: property.status,
-            createdAt: property.created_at,
-            landlord: property.landlord ? {
-                id: property.landlord.id,
-                email: property.landlord.email,
-                firstName: property.landlord.profile?.first_name,
-                lastName: property.landlord.profile?.last_name,
-                phone: property.landlord.profile?.phone_number,
-            } : null,
+            type: property.type ?? '',
+            furnishing: String(property.furnishing ?? ''),
+            status: String(property.status),
+            createdAt:
+                property.created_at instanceof Date
+                    ? property.created_at
+                    : new Date(String(property.created_at)),
+            landlord: property.landlord
+                ? {
+                      id: String(property.landlord.id),
+                      email: property.landlord.email,
+                      firstName: property.landlord.profile?.first_name,
+                      lastName: property.landlord.profile?.last_name,
+                      phone: property.landlord.profile?.phone_number,
+                  }
+                : null,
             ownershipDocs: (property as any).ownershipDocs?.map((doc: any) => ({
-                id: doc.id,
+                id: String(doc.id),
                 documentUrl: doc.document_url,
             })) || [],
         }));

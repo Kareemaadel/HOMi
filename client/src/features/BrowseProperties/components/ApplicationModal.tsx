@@ -59,7 +59,7 @@ const livingSituationOptions: { label: string; value: LivingSituation }[] = [
     { label: 'Students', value: 'STUDENTS' },
 ];
 
-interface PrefillData {
+export interface PrefillData {
     moveInDate:      string;
     duration:        RentalDuration;
     occupants:       number;
@@ -186,10 +186,11 @@ const ApplicationModal = ({ property, onClose, onBack, isReadOnly = false, prefi
             }
 
             setIsSubmitted(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const ax = err as { response?: { data?: { message?: string; error?: string } } };
             const apiMessage: string =
-                err?.response?.data?.message ||
-                err?.response?.data?.error   ||
+                ax.response?.data?.message ||
+                ax.response?.data?.error ||
                 'Something went wrong. Please try again.';
             setSubmitError(apiMessage);
         } finally {

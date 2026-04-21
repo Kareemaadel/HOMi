@@ -36,7 +36,8 @@ const GuestNavbar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setMobileMenuOpen(false);
+    const timer = window.setTimeout(() => setMobileMenuOpen(false), 0);
+    return () => window.clearTimeout(timer);
   }, [location.pathname]);
 
   return (

@@ -1,4 +1,3 @@
-import React from 'react';
 import { FaRobot, FaCheckCircle, FaStar } from 'react-icons/fa';
 import './tenantAI.css';
 

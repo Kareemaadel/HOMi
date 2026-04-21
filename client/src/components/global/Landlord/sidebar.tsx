@@ -4,7 +4,6 @@ import {
   FaHome, FaBuilding,
   FaTools, FaCreditCard, FaEnvelope,
   FaSignOutAlt,
-  FaCog,
   FaInbox,
   FaSignature
 } from 'react-icons/fa';

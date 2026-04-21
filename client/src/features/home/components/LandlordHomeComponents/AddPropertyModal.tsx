@@ -24,7 +24,7 @@ import authService from '../../../../services/auth.service';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -45,15 +45,15 @@ interface AddPropertyModalProps {
 const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
   const map = useMap();
   useEffect(() => {
-    // @ts-ignore
+    // @ts-expect-error — leaflet-control-geocoder augments L.Control at runtime
     const geocoder = L.Control.Geocoder.nominatim();
-    // @ts-ignore
+    // @ts-expect-error — geocoder control factory is not in @types/leaflet
     const control = L.Control.geocoder({
       geocoder,
       defaultMarkGeocode: false,
       placeholder: "Search in Egypt...",
     })
-      .on('markgeocode', (e: any) => {
+      .on('markgeocode', (e: { geocode: { center: L.LatLng } }) => {
         const { center } = e.geocode;
         if (EGYPT_BOUNDS.contains(center)) {
           map.setView(center, 16);
@@ -325,7 +325,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
 
   const toggleChip = (
     value: string,
-    selected: string[],
+    _selected: string[],
     setter: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     setter((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
@@ -447,7 +447,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     try {
       const address = `${streetName}, ${area}, ${city}, Egypt`;
 
-      const createResult = await propertyService.createProperty({
+      await propertyService.createProperty({
         title: title.trim(),
         description: aboutProperty.trim(),
         monthly_price: parsedMonthlyPrice,
@@ -485,9 +485,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
       setLoading(false);
       setIsSuccess(true);
       triggerConfetti();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setLoading(false);
-      setSubmitError(error?.response?.data?.message || 'Failed to publish property. Please try again.');
+      const ex = error as { response?: { data?: { message?: string } } };
+      setSubmitError(ex.response?.data?.message || 'Failed to publish property. Please try again.');
     }
   };
 

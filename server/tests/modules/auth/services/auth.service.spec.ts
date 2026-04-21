@@ -88,7 +88,11 @@ describe('AuthService', () => {
         it('should register user successfully', async () => {
             vi.mocked(User.findOne).mockResolvedValue(null);
             vi.mocked(Profile.findOne).mockResolvedValue(null);
-            vi.mocked(User.create).mockResolvedValue({ id: 'u1' } as any);
+            vi.mocked(User.create).mockResolvedValue({
+                id: 'u1',
+                role: 'TENANT',
+                email: 'test@example.com',
+            } as any);
             vi.mocked(Profile.create).mockResolvedValue({ id: 'p1' } as any);
 
             const res = await authService.register(regInput);

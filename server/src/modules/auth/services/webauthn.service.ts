@@ -238,7 +238,7 @@ export class WebAuthnService {
         return authService.loginWithPasskey(user);
     }
 
-    async listPasskeys(userId: string) {
+    async listPasskeys(userId: string): Promise<Array<{ id: string; credentialId: string; createdAt: Date }>> {
         const rows = await UserPasskey.findAll({
             where: { user_id: userId },
             order: [['created_at', 'ASC']],
