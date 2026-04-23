@@ -64,9 +64,6 @@ const MaintenanceSideBar = () => {
                     <li><a href="/maintenance-home" className={location.pathname === "/maintenance-home" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
                     <li><a href="/my-jobs" className={location.pathname === "/my-jobs" ? "active" : ""}><FaTools /> <span>My Jobs</span></a></li>
                     <li><a href="/available-jobs" className={location.pathname === "/available-jobs" ? "active" : ""}><FaSearch /> <span>Available Jobs</span></a></li>
-
-                    <div className="nav-divider">Management</div>
-
                     <li><a href="/earnings" className={location.pathname === "/earnings" ? "active" : ""}><FaCreditCard /> <span>Earnings</span></a></li>
                     <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages {hasMessagingUnread ? <em className="notif-dot" aria-hidden /> : null}</span></a></li>
                 </ul>

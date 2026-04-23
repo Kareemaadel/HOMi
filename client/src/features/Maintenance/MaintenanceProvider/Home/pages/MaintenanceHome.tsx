@@ -85,7 +85,9 @@ const MaintenanceHome: React.FC = () => {
                                                 <div className="job-info">
                                                     <h4>Leaking sink</h4>
                                                     <div className="job-meta">
-                                                        <span><FaMapMarkerAlt /> 2km away</span>
+                                                        <span><FaMapMarkerAlt /> Cairo (2km away)</span>
+                                                        <span>Plumbing</span>
+                                                        <span>Oct 24, 2023</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -100,7 +102,9 @@ const MaintenanceHome: React.FC = () => {
                                                 <div className="job-info">
                                                     <h4>Electrical issue</h4>
                                                     <div className="job-meta">
-                                                        <span><FaMapMarkerAlt /> 5km away</span>
+                                                        <span><FaMapMarkerAlt /> Giza (5km away)</span>
+                                                        <span>Electrical</span>
+                                                        <span>Oct 23, 2023</span>
                                                         <span style={{ color: '#ef4444', fontWeight: 600 }}>Urgent</span>
                                                     </div>
                                                 </div>
@@ -125,12 +129,15 @@ const MaintenanceHome: React.FC = () => {
                                                 <div className="job-info">
                                                     <h4>Kitchen repair</h4>
                                                     <div className="job-meta">
-                                                        <span>Assigned today</span>
+                                                        <span><FaMapMarkerAlt /> Maadi (3km away)</span>
+                                                        <span>Appliance</span>
+                                                        <span>Oct 22, 2023</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="job-action">
                                                 <span className="status-badge in-progress">In Progress</span>
+                                                <span className="price" style={{ marginLeft: '10px' }}>$80</span>
                                             </div>
                                         </div>
 
@@ -140,12 +147,15 @@ const MaintenanceHome: React.FC = () => {
                                                 <div className="job-info">
                                                     <h4>Bathroom fix</h4>
                                                     <div className="job-meta">
-                                                        <span>Scheduled</span>
+                                                        <span><FaMapMarkerAlt /> Nasr City (8km away)</span>
+                                                        <span>Plumbing</span>
+                                                        <span>Oct 21, 2023</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="job-action">
                                                 <span className="status-badge scheduled">Tomorrow</span>
+                                                <span className="price" style={{ marginLeft: '10px' }}>$120</span>
                                             </div>
                                         </div>
                                     </div>
