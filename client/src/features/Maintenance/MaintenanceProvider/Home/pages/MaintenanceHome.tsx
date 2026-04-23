@@ -6,7 +6,7 @@ import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
 import {
     FaTools, FaCheckCircle, FaDollarSign, FaSearch,
     FaMapMarkerAlt, FaWrench, FaBolt, FaChevronRight,
-    FaBell, FaClipboardCheck, FaCreditCard
+    FaBell, FaClipboardCheck, FaCreditCard, FaStar, FaStarHalfAlt
 } from 'react-icons/fa';
 import './MaintenanceHome.css';
 
@@ -24,16 +24,12 @@ const MaintenanceHome: React.FC = () => {
                     <div className="maintenance-dashboard-container">
 
                         {/* Welcome Section */}
-                        <section className="maintenance-welcome-section">
-                            <div className="maintenance-welcome-text">
-                                <h1>Good Morning, Ahmed</h1>
+                        <header className="welcome-section">
+                            <div className="welcome-text">
+                                <h1>Good Morning, <span className="highlight">Ahmed!</span></h1>
                                 <p>You have 3 new job requests today</p>
                             </div>
-                            <div className="maintenance-welcome-image">
-                                {/* A placeholder for an illustration, using an icon instead */}
-                                <FaTools style={{ fontSize: '100px', opacity: 0.8 }} />
-                            </div>
-                        </section>
+                        </header>
 
                         {/* Quick Stats Cards */}
                         <section className="stats-grid">
@@ -117,7 +113,7 @@ const MaintenanceHome: React.FC = () => {
                                 </div>
 
                                 {/* Active Jobs Preview */}
-                                <div className="section-card">
+                                <div className="Active-jobs-section-card">
                                     <div className="section-header">
                                         <h2>Active Jobs</h2>
                                     </div>
@@ -214,6 +210,31 @@ const MaintenanceHome: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Rating Card */}
+                                <div className="rating-premium-card">
+                                    <div className="rating-header">
+                                        <h3>Your Rating</h3>
+                                        <div className="rating-score-badge">Top Rated</div>
+                                    </div>
+                                    <div className="rating-body">
+                                        <div className="rating-big-score">
+                                            <span>4.8</span>
+                                            <span className="rating-max">/ 5</span>
+                                        </div>
+                                        <div className="rating-stars">
+                                            <FaStar className="star-filled" />
+                                            <FaStar className="star-filled" />
+                                            <FaStar className="star-filled" />
+                                            <FaStar className="star-filled" />
+                                            <FaStarHalfAlt className="star-filled" />
+                                        </div>
+                                        <p className="rating-text">Based on 45 customer reviews.</p>
+                                    </div>
+                                    <button className="view-reviews-btn">
+                                        View All Reviews <FaChevronRight />
+                                    </button>
                                 </div>
 
                             </div>
