@@ -79,14 +79,19 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
 const JobRequests: React.FC = () => {
     const [filter, setFilter] = useState('All');
 
+    // Toggle this to false to easily view the empty state
+    const hasData = false;
+
     const handleViewDetails = (id: string) => {
         console.log(`Viewing details for job request: ${id}`);
         // In a real app, this would navigate to a details page or open a modal
     };
 
+    const data = hasData ? MOCK_JOB_REQUESTS : [];
+    
     const filteredRequests = filter === 'All'
-        ? MOCK_JOB_REQUESTS
-        : MOCK_JOB_REQUESTS.filter(req => req.urgency === filter);
+        ? data
+        : data.filter(req => req.urgency === filter);
 
     return (
         <div className="maintenance-job-requests-page">
@@ -122,25 +127,25 @@ const JobRequests: React.FC = () => {
 
                     <div className="job-requests-summary">
                         <div className="summary-card">
-                            <div className="summary-value">{MOCK_JOB_REQUESTS.length}</div>
+                            <div className="summary-value">{data.length}</div>
                             <div className="summary-label">Total Requests</div>
                         </div>
                         <div className="summary-card">
-                            <div className="summary-value critical">{MOCK_JOB_REQUESTS.filter(r => r.urgency === 'Critical').length}</div>
+                            <div className="summary-value critical">{data.filter(r => r.urgency === 'Critical').length}</div>
                             <div className="summary-label">Critical</div>
                         </div>
                         <div className="summary-card">
-                            <div className="summary-value high">{MOCK_JOB_REQUESTS.filter(r => r.urgency === 'High').length}</div>
+                            <div className="summary-value high">{data.filter(r => r.urgency === 'High').length}</div>
                             <div className="summary-label">High Priority</div>
                         </div>
                         <div className="summary-card">
-                            <div className="summary-value active">4</div>
+                            <div className="summary-value active">{hasData ? 4 : 0}</div>
                             <div className="summary-label">Active Jobs</div>
                         </div>
                     </div>
 
                     <div className="job-requests-grid">
-                        {filteredRequests.length > 0 ? (
+                        {hasData && filteredRequests.length > 0 ? (
                             filteredRequests.map(request => (
                                 <JobRequestCard
                                     key={request.id}
