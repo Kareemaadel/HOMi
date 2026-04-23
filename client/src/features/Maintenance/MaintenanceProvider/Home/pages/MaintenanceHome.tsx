@@ -12,7 +12,7 @@ import './MaintenanceHome.css';
 
 const MaintenanceHome: React.FC = () => {
     const navigate = useNavigate();
-    const hasData = false; // Toggle this to test empty states
+    const hasData = true; // Toggle this to test empty states
 
     return (
         <div className="maintenance-home-layout">
@@ -254,7 +254,6 @@ const MaintenanceHome: React.FC = () => {
                                 <div className="rating-premium-card">
                                     <div className="rating-header">
                                         <h3>Your Rating</h3>
-                                        {hasData && <div className="rating-score-badge">Top Rated</div>}
                                     </div>
                                     <div className="rating-body">
                                         <div className="rating-big-score">

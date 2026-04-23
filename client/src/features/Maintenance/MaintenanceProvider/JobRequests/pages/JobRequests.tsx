@@ -4,6 +4,7 @@ import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
 import JobRequestCard from '../components/JobRequestCard';
 import type { JobRequestCardProps } from '../components/JobRequestCard';
+import DetailedMaintenanceModal from '../components/DetailedMaintenanceModal';
 import './JobRequests.css';
 
 // Mock Data
@@ -78,13 +79,33 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
 
 const JobRequests: React.FC = () => {
     const [filter, setFilter] = useState('All');
+    const [selectedJob, setSelectedJob] = useState<any | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Toggle this to false to easily view the empty state
-    const hasData = false;
+    const hasData = true;
 
     const handleViewDetails = (id: string) => {
-        console.log(`Viewing details for job request: ${id}`);
-        // In a real app, this would navigate to a details page or open a modal
+        const job = MOCK_JOB_REQUESTS.find(req => req.id === id);
+        if (job) {
+            // Mapping job props to match modal expected object
+            setSelectedJob({
+                ...job,
+                datePosted: job.dateRequested,
+                deadline: '48 hours' // Mock deadline
+            });
+            setIsModalOpen(true);
+        }
+    };
+
+    const handleAcceptJob = (id: string, scheduleTime: string) => {
+        console.log(`Job ${id} accepted and scheduled for ${scheduleTime}`);
+        // Logic to update job status would go here
+    };
+
+    const handleIgnoreJob = (id: string) => {
+        console.log(`Job ${id} ignored`);
+        setIsModalOpen(false);
     };
 
     const data = hasData ? MOCK_JOB_REQUESTS : [];
@@ -167,9 +188,18 @@ const JobRequests: React.FC = () => {
                 </main>
             </div>
 
+            <DetailedMaintenanceModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                request={selectedJob}
+                onAccept={handleAcceptJob}
+                onIgnore={handleIgnoreJob}
+            />
+
             <Footer />
         </div>
     );
 };
 
 export default JobRequests;
+
