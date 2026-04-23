@@ -47,6 +47,8 @@ import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
 import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
 import MaintenanceHome from "./features/Maintenance/MaintenanceProvider/Home/pages/MaintenanceHome";
 import JobRequests from "./features/Maintenance/MaintenanceProvider/JobRequests/pages/JobRequests";
+import MyJobs from "./features/Maintenance/MaintenanceProvider/MyJobs/pages/MyJobs";
+
 function App() {
   return (
     <BrowserRouter>
@@ -90,6 +92,7 @@ function App() {
         {/* Maintenance Routes */}
         <Route path="/maintenance-home" element={<MaintenanceHome />} />
         <Route path="/maintenance-requests" element={<JobRequests />} />
+        <Route path="/my-jobs" element={<MyJobs />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
