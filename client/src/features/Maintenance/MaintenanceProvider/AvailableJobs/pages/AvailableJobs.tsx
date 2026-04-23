@@ -3,6 +3,7 @@ import Header from '../../../../../components/global/header';
 import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
 import AvailableJobCard from '../components/AvailableJobCard';
+import AvailableJobModal from '../components/AvailableJobModal';
 import './AvailableJobs.css';
 import {
     FaSearch, FaFilter, FaCompass, FaMapMarkerAlt,
@@ -27,7 +28,6 @@ const MOCK_AVAILABLE_JOBS = [
         requesterName: 'Kareem Adel',
         propertyLocation: 'Sheikh Zayed, Giza',
         price: 450,
-        dateRequested: 'Oct 23, 2023', // Testing variety
         datePublished: '1 hour ago',
         urgency: 'High' as const
     },
@@ -77,6 +77,8 @@ const AvailableJobs: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [category, setCategory] = useState('All');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [selectedJob, setSelectedJob] = useState<any | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const filteredJobs = MOCK_AVAILABLE_JOBS.filter(job => {
         const matchesSearch = job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,6 +86,19 @@ const AvailableJobs: React.FC = () => {
         const matchesCategory = category === 'All' || job.issueType.includes(category);
         return matchesSearch && matchesCategory;
     });
+
+    const handleOpenModal = (id: string) => {
+        const job = MOCK_AVAILABLE_JOBS.find(j => j.id === id);
+        if (job) {
+            setSelectedJob(job);
+            setIsModalOpen(true);
+        }
+    };
+
+    const handleConfirmApply = (id: string) => {
+        alert(`Application for ${id} has been submitted successfully!`);
+        setIsModalOpen(false);
+    };
 
     return (
         <div className="marketplace-layout">
@@ -118,7 +133,6 @@ const AvailableJobs: React.FC = () => {
 
                         <div className="search-bar-premium">
                             <div className="search-input-group">
-
                                 <input
                                     type="text"
                                     placeholder="Search by specialty, location, or keyword..."
@@ -166,7 +180,8 @@ const AvailableJobs: React.FC = () => {
                                     <AvailableJobCard
                                         key={job.id}
                                         {...job}
-                                        onApply={(id) => alert(`Application for ${id} sent!`)}
+                                        onApply={handleOpenModal}
+                                        onViewDetails={handleOpenModal}
                                     />
                                 ))
                             ) : (
@@ -185,10 +200,18 @@ const AvailableJobs: React.FC = () => {
                     </div>
                 </main>
 
+                <AvailableJobModal 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    job={selectedJob}
+                    onConfirmApply={handleConfirmApply}
+                />
+
                 <Footer />
             </div>
         </div>
     );
 };
+
 
 export default AvailableJobs;
