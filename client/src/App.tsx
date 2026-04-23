@@ -45,6 +45,7 @@ import PageNotFound from "./features/PageNotFound/pages/PageNotFound";
 import LandlordPublicProfile from "./features/LandlordPublicProfile/pages/LandlordPublicProfile";
 import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
 import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
+import MaintenanceHome from "./features/Maintenance/MaintenanceProvider/Home/pages/MaintenanceHome";
 function App() {
   return (
     <BrowserRouter>
@@ -87,6 +88,9 @@ function App() {
           path="/maintenance-requests"
           element={<AuthGuard><ComingSoon title="Maintenance Requests" description="Maintenance requests management is coming soon." /></AuthGuard>}
         />
+
+        {/* Maintenance Routes */}
+        <Route path="/maintenance-home" element={<MaintenanceHome />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
