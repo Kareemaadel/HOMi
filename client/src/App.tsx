@@ -49,6 +49,7 @@ import MaintenanceHome from "./features/Maintenance/MaintenanceProvider/Home/pag
 import JobRequests from "./features/Maintenance/MaintenanceProvider/JobRequests/pages/JobRequests";
 import MyJobs from "./features/Maintenance/MaintenanceProvider/MyJobs/pages/MyJobs";
 import AvailableJobs from "./features/Maintenance/MaintenanceProvider/AvailableJobs/pages/AvailableJobs";
+import Earnings from "./features/Maintenance/MaintenanceProvider/Earnings/pages/Earnings";
 
 function App() {
   return (
@@ -95,6 +96,7 @@ function App() {
         <Route path="/maintenance-requests" element={<JobRequests />} />
         <Route path="/my-jobs" element={<MyJobs />} />
         <Route path="/available-jobs" element={<AvailableJobs />} />
+        <Route path="/earnings" element={<Earnings />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
