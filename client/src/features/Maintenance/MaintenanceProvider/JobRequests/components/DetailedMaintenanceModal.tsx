@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './DetailedMaintenanceModal.css';
-import { FaTimes, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUser, FaTag, FaCheckCircle, FaTrashAlt, FaDollarSign } from 'react-icons/fa';
+import { FaTimes, FaCreditCard, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUser, FaTag, FaCheckCircle, FaTrashAlt, FaDollarSign } from 'react-icons/fa';
 
 export interface DetailedMaintenanceModalProps {
     isOpen: boolean;
@@ -16,6 +16,7 @@ export interface DetailedMaintenanceModalProps {
         propertyLocation: string;
         datePosted: string;
         deadline: string;
+        paymentMethod: 'Cash' | 'Instapay' | 'Visa' | 'Vodafone cash';
     } | null;
     onAccept: (id: string, scheduleTime: string) => void;
     onIgnore: (id: string) => void;
@@ -41,7 +42,7 @@ const DetailedMaintenanceModal: React.FC<DetailedMaintenanceModalProps> = ({
         }
         onAccept(request.id, scheduleTime);
         setShowSuccess(true);
-        
+
         // Auto close after 3 seconds
         setTimeout(() => {
             handleResetAndClose();
@@ -121,6 +122,10 @@ const DetailedMaintenanceModal: React.FC<DetailedMaintenanceModalProps> = ({
                                             <label><FaCheckCircle /> Response Deadline</label>
                                             <span className="deadline-text">{request.deadline}</span>
                                         </div>
+                                        <div className="metadata-item">
+                                            <label><FaCreditCard /> Payment Method</label>
+                                            <span className="payment-method-tag">{request.paymentMethod}</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -134,14 +139,14 @@ const DetailedMaintenanceModal: React.FC<DetailedMaintenanceModalProps> = ({
 
                                     {!isAccepted ? (
                                         <div className="modal-action-group">
-                                            <button 
-                                                className="modal-accept-btn" 
+                                            <button
+                                                className="modal-accept-btn"
                                                 onClick={() => setIsAccepted(true)}
                                             >
                                                 Accept Request
                                             </button>
-                                            <button 
-                                                className="modal-ignore-btn" 
+                                            <button
+                                                className="modal-ignore-btn"
                                                 onClick={() => onIgnore(request.id)}
                                             >
                                                 <FaTrashAlt /> Ignore
@@ -152,8 +157,8 @@ const DetailedMaintenanceModal: React.FC<DetailedMaintenanceModalProps> = ({
                                             <label htmlFor="schedule-time">Schedule Service Time</label>
                                             <div className="input-with-icon">
                                                 <FaCalendarAlt className="input-icon" />
-                                                <input 
-                                                    type="datetime-local" 
+                                                <input
+                                                    type="datetime-local"
                                                     id="schedule-time"
                                                     value={scheduleTime}
                                                     onChange={(e) => setScheduleTime(e.target.value)}
@@ -161,7 +166,7 @@ const DetailedMaintenanceModal: React.FC<DetailedMaintenanceModalProps> = ({
                                                 />
                                             </div>
                                             <p className="deadline-hint">Must be before {request.deadline}</p>
-                                            
+
                                             <div className="modal-scheduling-actions">
                                                 <button className="modal-confirm-btn" onClick={handleAccept}>
                                                     Confirm Schedule

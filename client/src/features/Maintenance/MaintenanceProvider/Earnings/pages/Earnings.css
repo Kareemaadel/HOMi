@@ -408,3 +408,86 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Empty States */
+.earnings-empty-card {
+    background: white;
+    border-radius: 28px;
+    border: 2px dashed #e2e8f0;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.25rem;
+    color: #64748b;
+    transition: all 0.3s ease;
+}
+
+.earnings-empty-card:hover {
+    border-color: #cbd5e1;
+    background: #fcfdfe;
+}
+
+.empty-icon-wrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+}
+
+.earnings-empty-card h4 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+}
+
+.earnings-empty-card p {
+    max-width: 400px;
+    line-height: 1.6;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.stats-empty {
+    min-height: 250px;
+}
+
+.table-empty {
+    margin-top: 1rem;
+}
+
+.full-tab-empty {
+    min-height: 400px;
+}
+
+.methods-empty {
+    padding: 5rem 2rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.txn-code {
+    background: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-family: 'SF Mono', 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    color: #475569;
+}

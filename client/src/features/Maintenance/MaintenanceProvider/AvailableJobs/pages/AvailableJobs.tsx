@@ -19,7 +19,8 @@ const MOCK_AVAILABLE_JOBS = [
         propertyLocation: 'Zamalek, Cairo',
         price: 1500,
         datePublished: '30 mins ago',
-        urgency: 'Medium' as const
+        urgency: 'Medium' as const,
+        paymentMethod: 'Cash'
     },
     {
         id: 'pub-202',
@@ -29,7 +30,8 @@ const MOCK_AVAILABLE_JOBS = [
         propertyLocation: 'Sheikh Zayed, Giza',
         price: 450,
         datePublished: '1 hour ago',
-        urgency: 'High' as const
+        urgency: 'High' as const,
+        paymentMethod: 'Instapay'
     },
     {
         id: 'pub-203',
@@ -39,7 +41,8 @@ const MOCK_AVAILABLE_JOBS = [
         propertyLocation: 'New Cairo, Egypt',
         price: 2200,
         datePublished: '3 hours ago',
-        urgency: 'Low' as const
+        urgency: 'Low' as const,
+        paymentMethod: 'Visa'
     },
     {
         id: 'pub-204',
@@ -49,7 +52,8 @@ const MOCK_AVAILABLE_JOBS = [
         propertyLocation: 'Heliopolis, Cairo',
         price: 1800,
         datePublished: '5 hours ago',
-        urgency: 'Critical' as const
+        urgency: 'Critical' as const,
+        paymentMethod: 'Vodafone cash'
     },
     {
         id: 'pub-205',
@@ -59,8 +63,10 @@ const MOCK_AVAILABLE_JOBS = [
         propertyLocation: 'Madinaty',
         price: 3200,
         datePublished: 'Yesterday',
-        urgency: 'Medium' as const
-    },
+        urgency: 'Medium' as const,
+        paymentMethod: 'Cash'
+    }
+,
     {
         id: 'pub-206',
         issueType: 'Flooring',

@@ -18,7 +18,8 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
         propertyLocation: 'Apt 4B, Sunset Boulevard, Cairo',
         urgency: 'Critical',
         price: 1500,
-        dateRequested: 'Oct 24, 2023'
+        dateRequested: 'Oct 24, 2023',
+        paymentMethod: 'Cash'
     },
     {
         id: 'req-002',
@@ -29,7 +30,8 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
         propertyLocation: 'Villa 12, Palm Hills, Giza',
         urgency: 'High',
         price: 800,
-        dateRequested: 'Oct 23, 2023'
+        dateRequested: 'Oct 23, 2023',
+        paymentMethod: 'Visa'
     },
     {
         id: 'req-003',
@@ -40,7 +42,8 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
         propertyLocation: 'Unit 502, Maadi Degla',
         urgency: 'Medium',
         price: 'Pending Estimate',
-        dateRequested: 'Oct 21, 2023'
+        dateRequested: 'Oct 21, 2023',
+        paymentMethod: 'Instapay'
     },
     {
         id: 'req-004',
@@ -51,7 +54,8 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
         propertyLocation: 'Building 5, Zamalek',
         urgency: 'Medium',
         price: 450,
-        dateRequested: 'Oct 20, 2023'
+        dateRequested: 'Oct 20, 2023',
+        paymentMethod: 'Vodafone cash'
     },
     {
         id: 'req-005',
@@ -62,7 +66,8 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
         propertyLocation: 'Apt 12C, New Cairo',
         urgency: 'Low',
         price: 1200,
-        dateRequested: 'Oct 19, 2023'
+        dateRequested: 'Oct 19, 2023',
+        paymentMethod: 'Cash'
     },
     {
         id: 'req-006',
@@ -73,7 +78,8 @@ const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
         propertyLocation: 'Apt 8A, Heliopolis',
         urgency: 'High',
         price: 3500,
-        dateRequested: 'Oct 18, 2023'
+        dateRequested: 'Oct 18, 2023',
+        paymentMethod: 'Visa'
     }
 ];
 

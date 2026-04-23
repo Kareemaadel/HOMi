@@ -3,7 +3,7 @@ import './AvailableJobModal.css';
 import { 
     FaTimes, FaMapMarkerAlt, FaUser, FaTag, FaClock, 
     FaDollarSign, FaExclamationTriangle, FaImage, FaCheckCircle,
-    FaArrowRight
+    FaArrowRight, FaCreditCard
 } from 'react-icons/fa';
 
 interface AvailableJobModalProps {
@@ -18,6 +18,7 @@ interface AvailableJobModalProps {
         price: number | string;
         datePublished: string;
         urgency: 'Low' | 'Medium' | 'High' | 'Critical';
+        paymentMethod: 'Cash' | 'Instapay' | 'Visa' | 'Vodafone cash';
     } | null;
     onConfirmApply: (id: string) => void;
 }
@@ -112,6 +113,10 @@ const AvailableJobModal: React.FC<AvailableJobModalProps> = ({
                                 <div className="data-cell">
                                     <label><FaClock /> Published Date</label>
                                     <p>{job.datePublished}</p>
+                                </div>
+                                <div className="data-cell">
+                                    <label><FaCreditCard /> Payment Method</label>
+                                    <p className="payment-method-tag">{job.paymentMethod}</p>
                                 </div>
                             </div>
 

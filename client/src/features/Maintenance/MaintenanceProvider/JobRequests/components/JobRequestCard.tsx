@@ -11,6 +11,7 @@ export interface JobRequestCardProps {
   urgency: 'Low' | 'Medium' | 'High' | 'Critical';
   price: number | string;
   dateRequested: string;
+  paymentMethod: 'Cash' | 'Instapay' | 'Visa' | 'Vodafone cash';
   onViewDetails?: (id: string) => void;
 }
 
