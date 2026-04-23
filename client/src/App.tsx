@@ -48,6 +48,7 @@ import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
 import MaintenanceHome from "./features/Maintenance/MaintenanceProvider/Home/pages/MaintenanceHome";
 import JobRequests from "./features/Maintenance/MaintenanceProvider/JobRequests/pages/JobRequests";
 import MyJobs from "./features/Maintenance/MaintenanceProvider/MyJobs/pages/MyJobs";
+import AvailableJobs from "./features/Maintenance/MaintenanceProvider/AvailableJobs/pages/AvailableJobs";
 
 function App() {
   return (
@@ -93,6 +94,7 @@ function App() {
         <Route path="/maintenance-home" element={<MaintenanceHome />} />
         <Route path="/maintenance-requests" element={<JobRequests />} />
         <Route path="/my-jobs" element={<MyJobs />} />
+        <Route path="/available-jobs" element={<AvailableJobs />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
