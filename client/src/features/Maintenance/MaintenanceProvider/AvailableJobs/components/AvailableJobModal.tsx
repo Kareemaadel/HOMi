@@ -28,7 +28,43 @@ const AvailableJobModal: React.FC<AvailableJobModalProps> = ({
     job, 
     onConfirmApply 
 }) => {
+    const [showSuccess, setShowSuccess] = React.useState(false);
+
+    // Reset success state when modal opens/closes
+    React.useEffect(() => {
+        if (!isOpen) {
+            setShowSuccess(false);
+        }
+    }, [isOpen]);
+
     if (!isOpen || !job) return null;
+
+    const handleApplyClick = () => {
+        onConfirmApply(job.id);
+        setShowSuccess(true);
+    };
+
+    if (showSuccess) {
+        return (
+            <div className="market-modal-overlay" onClick={onClose}>
+                <div className="market-modal-container success-mode" onClick={e => e.stopPropagation()}>
+                    <div className="modal-success-state">
+                        <div className="success-icon-circle">
+                            <FaCheckCircle />
+                        </div>
+                        <h2>Application Sent!</h2>
+                        <p>Your application for <strong>{job.issueType}</strong> has been submitted successfully.</p>
+                        <div className="success-message-badge">
+                            We'll notify if there's any updates
+                        </div>
+                        <button className="modal-success-close-btn" onClick={onClose}>
+                            Return to Marketplace
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Mock evidence photos
     const mockPhotos = [
@@ -112,7 +148,7 @@ const AvailableJobModal: React.FC<AvailableJobModalProps> = ({
                             </div>
 
                             <div className="modal-side-actions">
-                                <button className="modal-btn-apply" onClick={() => onConfirmApply(job.id)}>
+                                <button className="modal-btn-apply" onClick={handleApplyClick}>
                                     Apply for this Job <FaArrowRight />
                                 </button>
                                 <button className="modal-btn-close" onClick={onClose}>
@@ -126,5 +162,6 @@ const AvailableJobModal: React.FC<AvailableJobModalProps> = ({
         </div>
     );
 };
+
 
 export default AvailableJobModal;

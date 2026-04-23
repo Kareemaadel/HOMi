@@ -96,8 +96,8 @@ const AvailableJobs: React.FC = () => {
     };
 
     const handleConfirmApply = (id: string) => {
-        alert(`Application for ${id} has been submitted successfully!`);
-        setIsModalOpen(false);
+        console.log(`Application for ${id} submitted successfully.`);
+        // Note: Modal state is handled internally to show the success message
     };
 
     return (
