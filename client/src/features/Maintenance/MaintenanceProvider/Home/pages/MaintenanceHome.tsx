@@ -12,6 +12,7 @@ import './MaintenanceHome.css';
 
 const MaintenanceHome: React.FC = () => {
     const navigate = useNavigate();
+    const hasData = false; // Toggle this to test empty states
 
     return (
         <div className="maintenance-home-layout">
@@ -27,7 +28,7 @@ const MaintenanceHome: React.FC = () => {
                         <header className="welcome-section">
                             <div className="welcome-text">
                                 <h1>Good Morning, <span className="highlight">Ahmed!</span></h1>
-                                <p>You have 3 new job requests today</p>
+                                <p>{hasData ? "You have 3 new job requests today" : "No new job requests today"}</p>
                             </div>
                         </header>
 
@@ -36,28 +37,28 @@ const MaintenanceHome: React.FC = () => {
                             <div className="stat-card">
                                 <div className="stat-icon blue"><FaSearch /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">5</h3>
+                                    <h3 className="stat-value">{hasData ? "5" : "0"}</h3>
                                     <p className="stat-label">Available Jobs</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon yellow"><FaWrench /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">2</h3>
+                                    <h3 className="stat-value">{hasData ? "2" : "0"}</h3>
                                     <p className="stat-label">In Progress</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon green"><FaCheckCircle /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">18</h3>
+                                    <h3 className="stat-value">{hasData ? "18" : "0"}</h3>
                                     <p className="stat-label">Completed</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon purple"><FaDollarSign /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">$1200</h3>
+                                    <h3 className="stat-value">{hasData ? "$1200" : "$0"}</h3>
                                     <p className="stat-label">Earnings This Month</p>
                                 </div>
                             </div>
@@ -79,40 +80,49 @@ const MaintenanceHome: React.FC = () => {
                                     </div>
 
                                     <div className="job-list">
-                                        <div className="job-item">
-                                            <div className="job-details">
-                                                <div className="job-icon"><FaTools /></div>
-                                                <div className="job-info">
-                                                    <h4>Leaking sink</h4>
-                                                    <div className="job-meta">
-                                                        <span><FaMapMarkerAlt /> Cairo (2km away)</span>
-                                                        <span>Plumbing</span>
-                                                        <span>Oct 24, 2023</span>
+                                        {hasData ? (
+                                            <>
+                                                <div className="job-item">
+                                                    <div className="job-details">
+                                                        <div className="job-icon"><FaTools /></div>
+                                                        <div className="job-info">
+                                                            <h4>Leaking sink</h4>
+                                                            <div className="job-meta">
+                                                                <span><FaMapMarkerAlt /> Cairo (2km away)</span>
+                                                                <span>Plumbing</span>
+                                                                <span>Oct 24, 2023</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="job-action">
+                                                        <span className="price">$40</span>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className="job-action">
-                                                <span className="price">$40</span>
-                                            </div>
-                                        </div>
 
-                                        <div className="job-item">
-                                            <div className="job-details">
-                                                <div className="job-icon"><FaBolt /></div>
-                                                <div className="job-info">
-                                                    <h4>Electrical issue</h4>
-                                                    <div className="job-meta">
-                                                        <span><FaMapMarkerAlt /> Giza (5km away)</span>
-                                                        <span>Electrical</span>
-                                                        <span>Oct 23, 2023</span>
-                                                        <span style={{ color: '#ef4444', fontWeight: 600 }}>Urgent</span>
+                                                <div className="job-item">
+                                                    <div className="job-details">
+                                                        <div className="job-icon"><FaBolt /></div>
+                                                        <div className="job-info">
+                                                            <h4>Electrical issue</h4>
+                                                            <div className="job-meta">
+                                                                <span><FaMapMarkerAlt /> Giza (5km away)</span>
+                                                                <span>Electrical</span>
+                                                                <span>Oct 23, 2023</span>
+                                                                <span style={{ color: '#ef4444', fontWeight: 600 }}>Urgent</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="job-action">
+                                                        <span className="price">$60</span>
                                                     </div>
                                                 </div>
+                                            </>
+                                        ) : (
+                                            <div className="empty-state-card-mini">
+                                                <div className="empty-icon"><FaSearch /></div>
+                                                <p>No new requests available</p>
                                             </div>
-                                            <div className="job-action">
-                                                <span className="price">$60</span>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -123,41 +133,50 @@ const MaintenanceHome: React.FC = () => {
                                     </div>
 
                                     <div className="job-list">
-                                        <div className="job-item">
-                                            <div className="job-details">
-                                                <div className="job-icon"><FaWrench /></div>
-                                                <div className="job-info">
-                                                    <h4>Kitchen repair</h4>
-                                                    <div className="job-meta">
-                                                        <span><FaMapMarkerAlt /> Maadi (3km away)</span>
-                                                        <span>Appliance</span>
-                                                        <span>Oct 22, 2023</span>
+                                        {hasData ? (
+                                            <>
+                                                <div className="job-item">
+                                                    <div className="job-details">
+                                                        <div className="job-icon"><FaWrench /></div>
+                                                        <div className="job-info">
+                                                            <h4>Kitchen repair</h4>
+                                                            <div className="job-meta">
+                                                                <span><FaMapMarkerAlt /> Maadi (3km away)</span>
+                                                                <span>Appliance</span>
+                                                                <span>Oct 22, 2023</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="job-action">
+                                                        <span className="status-badge in-progress">In Progress</span>
+                                                        <span className="price" style={{ marginLeft: '10px' }}>$80</span>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className="job-action">
-                                                <span className="status-badge in-progress">In Progress</span>
-                                                <span className="price" style={{ marginLeft: '10px' }}>$80</span>
-                                            </div>
-                                        </div>
 
-                                        <div className="job-item">
-                                            <div className="job-details">
-                                                <div className="job-icon"><FaTools /></div>
-                                                <div className="job-info">
-                                                    <h4>Bathroom fix</h4>
-                                                    <div className="job-meta">
-                                                        <span><FaMapMarkerAlt /> Nasr City (8km away)</span>
-                                                        <span>Plumbing</span>
-                                                        <span>Oct 21, 2023</span>
+                                                <div className="job-item">
+                                                    <div className="job-details">
+                                                        <div className="job-icon"><FaTools /></div>
+                                                        <div className="job-info">
+                                                            <h4>Bathroom fix</h4>
+                                                            <div className="job-meta">
+                                                                <span><FaMapMarkerAlt /> Nasr City (8km away)</span>
+                                                                <span>Plumbing</span>
+                                                                <span>Oct 21, 2023</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="job-action">
+                                                        <span className="status-badge scheduled">Tomorrow</span>
+                                                        <span className="price" style={{ marginLeft: '10px' }}>$120</span>
                                                     </div>
                                                 </div>
+                                            </>
+                                        ) : (
+                                            <div className="empty-state-card-mini">
+                                                <div className="empty-icon"><FaTools /></div>
+                                                <p>No active jobs at the moment</p>
                                             </div>
-                                            <div className="job-action">
-                                                <span className="status-badge scheduled">Tomorrow</span>
-                                                <span className="price" style={{ marginLeft: '10px' }}>$120</span>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -178,47 +197,56 @@ const MaintenanceHome: React.FC = () => {
                                     </header>
 
                                     <div className="notif-scroll-area">
-                                        {/* Notification 1 */}
-                                        <div className="notif-card is-unread">
-                                            <div className="icon-orb system">
-                                                <FaClipboardCheck />
-                                            </div>
-                                            <div className="notif-body">
-                                                <div className="notif-meta">
-                                                    <span className="notif-subject">New Job Posted</span>
-                                                    <span className="notif-timestamp">10m ago</span>
+                                        {hasData ? (
+                                            <>
+                                                {/* Notification 1 */}
+                                                <div className="notif-card is-unread">
+                                                    <div className="icon-orb system">
+                                                        <FaClipboardCheck />
+                                                    </div>
+                                                    <div className="notif-body">
+                                                        <div className="notif-meta">
+                                                            <span className="notif-subject">New Job Posted</span>
+                                                            <span className="notif-timestamp">10m ago</span>
+                                                        </div>
+                                                        <p className="notif-text">A new plumbing job is available near you.</p>
+                                                    </div>
                                                 </div>
-                                                <p className="notif-text">A new plumbing job is available near you.</p>
-                                            </div>
-                                        </div>
 
-                                        {/* Notification 2 */}
-                                        <div className="notif-card">
-                                            <div className="icon-orb maintenance">
-                                                <FaWrench />
-                                            </div>
-                                            <div className="notif-body">
-                                                <div className="notif-meta">
-                                                    <span className="notif-subject">Job Assigned</span>
-                                                    <span className="notif-timestamp">2h ago</span>
+                                                {/* Notification 2 */}
+                                                <div className="notif-card">
+                                                    <div className="icon-orb maintenance">
+                                                        <FaWrench />
+                                                    </div>
+                                                    <div className="notif-body">
+                                                        <div className="notif-meta">
+                                                            <span className="notif-subject">Job Assigned</span>
+                                                            <span className="notif-timestamp">2h ago</span>
+                                                        </div>
+                                                        <p className="notif-text">You have been assigned to "Kitchen repair".</p>
+                                                    </div>
                                                 </div>
-                                                <p className="notif-text">You have been assigned to "Kitchen repair".</p>
-                                            </div>
-                                        </div>
 
-                                        {/* Notification 3 */}
-                                        <div className="notif-card">
-                                            <div className="icon-orb payment">
-                                                <FaCreditCard />
-                                            </div>
-                                            <div className="notif-body">
-                                                <div className="notif-meta">
-                                                    <span className="notif-subject">Payment Received</span>
-                                                    <span className="notif-timestamp">1d ago</span>
+                                                {/* Notification 3 */}
+                                                <div className="notif-card">
+                                                    <div className="icon-orb payment">
+                                                        <FaCreditCard />
+                                                    </div>
+                                                    <div className="notif-body">
+                                                        <div className="notif-meta">
+                                                            <span className="notif-subject">Payment Received</span>
+                                                            <span className="notif-timestamp">1d ago</span>
+                                                        </div>
+                                                        <p className="notif-text">Received $120 for "AC maintenance".</p>
+                                                    </div>
                                                 </div>
-                                                <p className="notif-text">Received $120 for "AC maintenance".</p>
+                                            </>
+                                        ) : (
+                                            <div className="empty-state-feed">
+                                                <div className="empty-feed-icon"><FaBell /></div>
+                                                <p>Stay tuned for updates</p>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -226,25 +254,41 @@ const MaintenanceHome: React.FC = () => {
                                 <div className="rating-premium-card">
                                     <div className="rating-header">
                                         <h3>Your Rating</h3>
-                                        <div className="rating-score-badge">Top Rated</div>
+                                        {hasData && <div className="rating-score-badge">Top Rated</div>}
                                     </div>
                                     <div className="rating-body">
                                         <div className="rating-big-score">
-                                            <span>4.8</span>
+                                            <span>{hasData ? "4.8" : "0.0"}</span>
                                             <span className="rating-max">/ 5</span>
                                         </div>
                                         <div className="rating-stars">
-                                            <FaStar className="star-filled" />
-                                            <FaStar className="star-filled" />
-                                            <FaStar className="star-filled" />
-                                            <FaStar className="star-filled" />
-                                            <FaStarHalfAlt className="star-filled" />
+                                            {hasData ? (
+                                                <>
+                                                    <FaStar className="star-filled" />
+                                                    <FaStar className="star-filled" />
+                                                    <FaStar className="star-filled" />
+                                                    <FaStar className="star-filled" />
+                                                    <FaStarHalfAlt className="star-filled" />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FaStar className="star-empty" />
+                                                    <FaStar className="star-empty" />
+                                                    <FaStar className="star-empty" />
+                                                    <FaStar className="star-empty" />
+                                                    <FaStar className="star-empty" />
+                                                </>
+                                            )}
                                         </div>
-                                        <p className="rating-text">Based on 45 customer reviews.</p>
+                                        <p className="rating-text">
+                                            {hasData ? "Based on 45 customer reviews." : "No reviews yet."}
+                                        </p>
                                     </div>
-                                    <button className="view-reviews-btn">
-                                        View All Reviews <FaChevronRight />
-                                    </button>
+                                    {hasData && (
+                                        <button className="view-reviews-btn">
+                                            View All Reviews <FaChevronRight />
+                                        </button>
+                                    )}
                                 </div>
 
                             </div>

@@ -88,7 +88,7 @@ const JobRequests: React.FC = () => {
     };
 
     const data = hasData ? MOCK_JOB_REQUESTS : [];
-    
+
     const filteredRequests = filter === 'All'
         ? data
         : data.filter(req => req.urgency === filter);
@@ -159,7 +159,7 @@ const JobRequests: React.FC = () => {
                                 <h3>No requests found</h3>
                                 <p>There are no job requests matching the selected filter.</p>
                                 <button className="btn-clear-filter" onClick={() => setFilter('All')}>
-                                    Clear Filters
+                                    View Available Jobs
                                 </button>
                             </div>
                         )}

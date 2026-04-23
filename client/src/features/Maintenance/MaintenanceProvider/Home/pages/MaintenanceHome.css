@@ -486,6 +486,10 @@
     color: #eab308;
 }
 
+.star-empty {
+    color: #e5e7eb;
+}
+
 .rating-text {
     margin: 0;
     font-size: 0.875rem;
@@ -511,4 +515,50 @@
 
 .view-reviews-btn:hover {
     background: #e5e7eb;
+}
+
+/* Empty States */
+.empty-state-card-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    background: #f9fafb;
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    gap: 1rem;
+}
+
+.empty-state-card-mini .empty-icon {
+    font-size: 2.5rem;
+    color: #d1d5db;
+}
+
+.empty-state-card-mini p {
+    margin: 0;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.empty-state-feed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    text-align: center;
+    gap: 0.75rem;
+}
+
+.empty-state-feed .empty-feed-icon {
+    font-size: 2rem;
+    color: #e5e7eb;
+}
+
+.empty-state-feed p {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 0.875rem;
 }

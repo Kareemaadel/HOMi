@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-    FaHome, FaTools, FaSearch, FaCreditCard, FaEnvelope, FaSignOutAlt
+    FaHome, FaTools, FaSearch, FaCreditCard, FaEnvelope, FaSignOutAlt, FaInbox
 } from 'react-icons/fa';
 import './MaintenanceSideBar.css';
 import authService from '../../../../services/auth.service';
@@ -64,6 +64,7 @@ const MaintenanceSideBar = () => {
                     <li><a href="/maintenance-home" className={location.pathname === "/maintenance-home" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
                     <li><a href="/my-jobs" className={location.pathname === "/my-jobs" ? "active" : ""}><FaTools /> <span>My Jobs</span></a></li>
                     <li><a href="/available-jobs" className={location.pathname === "/available-jobs" ? "active" : ""}><FaSearch /> <span>Available Jobs</span></a></li>
+                    <li><a href="/maintenance-requests" className={location.pathname === "/maintenance-requests" ? "active" : ""}><FaInbox /> <span>Job Requests</span></a></li>
                     <li><a href="/earnings" className={location.pathname === "/earnings" ? "active" : ""}><FaCreditCard /> <span>Earnings</span></a></li>
                     <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages {hasMessagingUnread ? <em className="notif-dot" aria-hidden /> : null}</span></a></li>
                 </ul>
