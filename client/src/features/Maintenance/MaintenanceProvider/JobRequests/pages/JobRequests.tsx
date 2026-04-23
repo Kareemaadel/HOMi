@@ -194,7 +194,7 @@ const JobRequests: React.FC = () => {
                 </main>
             </div>
 
-            <DetailedMaintenanceModal 
+            <DetailedMaintenanceModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 request={selectedJob}

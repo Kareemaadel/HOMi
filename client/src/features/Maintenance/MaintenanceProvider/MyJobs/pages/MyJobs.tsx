@@ -66,12 +66,17 @@ const MyJobs: React.FC = () => {
     const [selectedJob, setSelectedJob] = useState<any | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    // Global data flag for testing empty states
+    const [hasData, setHasData] = useState(false);
+
+    const data = hasData ? MOCK_MY_JOBS : [];
+
     const filteredJobs = activeTab === 'All'
-        ? MOCK_MY_JOBS
-        : MOCK_MY_JOBS.filter(job => job.status === activeTab);
+        ? data
+        : data.filter(job => job.status === activeTab);
 
     const handleViewJobDetails = (id: string) => {
-        const job = MOCK_MY_JOBS.find(j => j.id === id);
+        const job = data.find(j => j.id === id);
         if (job) {
             setSelectedJob(job);
             setIsModalOpen(true);
@@ -81,24 +86,24 @@ const MyJobs: React.FC = () => {
     return (
         <div className="my-jobs-page-wrapper">
             <MaintenanceSideBar />
-            
+
             <div className="my-jobs-content-area">
                 <Header />
-                
+
                 <main className="my-jobs-main">
                     <div className="my-jobs-header">
                         <div className="header-text">
                             <h1>My Assigned Jobs</h1>
                             <p>Manage your current workload and review history</p>
                         </div>
-                        
+
                         <div className="jobs-summary-pills">
                             <div className="summary-pill blue">
-                                <span className="pill-count">{MOCK_MY_JOBS.filter(j => j.status === 'Scheduled').length}</span>
+                                <span className="pill-count">{data.filter(j => j.status === 'Scheduled').length}</span>
                                 <span className="pill-label">Scheduled</span>
                             </div>
                             <div className="summary-pill yellow">
-                                <span className="pill-count">{MOCK_MY_JOBS.filter(j => j.status === 'In Progress').length}</span>
+                                <span className="pill-count">{data.filter(j => j.status === 'In Progress').length}</span>
                                 <span className="pill-label">Active</span>
                             </div>
                         </div>
@@ -114,9 +119,9 @@ const MyJobs: React.FC = () => {
                                 >
                                     {status}
                                     <span className="tab-count">
-                                        {status === 'All' 
-                                            ? MOCK_MY_JOBS.length 
-                                            : MOCK_MY_JOBS.filter(j => j.status === status).length}
+                                        {status === 'All'
+                                            ? data.length
+                                            : data.filter(j => j.status === status).length}
                                     </span>
                                 </button>
                             ))}
@@ -126,23 +131,32 @@ const MyJobs: React.FC = () => {
                     <div className="my-jobs-grid">
                         {filteredJobs.length > 0 ? (
                             filteredJobs.map(job => (
-                                <JobCard 
-                                    key={job.id} 
-                                    {...job} 
+                                <JobCard
+                                    key={job.id}
+                                    {...job}
                                     onViewDetails={handleViewJobDetails}
                                 />
                             ))
                         ) : (
                             <div className="empty-jobs-state">
-                                <div className="empty-jobs-icon">📁</div>
-                                <h3>No jobs found</h3>
-                                <p>You don't have any jobs in the "{activeTab}" category.</p>
+                                <div className="empty-jobs-icon">{hasData ? '🔍' : '📁'}</div>
+                                <h3>{hasData ? 'No jobs found' : 'Your job list is empty'}</h3>
+                                <p>
+                                    {hasData
+                                        ? `You don't have any jobs in the "${activeTab}" category.`
+                                        : "You haven't been assigned to any jobs yet. Check the Marketplace for available opportunities."}
+                                </p>
+                                {!hasData && (
+                                    <button className="empty-state-action-btn" onClick={() => window.location.href = '/available-jobs'}>
+                                        Browse Marketplace
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
                 </main>
-                
-                <DetailedJobModal 
+
+                <DetailedJobModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     job={selectedJob}
