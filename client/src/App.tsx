@@ -46,6 +46,7 @@ import LandlordPublicProfile from "./features/LandlordPublicProfile/pages/Landlo
 import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
 import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
 import MaintenanceHome from "./features/Maintenance/MaintenanceProvider/Home/pages/MaintenanceHome";
+import JobRequests from "./features/Maintenance/MaintenanceProvider/JobRequests/pages/JobRequests";
 function App() {
   return (
     <BrowserRouter>
@@ -84,13 +85,11 @@ function App() {
         <Route path="/rental-requests" element={<AuthGuard allowedRoles={['LANDLORD']}><RentalRequests /></AuthGuard>} />
         <Route path="/landlord-payment" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordPayment /></AuthGuard>} />
         <Route path="/landlord-contracts" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordContract /></AuthGuard>} />
-        <Route
-          path="/maintenance-requests"
-          element={<AuthGuard><ComingSoon title="Maintenance Requests" description="Maintenance requests management is coming soon." /></AuthGuard>}
-        />
+
 
         {/* Maintenance Routes */}
         <Route path="/maintenance-home" element={<MaintenanceHome />} />
+        <Route path="/maintenance-requests" element={<JobRequests />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
