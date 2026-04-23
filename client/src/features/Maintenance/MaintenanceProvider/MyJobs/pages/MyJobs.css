@@ -8,14 +8,16 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    margin-left: 260px; /* Adjust based on Sidebar width */
-    margin-top: 60px; /* Adjust based on Header height */
+    margin-left: 260px;
+    /* Adjust based on Sidebar width */
+    margin-top: 60px;
+    /* Adjust based on Header height */
 }
 
 .my-jobs-main {
     flex: 1;
     padding: 2.5rem;
-    max-width: 1400px;
+    max-width: 1560px;
     margin: 0 auto;
     width: 100%;
     display: flex;
@@ -73,8 +75,13 @@
     color: #9ca3af;
 }
 
-.summary-pill.blue .pill-count { color: #3b82f6; }
-.summary-pill.yellow .pill-count { color: #eab308; }
+.summary-pill.blue .pill-count {
+    color: #3b82f6;
+}
+
+.summary-pill.yellow .pill-count {
+    color: #eab308;
+}
 
 /* Tabs */
 .tabs-container {

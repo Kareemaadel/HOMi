@@ -4,13 +4,14 @@ import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
 import JobCard from '../components/JobCard';
 import type { JobStatus } from '../components/JobCard';
+import DetailedJobModal from '../components/DetailedJobModal';
 import './MyJobs.css';
 
 const MOCK_MY_JOBS = [
     {
         id: 'job-101',
         issueType: 'Plumbing Repair',
-        description: 'Main kitchen pipe burst. Requires replacement of 2-meter section and pressure testing.',
+        description: 'Main kitchen pipe burst. Requires replacement of 2-meter section and pressure testing. Ensure all seals are waterproof and check for secondary leaks in the drainage system.',
         requesterName: 'Sarah Jenkins',
         requesterRole: 'Tenant' as const,
         propertyLocation: 'Apt 4B, Sunset Boulevard, Cairo',
@@ -23,7 +24,7 @@ const MOCK_MY_JOBS = [
     {
         id: 'job-102',
         issueType: 'Electrical Maintenance',
-        description: 'Periodic inspection of circuit breakers and replacement of faulty switches in common areas.',
+        description: 'Periodic inspection of circuit breakers and replacement of faulty switches in common areas. Test all safety groundings.',
         requesterName: 'Ahmed Hassan',
         requesterRole: 'Landlord' as const,
         propertyLocation: 'Building 12, Maadi Degla',
@@ -36,7 +37,7 @@ const MOCK_MY_JOBS = [
     {
         id: 'job-103',
         issueType: 'AC Service',
-        description: 'Full cleaning and gas refill for 3 split units. Units are making noise and cooling is inefficient.',
+        description: 'Full cleaning and gas refill for 3 split units. Units are making noise and cooling is inefficient. Replace filters if necessary.',
         requesterName: 'Mona Zaki',
         requesterRole: 'Landlord' as const,
         propertyLocation: 'Villa 5, Beverly Hills, Giza',
@@ -49,7 +50,7 @@ const MOCK_MY_JOBS = [
     {
         id: 'job-104',
         issueType: 'Door Lock Repair',
-        description: 'Front door smart lock is not responding to codes. Needs manual bypass and electronic repair.',
+        description: 'Front door smart lock is not responding to codes. Needs manual bypass and electronic repair. Check battery and connectivity.',
         requesterName: 'Omar Tarek',
         requesterRole: 'Tenant' as const,
         propertyLocation: 'Unit 802, Nile Towers',
@@ -62,13 +63,19 @@ const MOCK_MY_JOBS = [
 
 const MyJobs: React.FC = () => {
     const [activeTab, setActiveTab] = useState<JobStatus | 'All'>('All');
+    const [selectedJob, setSelectedJob] = useState<any | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const filteredJobs = activeTab === 'All'
         ? MOCK_MY_JOBS
         : MOCK_MY_JOBS.filter(job => job.status === activeTab);
 
     const handleViewJobDetails = (id: string) => {
-        console.log(`Viewing details for job: ${id}`);
+        const job = MOCK_MY_JOBS.find(j => j.id === id);
+        if (job) {
+            setSelectedJob(job);
+            setIsModalOpen(true);
+        }
     };
 
     return (
@@ -135,6 +142,12 @@ const MyJobs: React.FC = () => {
                     </div>
                 </main>
                 
+                <DetailedJobModal 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    job={selectedJob}
+                />
+
                 <Footer />
             </div>
         </div>
@@ -142,3 +155,4 @@ const MyJobs: React.FC = () => {
 };
 
 export default MyJobs;
+
