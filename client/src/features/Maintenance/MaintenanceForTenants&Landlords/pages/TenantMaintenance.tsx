@@ -3,6 +3,7 @@ import Header from '../../../../components/global/header';
 import Footer from '../../../../components/global/footer';
 import Sidebar from '../../../../components/global/Tenant/sidebar';
 import ProviderCard from '../components/ProviderCard';
+import DetailedIssueModal from '../components/DetailedIssueModal';
 import './TenantMaintenance.css';
 import { 
     FaPlus, FaSearch, FaFilter, FaTools, FaCalendarCheck, 
@@ -112,9 +113,14 @@ const TenantMaintenance: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'post' | 'browse' | 'active'>('post');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('All');
+    const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
 
     const handleViewProfile = (id: string) => {
         console.log('Viewing profile:', id);
+    };
+
+    const handlePostSuccess = () => {
+        console.log('Issue posted successfully');
     };
 
     const renderTabContent = () => {
@@ -127,7 +133,7 @@ const TenantMaintenance: React.FC = () => {
                                 <h2>Community Marketplace</h2>
                                 <p>Post your issue to the HOMi community and get bids from certified pros.</p>
                             </div>
-                            <button className="post-issue-btn">
+                            <button className="post-issue-btn" onClick={() => setIsIssueModalOpen(true)}>
                                 <FaPlus /> Post New Issue
                             </button>
                         </div>
@@ -161,7 +167,7 @@ const TenantMaintenance: React.FC = () => {
                                 </div>
                             ))}
                             
-                            <div className="add-post-placeholder">
+                            <div className="add-post-placeholder" onClick={() => setIsIssueModalOpen(true)}>
                                 <div className="placeholder-content">
                                     <div className="plus-icon-box">
                                         <FaPlus />
@@ -323,6 +329,12 @@ const TenantMaintenance: React.FC = () => {
                         {renderTabContent()}
                     </div>
                 </main>
+
+                <DetailedIssueModal 
+                    isOpen={isIssueModalOpen}
+                    onClose={() => setIsIssueModalOpen(false)}
+                    onPostSuccess={handlePostSuccess}
+                />
 
                 <Footer />
             </div>

@@ -16,8 +16,9 @@
 
 .maintenance-main-container {
     padding: 2rem;
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
+    margin-left: 250px;
     width: 100%;
 }
 
@@ -33,6 +34,7 @@
     border: 1px solid #e2e8f0;
     position: relative;
     overflow: hidden;
+    margin-top: 40px;
 }
 
 .maintenance-hero::before {
