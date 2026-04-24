@@ -245,6 +245,7 @@ const TenantMaintenance: React.FC = () => {
                     </div>
                 );
             case 'active':
+                const hasActiveRequests = MOCK_MY_REQUESTS.length > 0;
                 return (
                     <div className="tab-pane animate-in">
                         <div className="section-header">
@@ -254,42 +255,56 @@ const TenantMaintenance: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="active-requests-list">
-                            {MOCK_MY_REQUESTS.map(req => (
-                                <div key={req.id} className="active-request-row">
-                                    <div className={`status-indicator ${req.status.toLowerCase().replace(' ', '-')}`}>
-                                        {req.status === 'Scheduled' && <FaCalendarCheck />}
-                                        {req.status === 'In Progress' && <FaClock />}
-                                        {req.status === 'Completed' && <FaCheckCircle />}
-                                    </div>
+                        {hasActiveRequests ? (
+                            <div className="active-requests-list">
+                                {MOCK_MY_REQUESTS.map(req => (
+                                    <div key={req.id} className="active-request-row">
+                                        <div className={`status-indicator ${req.status.toLowerCase().replace(' ', '-')}`}>
+                                            {req.status === 'Scheduled' && <FaCalendarCheck />}
+                                            {req.status === 'In Progress' && <FaClock />}
+                                            {req.status === 'Completed' && <FaCheckCircle />}
+                                        </div>
 
-                                    <div className="req-main-info">
-                                        <h4>{req.issueType}</h4>
-                                        <p>{req.description}</p>
-                                    </div>
+                                        <div className="req-main-info">
+                                            <h4>{req.issueType}</h4>
+                                            <p>{req.description}</p>
+                                        </div>
 
-                                    <div className="req-provider">
-                                        <span className="label">Provider</span>
-                                        <span className="value">{req.providerName}</span>
-                                    </div>
+                                        <div className="req-provider">
+                                            <span className="label">Provider</span>
+                                            <span className="value">{req.providerName}</span>
+                                        </div>
 
-                                    <div className="req-date">
-                                        <span className="label">Date</span>
-                                        <span className="value">{req.date}</span>
-                                    </div>
+                                        <div className="req-date">
+                                            <span className="label">Date</span>
+                                            <span className="value">{req.date}</span>
+                                        </div>
 
-                                    <div className="req-status-badge">
-                                        <span className={`badge ${req.status.toLowerCase().replace(' ', '-')}`}>
-                                            {req.status}
-                                        </span>
-                                    </div>
+                                        <div className="req-status-badge">
+                                            <span className={`badge ${req.status.toLowerCase().replace(' ', '-')}`}>
+                                                {req.status}
+                                            </span>
+                                        </div>
 
-                                    <button className="req-details-btn">
-                                        <FaChevronRight />
-                                    </button>
+                                        <button className="req-details-btn">
+                                            <FaChevronRight />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="empty-state-container">
+                                <div className="empty-state-icon-box">
+                                    <FaTools />
                                 </div>
-                            ))}
-                        </div>
+                                <h3>No active requests</h3>
+                                <p>You haven't scheduled any maintenance yet. Post an issue or browse providers to get started.</p>
+                                <div className="empty-state-actions">
+                                    <button className="primary-empty-btn" onClick={() => setActiveTab('post')}>Post an Issue</button>
+                                    <button className="secondary-empty-btn" onClick={() => setActiveTab('browse')}>Browse Providers</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             default:
