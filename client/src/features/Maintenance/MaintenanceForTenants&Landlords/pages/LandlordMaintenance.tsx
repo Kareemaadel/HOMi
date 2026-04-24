@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import Header from '../../../../components/global/header';
 import Footer from '../../../../components/global/footer';
-import Sidebar from '../../../../components/global/Tenant/sidebar';
+import Sidebar from '../../../../components/global/Landlord/sidebar';
 import ProviderCard from '../components/ProviderCard';
 import DetailedIssueModal from '../components/DetailedIssueModal';
 import ProviderProfile from '../components/ProviderProfile';
-import './TenantMaintenance.css';
+import './LandlordMaintenance.css';
 import {
     FaPlus, FaSearch, FaFilter, FaTools, FaCalendarCheck,
     FaHistory, FaMapMarkerAlt, FaHammer, FaWrench, FaBolt,
@@ -110,7 +110,7 @@ const MOCK_MARKETPLACE_POSTS = [
     }
 ];
 
-const TenantMaintenance: React.FC = () => {
+const LandlordMaintenance: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'post' | 'browse' | 'active'>('post');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('All');
@@ -321,9 +321,9 @@ const TenantMaintenance: React.FC = () => {
     };
 
     return (
-        <div className="tenant-maintenance-layout">
+        <div className="landlord-maintenance-layout">
             <Sidebar />
-            <div className="tenant-maintenance-content">
+            <div className="landlord-maintenance-content">
                 <Header />
 
                 <main className="maintenance-main-container">
@@ -387,7 +387,7 @@ const TenantMaintenance: React.FC = () => {
                     isOpen={isProfileModalOpen}
                     onClose={() => setIsProfileModalOpen(false)}
                     provider={selectedProviderProfile}
-                    myIssues={MOCK_MARKETPLACE_POSTS} // Using marketplace posts as tenant's issues for this demo
+                    myIssues={MOCK_MARKETPLACE_POSTS}
                 />
 
                 <Footer />
@@ -396,4 +396,4 @@ const TenantMaintenance: React.FC = () => {
     );
 };
 
-export default TenantMaintenance;
+export default LandlordMaintenance;

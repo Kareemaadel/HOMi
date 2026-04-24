@@ -52,6 +52,7 @@ import MyJobs from "./features/Maintenance/MaintenanceProvider/MyJobs/pages/MyJo
 import AvailableJobs from "./features/Maintenance/MaintenanceProvider/AvailableJobs/pages/AvailableJobs";
 import Earnings from "./features/Maintenance/MaintenanceProvider/Earnings/pages/Earnings";
 import TenantMaintenance from "./features/Maintenance/MaintenanceForTenants&Landlords/pages/TenantMaintenance";
+import LandlordMaintenance from "./features/Maintenance/MaintenanceForTenants&Landlords/pages/LandlordMaintenance";
 
 function App() {
   return (
@@ -92,6 +93,7 @@ function App() {
         <Route path="/rental-requests" element={<AuthGuard allowedRoles={['LANDLORD']}><RentalRequests /></AuthGuard>} />
         <Route path="/landlord-payment" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordPayment /></AuthGuard>} />
         <Route path="/landlord-contracts" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordContract /></AuthGuard>} />
+        <Route path="/landlord-maintenance" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordMaintenance /></AuthGuard>} />
 
 
         {/* Maintenance Routes */}
