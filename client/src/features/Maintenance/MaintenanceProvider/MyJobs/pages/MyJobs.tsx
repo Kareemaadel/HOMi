@@ -67,7 +67,7 @@ const MyJobs: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Global data flag for testing empty states
-    const [hasData, setHasData] = useState(false);
+    const [hasData, setHasData] = useState(true);
 
     const data = hasData ? MOCK_MY_JOBS : [];
 

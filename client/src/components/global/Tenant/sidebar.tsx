@@ -73,9 +73,9 @@ const Sidebar = () => {
 
           <div className="nav-divider">Management</div>
 
-          <li><a href="/maintenance-requests" className={location.pathname === "/maintenance-requests" ? "active" : ""}><FaTools /> <span>Maintenance</span></a></li>
+          <li><a href="/tenant-maintenance" className={location.pathname === "/tenant-maintenance" ? "active" : ""}><FaTools /> <span>Maintenance</span></a></li>
           <li><a href="/tenant-payment" className={location.pathname === "/tenant-payment" ? "active" : ""}><FaCreditCard /> <span>Payments</span></a></li>
-          <li><a href="/tenant-contracts" className={location.pathname === "/tenant-contracts" ? "active" : ""}><FaSignature/> <span>Contracts</span></a></li>
+          <li><a href="/tenant-contracts" className={location.pathname === "/tenant-contracts" ? "active" : ""}><FaSignature /> <span>Contracts</span></a></li>
           <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages {hasMessagingUnread ? <em className="notif-dot" aria-hidden /> : null}</span></a></li>
           <li><a href="/rewards" className={location.pathname === "/rewards" ? "active" : ""}><FaStar /> <span>Rewards</span></a></li>
         </ul>

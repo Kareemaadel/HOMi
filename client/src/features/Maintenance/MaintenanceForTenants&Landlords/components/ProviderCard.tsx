@@ -1,0 +1,83 @@
+import React from 'react';
+import { FaStar, FaMapMarkerAlt, FaToolbox, FaCheckCircle, FaChevronRight } from 'react-icons/fa';
+import './ProviderCard.css';
+
+interface ProviderCardProps {
+    id: string;
+    name: string;
+    specialty: string;
+    rating: number;
+    reviewCount: number;
+    location: string;
+    priceRange: string;
+    imageUrl: string;
+    isVerified?: boolean;
+    completedJobs: number;
+    onViewProfile: (id: string) => void;
+}
+
+const ProviderCard: React.FC<ProviderCardProps> = ({
+    id,
+    name,
+    specialty,
+    rating,
+    reviewCount,
+    location,
+    priceRange,
+    imageUrl,
+    isVerified = false,
+    completedJobs,
+    onViewProfile
+}) => {
+    return (
+        <div className="provider-card">
+            <div className="provider-image-wrapper">
+                <img src={imageUrl} alt={name} className="provider-image" />
+                {isVerified && (
+                    <div className="verified-badge" title="Verified Professional">
+                        <FaCheckCircle />
+                    </div>
+                )}
+            </div>
+            
+            <div className="provider-info">
+                <div className="provider-header">
+                    <h3 className="provider-name">{name}</h3>
+                    <div className="provider-rating">
+                        <FaStar className="star-icon" />
+                        <span>{rating.toFixed(1)}</span>
+                        <span className="review-count">({reviewCount})</span>
+                    </div>
+                </div>
+                
+                <div className="provider-specialty">
+                    <FaToolbox className="info-icon" />
+                    <span>{specialty}</span>
+                </div>
+                
+                <div className="provider-location">
+                    <FaMapMarkerAlt className="info-icon" />
+                    <span>{location}</span>
+                </div>
+                
+                <div className="provider-stats">
+                    <div className="stat-item">
+                        <span className="stat-value">{completedJobs}+</span>
+                        <span className="stat-label">Jobs Done</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-value">{priceRange}</span>
+                        <span className="stat-label">Starting From</span>
+                    </div>
+                </div>
+                
+                <button className="view-profile-btn" onClick={() => onViewProfile(id)}>
+                    View Profile
+                    <FaChevronRight className="btn-icon" />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export default ProviderCard;

@@ -45,11 +45,13 @@ import PageNotFound from "./features/PageNotFound/pages/PageNotFound";
 import LandlordPublicProfile from "./features/LandlordPublicProfile/pages/LandlordPublicProfile";
 import VerifyEmailCallback from "./features/auth/pages/VerifyEmailCallback";
 import AccountBannedPage from "./features/auth/pages/AccountBannedPage";
+
 import MaintenanceHome from "./features/Maintenance/MaintenanceProvider/Home/pages/MaintenanceHome";
 import JobRequests from "./features/Maintenance/MaintenanceProvider/JobRequests/pages/JobRequests";
 import MyJobs from "./features/Maintenance/MaintenanceProvider/MyJobs/pages/MyJobs";
 import AvailableJobs from "./features/Maintenance/MaintenanceProvider/AvailableJobs/pages/AvailableJobs";
 import Earnings from "./features/Maintenance/MaintenanceProvider/Earnings/pages/Earnings";
+import TenantMaintenance from "./features/Maintenance/MaintenanceForTenants&Landlords/pages/TenantMaintenance";
 
 function App() {
   return (
@@ -59,14 +61,14 @@ function App() {
         <Route path="/" element={<LoadingPage />} />
 
         {/* Tenant Routes — protected */}
-        <Route path="/tenant-home"   element={<AuthGuard allowedRoles={['TENANT']}><TenantHome /></AuthGuard>} />
+        <Route path="/tenant-home" element={<AuthGuard allowedRoles={['TENANT']}><TenantHome /></AuthGuard>} />
         <Route path="/browse-properties" element={<BrowseProperties />} /> {/* guests can browse; Apply Now button guards itself */}
         <Route path="/landlords/:landlordId" element={<LandlordPublicProfile />} />
         <Route path="/active-rental" element={<AuthGuard allowedRoles={['TENANT']}><ActiveRental /></AuthGuard>} />
         <Route path="/prepayment-page" element={<AuthGuard allowedRoles={['TENANT']}><PrePayment /></AuthGuard>} />
         <Route path="/payment/verify" element={<AuthGuard allowedRoles={['TENANT']}><PaymobVerify /></AuthGuard>} />
         <Route path="/saved-properties" element={<AuthGuard allowedRoles={['TENANT']}><SavedProperties /></AuthGuard>} />
-        <Route path="/actives"       element={<AuthGuard allowedRoles={['TENANT']}><MyActives /></AuthGuard>} />
+        <Route path="/actives" element={<AuthGuard allowedRoles={['TENANT']}><MyActives /></AuthGuard>} />
         <Route path="/tenant-payment" element={<AuthGuard allowedRoles={['TENANT']}><TenantPayment /></AuthGuard>} />
         <Route path="/tenant-contracts" element={<AuthGuard allowedRoles={['TENANT']}><Contract /></AuthGuard>} />
         <Route path="/sent-requests" element={<AuthGuard allowedRoles={['TENANT']}><SentRequests /></AuthGuard>} />
@@ -82,6 +84,7 @@ function App() {
           path="/matching"
           element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Roommate Matching" description="Roommate matching is coming soon." /></AuthGuard>}
         />
+        <Route path="/tenant-maintenance" element={<AuthGuard allowedRoles={['TENANT']}><TenantMaintenance /></AuthGuard>} />
 
         {/* Landlord Routes — protected */}
         <Route path="/landlord-home" element={<AuthGuard allowedRoles={['LANDLORD']}><LandlordHome /></AuthGuard>} />
@@ -106,18 +109,19 @@ function App() {
         <Route path="/get-help" element={<GetHelp />} />
         <Route path="/how-it-works-choose" element={<HowItWorksChoose />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/for-landlords"  element={<HowItWorks />} />
+        <Route path="/for-landlords" element={<HowItWorks />} />
         <Route path="/for-tenants" element={<ForTenants />} />
         <Route path="/homi-plus" element={<AuthGuard allowedRoles={['LANDLORD', 'TENANT']}><HomiPlusComingSoon /></AuthGuard>} />
+
         {/* Global Dashboard Routes — protected */}
-        <Route path="/balance"   element={<AuthGuard><Balance /></AuthGuard>} />
-        <Route path="/settings"  element={<Settings />} /> {/* has its own guard */}
-        <Route path="/messages"  element={<AuthGuard><Messages /></AuthGuard>} />
-        <Route path="/about-us"  element={<AboutUs />} />
-        <Route path="/not-found"  element={<PageNotFound />} />
+        <Route path="/balance" element={<AuthGuard><Balance /></AuthGuard>} />
+        <Route path="/settings" element={<Settings />} /> {/* has its own guard */}
+        <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/not-found" element={<PageNotFound />} />
 
         {/* Guest Routes — public */}
-        <Route path="/guest-home"   element={<GuestHome />} />
+        <Route path="/guest-home" element={<GuestHome />} />
         <Route path="/guest-search" element={<GuestSearch />} />
 
         {/* Admin Routes */}
@@ -131,11 +135,11 @@ function App() {
         <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
 
         {/* Auth Routes — public */}
-        <Route path="/auth"             element={<AuthPage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
-        <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
-        <Route path="/reset-password"   element={<ResetPasswordPage />} />
-        <Route path="/verify-email"     element={<EmailVerificationPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="/verify-email-callback" element={<VerifyEmailCallback />} />
         <Route path="/account-banned" element={<AccountBannedPage />} />
 
