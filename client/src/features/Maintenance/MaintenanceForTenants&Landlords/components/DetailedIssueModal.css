@@ -430,3 +430,25 @@
         grid-template-columns: 1fr;
     }
 }
+
+.no-images-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    color: #94a3b8;
+    gap: 0.8rem;
+}
+
+.no-images-view svg {
+    font-size: 2rem;
+}
+
+.no-images-view span {
+    font-size: 0.9rem;
+    font-weight: 600;
+}

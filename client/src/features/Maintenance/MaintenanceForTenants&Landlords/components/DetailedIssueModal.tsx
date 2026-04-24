@@ -9,12 +9,26 @@ interface DetailedIssueModalProps {
     isOpen: boolean;
     onClose: () => void;
     onPostSuccess: () => void;
+    isViewOnly?: boolean;
+    initialData?: {
+        issueType: string;
+        description: string;
+        budget: string;
+        urgency: string;
+        images?: string[]; // Assuming URLs for view-only
+    } | null;
 }
 
 const CATEGORIES = ['Plumbing', 'Electrical', 'Painting', 'AC Service', 'Gardening', 'Flooring', 'Other'];
 const URGENCY_LEVELS = ['Low', 'Medium', 'High', 'Critical'];
 
-const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose, onPostSuccess }) => {
+const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ 
+    isOpen, 
+    onClose, 
+    onPostSuccess,
+    isViewOnly = false,
+    initialData = null
+}) => {
     const [issueType, setIssueType] = useState('Plumbing');
     const [description, setDescription] = useState('');
     const [budget, setBudget] = useState('');
@@ -25,16 +39,25 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose
     const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen) {
+            if (initialData) {
+                setIssueType(initialData.issueType);
+                setDescription(initialData.description);
+                setBudget(initialData.budget);
+                setUrgency(initialData.urgency);
+                // Previews for view-only would be URLs
+                setPreviews(initialData.images || []);
+            } else {
+                setIssueType('Plumbing');
+                setDescription('');
+                setBudget('');
+                setUrgency('Medium');
+                setImages([]);
+                setPreviews([]);
+            }
             setShowSuccess(false);
-            setIssueType('Plumbing');
-            setDescription('');
-            setBudget('');
-            setUrgency('Medium');
-            setImages([]);
-            setPreviews([]);
         }
-    }, [isOpen]);
+    }, [isOpen, initialData]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -91,8 +114,8 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose
                             <FaExclamationCircle />
                         </div>
                         <div>
-                            <h2>Report a New Issue</h2>
-                            <p>Describe the problem to get help from our expert community.</p>
+                            <h2>{isViewOnly ? 'Issue Details' : 'Report a New Issue'}</h2>
+                            <p>{isViewOnly ? 'View the status and details of your posted issue.' : 'Describe the problem to get help from our expert community.'}</p>
                         </div>
                     </div>
                     <button className="close-modal-btn" onClick={onClose}>
@@ -109,6 +132,7 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose
                                     value={issueType} 
                                     onChange={(e) => setIssueType(e.target.value)}
                                     required
+                                    disabled={isViewOnly}
                                 >
                                     {CATEGORIES.map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
@@ -124,7 +148,8 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose
                                             key={level}
                                             type="button"
                                             className={`urgency-pill ${urgency === level ? 'active' : ''} ${level.toLowerCase()}`}
-                                            onClick={() => setUrgency(level)}
+                                            onClick={() => !isViewOnly && setUrgency(level)}
+                                            disabled={isViewOnly}
                                         >
                                             {level}
                                         </button>
@@ -140,6 +165,7 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 required
+                                disabled={isViewOnly}
                             />
                         </div>
 
@@ -152,6 +178,7 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose
                                     placeholder="0.00"
                                     value={budget}
                                     onChange={(e) => setBudget(e.target.value)}
+                                    disabled={isViewOnly}
                                 />
                             </div>
                             <small>This helps providers give more accurate bids.</small>
@@ -159,50 +186,61 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({ isOpen, onClose
 
                         <div className="form-group">
                             <label><FaImage /> Evidence Photos</label>
-                            <div className="upload-area" onClick={() => document.getElementById('image-upload')?.click()}>
-                                <input 
-                                    type="file" 
-                                    id="image-upload" 
-                                    multiple 
-                                    accept="image/*" 
-                                    onChange={handleImageChange}
-                                    hidden
-                                />
-                                <div className="upload-placeholder">
-                                    <FaUpload className="upload-icon" />
-                                    <p>Click or drag to upload evidence</p>
-                                    <span>PNG, JPG up to 10MB</span>
+                            {!isViewOnly && (
+                                <div className="upload-area" onClick={() => document.getElementById('image-upload')?.click()}>
+                                    <input 
+                                        type="file" 
+                                        id="image-upload" 
+                                        multiple 
+                                        accept="image/*" 
+                                        onChange={handleImageChange}
+                                        hidden
+                                    />
+                                    <div className="upload-placeholder">
+                                        <FaUpload className="upload-icon" />
+                                        <p>Click or drag to upload evidence</p>
+                                        <span>PNG, JPG up to 10MB</span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                            {previews.length > 0 && (
+                            {previews.length > 0 ? (
                                 <div className="previews-grid">
                                     {previews.map((url, index) => (
                                         <div key={index} className="preview-item">
                                             <img src={url} alt={`Preview ${index}`} />
-                                            <button 
-                                                type="button" 
-                                                className="remove-img-btn"
-                                                onClick={() => removeImage(index)}
-                                            >
-                                                <FaTrash />
-                                            </button>
+                                            {!isViewOnly && (
+                                                <button 
+                                                    type="button" 
+                                                    className="remove-img-btn"
+                                                    onClick={() => removeImage(index)}
+                                                >
+                                                    <FaTrash />
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
+                                </div>
+                            ) : isViewOnly && (
+                                <div className="no-images-view">
+                                    <FaImage />
+                                    <span>No evidence images provided</span>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     <footer className="issue-modal-footer">
-                        <button type="button" className="cancel-btn" onClick={onClose}>Cancel</button>
-                        <button 
-                            type="submit" 
-                            className="submit-btn"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? 'Posting...' : 'Post Issue'}
-                        </button>
+                        <button type="button" className="cancel-btn" onClick={onClose}>{isViewOnly ? 'Close' : 'Cancel'}</button>
+                        {!isViewOnly && (
+                            <button 
+                                type="submit" 
+                                className="submit-btn"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Posting...' : 'Post Issue'}
+                            </button>
+                        )}
                     </footer>
                 </form>
             </div>

@@ -5,9 +5,9 @@ import Sidebar from '../../../../components/global/Tenant/sidebar';
 import ProviderCard from '../components/ProviderCard';
 import DetailedIssueModal from '../components/DetailedIssueModal';
 import './TenantMaintenance.css';
-import { 
-    FaPlus, FaSearch, FaFilter, FaTools, FaCalendarCheck, 
-    FaHistory, FaMapMarkerAlt, FaHammer, FaWrench, FaBolt, 
+import {
+    FaPlus, FaSearch, FaFilter, FaTools, FaCalendarCheck,
+    FaHistory, FaMapMarkerAlt, FaHammer, FaWrench, FaBolt,
     FaPaintRoller, FaCheckCircle, FaClock, FaTimesCircle,
     FaExclamationTriangle, FaChevronRight, FaStar
 } from 'react-icons/fa';
@@ -105,7 +105,7 @@ const MOCK_MARKETPLACE_POSTS = [
         applications: 5,
         postedDate: '2 days ago',
         status: 'Live',
-        budget: 'EGP 500-800'
+        budget: 'EGP 800'
     }
 ];
 
@@ -114,6 +114,8 @@ const TenantMaintenance: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('All');
     const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
+    const [selectedIssue, setSelectedIssue] = useState<any>(null);
+    const [isViewOnlyModal, setIsViewOnlyModal] = useState(false);
 
     const handleViewProfile = (id: string) => {
         console.log('Viewing profile:', id);
@@ -121,6 +123,26 @@ const TenantMaintenance: React.FC = () => {
 
     const handlePostSuccess = () => {
         console.log('Issue posted successfully');
+    };
+
+    const openPostModal = () => {
+        setSelectedIssue(null);
+        setIsViewOnlyModal(false);
+        setIsIssueModalOpen(true);
+    };
+
+    const openViewIssueModal = (post: any) => {
+        setSelectedIssue({
+            issueType: post.issueType,
+            description: post.description,
+            budget: post.budget.replace('EGP ', ''),
+            urgency: 'Medium', // Default for mock data
+            images: [
+                'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400'
+            ]
+        });
+        setIsViewOnlyModal(true);
+        setIsIssueModalOpen(true);
     };
 
     const renderTabContent = () => {
@@ -133,7 +155,7 @@ const TenantMaintenance: React.FC = () => {
                                 <h2>Community Marketplace</h2>
                                 <p>Post your issue to the HOMi community and get bids from certified pros.</p>
                             </div>
-                            <button className="post-issue-btn" onClick={() => setIsIssueModalOpen(true)}>
+                            <button className="post-issue-btn" onClick={openPostModal}>
                                 <FaPlus /> Post New Issue
                             </button>
                         </div>
@@ -162,12 +184,12 @@ const TenantMaintenance: React.FC = () => {
                                             <span>Budget:</span>
                                             <strong>{post.budget}</strong>
                                         </div>
-                                        <button className="view-bids-btn">View Bids</button>
+                                        <button className="view-bids-btn" onClick={() => openViewIssueModal(post)}>View Issue</button>
                                     </div>
                                 </div>
                             ))}
-                            
-                            <div className="add-post-placeholder" onClick={() => setIsIssueModalOpen(true)}>
+
+                            <div className="add-post-placeholder" onClick={openPostModal}>
                                 <div className="placeholder-content">
                                     <div className="plus-icon-box">
                                         <FaPlus />
@@ -185,17 +207,17 @@ const TenantMaintenance: React.FC = () => {
                         <div className="browse-controls">
                             <div className="search-box-premium">
                                 <FaSearch className="search-icon" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search by name, skill, or location..." 
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, skill, or location..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
                             <div className="filter-dropdown-premium">
                                 <FaFilter className="filter-icon" />
-                                <select 
-                                    value={filterCategory} 
+                                <select
+                                    value={filterCategory}
                                     onChange={(e) => setFilterCategory(e.target.value)}
                                 >
                                     <option value="All">All Categories</option>
@@ -209,13 +231,13 @@ const TenantMaintenance: React.FC = () => {
 
                         <div className="providers-grid">
                             {MOCK_PROVIDERS
-                                .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                           p.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
+                                .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    p.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
                                 .map(provider => (
-                                    <ProviderCard 
-                                        key={provider.id} 
-                                        {...provider} 
-                                        onViewProfile={handleViewProfile} 
+                                    <ProviderCard
+                                        key={provider.id}
+                                        {...provider}
+                                        onViewProfile={handleViewProfile}
                                     />
                                 ))
                             }
@@ -240,28 +262,28 @@ const TenantMaintenance: React.FC = () => {
                                         {req.status === 'In Progress' && <FaClock />}
                                         {req.status === 'Completed' && <FaCheckCircle />}
                                     </div>
-                                    
+
                                     <div className="req-main-info">
                                         <h4>{req.issueType}</h4>
                                         <p>{req.description}</p>
                                     </div>
-                                    
+
                                     <div className="req-provider">
                                         <span className="label">Provider</span>
                                         <span className="value">{req.providerName}</span>
                                     </div>
-                                    
+
                                     <div className="req-date">
                                         <span className="label">Date</span>
                                         <span className="value">{req.date}</span>
                                     </div>
-                                    
+
                                     <div className="req-status-badge">
                                         <span className={`badge ${req.status.toLowerCase().replace(' ', '-')}`}>
                                             {req.status}
                                         </span>
                                     </div>
-                                    
+
                                     <button className="req-details-btn">
                                         <FaChevronRight />
                                     </button>
@@ -280,7 +302,7 @@ const TenantMaintenance: React.FC = () => {
             <Sidebar />
             <div className="tenant-maintenance-content">
                 <Header />
-                
+
                 <main className="maintenance-main-container">
                     <header className="maintenance-hero">
                         <div className="hero-text">
@@ -288,7 +310,7 @@ const TenantMaintenance: React.FC = () => {
                             <h1>Maintenance Hub</h1>
                             <p>Everything you need to keep your home in perfect condition.</p>
                         </div>
-                        
+
                         <div className="maintenance-quick-stats">
                             <div className="mini-stat">
                                 <span className="stat-num">{MOCK_MY_REQUESTS.filter(r => r.status !== 'Completed').length}</span>
@@ -302,21 +324,21 @@ const TenantMaintenance: React.FC = () => {
                     </header>
 
                     <nav className="maintenance-tabs">
-                        <button 
+                        <button
                             className={`tab-btn ${activeTab === 'post' ? 'active' : ''}`}
                             onClick={() => setActiveTab('post')}
                         >
                             <FaPlus className="tab-icon" />
                             <span>Post an Issue</span>
                         </button>
-                        <button 
+                        <button
                             className={`tab-btn ${activeTab === 'browse' ? 'active' : ''}`}
                             onClick={() => setActiveTab('browse')}
                         >
                             <FaSearch className="tab-icon" />
                             <span>Browse Providers</span>
                         </button>
-                        <button 
+                        <button
                             className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
                             onClick={() => setActiveTab('active')}
                         >
@@ -330,10 +352,12 @@ const TenantMaintenance: React.FC = () => {
                     </div>
                 </main>
 
-                <DetailedIssueModal 
+                <DetailedIssueModal
                     isOpen={isIssueModalOpen}
                     onClose={() => setIsIssueModalOpen(false)}
                     onPostSuccess={handlePostSuccess}
+                    isViewOnly={isViewOnlyModal}
+                    initialData={selectedIssue}
                 />
 
                 <Footer />
