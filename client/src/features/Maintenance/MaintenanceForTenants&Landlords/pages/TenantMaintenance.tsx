@@ -4,6 +4,7 @@ import Footer from '../../../../components/global/footer';
 import Sidebar from '../../../../components/global/Tenant/sidebar';
 import ProviderCard from '../components/ProviderCard';
 import DetailedIssueModal from '../components/DetailedIssueModal';
+import ProviderProfile from '../components/ProviderProfile';
 import './TenantMaintenance.css';
 import {
     FaPlus, FaSearch, FaFilter, FaTools, FaCalendarCheck,
@@ -116,9 +117,15 @@ const TenantMaintenance: React.FC = () => {
     const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
     const [selectedIssue, setSelectedIssue] = useState<any>(null);
     const [isViewOnlyModal, setIsViewOnlyModal] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [selectedProviderProfile, setSelectedProviderProfile] = useState<any>(null);
 
     const handleViewProfile = (id: string) => {
-        console.log('Viewing profile:', id);
+        const provider = MOCK_PROVIDERS.find(p => p.id === id);
+        if (provider) {
+            setSelectedProviderProfile(provider);
+            setIsProfileModalOpen(true);
+        }
     };
 
     const handlePostSuccess = () => {
@@ -137,6 +144,8 @@ const TenantMaintenance: React.FC = () => {
             description: post.description,
             budget: post.budget.replace('EGP ', ''),
             urgency: 'Medium', // Default for mock data
+            paymentMethod: 'Cash',
+            responseTime: '24 Hours',
             images: [
                 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400'
             ]
@@ -373,6 +382,13 @@ const TenantMaintenance: React.FC = () => {
                     onPostSuccess={handlePostSuccess}
                     isViewOnly={isViewOnlyModal}
                     initialData={selectedIssue}
+                />
+
+                <ProviderProfile 
+                    isOpen={isProfileModalOpen}
+                    onClose={() => setIsProfileModalOpen(false)}
+                    provider={selectedProviderProfile}
+                    myIssues={MOCK_MARKETPLACE_POSTS} // Using marketplace posts as tenant's issues for this demo
                 />
 
                 <Footer />
