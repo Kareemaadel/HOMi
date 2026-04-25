@@ -791,10 +791,14 @@ class ContractService {
             }
 
             const now = new Date();
-            const currentDueDate = this.getCycleDueDate(contract, now);
+            const baseDueDate = this.getCycleDueDate(contract, now);
+            const currentDueDate = baseDueDate < now
+                ? this.getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1))
+                : baseDueDate;
+            const previousCycleStart = this.getCycleDueDate(contract, new Date(currentDueDate.getFullYear(), currentDueDate.getMonth() - 1, 1));
             const nextCycleStart = this.getCycleDueDate(contract, new Date(currentDueDate.getFullYear(), currentDueDate.getMonth() + 1, 1));
             const paidAt = contract.payment_verified_at ? new Date(contract.payment_verified_at) : null;
-            const isCurrentCyclePaid = paidAt ? paidAt >= currentDueDate && paidAt < nextCycleStart : false;
+            const isCurrentCyclePaid = paidAt ? paidAt >= previousCycleStart && paidAt < nextCycleStart : false;
 
             if (isCurrentCyclePaid) {
                 throw new ContractError('Current month rent is already paid for this contract', 400, 'MONTHLY_RENT_ALREADY_PAID');

@@ -24,12 +24,16 @@ const startOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMo
 
 export const getRentCycleSummary = (contract: LandlordContract, nowInput?: Date): RentCycleSummary => {
     const now = nowInput ? startOfDay(nowInput) : startOfDay(new Date());
-    const thisCycleDue = getCycleDueDate(contract, now);
-    const nextCycleDue = getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1));
+    const baseCycleDue = getCycleDueDate(contract, now);
+    const currentCycleDue = baseCycleDue < now
+        ? getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1))
+        : baseCycleDue;
+    const previousCycleDue = getCycleDueDate(contract, new Date(currentCycleDue.getFullYear(), currentCycleDue.getMonth() - 1, 1));
+    const nextCycleDue = getCycleDueDate(contract, new Date(currentCycleDue.getFullYear(), currentCycleDue.getMonth() + 1, 1));
     const paidAt = contract.paymentVerifiedAt ? startOfDay(new Date(contract.paymentVerifiedAt)) : null;
-    const isPaidForCurrentCycle = Boolean(paidAt && paidAt >= thisCycleDue && paidAt < nextCycleDue);
+    const isPaidForCurrentCycle = Boolean(paidAt && paidAt >= previousCycleDue && paidAt < nextCycleDue);
 
-    const dueDate = isPaidForCurrentCycle ? nextCycleDue : thisCycleDue;
+    const dueDate = isPaidForCurrentCycle ? nextCycleDue : currentCycleDue;
     const followingDueDate = getCycleDueDate(contract, new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 1));
     const daysUntilDue = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
