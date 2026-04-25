@@ -15,6 +15,7 @@ import type {
     AdminPropertyDetails,
     AdminManagedUser,
     AdminSupportInboxItem,
+    PendingMaintenanceApplication,
 } from '../interfaces/admin.interfaces.js';
 import { Conversation, Message } from '../../messages/models/index.js';
 import { resolveSupportInboxAdminId } from '../../messages/services/support.service.js';
@@ -24,6 +25,10 @@ import type { PropertyResponse } from '../../properties/interfaces/property.inte
 import { propertyService } from '../../properties/services/property.service.js';
 import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
 import { activityLogService } from '../../../shared/services/activity-log.service.js';
+import {
+    MaintenanceProviderApplication,
+    MaintenanceApplicationStatus,
+} from '../../maintenance/models/MaintenanceProviderApplication.js';
 
 export class AdminError extends Error {
     constructor(
@@ -683,6 +688,81 @@ class AdminService {
         });
 
         return filtered;
+    }
+
+    async getPendingMaintenanceApplications(): Promise<PendingMaintenanceApplication[]> {
+        const applications = await MaintenanceProviderApplication.findAll({
+            where: { status: MaintenanceApplicationStatus.PENDING },
+            order: [['created_at', 'ASC']],
+        });
+
+        const userIds = applications.map((item) => item.user_id);
+        const users = userIds.length > 0
+            ? await User.findAll({
+                where: { id: userIds },
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'phone_number'] }],
+            })
+            : [];
+
+        const userMap = new Map(users.map((u) => [u.id, u]));
+
+        return applications.map((application) => {
+            const user = userMap.get(application.user_id);
+            return {
+                id: application.id,
+                userId: application.user_id,
+                email: user?.email || '',
+                firstName: user?.profile?.first_name || '',
+                lastName: user?.profile?.last_name || '',
+                phone: user?.profile?.phone_number || '',
+                providerType: application.provider_type,
+                businessName: application.business_name,
+                category: application.category,
+                categories: application.categories || null,
+                criminalRecordDocument: application.criminal_record_document,
+                selfieImage: application.selfie_image,
+                nationalIdFront: application.national_id_front,
+                nationalIdBack: application.national_id_back,
+                numberOfEmployees: application.number_of_employees,
+                companyLocation: application.company_location,
+                documentationFiles: application.documentation_files || null,
+                notes: application.notes,
+                createdAt: application.created_at,
+            };
+        });
+    }
+
+    async reviewMaintenanceApplication(
+        applicationId: string,
+        action: 'APPROVE' | 'REJECT',
+        rejectionReason: string | undefined,
+        adminId: string
+    ): Promise<void> {
+        const application = await MaintenanceProviderApplication.findByPk(applicationId);
+        if (!application) {
+            throw new AdminError('Maintenance request not found', 404, 'MAINTENANCE_REQUEST_NOT_FOUND');
+        }
+        if (application.status !== MaintenanceApplicationStatus.PENDING) {
+            throw new AdminError('Maintenance request has already been reviewed', 400, 'MAINTENANCE_ALREADY_REVIEWED');
+        }
+
+        if (action === 'APPROVE') {
+            await application.update({
+                status: MaintenanceApplicationStatus.APPROVED,
+                rejection_reason: null,
+                reviewed_by_admin_id: adminId,
+                reviewed_at: new Date(),
+            });
+            await User.update({ is_verified: true }, { where: { id: application.user_id } });
+            return;
+        }
+
+        await application.update({
+            status: MaintenanceApplicationStatus.REJECTED,
+            rejection_reason: rejectionReason || 'Rejected by admin',
+            reviewed_by_admin_id: adminId,
+            reviewed_at: new Date(),
+        });
     }
 }
 

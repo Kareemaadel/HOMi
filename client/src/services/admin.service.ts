@@ -174,6 +174,28 @@ export interface AdminManagedUser {
     } | null;
 }
 
+export interface PendingMaintenanceApplication {
+    id: string;
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    providerType: 'CENTER' | 'INDIVIDUAL';
+    businessName: string | null;
+    category: string;
+    categories: string[] | null;
+    criminalRecordDocument: string | null;
+    selfieImage: string | null;
+    nationalIdFront: string | null;
+    nationalIdBack: string | null;
+    numberOfEmployees: number | null;
+    companyLocation: string | null;
+    documentationFiles: string[] | null;
+    notes: string | null;
+    createdAt: string;
+}
+
 class AdminService {
     async getDashboardStats() {
         const response = await apiClient.get<{ success: boolean; data: AdminStatsResponse }>('/admin/dashboard/stats');
@@ -248,6 +270,24 @@ class AdminService {
             },
         });
         return response.data.data;
+    }
+
+    async getPendingMaintenanceApplications() {
+        const response = await apiClient.get<{ success: boolean; data: PendingMaintenanceApplication[] }>(
+            '/admin/maintenance-providers/pending'
+        );
+        return response.data.data;
+    }
+
+    async reviewMaintenanceApplication(
+        id: string,
+        payload: { action: 'APPROVE' | 'REJECT'; rejectionReason?: string }
+    ) {
+        const response = await apiClient.patch<{ success: boolean; message: string }>(
+            `/admin/maintenance-providers/${id}/review`,
+            payload
+        );
+        return response.data;
     }
 }
 

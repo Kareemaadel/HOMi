@@ -179,6 +179,85 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 ADD COLUMN IF NOT EXISTS "is_support" BOOLEAN NOT NULL DEFAULT false;
         `);
         await sequelize.query(`
+            DO $$ BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM pg_type t
+                    WHERE t.typname = 'enum_users_role'
+                ) AND NOT EXISTS (
+                    SELECT 1 FROM pg_enum e
+                    JOIN pg_type t ON e.enumtypid = t.oid
+                    WHERE t.typname = 'enum_users_role'
+                      AND e.enumlabel = 'MAINTENANCE_PROVIDER'
+                ) THEN
+                    ALTER TYPE enum_users_role ADD VALUE 'MAINTENANCE_PROVIDER';
+                END IF;
+            END $$;
+        `);
+        await sequelize.query(`
+            CREATE TABLE IF NOT EXISTS "maintenance_provider_applications" (
+                "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                "user_id" UUID NOT NULL UNIQUE REFERENCES "users"("id") ON DELETE CASCADE,
+                "provider_type" VARCHAR(32) NOT NULL,
+                "business_name" VARCHAR(255),
+                "category" VARCHAR(120) NOT NULL,
+                "categories" JSONB,
+                "criminal_record_document" TEXT,
+                "selfie_image" TEXT,
+                "national_id_front" TEXT,
+                "national_id_back" TEXT,
+                "number_of_employees" INTEGER,
+                "company_location" VARCHAR(255),
+                "documentation_files" JSONB,
+                "notes" TEXT,
+                "status" VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+                "rejection_reason" TEXT,
+                "reviewed_by_admin_id" UUID,
+                "reviewed_at" TIMESTAMP WITH TIME ZONE,
+                "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+            );
+        `);
+        await sequelize.query(`
+            ALTER TABLE IF EXISTS "maintenance_provider_applications"
+                ADD COLUMN IF NOT EXISTS "selfie_image" TEXT,
+                ADD COLUMN IF NOT EXISTS "national_id_front" TEXT,
+                ADD COLUMN IF NOT EXISTS "national_id_back" TEXT;
+        `);
+        // Existing databases may have this column as VARCHAR with a text default.
+        // PostgreSQL can fail when Sequelize later alters it to ENUM if default is still text.
+        await sequelize.query(`
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'maintenance_provider_applications'
+                      AND column_name = 'status'
+                      AND udt_name <> 'enum_maintenance_provider_applications_status'
+                ) THEN
+                    ALTER TABLE "maintenance_provider_applications"
+                        ALTER COLUMN "status" DROP DEFAULT;
+
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM pg_type t
+                        WHERE t.typname = 'enum_maintenance_provider_applications_status'
+                    ) THEN
+                        CREATE TYPE "public"."enum_maintenance_provider_applications_status" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+                    END IF;
+
+                    ALTER TABLE "maintenance_provider_applications"
+                        ALTER COLUMN "status"
+                        TYPE "public"."enum_maintenance_provider_applications_status"
+                        USING ("status"::"public"."enum_maintenance_provider_applications_status");
+
+                    ALTER TABLE "maintenance_provider_applications"
+                        ALTER COLUMN "status" SET DEFAULT 'PENDING';
+                END IF;
+            END
+            $$;
+        `);
+        await sequelize.query(`
             CREATE INDEX IF NOT EXISTS "conversations_is_support_last_message"
                 ON "conversations" ("is_support", "last_message_at")
                 WHERE "deleted_at" IS NULL;

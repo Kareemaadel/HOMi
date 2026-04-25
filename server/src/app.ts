@@ -33,6 +33,7 @@ import './modules/payment-methods/models/index.js';
 import './modules/saved-properties/models/index.js';
 import './modules/messages/models/index.js';
 import './modules/admin/models/ActivityLog.js';
+import './modules/maintenance/models/MaintenanceProviderApplication.js';
 
 // Create Express app
 const app = express();

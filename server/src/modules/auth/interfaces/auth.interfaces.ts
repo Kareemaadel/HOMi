@@ -201,3 +201,33 @@ export interface ChangePasswordRequest {
 export interface UpdateRoleRequest {
     role: 'TENANT' | 'LANDLORD';
 }
+
+export interface MaintenanceApplicationRequest {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    providerType: 'CENTER' | 'INDIVIDUAL';
+    businessName?: string;
+    category: string;
+    categories?: string[];
+    criminalRecordDocument?: string;
+    selfieImage?: string;
+    nationalIdFront?: string;
+    nationalIdBack?: string;
+    numberOfEmployees?: number;
+    companyLocation?: string;
+    documentationFiles?: string[];
+    notes?: string;
+}
+
+export interface MaintenanceAvailabilityRequest {
+    email?: string;
+    phone?: string;
+}
+
+export interface MaintenanceAvailabilityResponse {
+    emailExists: boolean;
+    phoneExists: boolean;
+}

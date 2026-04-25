@@ -19,6 +19,8 @@ import type {
     ChangePasswordRequest,
     UserProfileResponse,
     EmailVerificationResponse,
+    MaintenanceApplyRequest,
+    MaintenanceAvailabilityResponse,
 } from '../types/auth.types';
 
 const REFRESH_VIA_COOKIE = 'refreshViaCookie';
@@ -86,13 +88,14 @@ class AuthService {
     }): string {
         const cached = source ?? this.getCurrentUser() ?? undefined;
         const role = cached?.user?.role;
-        const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN';
+        const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN' || role === 'MAINTENANCE_PROVIDER';
 
         // Onboarding gate should enforce selecting a role, not forcing every optional profile field.
         if (!hasAppRole) return '/complete-profile';
         if (role === 'ADMIN') return '/admin/dashboard';
         if (role === 'LANDLORD') return '/landlord-home';
         if (role === 'TENANT') return '/tenant-home';
+        if (role === 'MAINTENANCE_PROVIDER') return '/maintenance-home';
 
         return '/complete-profile';
     }
@@ -116,6 +119,25 @@ class AuthService {
             localStorage.setItem('authProvider', 'email');
         }
 
+        return response.data;
+    }
+
+    async maintenanceApply(data: MaintenanceApplyRequest): Promise<AuthSuccessResponse> {
+        const response = await apiClient.post<AuthSuccessResponse>('/auth/maintenance/apply', data);
+        return response.data;
+    }
+
+    async maintenanceLogin(data: LoginRequest): Promise<LoginResponse> {
+        const response = await apiClient.post<LoginResponse>('/auth/maintenance/login', data);
+        if (response.data.accessToken) {
+            persistLoginSession(response.data, data.rememberMe === true);
+            localStorage.setItem('authProvider', 'email');
+        }
+        return response.data;
+    }
+
+    async checkMaintenanceAvailability(data: { email?: string; phone?: string }): Promise<MaintenanceAvailabilityResponse> {
+        const response = await apiClient.post<MaintenanceAvailabilityResponse>('/auth/maintenance/check-availability', data);
         return response.data;
     }
 

@@ -18,6 +18,7 @@ interface TeamMember {
 
 const AboutUs: React.FC = () => {
 const role = authService.getCurrentUser()?.user?.role;
+const showSidebar = role === 'LANDLORD' || role === 'TENANT';
 const SidebarComponent = role === 'LANDLORD' ? LandlordSidebar : TenantSidebar;
 const devTeam: TeamMember[] = [
     {
@@ -66,10 +67,10 @@ const devTeam: TeamMember[] = [
   ];
 
   return (
-    <div className="about-page-layout">
-      <SidebarComponent />
+    <div className={`about-page-layout ${showSidebar ? '' : 'about-page-no-sidebar'}`}>
+      {showSidebar ? <SidebarComponent /> : null}
       
-      <div className="about-main-content">
+      <div className={`about-main-content ${showSidebar ? '' : 'about-main-fullwidth'}`}>
         <Header />
         
         {/* Hero Section */}

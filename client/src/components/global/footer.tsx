@@ -46,6 +46,7 @@ const Footer = () => {
             <Link to="/homi-plus">HOMI Pro</Link>
             <Link to="/pricing">Pricing & Fees</Link>
             <Link to="/roommate-matching">Roommate Matching</Link>
+            <Link to="/maintenance-providers">Maintenance Providers</Link>
           </div>
 
           {/* Resources Links */}

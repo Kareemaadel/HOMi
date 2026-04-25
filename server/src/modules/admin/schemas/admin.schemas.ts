@@ -20,6 +20,17 @@ export const VerifyPropertySchema = z.object({
 
 export type VerifyPropertyInput = z.infer<typeof VerifyPropertySchema>;
 
+export const ReviewMaintenanceApplicationSchema = z.object({
+    action: z.enum(['APPROVE', 'REJECT']),
+    rejectionReason: z.string().optional(),
+}).refine(
+    (data) => data.action === 'APPROVE' || Boolean(data.rejectionReason?.trim()),
+    {
+        message: 'Rejection reason is required when action is REJECT',
+        path: ['rejectionReason'],
+    }
+);
+
 export const SupportInboxQuerySchema = z.object({
     filter: z.enum(['all', 'unread', 'read']).default('all'),
     sort: z.enum(['oldest', 'newest']).default('newest'),

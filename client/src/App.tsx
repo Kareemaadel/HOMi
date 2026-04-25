@@ -34,6 +34,7 @@ import AdminUserReports from "./features/admin/pages/AdminUserReports";
 import AdminActivityLogs from "./features/admin/pages/AdminActivityLogs";
 import AdminUserManagement from "./features/admin/pages/AdminUserManagement";
 import AdminSupportInbox from "./features/admin/pages/AdminSupportInbox";
+import AdminMaintenanceApprovals from "./features/admin/pages/AdminMaintenanceApprovals";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -53,6 +54,7 @@ import AvailableJobs from "./features/Maintenance/MaintenanceProvider/AvailableJ
 import Earnings from "./features/Maintenance/MaintenanceProvider/Earnings/pages/Earnings";
 import TenantMaintenance from "./features/Maintenance/MaintenanceForTenants&Landlords/pages/TenantMaintenance";
 import LandlordMaintenance from "./features/Maintenance/MaintenanceForTenants&Landlords/pages/LandlordMaintenance";
+import MaintenanceProviderOnboarding from "./features/MaintenanceProvider/pages/MaintenanceProviderOnboarding";
 
 function App() {
   return (
@@ -97,11 +99,12 @@ function App() {
 
 
         {/* Maintenance Routes */}
-        <Route path="/maintenance-home" element={<MaintenanceHome />} />
-        <Route path="/maintenance-requests" element={<JobRequests />} />
-        <Route path="/my-jobs" element={<MyJobs />} />
-        <Route path="/available-jobs" element={<AvailableJobs />} />
-        <Route path="/earnings" element={<Earnings />} />
+        <Route path="/maintenance-home" element={<AuthGuard allowedRoles={['MAINTENANCE_PROVIDER']}><MaintenanceHome /></AuthGuard>} />
+        <Route path="/maintenance-requests" element={<AuthGuard allowedRoles={['MAINTENANCE_PROVIDER']}><JobRequests /></AuthGuard>} />
+        <Route path="/my-jobs" element={<AuthGuard allowedRoles={['MAINTENANCE_PROVIDER']}><MyJobs /></AuthGuard>} />
+        <Route path="/available-jobs" element={<AuthGuard allowedRoles={['MAINTENANCE_PROVIDER']}><AvailableJobs /></AuthGuard>} />
+        <Route path="/earnings" element={<AuthGuard allowedRoles={['MAINTENANCE_PROVIDER']}><Earnings /></AuthGuard>} />
+        <Route path="/maintenance-providers" element={<MaintenanceProviderOnboarding />} />
 
         {/* Global Dashboard Routes */}
         <Route path="/balance" element={<Balance />} />
@@ -135,6 +138,7 @@ function App() {
         <Route path="/admin/user-management" element={<AuthGuard allowedRoles={['ADMIN']}><AdminUserManagement /></AuthGuard>} />
         <Route path="/admin/activity-logs" element={<AuthGuard allowedRoles={['ADMIN']}><AdminActivityLogs /></AuthGuard>} />
         <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
+        <Route path="/admin/maintenance-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceApprovals /></AuthGuard>} />
 
         {/* Auth Routes — public */}
         <Route path="/auth" element={<AuthPage />} />

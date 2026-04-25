@@ -4,6 +4,7 @@ import {
     FaExclamationCircle, FaUpload, FaCheckCircle, FaTrash, FaClock
 } from 'react-icons/fa';
 import './DetailedIssueModal.css';
+import { MAINTENANCE_CATEGORIES } from '../../constants/categories';
 
 interface DetailedIssueModalProps {
     isOpen: boolean;
@@ -21,7 +22,7 @@ interface DetailedIssueModalProps {
     } | null;
 }
 
-const CATEGORIES = ['Plumbing', 'Electrical', 'Painting', 'AC Service', 'Gardening', 'Flooring', 'Other'];
+const CATEGORIES = [...MAINTENANCE_CATEGORIES];
 const URGENCY_LEVELS = ['Low', 'Medium', 'High', 'Critical'];
 const PAYMENT_METHODS = ['Cash', 'Visa', 'InstaPay', 'Vodafone Cash'];
 const RESPONSE_TIMES = ['1 Hour', '3 Hours', '12 Hours', '24 Hours', '2 Days'];

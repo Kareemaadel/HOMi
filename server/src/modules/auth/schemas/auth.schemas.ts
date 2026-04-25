@@ -275,6 +275,86 @@ export const UpdateRoleSchema = z.object({
 
 export type UpdateRoleInput = z.infer<typeof UpdateRoleSchema>;
 
+export const MaintenanceApplySchema = z.object({
+    email: z.string().email('Invalid email address').max(255),
+    password: z
+        .string()
+        .min(8, 'Password must be at least 8 characters')
+        .max(100, 'Password must be at most 100 characters')
+        .regex(
+            passwordRegex,
+            'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character'
+        ),
+    firstName: z.string().min(1, 'First name is required').max(100).trim(),
+    lastName: z.string().min(1, 'Last name is required').max(100).trim(),
+    phone: z.string().min(1, 'Phone number is required').max(20),
+    providerType: z.enum(['CENTER', 'INDIVIDUAL']),
+    businessName: z.string().max(255).optional(),
+    category: z.string().min(1, 'Category is required').max(120),
+    categories: z.array(z.string().min(1).max(120)).optional(),
+    criminalRecordDocument: z.string().min(1).optional(),
+    selfieImage: z.string().min(1).optional(),
+    nationalIdFront: z.string().min(1).optional(),
+    nationalIdBack: z.string().min(1).optional(),
+    numberOfEmployees: z.number().int().positive().optional(),
+    companyLocation: z.string().max(255).optional(),
+    documentationFiles: z.array(z.string().min(1)).optional(),
+    notes: z.string().max(2000).optional(),
+}).superRefine((data, ctx) => {
+    if (data.providerType === 'INDIVIDUAL' && !data.criminalRecordDocument) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Criminal record certificate is required for individuals',
+            path: ['criminalRecordDocument'],
+        });
+    }
+    if (data.providerType === 'INDIVIDUAL' && !data.selfieImage) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Selfie is required for individuals',
+            path: ['selfieImage'],
+        });
+    }
+    if (data.providerType === 'INDIVIDUAL' && !data.nationalIdFront) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'National ID front image is required for individuals',
+            path: ['nationalIdFront'],
+        });
+    }
+    if (data.providerType === 'INDIVIDUAL' && !data.nationalIdBack) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'National ID back image is required for individuals',
+            path: ['nationalIdBack'],
+        });
+    }
+    if (data.providerType === 'CENTER') {
+        if (!data.numberOfEmployees) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Number of employees is required for centers',
+                path: ['numberOfEmployees'],
+            });
+        }
+        if (!data.companyLocation) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Company location is required for centers',
+                path: ['companyLocation'],
+            });
+        }
+    }
+});
+
+export const MaintenanceLoginSchema = LoginSchema;
+export const MaintenanceAvailabilitySchema = z.object({
+    email: z.string().email('Invalid email address').optional(),
+    phone: z.string().min(1, 'Phone number cannot be empty').max(20).optional(),
+}).refine((data) => Boolean(data.email || data.phone), {
+    message: 'Email or phone is required',
+});
+
 /** Passkey login — same identifier rules as password login (email or phone). */
 export const PasskeyIdentifierBodySchema = z.object({
     identifier: z.string().min(1, 'Email or phone number is required').max(255),
@@ -310,6 +390,9 @@ export default {
     VerifyEmailSchema,
     ChangePasswordSchema,
     UpdateRoleSchema,
+    MaintenanceApplySchema,
+    MaintenanceLoginSchema,
+    MaintenanceAvailabilitySchema,
     PasskeyIdentifierBodySchema,
     PasskeyRegistrationVerifySchema,
     PasskeyAuthenticationVerifySchema,

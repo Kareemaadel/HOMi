@@ -12,6 +12,10 @@
   background-color: var(--about-white);
 }
 
+.about-page-layout.about-page-no-sidebar {
+  --sidebar-width: 0px;
+}
+
 /* --- Layout Adjustment for Sidebar --- */
 .about-main-content {
   flex: 1;
@@ -20,6 +24,10 @@
   margin-left: 260px; 
   overflow-x: hidden;
   position: relative;
+}
+
+.about-main-content.about-main-fullwidth {
+  margin-left: 0;
 }
 
 .container {

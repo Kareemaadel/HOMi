@@ -437,6 +437,7 @@ const GuestHome: React.FC = () => {
               <Link to="/guest-search">Browse Homes</Link>
               <a href="#" className="footer-link-override" onClick={(e) => { e.preventDefault(); setShowAuthModal(true); }}>List a Property</a>
               <Link to="/pricing">Pricing</Link>
+              <Link to="/maintenance-providers">Maintenance Providers</Link>
             </div>
             <div className="footer-links">
               <h4>Resources</h4>

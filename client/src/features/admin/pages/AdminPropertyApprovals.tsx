@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FiCheck, FiCheckCircle, FiFileText, FiHome, FiLogOut, FiX, FiClock, FiAlertTriangle, FiActivity, FiMessageCircle, FiUsers } from 'react-icons/fi';
+import { FiCheck, FiCheckCircle, FiFileText, FiHome, FiLogOut, FiX, FiClock, FiAlertTriangle, FiActivity, FiMessageCircle, FiUsers, FiTool } from 'react-icons/fi';
 import adminService, { type PendingApprovalProperty } from '../../../services/admin.service';
 import './adminDashboard.css';
 import './AdminPropertyApprovals.css';
@@ -138,6 +138,7 @@ const AdminPropertyApprovals = () => {
                 <nav className="admin-nav">
                     <NavLink to="/admin/dashboard"><FiHome /> Dashboard</NavLink>
                     <NavLink to="/admin/property-approvals"><FiFileText /> Property Approvals</NavLink>
+                    <NavLink to="/admin/maintenance-approvals"><FiTool /> Maintenance Requests</NavLink>
                     <NavLink to="/admin/user-reports"><FiAlertTriangle /> User Reports</NavLink>
                     <NavLink to="/admin/user-management"><FiUsers /> User Management</NavLink>
                     <NavLink to="/admin/support-inbox"><FiMessageCircle /> Help Center</NavLink>

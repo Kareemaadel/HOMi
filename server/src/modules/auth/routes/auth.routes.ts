@@ -16,6 +16,9 @@ import {
     PasskeyIdentifierBodySchema,
     PasskeyRegistrationVerifySchema,
     PasskeyAuthenticationVerifySchema,
+    MaintenanceApplySchema,
+    MaintenanceLoginSchema,
+    MaintenanceAvailabilitySchema,
 } from '../schemas/auth.schemas.js';
 
 const router = Router();
@@ -57,6 +60,12 @@ router.post(
     '/register',
     validate(RegisterSchema),
     authController.register.bind(authController)
+);
+
+router.post(
+    '/maintenance/apply',
+    validate(MaintenanceApplySchema),
+    authController.applyMaintenanceProvider.bind(authController)
 );
 
 /**
@@ -121,6 +130,18 @@ router.post(
     '/login',
     validate(LoginSchema),
     authController.login.bind(authController)
+);
+
+router.post(
+    '/maintenance/login',
+    validate(MaintenanceLoginSchema),
+    authController.maintenanceLogin.bind(authController)
+);
+
+router.post(
+    '/maintenance/check-availability',
+    validate(MaintenanceAvailabilitySchema),
+    authController.checkMaintenanceAvailability.bind(authController)
 );
 
 /**

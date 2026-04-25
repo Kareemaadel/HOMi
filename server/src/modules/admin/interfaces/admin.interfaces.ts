@@ -154,3 +154,25 @@ export interface AdminSupportInboxItem {
     lastMessageAt: string | null;
     unreadFromUser: number;
 }
+
+export interface PendingMaintenanceApplication {
+    id: string;
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    providerType: 'CENTER' | 'INDIVIDUAL';
+    businessName: string | null;
+    category: string;
+    categories: string[] | null;
+    criminalRecordDocument: string | null;
+    selfieImage: string | null;
+    nationalIdFront: string | null;
+    nationalIdBack: string | null;
+    numberOfEmployees: number | null;
+    companyLocation: string | null;
+    documentationFiles: string[] | null;
+    notes: string | null;
+    createdAt: Date;
+}

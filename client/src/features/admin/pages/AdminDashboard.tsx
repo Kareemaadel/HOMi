@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FiUsers, FiHome, FiCheckCircle, FiFileText, FiLogOut, FiTrendingUp, FiBarChart2, FiAlertTriangle, FiActivity, FiMessageCircle } from 'react-icons/fi';
+import { FiUsers, FiHome, FiCheckCircle, FiFileText, FiLogOut, FiTrendingUp, FiBarChart2, FiAlertTriangle, FiActivity, FiMessageCircle, FiTool } from 'react-icons/fi';
 import { useNavigate, NavLink } from 'react-router-dom';
 import adminService from '../../../services/admin.service';
 import type { AdminStatsResponse } from '../../../services/admin.service';
@@ -88,6 +88,7 @@ const AdminDashboard = () => {
                 <nav className="admin-nav">
                     <NavLink to="/admin/dashboard" end><FiHome /> Dashboard</NavLink>
                     <NavLink to="/admin/property-approvals"><FiFileText /> Property Approvals</NavLink>
+                    <NavLink to="/admin/maintenance-approvals"><FiTool /> Maintenance Requests</NavLink>
                     <NavLink to="/admin/user-reports"><FiAlertTriangle /> User Reports</NavLink>
                     <NavLink to="/admin/user-management"><FiUsers /> User Management</NavLink>
                     <NavLink to="/admin/support-inbox"><FiMessageCircle /> Help Center</NavLink>

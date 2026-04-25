@@ -2,7 +2,7 @@
 // Type Definitions for Auth
 // ==========================================
 
-export type UserRole = 'LANDLORD' | 'TENANT' | 'ADMIN' | 'SUPPORT';
+export type UserRole = 'LANDLORD' | 'TENANT' | 'ADMIN' | 'MAINTENANCE_PROVIDER' | 'SUPPORT';
 export type Gender = 'MALE' | 'FEMALE' | 'PREFER_NOT_TO_SAY' | 'OTHER';
 
 // ==========================================
@@ -23,6 +23,31 @@ export interface LoginRequest {
     password: string;
     /** When true, server stores refresh token in httpOnly cookie (Remember me). */
     rememberMe?: boolean;
+}
+
+export interface MaintenanceApplyRequest {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    providerType: 'CENTER' | 'INDIVIDUAL';
+    businessName?: string;
+    category: string;
+    categories?: string[];
+    criminalRecordDocument?: string;
+    selfieImage?: string;
+    nationalIdFront?: string;
+    nationalIdBack?: string;
+    numberOfEmployees?: number;
+    companyLocation?: string;
+    documentationFiles?: string[];
+    notes?: string;
+}
+
+export interface MaintenanceAvailabilityResponse {
+    emailExists: boolean;
+    phoneExists: boolean;
 }
 
 export interface ForgotPasswordRequest {
