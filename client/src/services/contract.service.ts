@@ -1,4 +1,5 @@
 import apiClient from '../config/api';
+import { clearTestingClockCache, saveTestingClockSnapshot } from '../shared/utils/testingClock';
 
 export interface ContractPaymentTerms {
     rentAmount: number | null;
@@ -73,6 +74,8 @@ interface MonthlyRentPaymentApiResponse {
         remainingBalance: number;
         debitedAmount: number;
         paidForMonth: string;
+        lateFeeApplied?: number;
+        wasLate?: boolean;
     };
 }
 
@@ -99,6 +102,17 @@ export interface TenantPaymentHistoryItem {
 interface TenantPaymentHistoryApiResponse {
     success: boolean;
     data: TenantPaymentHistoryItem[];
+}
+
+interface TestingClockState {
+    enabled: boolean;
+    offsetDays: number;
+    now: string;
+}
+
+interface TestingClockApiResponse {
+    success: boolean;
+    data: TestingClockState;
 }
 
 export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
@@ -204,6 +218,37 @@ interface ContractListResponse {
 }
 
 class ContractService {
+    async getTestingClock(): Promise<TestingClockState> {
+        const response = await apiClient.get<TestingClockApiResponse>('/contracts/testing/clock');
+        saveTestingClockSnapshot({
+            now: response.data.data.now,
+            offsetDays: response.data.data.offsetDays,
+        });
+        return response.data.data;
+    }
+
+    async advanceTestingClock(days = 15): Promise<TestingClockState> {
+        const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/advance', { days });
+        saveTestingClockSnapshot({
+            now: response.data.data.now,
+            offsetDays: response.data.data.offsetDays,
+        });
+        return response.data.data;
+    }
+
+    async resetTestingClock(): Promise<TestingClockState> {
+        const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/reset');
+        if (Number(response.data.data.offsetDays ?? 0) === 0) {
+            clearTestingClockCache();
+        } else {
+            saveTestingClockSnapshot({
+                now: response.data.data.now,
+                offsetDays: response.data.data.offsetDays,
+            });
+        }
+        return response.data.data;
+    }
+
     async getContractPaymentDetails(contractId: string): Promise<ContractDetails> {
         const response = await apiClient.get<ContractApiResponse>(`/contracts/${contractId}`);
         const c = response.data.data;

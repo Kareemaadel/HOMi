@@ -15,9 +15,13 @@ interface RentalSpecs {
 interface ActiveRentalsCardProps {
   contract: LandlordContract | null;
   propertyDetails: PropertyResponse | null;
+  referenceDate?: Date;
 }
 
-const getLeaseMetrics = (contract: LandlordContract | null): { leaseProgress: number; monthsLeft: number } => {
+const getLeaseMetrics = (
+  contract: LandlordContract | null,
+  referenceDate?: Date
+): { leaseProgress: number; monthsLeft: number } => {
   const start = contract ? new Date(contract.moveInDate) : null;
   const durationMonths = Number(contract?.leaseDurationMonths ?? 0);
   const end = start && !Number.isNaN(start.getTime()) ? new Date(start) : null;
@@ -29,10 +33,11 @@ const getLeaseMetrics = (contract: LandlordContract | null): { leaseProgress: nu
   end.setMonth(end.getMonth() + durationMonths);
 
   const totalDurationMs = end.getTime() - start.getTime();
-  const elapsedMs = Date.now() - start.getTime();
+  const nowMs = (referenceDate ?? new Date()).getTime();
+  const elapsedMs = nowMs - start.getTime();
   const rawProgress = totalDurationMs > 0 ? (elapsedMs / totalDurationMs) * 100 : 0;
   const leaseProgress = Math.min(100, Math.max(0, Math.round(rawProgress)));
-  const monthsLeft = Math.max(0, Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)));
+  const monthsLeft = Math.max(0, Math.ceil((end.getTime() - nowMs) / (1000 * 60 * 60 * 24 * 30)));
 
   return { leaseProgress, monthsLeft };
 };
@@ -87,8 +92,8 @@ const formatFurnishing = (furnishing: string | null | undefined): string => {
   return furnishing;
 };
 
-const ActiveRentalsCard: React.FC<ActiveRentalsCardProps> = ({ contract, propertyDetails }) => {
-  const { leaseProgress, monthsLeft } = getLeaseMetrics(contract);
+const ActiveRentalsCard: React.FC<ActiveRentalsCardProps> = ({ contract, propertyDetails, referenceDate }) => {
+  const { leaseProgress, monthsLeft } = getLeaseMetrics(contract, referenceDate);
 
   const monthlyPrice = Number(contract?.rentAmount ?? propertyDetails?.monthlyPrice ?? contract?.property?.monthlyPrice ?? 0);
   const propertyTitle = propertyDetails?.title || contract?.property?.title || 'Active rental';

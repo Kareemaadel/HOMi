@@ -18,6 +18,42 @@ import type {
  * Handles HTTP request/response for contract endpoints
  */
 class ContractController {
+    async getTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const state = contractService.getTestingClockState();
+            res.status(200).json({ success: true, data: state });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async advanceTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const days = Number((req.body as any)?.days ?? 15);
+            const state = contractService.advanceTestingClock(days);
+            res.status(200).json({
+                success: true,
+                message: `Testing clock advanced by ${Math.max(0, Math.floor(days))} day(s).`,
+                data: state,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async resetTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const state = contractService.resetTestingClock();
+            res.status(200).json({
+                success: true,
+                message: 'Testing clock reset.',
+                data: state,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     /**
      * GET /api/contracts/landlord
      */

@@ -282,6 +282,7 @@
 }
 
 .pill.success { background: #e6fffa; color: #007d51; }
+.pill.scheduled { background: #eff6ff; color: #1d4ed8; }
 
 /* --- 4. REFUNDS (Empty State & Cards) --- */
 .empty-state {

@@ -20,9 +20,11 @@ import type { LandlordContract } from '../../../services/contract.service';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
 
 const TenantHome: React.FC = () => {
-  const [hasActiveRentals, setHasActiveRentals] = useState<boolean>(false);
   const [isCheckingContracts, setIsCheckingContracts] = useState<boolean>(true);
   const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
+  const [activeRentalIndex, setActiveRentalIndex] = useState(0);
+  const [timeOffsetDays, setTimeOffsetDays] = useState(0);
+  const [simulatedNow, setSimulatedNow] = useState<Date>(new Date());
   const [activePropertyDetails, setActivePropertyDetails] = useState<PropertyResponse | null>(null);
   const navigate = useNavigate(); 
   const firstName = authService.getCurrentUser()?.profile?.firstName?.trim() || 'there';
@@ -35,30 +37,51 @@ const TenantHome: React.FC = () => {
     greeting = 'Good Afternoon';
   }
 
-  useEffect(() => {
-    const loadActiveContracts = async () => {
-      setIsCheckingContracts(true);
-      try {
-        const response = await contractService.getTenantContracts({ page: 1, limit: 50 });
-        const contracts = response.data ?? [];
-        const activeContracts = contracts.filter((contract) => contract.status === 'ACTIVE');
-        setTenantContracts(contracts);
-        setHasActiveRentals(activeContracts.length > 0);
-      } catch {
-        setTenantContracts([]);
-        setHasActiveRentals(false);
-      } finally {
-        setIsCheckingContracts(false);
-      }
-    };
+  const isContractActiveForReferenceDate = (contract: LandlordContract, referenceDate: Date): boolean => {
+    if (contract.status !== 'ACTIVE') return false;
+    const moveIn = new Date(contract.moveInDate);
+    if (Number.isNaN(moveIn.getTime())) return true;
+    const leaseEnd = new Date(moveIn);
+    leaseEnd.setMonth(leaseEnd.getMonth() + Number(contract.leaseDurationMonths ?? 0));
+    return referenceDate < leaseEnd;
+  };
 
-    void loadActiveContracts();
+  const loadDashboardData = async () => {
+    setIsCheckingContracts(true);
+    try {
+      const [contractsRes, clock] = await Promise.all([
+        contractService.getTenantContracts({ page: 1, limit: 50 }),
+        contractService.getTestingClock(),
+      ]);
+      setTenantContracts(contractsRes.data ?? []);
+      setActiveRentalIndex(0);
+      setTimeOffsetDays(Number(clock.offsetDays ?? 0));
+      setSimulatedNow(new Date(clock.now));
+    } catch {
+      setTenantContracts([]);
+    } finally {
+      setIsCheckingContracts(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadDashboardData();
   }, []);
 
-  const activeContract = useMemo(
-    () => tenantContracts.find((contract) => contract.status === 'ACTIVE') ?? null,
-    [tenantContracts]
+  const activeContracts = useMemo(
+    () => tenantContracts.filter((contract) => isContractActiveForReferenceDate(contract, simulatedNow)),
+    [tenantContracts, simulatedNow]
   );
+  const activeContract = useMemo(
+    () => activeContracts[activeRentalIndex] ?? activeContracts[0] ?? null,
+    [activeContracts, activeRentalIndex]
+  );
+  const hasActiveRentalsForView = activeContracts.length > 0;
+
+  useEffect(() => {
+    if (activeRentalIndex < activeContracts.length) return;
+    setActiveRentalIndex(0);
+  }, [activeRentalIndex, activeContracts.length]);
 
   useEffect(() => {
     const propertyId = activeContract?.property?.id;
@@ -103,6 +126,20 @@ const TenantHome: React.FC = () => {
     activeSummaryText = `You have ${openPaymentContractsCount} pending ${paymentLabel} and ${maintenanceAreasCount} maintenance ${areaLabel} in your lease.`;
   }
 
+  const handleAdvance15Days = async () => {
+    const next = await contractService.advanceTestingClock(15);
+    setTimeOffsetDays(Number(next.offsetDays ?? 0));
+    setSimulatedNow(new Date(next.now));
+    await loadDashboardData();
+  };
+
+  const handleResetTimeSimulation = async () => {
+    const next = await contractService.resetTestingClock();
+    setTimeOffsetDays(Number(next.offsetDays ?? 0));
+    setSimulatedNow(new Date(next.now));
+    await loadDashboardData();
+  };
+
   if (isCheckingContracts) {
     return (
       <div className="tenant-dashboard-root">
@@ -128,24 +165,57 @@ const TenantHome: React.FC = () => {
           <header className="welcome-section">
             <div className="welcome-text">
               <h1>{greeting}, <span className="highlight">{firstName}!</span></h1>
-              {hasActiveRentals ? (
+              {hasActiveRentalsForView ? (
                 <p>{activeSummaryText}</p>
               ) : (
                 <p>Welcome to your new dashboard. Let's get you into your dream home!</p>
               )}
             </div>
+            <div className="time-travel-controls">
+              <div className="time-travel-meta">
+                <strong>Testing Date:</strong>{' '}
+                {simulatedNow.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                {timeOffsetDays > 0 ? ` (+${timeOffsetDays} days)` : ''}
+              </div>
+              <div className="time-travel-actions">
+                <button type="button" className="time-travel-btn" onClick={handleAdvance15Days}>
+                  Advance +15 days
+                </button>
+                <button
+                  type="button"
+                  className="time-travel-btn reset"
+                  onClick={handleResetTimeSimulation}
+                  disabled={timeOffsetDays === 0}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
           </header>
 
-          {hasActiveRentals ? (
+          {hasActiveRentalsForView ? (
             <div className="dashboard-grid active-dashboard-grid">
               <section className="grid-col-2 active-home-card-slot">
-                <ActiveRentalsCard contract={activeContract} propertyDetails={activePropertyDetails} />
+                <ActiveRentalsCard contract={activeContract} propertyDetails={activePropertyDetails} referenceDate={simulatedNow} />
+                {activeContracts.length > 1 && (
+                  <div className="active-rental-dots" aria-label="Switch active property">
+                    {activeContracts.map((contract, idx) => (
+                      <button
+                        key={contract.id}
+                        type="button"
+                        className={`rental-dot ${idx === activeRentalIndex ? 'active' : ''}`}
+                        aria-label={`Show property ${idx + 1}`}
+                        onClick={() => setActiveRentalIndex(idx)}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
               <section className="grid-col-1 active-payment-card-slot">
-                <UpcomingPayments contract={activeContract} />
+                <UpcomingPayments contract={activeContract} referenceDate={simulatedNow} />
               </section>
               <section className="grid-col-1">
-                <Notifications contracts={tenantContracts} />
+                <Notifications />
               </section>
               <section className="grid-col-1">
                 <MaintenanceRequests contract={activeContract} />
@@ -234,7 +304,7 @@ const TenantHome: React.FC = () => {
 
                 <section className="grid-col-1">
                   <h3 className="section-subtitle" style={{ marginBottom: '1.25rem' }}>Your Updates</h3>
-                  <Notifications contracts={tenantContracts} />
+                  <Notifications />
                 </section>
 
               </div>

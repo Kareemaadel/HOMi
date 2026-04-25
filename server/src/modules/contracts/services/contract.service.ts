@@ -14,6 +14,7 @@ import {
 import { paymobService } from '../../../shared/services/paymob.service.js';
 import { env } from '../../../config/env.js';
 import { decrypt, encrypt } from '../../../shared/utils/encryption.util.js';
+import { testingClockService } from '../../../shared/services/testing-clock.service.js';
 import { PaymentMethod, PaymentProvider } from '../../payment-methods/models/PaymentMethod.js';
 import type {
     ContractResponse,
@@ -103,6 +104,18 @@ export class ContractError extends Error {
  * Handles all contract business logic
  */
 class ContractService {
+    getTestingClockState(): { enabled: boolean; offsetDays: number; now: string } {
+        return testingClockService.getState();
+    }
+
+    advanceTestingClock(days: number): { enabled: boolean; offsetDays: number; now: string } {
+        return testingClockService.advanceDays(days);
+    }
+
+    resetTestingClock(): { enabled: boolean; offsetDays: number; now: string } {
+        return testingClockService.reset();
+    }
+
     // ─── Contract Creation ────────────────────────────────────────────────────
 
     /**
@@ -184,6 +197,7 @@ class ContractService {
         landlordId: string,
         filters: { status?: string; page?: number; limit?: number }
     ): Promise<ContractListResponse> {
+        await this.expireCompletedLeases();
         const user = await User.findByPk(landlordId);
         if (!user) {
             throw new ContractError('User not found', 404, 'USER_NOT_FOUND');
@@ -230,6 +244,7 @@ class ContractService {
         tenantId: string,
         filters: { status?: string; page?: number; limit?: number }
     ): Promise<ContractListResponse> {
+        await this.expireCompletedLeases();
         const { status, page = 1, limit = 10 } = filters;
         const offset = (page - 1) * limit;
 
@@ -509,7 +524,7 @@ class ContractService {
 
         await contract.update({
             landlord_signature_url: input.signature_url,
-            landlord_signed_at: new Date(),
+            landlord_signed_at: testingClockService.getNow(),
             status: ContractStatus.PENDING_TENANT,
         });
 
@@ -558,7 +573,7 @@ class ContractService {
 
         await contract.update({
             tenant_signature_url: input.signature_url,
-            tenant_signed_at: new Date(),
+            tenant_signed_at: testingClockService.getNow(),
             tenant_agreed_terms: true,
             status: ContractStatus.PENDING_PAYMENT,
         });
@@ -590,7 +605,7 @@ class ContractService {
         const callbackUrl = `${env.CLIENT_URL.replace(/\/$/, '')}/payment/verify?contractId=${contract.id}`;
         const checkout = await paymobService.createCheckoutSession({
             amountCents,
-            merchantOrderId: `${contract.contract_id}-${Date.now()}`,
+            merchantOrderId: `${contract.contract_id}-${testingClockService.getNow().getTime()}`,
             billingData: {
                 email: tenantUser.email,
                 first_name: profile?.first_name || 'Tenant',
@@ -660,7 +675,7 @@ class ContractService {
 
         await contract.update({
             payment_status: ContractPaymentStatus.PAID,
-            payment_verified_at: new Date(),
+            payment_verified_at: testingClockService.getNow(),
             paymob_transaction_id: verification.transactionId,
             status: ContractStatus.ACTIVE,
         });
@@ -723,7 +738,7 @@ class ContractService {
             await contract.update(
                 {
                     payment_status: ContractPaymentStatus.PAID,
-                    payment_verified_at: new Date(),
+                    payment_verified_at: testingClockService.getNow(),
                     status: ContractStatus.ACTIVE,
                     paymob_order_id: null,
                     paymob_transaction_id: null,
@@ -791,15 +806,15 @@ class ContractService {
                 throw new ContractError('Tenant profile not found', 404, 'PROFILE_NOT_FOUND');
             }
 
-            const now = new Date();
-            const baseDueDate = this.getCycleDueDate(contract, now);
-            const currentDueDate = baseDueDate < now
-                ? this.getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1))
-                : baseDueDate;
-            const previousCycleStart = this.getCycleDueDate(contract, new Date(currentDueDate.getFullYear(), currentDueDate.getMonth() - 1, 1));
-            const nextCycleStart = this.getCycleDueDate(contract, new Date(currentDueDate.getFullYear(), currentDueDate.getMonth() + 1, 1));
+            const now = testingClockService.getNow();
+            const baseDueDate = this.getCycleDueDate(contract, now); // This month's due date
+            const nextCycleStart = this.getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1));
             const paidAt = contract.payment_verified_at ? new Date(contract.payment_verified_at) : null;
-            const isCurrentCyclePaid = paidAt ? paidAt >= previousCycleStart && paidAt < nextCycleStart : false;
+            const isCurrentCyclePaid = Boolean(
+                paidAt &&
+                paidAt >= baseDueDate &&
+                paidAt < nextCycleStart
+            );
 
             if (isCurrentCyclePaid) {
                 throw new ContractError('Current month rent is already paid for this contract', 400, 'MONTHLY_RENT_ALREADY_PAID');
@@ -829,20 +844,22 @@ class ContractService {
                 0
             );
             const netRentAmount = Math.max(rentAmount - pendingCreditTotal, 0);
+            const lateFee = now > baseDueDate ? Math.max(Number(contract.late_fee_amount ?? 0), 0) : 0;
+            const totalToDebit = netRentAmount + lateFee;
 
             const availableBalance = Number((profile as any).wallet_balance ?? 0);
-            if (availableBalance < netRentAmount) {
-                throw new ContractError('Insufficient wallet balance to pay monthly rent', 400, 'INSUFFICIENT_WALLET_BALANCE');
+            if (availableBalance < totalToDebit) {
+                throw new ContractError('Insufficient wallet balance to pay monthly rent (including late fee if applicable)', 400, 'INSUFFICIENT_WALLET_BALANCE');
             }
 
-            const remainingBalance = Math.max(availableBalance - netRentAmount, 0);
+            const remainingBalance = Math.max(availableBalance - totalToDebit, 0);
             await profile.update({ wallet_balance: remainingBalance }, { transaction });
 
             for (const charge of pendingCharges) {
                 await charge.update(
                     {
                         status: LandlordMaintenanceChargeStatus.APPLIED,
-                        applied_at: new Date(),
+                        applied_at: testingClockService.getNow(),
                     },
                     { transaction }
                 );
@@ -856,7 +873,7 @@ class ContractService {
                 { transaction }
             );
 
-            const paidForMonth = currentDueDate.toLocaleDateString('en-US', {
+            const paidForMonth = baseDueDate.toLocaleDateString('en-US', {
                 month: 'long',
                 year: 'numeric',
             });
@@ -870,7 +887,9 @@ class ContractService {
                 metadata: {
                     contractId: contract.id,
                     paidForMonth,
-                    debitedAmount: netRentAmount,
+                    debitedAmount: totalToDebit,
+                    lateFeeApplied: lateFee,
+                    wasLate: lateFee > 0,
                     landlordMaintenanceCredit: pendingCreditTotal,
                     rentAmount,
                     remainingBalance,
@@ -886,8 +905,10 @@ class ContractService {
             return {
                 contract: this.formatContractResponse(refreshedContract ?? contract, true, true),
                 remainingBalance,
-                debitedAmount: netRentAmount,
+                debitedAmount: totalToDebit,
                 paidForMonth,
+                lateFeeApplied: lateFee,
+                wasLate: lateFee > 0,
             };
         } catch (error) {
             await transaction.rollback();
@@ -935,7 +956,7 @@ class ContractService {
         const profile = (tenantUser as any).profile;
         const checkout = await paymobService.createCheckoutSession({
             amountCents,
-            merchantOrderId: `WALLET-${tenantId}-${Date.now()}`,
+            merchantOrderId: `WALLET-${tenantId}-${testingClockService.getNow().getTime()}`,
             billingData: {
                 email: tenantUser.email,
                 first_name: profile?.first_name || 'Tenant',
@@ -1250,6 +1271,24 @@ class ContractService {
         const deposit = Number(contract.security_deposit ?? 0);
         const fee = Number(contract.service_fee ?? 0);
         return rent + deposit + fee;
+    }
+
+    private async expireCompletedLeases(): Promise<void> {
+        const now = testingClockService.getNow();
+        const activeContracts = await Contract.findAll({
+            where: { status: ContractStatus.ACTIVE },
+            attributes: ['id', 'move_in_date', 'lease_duration_months'],
+        });
+
+        for (const contract of activeContracts) {
+            const moveIn = new Date(contract.move_in_date as any);
+            if (Number.isNaN(moveIn.getTime())) continue;
+            const leaseEnd = new Date(moveIn);
+            leaseEnd.setMonth(leaseEnd.getMonth() + Number(contract.lease_duration_months ?? 0));
+            if (now >= leaseEnd) {
+                await contract.update({ status: ContractStatus.EXPIRED });
+            }
+        }
     }
 
     private getCycleDueDate(contract: Contract, referenceDate: Date): Date {

@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaBell, FaCheckDouble, FaCreditCard, FaTools, FaGift, FaChevronRight } from 'react-icons/fa';
-import type { LandlordContract } from '../../../../services/contract.service';
+import notificationService, { type NotificationItem } from '../../../../services/notification.service';
 import './Notifications.css';
 
 interface Alert {
@@ -11,10 +11,6 @@ interface Alert {
   desc: string;
   time: string;
   unread: boolean;
-}
-
-interface NotificationsProps {
-  contracts: LandlordContract[];
 }
 
 const getRelativeTime = (iso: string): string => {
@@ -31,61 +27,60 @@ const getRelativeTime = (iso: string): string => {
   return `${diffDays}d ago`;
 };
 
-const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
+const mapNotificationToAlert = (item: NotificationItem): Alert => {
+  const normalizedType = String(item.type ?? '').toUpperCase();
+  const related = String(item.relatedEntityType ?? '').toUpperCase();
+  const title = String(item.title ?? '');
+  const body = String(item.body ?? '');
+  const textBlob = `${normalizedType} ${related} ${title} ${body}`.toUpperCase();
+
+  const type: Alert['type'] = textBlob.includes('PAYMENT') || textBlob.includes('WALLET')
+    ? 'payment'
+    : textBlob.includes('MAINTENANCE')
+      ? 'maintenance'
+      : 'system';
+
+  return {
+    id: item.id,
+    type,
+    title: item.title,
+    desc: item.body,
+    time: getRelativeTime(item.createdAt),
+    unread: !item.isRead,
+  };
+};
+
+const Notifications: React.FC = () => {
   const navigate = useNavigate();
+  const [alerts, setAlerts] = useState<Alert[]>([]);
 
-  const alerts = useMemo<Alert[]>(() => {
-    const activeContract = contracts.find((c) => c.status === 'ACTIVE');
-    const pendingPayment = contracts.find((c) => c.status === 'PENDING_PAYMENT');
-
-    const generated: Alert[] = [];
-
-    if (pendingPayment) {
-      generated.push({
-        id: `payment-${pendingPayment.id}`,
-        type: 'payment',
-        title: 'Payment Pending',
-        desc: `Complete your payment for ${pendingPayment.property?.title ?? 'your lease'} to activate your contract.`,
-        time: getRelativeTime(pendingPayment.createdAt),
-        unread: true,
-      });
-    }
-
-    if (activeContract) {
-      generated.push({
-        id: `active-${activeContract.id}`,
-        type: 'system',
-        title: 'Lease Active',
-        desc: `Your lease for ${activeContract.property?.title ?? 'your property'} is active.`,
-        time: getRelativeTime(activeContract.createdAt),
-        unread: false,
-      });
-
-      if ((activeContract.maintenanceResponsibilities?.length ?? 0) > 0) {
-        generated.push({
-          id: `maintenance-${activeContract.id}`,
-          type: 'maintenance',
-          title: 'Maintenance Responsibilities Updated',
-          desc: `${activeContract.maintenanceResponsibilities?.length ?? 0} maintenance areas are configured in your lease.`,
-          time: getRelativeTime(activeContract.createdAt),
-          unread: false,
-        });
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const result = await notificationService.list({ limit: 8 });
+        if (cancelled) return;
+        const mapped = result.notifications.map(mapNotificationToAlert);
+        setAlerts(mapped);
+      } catch {
+        if (!cancelled) setAlerts([]);
       }
-    }
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, []);
 
-    if (generated.length === 0) {
-      generated.push({
-        id: 'empty-state',
-        type: 'system',
-        title: 'No Recent Activity',
-        desc: 'Your latest contract and payment updates will appear here.',
-        time: 'Now',
-        unread: false,
-      });
-    }
-
-    return generated;
-  }, [contracts]);
+  const visibleAlerts = useMemo<Alert[]>(() => {
+    if (alerts.length > 0) return alerts;
+    return [{
+      id: 'empty-state',
+      type: 'system',
+      title: 'No Recent Activity',
+      desc: 'Your latest notifications (payments, properties, requests, maintenance) will appear here.',
+      time: 'Now',
+      unread: false,
+    }];
+  }, [alerts]);
 
   const getIcon = (type: Alert['type']) => {
     if (type === 'payment') return <FaCreditCard />;
@@ -96,6 +91,10 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
   const handleNotificationClick = (alert: Alert) => {
     if (alert.type === 'payment') {
       navigate('/tenant-payment');
+      return;
+    }
+    if (alert.type === 'maintenance') {
+      navigate('/maintenance-requests');
     }
   };
 
@@ -105,7 +104,7 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
         <div className="notif-title-group">
           <div className="bell-ring">
             <FaBell />
-            {alerts.some((alert) => alert.unread) && <span className="active-dot"></span>}
+            {visibleAlerts.some((alert) => alert.unread) && <span className="active-dot"></span>}
           </div>
           <h3>Activity Feed</h3>
         </div>
@@ -115,7 +114,7 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
       </header>
 
       <div className="notif-scroll-area">
-        {alerts.map((alert) => {
+        {visibleAlerts.map((alert) => {
           if (alert.type === 'payment') {
             return (
               <button

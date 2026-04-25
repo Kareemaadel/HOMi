@@ -412,46 +412,6 @@ const TenantPayment: React.FC = () => {
         }
     };
 
-    const handlePayUpcomingRent = async (contractId: string) => {
-        const contract = tenantContracts.find((item) => item.id === contractId);
-        if (!contract) return;
-
-        const requiredAmount =
-            contract.status === 'PENDING_PAYMENT'
-                ? getTotalContractCharge(contract)
-                : Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0);
-
-        if (walletBalance < requiredAmount) {
-            setActiveTab('topup');
-            setPaymentActionError('Insufficient wallet balance. Please top up your wallet before paying rent.');
-            return;
-        }
-
-        const isConfirmed = globalThis.confirm(`Pay ${formatMoney(requiredAmount)} from your wallet now?`);
-        if (!isConfirmed) return;
-
-        setIsProcessingPayment(true);
-        setPaymentActionError(null);
-        try {
-            if (contract.status === 'PENDING_PAYMENT') {
-                const result = await contractService.payContractFromBalance(contract.id);
-                setWalletBalance(Number(result.remainingBalance ?? 0));
-            } else {
-                const result = await contractService.payMonthlyRentFromBalance(contract.id);
-                setWalletBalance(Number(result.remainingBalance ?? 0));
-            }
-            setSuccessMessage(`Payment of ${formatMoney(requiredAmount)} completed successfully.`);
-            setShowSuccessToast(true);
-            await loadPaymentData();
-        } catch (error: unknown) {
-            const ex = error as { response?: { data?: { message?: string } } };
-            const message = ex.response?.data?.message || 'Could not complete rent payment.';
-            setPaymentActionError(message);
-        } finally {
-            setIsProcessingPayment(false);
-        }
-    };
-
     const handleStartTopup = async () => {
         const amount = Number(topupAmount);
 
@@ -474,12 +434,6 @@ const TenantPayment: React.FC = () => {
         } finally {
             setIsTopupStarting(false);
         }
-    };
-
-    const getUpcomingActionLabel = (canPay: boolean): string => {
-        if (!canPay) return 'Paid';
-        if (isProcessingPayment) return 'Processing...';
-        return 'Pay';
     };
 
     const getRequestActionLabel = (status: string): string => {
@@ -578,13 +532,9 @@ const TenantPayment: React.FC = () => {
                             </div>
                             <div className="row-actions">
                                 <span className="row-amount">{formatMoney(item.amount)}</span>
-                                <button
-                                    className={!item.canPay ? 'btn-manage-ghost' : 'btn-pay-now'}
-                                    onClick={!item.canPay ? undefined : () => void handlePayUpcomingRent(item.contractId)}
-                                    disabled={!item.canPay || isProcessingPayment}
-                                >
-                                    {getUpcomingActionLabel(item.canPay)}
-                                </button>
+                                <span className={`pill ${item.canPay ? 'scheduled' : 'success'}`}>
+                                    {item.canPay ? 'Scheduled' : 'Paid'}
+                                </span>
                             </div>
                         </div>
                     ))}

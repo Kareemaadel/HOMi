@@ -17,6 +17,24 @@ import {
 
 const router = Router();
 
+router.get(
+    '/testing/clock',
+    protect,
+    contractController.getTestingClock.bind(contractController)
+);
+
+router.post(
+    '/testing/clock/advance',
+    protect,
+    contractController.advanceTestingClock.bind(contractController)
+);
+
+router.post(
+    '/testing/clock/reset',
+    protect,
+    contractController.resetTestingClock.bind(contractController)
+);
+
 /**
  * @swagger
  * /contracts/landlord:

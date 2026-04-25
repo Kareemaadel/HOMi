@@ -107,6 +107,8 @@ export interface MonthlyRentPaymentResponse {
     remainingBalance: number;
     debitedAmount: number;
     paidForMonth: string;
+    lateFeeApplied?: number;
+    wasLate?: boolean;
 }
 
 export type TenantPaymentHistoryType =

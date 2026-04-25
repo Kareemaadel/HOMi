@@ -2,10 +2,12 @@ import React from 'react';
 import { FaCreditCard, FaCalendarAlt, FaChevronRight, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import type { LandlordContract, RentDueDate } from '../../../../services/contract.service';
+import { formatDateLabel, getRentCycleSummary } from '../../../TenantPayment/utils/rentSchedule';
 import './UpcomingPayments.css';
 
 interface UpcomingPaymentsProps {
   contract: LandlordContract | null;
+  referenceDate?: Date;
 }
 
 const getDueDayFromContract = (rentDueDate: RentDueDate | null): number => {
@@ -36,11 +38,17 @@ const getPeriodLabel = (): string => {
   return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
 };
 
-export const UpcomingPayments: React.FC<UpcomingPaymentsProps> = ({ contract }) => {
+export const UpcomingPayments: React.FC<UpcomingPaymentsProps> = ({ contract, referenceDate }) => {
   const navigate = useNavigate();
 
   const amount = Number(contract?.rentAmount ?? contract?.property?.monthlyPrice ?? 0);
-  const dueDate = getDueInLabel(contract?.rentDueDate ?? null);
+  const cycle = contract ? getRentCycleSummary(contract, referenceDate) : null;
+  const dueDate = cycle
+    ? `Due ${formatDateLabel(cycle.dueDate)}`
+    : getDueInLabel(contract?.rentDueDate ?? null);
+  const paymentState = cycle
+    ? (cycle.isPaidForCurrentCycle ? 'Paid for current cycle' : `Due in ${cycle.daysUntilDue} day${cycle.daysUntilDue === 1 ? '' : 's'}`)
+    : 'No active lease';
   const isAutopay = false;
   const hasLinkedMethod = false;
 
@@ -50,8 +58,8 @@ export const UpcomingPayments: React.FC<UpcomingPaymentsProps> = ({ contract }) 
         <header className="payment-header">
           <span className="type-badge">Rent Payment</span>
           <div className="due-status-indicator">
-            <FaExclamationCircle className="pulse-icon" />
-            <span>Due in {dueDate}</span>
+            {cycle?.isPaidForCurrentCycle ? <FaCheckCircle className="pulse-icon" /> : <FaExclamationCircle className="pulse-icon" />}
+            <span>{paymentState}</span>
           </div>
         </header>
         
@@ -62,7 +70,7 @@ export const UpcomingPayments: React.FC<UpcomingPaymentsProps> = ({ contract }) 
             <span className="amount-fraction">.00</span>
           </div>
           <p className="billing-label">
-            <FaCalendarAlt className="icon-subtle" /> Period: {getPeriodLabel()}
+            <FaCalendarAlt className="icon-subtle" /> {dueDate} - Period: {getPeriodLabel()}
           </p>
         </div>
 
@@ -83,15 +91,25 @@ export const UpcomingPayments: React.FC<UpcomingPaymentsProps> = ({ contract }) 
           </div>
         </footer>
 
-        <button
-          className="payment-action-inline"
-          aria-label="Process payment"
-          onClick={() => navigate('/tenant-payment')}
-        >
-          <FaCreditCard className="pay-icon" />
-          <span>Pay Now</span>
-          <FaChevronRight className="arrow-icon" />
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            className="payment-action-inline"
+            aria-label="Open payments page"
+            onClick={() => navigate('/tenant-payment')}
+          >
+            <FaCreditCard className="pay-icon" />
+            <span>Open Payments</span>
+            <FaChevronRight className="arrow-icon" />
+          </button>
+          <button
+            className="payment-action-inline"
+            aria-label="Open maintenance page"
+            onClick={() => navigate('/maintenance-requests')}
+          >
+            <span>Maintenance</span>
+            <FaChevronRight className="arrow-icon" />
+          </button>
+        </div>
       </div>
     </div>
   );

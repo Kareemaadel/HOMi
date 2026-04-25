@@ -1,4 +1,5 @@
 import type { LandlordContract } from '../../../services/contract.service';
+import { getTestingNowFromCache } from '../../../shared/utils/testingClock';
 
 export interface RentCycleSummary {
     dueDate: Date;
@@ -23,7 +24,8 @@ const getCycleDueDate = (contract: LandlordContract, reference: Date): Date => {
 const startOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 export const getRentCycleSummary = (contract: LandlordContract, nowInput?: Date): RentCycleSummary => {
-    const now = nowInput ? startOfDay(nowInput) : startOfDay(new Date());
+    const cached = getTestingNowFromCache();
+    const now = nowInput ? startOfDay(nowInput) : startOfDay(cached ?? new Date());
     const baseCycleDue = getCycleDueDate(contract, now);
     const currentCycleDue = baseCycleDue < now
         ? getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1))
