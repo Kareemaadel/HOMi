@@ -557,6 +557,12 @@ router.get(
     contractController.getWalletBalance.bind(contractController)
 );
 
+router.get(
+    '/payments/history',
+    protect,
+    contractController.getTenantPaymentHistory.bind(contractController)
+);
+
 router.post(
     '/:id/payments/balance/pay',
     protect,

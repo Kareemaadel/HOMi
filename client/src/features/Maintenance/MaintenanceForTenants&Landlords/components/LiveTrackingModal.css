@@ -1,0 +1,215 @@
+.lt-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    padding: 1.5rem;
+}
+
+.lt-modal {
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 40px 80px -20px rgba(15, 23, 42, 0.45);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.lt-modal-header {
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(135deg, #ecfdf5, #f0f9ff);
+    border-bottom: 1px solid #e0f2fe;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.lt-modal-header h2 {
+    margin: 0 0 4px;
+    font-size: 1.25rem;
+    color: #0f172a;
+}
+
+.lt-modal-header p {
+    margin: 0;
+    color: #475569;
+    font-size: 0.9rem;
+}
+
+.lt-close-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+}
+
+.lt-modal-body {
+    padding: 1.5rem 1.75rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.lt-provider-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #f8fafc;
+}
+
+.lt-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #eef2ff;
+    color: #6366f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex: 0 0 56px;
+}
+
+.lt-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lt-provider-info {
+    flex: 1;
+}
+
+.lt-provider-info h4 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1rem;
+}
+
+.lt-provider-type {
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.lt-provider-phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #6366f1;
+    text-decoration: none;
+}
+
+.lt-status-pill {
+    background: #16a34a;
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lt-map-placeholder {
+    border: 1px dashed #cbd5f5;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(16, 185, 129, 0.06));
+    padding: 1.25rem;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 130px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.lt-position-card,
+.lt-property-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fff;
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
+    box-shadow: 0 6px 12px -8px rgba(15, 23, 42, 0.2);
+    width: 100%;
+    max-width: 420px;
+    text-align: left;
+}
+
+.lt-position-card svg,
+.lt-property-card svg {
+    color: #ef4444;
+}
+
+.lt-position-card div,
+.lt-property-card div {
+    display: flex;
+    flex-direction: column;
+}
+
+.lt-position-card strong,
+.lt-property-card strong {
+    color: #0f172a;
+}
+
+.lt-position-card small,
+.lt-property-card small {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.lt-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+}
+
+.lt-stat {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.lt-stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.lt-stat strong {
+    margin-top: 4px;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    color: #0f172a;
+}

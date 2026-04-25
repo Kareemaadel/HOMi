@@ -523,6 +523,18 @@
     color: #065f46;
 }
 
+.badge.open { background: #ede9fe; color: #5b21b6; }
+.badge.en-route { background: #cffafe; color: #0e7490; }
+.badge.awaiting { background: #fef3c7; color: #92400e; }
+.badge.disputed { background: #fee2e2; color: #991b1b; }
+.badge.cancelled { background: #f1f5f9; color: #475569; }
+
+.status-indicator.open { background: #ede9fe; color: #5b21b6; }
+.status-indicator.en-route { background: #cffafe; color: #0e7490; }
+.status-indicator.awaiting { background: #fef3c7; color: #92400e; }
+.status-indicator.disputed { background: #fee2e2; color: #991b1b; }
+.status-indicator.cancelled { background: #f1f5f9; color: #475569; }
+
 .req-details-btn {
     background: transparent;
     border: none;

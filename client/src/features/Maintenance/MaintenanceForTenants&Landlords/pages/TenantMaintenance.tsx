@@ -1,323 +1,412 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import Header from '../../../../components/global/header';
 import Footer from '../../../../components/global/footer';
 import Sidebar from '../../../../components/global/Tenant/sidebar';
 import ProviderCard from '../components/ProviderCard';
 import DetailedIssueModal from '../components/DetailedIssueModal';
 import ProviderProfile from '../components/ProviderProfile';
+import ApplicationsModal from '../components/ApplicationsModal';
+import LiveTrackingModal from '../components/LiveTrackingModal';
+import CompletionConfirmModal from '../components/CompletionConfirmModal';
 import './TenantMaintenance.css';
 import {
     FaPlus, FaSearch, FaFilter, FaTools, FaCalendarCheck,
-    FaHistory, FaMapMarkerAlt, FaHammer, FaWrench, FaBolt,
-    FaPaintRoller, FaCheckCircle, FaClock, FaTimesCircle,
-    FaExclamationTriangle, FaChevronRight, FaStar
+    FaHammer, FaBolt, FaCheckCircle, FaClock, FaTimesCircle,
+    FaChevronRight, FaMapMarkerAlt, FaUsers,
 } from 'react-icons/fa';
+import maintenanceService, {
+    type BrowseProvider,
+    type MaintenanceRequest,
+} from '../../../../services/maintenance.service';
+import socketService from '../../../../services/socket.service';
+import { MAINTENANCE_CATEGORIES } from '../../constants/categories';
 
-// Mock Data
-const MOCK_PROVIDERS = [
-    {
-        id: 'p1',
-        name: 'Ahmed Plumbing Solutions',
-        specialty: 'Plumbing & Drainage',
-        rating: 4.8,
-        reviewCount: 124,
-        location: 'Maadi, Cairo',
-        priceRange: 'EGP 200',
-        imageUrl: 'https://images.unsplash.com/photo-1581578731522-745d4b45a0e7?q=80&w=400&auto=format&fit=crop',
-        isVerified: true,
-        completedJobs: 450
-    },
-    {
-        id: 'p2',
-        name: 'SafeWire Electrical',
-        specialty: 'Electrical Systems',
-        rating: 4.9,
-        reviewCount: 89,
-        location: 'New Cairo',
-        priceRange: 'EGP 350',
-        imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=400&auto=format&fit=crop',
-        isVerified: true,
-        completedJobs: 230
-    },
-    {
-        id: 'p3',
-        name: 'Modern Interiors Painting',
-        specialty: 'Painting & Decor',
-        rating: 4.7,
-        reviewCount: 156,
-        location: 'Zamalek, Cairo',
-        priceRange: 'EGP 150',
-        imageUrl: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=400&auto=format&fit=crop',
-        isVerified: false,
-        completedJobs: 820
-    },
-    {
-        id: 'p4',
-        name: 'CoolBreeze AC Service',
-        specialty: 'HVAC Maintenance',
-        rating: 4.6,
-        reviewCount: 67,
-        location: 'Sheikh Zayed',
-        priceRange: 'EGP 400',
-        imageUrl: 'https://images.unsplash.com/photo-1599708144666-47b2c9c8172b?q=80&w=400&auto=format&fit=crop',
-        isVerified: true,
-        completedJobs: 180
+function statusColor(status: MaintenanceRequest['status']) {
+    switch (status) {
+        case 'OPEN': return { label: 'Open', className: 'open' };
+        case 'ASSIGNED': return { label: 'Scheduled', className: 'scheduled' };
+        case 'EN_ROUTE': return { label: 'On the way', className: 'en-route' };
+        case 'IN_PROGRESS': return { label: 'In progress', className: 'in-progress' };
+        case 'AWAITING_CONFIRMATION': return { label: 'Awaiting confirmation', className: 'awaiting' };
+        case 'COMPLETED': return { label: 'Completed', className: 'completed' };
+        case 'DISPUTED': return { label: 'Disputed', className: 'disputed' };
+        case 'RESOLVED_BY_ADMIN': return { label: 'Resolved by admin', className: 'completed' };
+        case 'CANCELLED': return { label: 'Cancelled', className: 'cancelled' };
+        default: return { label: status, className: 'open' };
     }
-];
-
-const MOCK_MY_REQUESTS = [
-    {
-        id: 'req-1',
-        issueType: 'Water Leak',
-        description: 'Kitchen sink is leaking significantly from the main valve.',
-        status: 'Scheduled',
-        providerName: 'Ahmed Plumbing Solutions',
-        date: 'Oct 25, 2023',
-        price: 300,
-        urgency: 'High'
-    },
-    {
-        id: 'req-2',
-        issueType: 'AC Maintenance',
-        description: 'Annual cleaning for 2 units in the living room.',
-        status: 'In Progress',
-        providerName: 'CoolBreeze AC Service',
-        date: 'Oct 23, 2023',
-        price: 800,
-        urgency: 'Medium'
-    },
-    {
-        id: 'req-3',
-        issueType: 'Light Fixture',
-        description: 'Bedroom chandelier needs installation.',
-        status: 'Completed',
-        providerName: 'SafeWire Electrical',
-        date: 'Oct 15, 2023',
-        price: 450,
-        urgency: 'Low'
-    }
-];
-
-const MOCK_MARKETPLACE_POSTS = [
-    {
-        id: 'post-1',
-        issueType: 'Gardening',
-        description: 'Need lawn mowing and tree trimming for my backyard.',
-        applications: 5,
-        postedDate: '2 days ago',
-        status: 'Live',
-        budget: 'EGP 800'
-    }
-];
+}
 
 const TenantMaintenance: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'post' | 'browse' | 'active'>('post');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterCategory, setFilterCategory] = useState('All');
+
+    // ── Browse providers state ────────────────────────────────────────────────
+    const [providers, setProviders] = useState<BrowseProvider[]>([]);
+    const [providersLoading, setProvidersLoading] = useState(false);
+    const [providerSearch, setProviderSearch] = useState('');
+    const [providerCategory, setProviderCategory] = useState<string>('All');
+    const [providerType, setProviderType] = useState<'ALL' | 'INDIVIDUAL' | 'CENTER'>('ALL');
+
+    // ── Tenant requests state ────────────────────────────────────────────────
+    const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
+    const [requestsLoading, setRequestsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // ── Modals ────────────────────────────────────────────────────────────────
     const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
-    const [selectedIssue, setSelectedIssue] = useState<any>(null);
     const [isViewOnlyModal, setIsViewOnlyModal] = useState(false);
+    const [selectedIssue, setSelectedIssue] = useState<MaintenanceRequest | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-    const [selectedProviderProfile, setSelectedProviderProfile] = useState<any>(null);
+    const [selectedProvider, setSelectedProvider] = useState<BrowseProvider | null>(null);
+    const [appsRequest, setAppsRequest] = useState<MaintenanceRequest | null>(null);
+    const [trackRequest, setTrackRequest] = useState<MaintenanceRequest | null>(null);
+    const [confirmRequest, setConfirmRequest] = useState<MaintenanceRequest | null>(null);
 
-    const handleViewProfile = (id: string) => {
-        const provider = MOCK_PROVIDERS.find(p => p.id === id);
-        if (provider) {
-            setSelectedProviderProfile(provider);
-            setIsProfileModalOpen(true);
+    // ─── Loaders ────────────────────────────────────────────────────────────
+    const loadProviders = useCallback(async () => {
+        try {
+            setProvidersLoading(true);
+            const list = await maintenanceService.listProviders({
+                category: providerCategory !== 'All' ? providerCategory : undefined,
+                type: providerType !== 'ALL' ? providerType : undefined,
+                search: providerSearch.trim() || undefined,
+            });
+            setProviders(list);
+        } catch (err: any) {
+            setError(err?.response?.data?.message ?? 'Failed to load providers.');
+        } finally {
+            setProvidersLoading(false);
         }
-    };
+    }, [providerCategory, providerType, providerSearch]);
 
-    const handlePostSuccess = () => {
-        console.log('Issue posted successfully');
-    };
+    const loadRequests = useCallback(async () => {
+        try {
+            setRequestsLoading(true);
+            const list = await maintenanceService.listTenantRequests();
+            setRequests(list);
+        } catch (err: any) {
+            setError(err?.response?.data?.message ?? 'Failed to load your requests.');
+        } finally {
+            setRequestsLoading(false);
+        }
+    }, []);
 
+    useEffect(() => { loadProviders(); }, [loadProviders]);
+    useEffect(() => { loadRequests(); }, [loadRequests]);
+
+    // ─── Realtime: refresh requests on status events ───────────────────────
+    useEffect(() => {
+        socketService.connect();
+        const handler = () => { void loadRequests(); };
+        socketService.onMaintenanceStatus(handler);
+        socketService.onMaintenanceAwaitingConfirmation(handler);
+        return () => {
+            socketService.offMaintenanceStatus(handler);
+            socketService.offMaintenanceAwaitingConfirmation(handler);
+        };
+    }, [loadRequests]);
+
+    // ─── Active vs history split ────────────────────────────────────────────
+    const activeRequests = useMemo(
+        () =>
+            requests.filter(
+                (r) => !['COMPLETED', 'CANCELLED', 'RESOLVED_BY_ADMIN'].includes(r.status)
+            ),
+        [requests]
+    );
+    const completedRequests = useMemo(
+        () =>
+            requests.filter((r) =>
+                ['COMPLETED', 'CANCELLED', 'RESOLVED_BY_ADMIN'].includes(r.status)
+            ),
+        [requests]
+    );
+
+    // ─── Handlers ───────────────────────────────────────────────────────────
     const openPostModal = () => {
         setSelectedIssue(null);
         setIsViewOnlyModal(false);
         setIsIssueModalOpen(true);
     };
 
-    const openViewIssueModal = (post: any) => {
-        setSelectedIssue({
-            issueType: post.issueType,
-            description: post.description,
-            budget: post.budget.replace('EGP ', ''),
-            urgency: 'Medium', // Default for mock data
-            paymentMethod: 'Cash',
-            responseTime: '24 Hours',
-            images: [
-                'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400'
-            ]
-        });
+    const openViewIssueModal = (req: MaintenanceRequest) => {
+        setSelectedIssue(req);
         setIsViewOnlyModal(true);
         setIsIssueModalOpen(true);
     };
 
-    const renderTabContent = () => {
-        switch (activeTab) {
-            case 'post':
-                return (
-                    <div className="tab-pane animate-in">
-                        <div className="section-header">
-                            <div>
-                                <h2>Community Marketplace</h2>
-                                <p>Post your issue to the HOMi community and get bids from certified pros.</p>
-                            </div>
-                            <button className="post-issue-btn" onClick={openPostModal}>
-                                <FaPlus /> Post New Issue
-                            </button>
-                        </div>
+    const openApplicationsModal = (req: MaintenanceRequest) => setAppsRequest(req);
+    const openTrackingModal = (req: MaintenanceRequest) => setTrackRequest(req);
 
-                        <div className="marketplace-grid">
-                            {MOCK_MARKETPLACE_POSTS.map(post => (
-                                <div key={post.id} className="post-card-premium">
-                                    <div className="post-card-badge">{post.status}</div>
-                                    <div className="post-card-content">
-                                        <div className="post-card-type">
-                                            <FaHammer className="type-icon" />
-                                            {post.issueType}
-                                        </div>
-                                        <p className="post-description">{post.description}</p>
-                                        <div className="post-meta">
-                                            <div className="meta-item">
-                                                <FaClock /> {post.postedDate}
-                                            </div>
-                                            <div className="meta-item">
-                                                <FaBolt /> {post.applications} Applications
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="post-card-footer">
-                                        <div className="budget-info">
-                                            <span>Budget:</span>
-                                            <strong>{post.budget}</strong>
-                                        </div>
-                                        <button className="view-bids-btn" onClick={() => openViewIssueModal(post)}>View Issue</button>
-                                    </div>
-                                </div>
-                            ))}
+    const handlePostSuccess = (created: MaintenanceRequest) => {
+        setRequests((prev) => [created, ...prev]);
+    };
 
-                            <div className="add-post-placeholder" onClick={openPostModal}>
-                                <div className="placeholder-content">
-                                    <div className="plus-icon-box">
-                                        <FaPlus />
-                                    </div>
-                                    <p>Post a new maintenance request to get help fast.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 'browse':
-                return (
-                    <div className="tab-pane animate-in">
-                        <div className="browse-controls">
-                            <div className="search-box-premium">
-                                <FaSearch className="search-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="Search by name, skill, or location..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                            <div className="filter-dropdown-premium">
-                                <FaFilter className="filter-icon" />
-                                <select
-                                    value={filterCategory}
-                                    onChange={(e) => setFilterCategory(e.target.value)}
-                                >
-                                    <option value="All">All Categories</option>
-                                    <option value="Plumbing">Plumbing</option>
-                                    <option value="Electrical">Electrical</option>
-                                    <option value="Painting">Painting</option>
-                                    <option value="HVAC">HVAC</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="providers-grid">
-                            {MOCK_PROVIDERS
-                                .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    p.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
-                                .map(provider => (
-                                    <ProviderCard
-                                        key={provider.id}
-                                        {...provider}
-                                        onViewProfile={handleViewProfile}
-                                    />
-                                ))
-                            }
-                        </div>
-                    </div>
-                );
-            case 'active':
-                const hasActiveRequests = MOCK_MY_REQUESTS.length > 0;
-                return (
-                    <div className="tab-pane animate-in">
-                        <div className="section-header">
-                            <div>
-                                <h2>Track Maintenance</h2>
-                                <p>Monitor the progress of your scheduled and active maintenance jobs.</p>
-                            </div>
-                        </div>
-
-                        {hasActiveRequests ? (
-                            <div className="active-requests-list">
-                                {MOCK_MY_REQUESTS.map(req => (
-                                    <div key={req.id} className="active-request-row">
-                                        <div className={`status-indicator ${req.status.toLowerCase().replace(' ', '-')}`}>
-                                            {req.status === 'Scheduled' && <FaCalendarCheck />}
-                                            {req.status === 'In Progress' && <FaClock />}
-                                            {req.status === 'Completed' && <FaCheckCircle />}
-                                        </div>
-
-                                        <div className="req-main-info">
-                                            <h4>{req.issueType}</h4>
-                                            <p>{req.description}</p>
-                                        </div>
-
-                                        <div className="req-provider">
-                                            <span className="label">Provider</span>
-                                            <span className="value">{req.providerName}</span>
-                                        </div>
-
-                                        <div className="req-date">
-                                            <span className="label">Date</span>
-                                            <span className="value">{req.date}</span>
-                                        </div>
-
-                                        <div className="req-status-badge">
-                                            <span className={`badge ${req.status.toLowerCase().replace(' ', '-')}`}>
-                                                {req.status}
-                                            </span>
-                                        </div>
-
-                                        <button className="req-details-btn">
-                                            <FaChevronRight />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="empty-state-container">
-                                <div className="empty-state-icon-box">
-                                    <FaTools />
-                                </div>
-                                <h3>No active requests</h3>
-                                <p>You haven't scheduled any maintenance yet. Post an issue or browse providers to get started.</p>
-                                <div className="empty-state-actions">
-                                    <button className="primary-empty-btn" onClick={() => setActiveTab('post')}>Post an Issue</button>
-                                    <button className="secondary-empty-btn" onClick={() => setActiveTab('browse')}>Browse Providers</button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            default:
-                return null;
+    const handleCancel = async (req: MaintenanceRequest) => {
+        if (!window.confirm('Cancel this maintenance request?')) return;
+        try {
+            const updated = await maintenanceService.cancelTenantRequest(req.id);
+            setRequests((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        } catch (err: any) {
+            alert(err?.response?.data?.message ?? 'Could not cancel.');
         }
+    };
+
+    const handleViewProfile = (id: string) => {
+        const provider = providers.find((p) => p.id === id);
+        if (provider) {
+            setSelectedProvider(provider);
+            setIsProfileModalOpen(true);
+        }
+    };
+
+    // ─── Render tabs ───────────────────────────────────────────────────────
+    const renderPostTab = () => (
+        <div className="tab-pane animate-in">
+            <div className="section-header">
+                <div>
+                    <h2>Your maintenance issues</h2>
+                    <p>Post a new issue from your active rental — pros will start applying with their final price.</p>
+                </div>
+                <button className="post-issue-btn" onClick={openPostModal}>
+                    <FaPlus /> Post New Issue
+                </button>
+            </div>
+
+            {requestsLoading && requests.length === 0 ? (
+                <div className="empty-state-container"><h3>Loading…</h3></div>
+            ) : activeRequests.length === 0 ? (
+                <div className="add-post-placeholder" onClick={openPostModal} style={{ minHeight: 220 }}>
+                    <div className="placeholder-content">
+                        <div className="plus-icon-box"><FaPlus /></div>
+                        <p>You have no active issues. Tap to post one.</p>
+                    </div>
+                </div>
+            ) : (
+                <div className="marketplace-grid">
+                    {activeRequests.map((req) => {
+                        const sc = statusColor(req.status);
+                        return (
+                            <div key={req.id} className="post-card-premium">
+                                <div className="post-card-badge">{sc.label}</div>
+                                <div className="post-card-content">
+                                    <div className="post-card-type">
+                                        <FaHammer className="type-icon" />
+                                        {req.category}
+                                    </div>
+                                    <h3 style={{ margin: '4px 0 6px' }}>{req.title}</h3>
+                                    <p className="post-description">{req.description}</p>
+                                    <div className="post-meta">
+                                        <div className="meta-item"><FaClock /> {new Date(req.createdAt).toLocaleDateString()}</div>
+                                        <div className="meta-item"><FaBolt /> {req.applicationsCount ?? 0} applications</div>
+                                        {req.urgency && <div className="meta-item">Urgency: {req.urgency}</div>}
+                                    </div>
+                                </div>
+                                <div className="post-card-footer">
+                                    <div className="budget-info">
+                                        <span>{req.agreedPrice != null ? 'Agreed' : 'Budget'}:</span>
+                                        <strong>
+                                            {req.agreedPrice != null
+                                                ? `EGP ${Number(req.agreedPrice).toFixed(2)}`
+                                                : req.estimatedBudget
+                                                    ? `EGP ${Number(req.estimatedBudget).toFixed(2)}`
+                                                    : '—'}
+                                        </strong>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <button className="view-bids-btn" onClick={() => openViewIssueModal(req)}>View</button>
+                                        {req.status === 'OPEN' && (
+                                            <button
+                                                className="view-bids-btn"
+                                                style={{ background: '#6366f1', color: '#fff', border: 'none' }}
+                                                onClick={() => openApplicationsModal(req)}
+                                            >
+                                                Bids ({req.applicationsCount ?? 0})
+                                            </button>
+                                        )}
+                                        {(req.status === 'EN_ROUTE' || req.status === 'IN_PROGRESS') && (
+                                            <button
+                                                className="view-bids-btn"
+                                                style={{ background: '#10b981', color: '#fff', border: 'none' }}
+                                                onClick={() => openTrackingModal(req)}
+                                            >
+                                                Track
+                                            </button>
+                                        )}
+                                        {req.status === 'AWAITING_CONFIRMATION' && (
+                                            <button
+                                                className="view-bids-btn"
+                                                style={{ background: '#f59e0b', color: '#fff', border: 'none' }}
+                                                onClick={() => setConfirmRequest(req)}
+                                            >
+                                                Confirm
+                                            </button>
+                                        )}
+                                        {req.status === 'OPEN' && (
+                                            <button
+                                                className="view-bids-btn"
+                                                style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                                                onClick={() => handleCancel(req)}
+                                            >
+                                                <FaTimesCircle />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+
+    const renderBrowseTab = () => (
+        <div className="tab-pane animate-in">
+            <div className="browse-controls">
+                <div className="search-box-premium">
+                    <FaSearch className="search-icon" />
+                    <input
+                        type="text"
+                        placeholder="Search maintainers, centers, locations…"
+                        value={providerSearch}
+                        onChange={(e) => setProviderSearch(e.target.value)}
+                    />
+                </div>
+                <div className="filter-dropdown-premium">
+                    <FaFilter className="filter-icon" />
+                    <select
+                        value={providerCategory}
+                        onChange={(e) => setProviderCategory(e.target.value)}
+                    >
+                        <option value="All">All Categories</option>
+                        {MAINTENANCE_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="filter-dropdown-premium">
+                    <FaUsers className="filter-icon" />
+                    <select
+                        value={providerType}
+                        onChange={(e) => setProviderType(e.target.value as 'ALL' | 'INDIVIDUAL' | 'CENTER')}
+                    >
+                        <option value="ALL">Individuals + Centers</option>
+                        <option value="INDIVIDUAL">Individuals</option>
+                        <option value="CENTER">Centers</option>
+                    </select>
+                </div>
+            </div>
+
+            {providersLoading && providers.length === 0 ? (
+                <div className="empty-state-container"><h3>Loading providers…</h3></div>
+            ) : providers.length === 0 ? (
+                <div className="empty-state-container">
+                    <div className="empty-state-icon-box"><FaSearch /></div>
+                    <h3>No providers match your filters</h3>
+                    <p>Try a different category, type, or clear the search.</p>
+                </div>
+            ) : (
+                <div className="providers-grid">
+                    {providers.map((p) => {
+                        const fullName = `${p.firstName} ${p.lastName}`.trim();
+                        const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.businessName ?? fullName)}&background=6366f1&color=fff&size=200`;
+                        return (
+                            <ProviderCard
+                                key={p.id}
+                                id={p.id}
+                                name={p.businessName ?? fullName}
+                                specialty={p.primaryCategory}
+                                rating={p.rating}
+                                reviewCount={p.ratingsCount}
+                                location={p.companyLocation ?? '—'}
+                                priceRange="On request"
+                                imageUrl={p.avatarUrl ?? fallback}
+                                isVerified
+                                completedJobs={p.completedJobsCount}
+                                onViewProfile={handleViewProfile}
+                            />
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+
+    const renderActiveTab = () => {
+        const list = activeRequests.length === 0 ? completedRequests : [...activeRequests, ...completedRequests];
+        return (
+            <div className="tab-pane animate-in">
+                <div className="section-header">
+                    <div>
+                        <h2>Track maintenance</h2>
+                        <p>All your maintenance requests with live status updates.</p>
+                    </div>
+                </div>
+
+                {list.length === 0 ? (
+                    <div className="empty-state-container">
+                        <div className="empty-state-icon-box"><FaTools /></div>
+                        <h3>No active requests</h3>
+                        <p>You haven't posted any issues yet.</p>
+                        <div className="empty-state-actions">
+                            <button className="primary-empty-btn" onClick={() => setActiveTab('post')}>Post an Issue</button>
+                            <button className="secondary-empty-btn" onClick={() => setActiveTab('browse')}>Browse Providers</button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="active-requests-list">
+                        {list.map((req) => {
+                            const sc = statusColor(req.status);
+                            return (
+                                <div key={req.id} className="active-request-row">
+                                    <div className={`status-indicator ${sc.className}`}>
+                                        {req.status === 'COMPLETED' || req.status === 'RESOLVED_BY_ADMIN' ? <FaCheckCircle /> :
+                                            req.status === 'IN_PROGRESS' || req.status === 'EN_ROUTE' ? <FaClock /> :
+                                                <FaCalendarCheck />}
+                                    </div>
+
+                                    <div className="req-main-info">
+                                        <h4>{req.title}</h4>
+                                        <p>{req.description}</p>
+                                    </div>
+
+                                    <div className="req-provider">
+                                        <span className="label">Provider</span>
+                                        <span className="value">
+                                            {req.provider
+                                                ? req.provider.businessName ??
+                                                    `${req.provider.firstName} ${req.provider.lastName}`.trim()
+                                                : 'Awaiting bids'}
+                                        </span>
+                                    </div>
+
+                                    <div className="req-date">
+                                        <span className="label">Posted</span>
+                                        <span className="value">{new Date(req.createdAt).toLocaleDateString()}</span>
+                                    </div>
+
+                                    <div className="req-status-badge">
+                                        <span className={`badge ${sc.className}`}>{sc.label}</span>
+                                    </div>
+
+                                    <button
+                                        className="req-details-btn"
+                                        onClick={() => {
+                                            if (req.status === 'OPEN') openApplicationsModal(req);
+                                            else if (req.status === 'EN_ROUTE' || req.status === 'IN_PROGRESS') openTrackingModal(req);
+                                            else if (req.status === 'AWAITING_CONFIRMATION') setConfirmRequest(req);
+                                            else openViewIssueModal(req);
+                                        }}
+                                    >
+                                        <FaChevronRight />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -325,26 +414,36 @@ const TenantMaintenance: React.FC = () => {
             <Sidebar />
             <div className="tenant-maintenance-content">
                 <Header />
-
                 <main className="maintenance-main-container">
                     <header className="maintenance-hero">
                         <div className="hero-text">
                             <span className="pre-title">Home Care & Support</span>
                             <h1>Maintenance Hub</h1>
-                            <p>Everything you need to keep your home in perfect condition.</p>
+                            <p>Post issues, hire trusted pros, track every job — all paid via your HOMi wallet.</p>
                         </div>
 
                         <div className="maintenance-quick-stats">
                             <div className="mini-stat">
-                                <span className="stat-num">{MOCK_MY_REQUESTS.filter(r => r.status !== 'Completed').length}</span>
-                                <span className="stat-desc">Pending Issues</span>
+                                <span className="stat-num">{activeRequests.length}</span>
+                                <span className="stat-desc">Active issues</span>
                             </div>
                             <div className="mini-stat accent">
-                                <span className="stat-num">{MOCK_PROVIDERS.length}</span>
-                                <span className="stat-desc">Nearby Pros</span>
+                                <span className="stat-num">{providers.length}</span>
+                                <span className="stat-desc">Pros nearby</span>
                             </div>
                         </div>
                     </header>
+
+                    {error && (
+                        <div style={{
+                            padding: '0.75rem 1rem',
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            color: '#b91c1c',
+                            borderRadius: 12,
+                            marginBottom: '1rem',
+                        }}>{error}</div>
+                    )}
 
                     <nav className="maintenance-tabs">
                         <button
@@ -371,7 +470,9 @@ const TenantMaintenance: React.FC = () => {
                     </nav>
 
                     <div className="tab-content-wrapper">
-                        {renderTabContent()}
+                        {activeTab === 'post' && renderPostTab()}
+                        {activeTab === 'browse' && renderBrowseTab()}
+                        {activeTab === 'active' && renderActiveTab()}
                     </div>
                 </main>
 
@@ -386,9 +487,38 @@ const TenantMaintenance: React.FC = () => {
                 <ProviderProfile
                     isOpen={isProfileModalOpen}
                     onClose={() => setIsProfileModalOpen(false)}
-                    provider={selectedProviderProfile}
-                    myIssues={MOCK_MARKETPLACE_POSTS} // Using marketplace posts as tenant's issues for this demo
+                    provider={selectedProvider}
                 />
+
+                {appsRequest && (
+                    <ApplicationsModal
+                        isOpen
+                        onClose={() => setAppsRequest(null)}
+                        request={appsRequest}
+                        onAccepted={(updated) => {
+                            setRequests((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+                            setAppsRequest(null);
+                        }}
+                    />
+                )}
+
+                {trackRequest && (
+                    <LiveTrackingModal
+                        isOpen
+                        onClose={() => setTrackRequest(null)}
+                        request={trackRequest}
+                    />
+                )}
+
+                {confirmRequest && (
+                    <CompletionConfirmModal
+                        request={confirmRequest}
+                        onResolved={(updated) => {
+                            setRequests((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+                            setConfirmRequest(null);
+                        }}
+                    />
+                )}
 
                 <Footer />
             </div>

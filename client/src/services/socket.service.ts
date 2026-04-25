@@ -82,6 +82,60 @@ class SocketService {
     offConversationRead(handler: (payload: ConversationReadEvent) => void): void {
         this.socket?.off('conversation:read', handler);
     }
+
+    // ─── Maintenance ────────────────────────────────────────────────────────
+    joinMaintenanceRequest(requestId: string): void {
+        this.socket?.emit('maintenance:join', { requestId });
+    }
+
+    leaveMaintenanceRequest(requestId: string): void {
+        this.socket?.emit('maintenance:leave', { requestId });
+    }
+
+    onMaintenanceLocation(
+        handler: (payload: { requestId: string; lat: number; lng: number; reportedAt: string }) => void
+    ): void {
+        this.socket?.on('maintenance:location', handler);
+    }
+
+    offMaintenanceLocation(
+        handler: (payload: { requestId: string; lat: number; lng: number; reportedAt: string }) => void
+    ): void {
+        this.socket?.off('maintenance:location', handler);
+    }
+
+    onMaintenanceStatus(
+        handler: (payload: { requestId: string; status: string }) => void
+    ): void {
+        this.socket?.on('maintenance:status', handler);
+    }
+
+    offMaintenanceStatus(
+        handler: (payload: { requestId: string; status: string }) => void
+    ): void {
+        this.socket?.off('maintenance:status', handler);
+    }
+
+    onMaintenanceAwaitingConfirmation(
+        handler: (payload: { requestId: string }) => void
+    ): void {
+        this.socket?.on('maintenance:awaiting_confirmation', handler);
+    }
+
+    offMaintenanceAwaitingConfirmation(
+        handler: (payload: { requestId: string }) => void
+    ): void {
+        this.socket?.off('maintenance:awaiting_confirmation', handler);
+    }
+
+    // ─── Notifications ──────────────────────────────────────────────────────
+    onNotificationNew(handler: (payload: unknown) => void): void {
+        this.socket?.on('notification:new', handler);
+    }
+
+    offNotificationNew(handler: (payload: unknown) => void): void {
+        this.socket?.off('notification:new', handler);
+    }
 }
 
 export const socketService = new SocketService();

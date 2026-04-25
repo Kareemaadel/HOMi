@@ -809,13 +809,43 @@ class ContractService {
                 throw new ContractError('Monthly rent amount is not configured for this contract', 400, 'INVALID_RENT_AMOUNT');
             }
 
+            // ─── Apply pending landlord-responsibility maintenance credits ──────
+            // Maintenance jobs the landlord owed for in past months get deducted
+            // from the next rent the tenant pays.
+            const { LandlordMaintenanceCharge, LandlordMaintenanceChargeStatus } = await import(
+                '../../maintenance/models/LandlordMaintenanceCharge.js'
+            );
+            const pendingCharges = await LandlordMaintenanceCharge.findAll({
+                where: {
+                    contract_id: contract.id,
+                    status: LandlordMaintenanceChargeStatus.PENDING,
+                },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+            const pendingCreditTotal = pendingCharges.reduce(
+                (sum, c) => sum + Number((c as any).amount ?? 0),
+                0
+            );
+            const netRentAmount = Math.max(rentAmount - pendingCreditTotal, 0);
+
             const availableBalance = Number((profile as any).wallet_balance ?? 0);
-            if (availableBalance < rentAmount) {
+            if (availableBalance < netRentAmount) {
                 throw new ContractError('Insufficient wallet balance to pay monthly rent', 400, 'INSUFFICIENT_WALLET_BALANCE');
             }
 
-            const remainingBalance = Math.max(availableBalance - rentAmount, 0);
+            const remainingBalance = Math.max(availableBalance - netRentAmount, 0);
             await profile.update({ wallet_balance: remainingBalance }, { transaction });
+
+            for (const charge of pendingCharges) {
+                await charge.update(
+                    {
+                        status: LandlordMaintenanceChargeStatus.APPLIED,
+                        applied_at: new Date(),
+                    },
+                    { transaction }
+                );
+            }
 
             await contract.update(
                 {
@@ -839,7 +869,9 @@ class ContractService {
                 metadata: {
                     contractId: contract.id,
                     paidForMonth,
-                    debitedAmount: rentAmount,
+                    debitedAmount: netRentAmount,
+                    landlordMaintenanceCredit: pendingCreditTotal,
+                    rentAmount,
                     remainingBalance,
                 },
             });
@@ -853,7 +885,7 @@ class ContractService {
             return {
                 contract: this.formatContractResponse(refreshedContract ?? contract, true, true),
                 remainingBalance,
-                debitedAmount: rentAmount,
+                debitedAmount: netRentAmount,
                 paidForMonth,
             };
         } catch (error) {

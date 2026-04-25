@@ -134,7 +134,10 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                               'property_detailed_locations', 'property_ownership_docs',
                               'rental_requests', 'saved_properties',
                               'property_amenities', 'property_house_rules',
-                              'messages', 'payment_methods', 'notifications'
+                              'messages', 'payment_methods', 'notifications',
+                              'maintenance_requests', 'maintenance_job_applications',
+                              'maintenance_locations', 'maintenance_conflicts',
+                              'maintenance_ratings', 'landlord_maintenance_charges'
                           )
                     LOOP
                         EXECUTE format(

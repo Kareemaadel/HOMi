@@ -1,18 +1,83 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../../../components/global/header';
 import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
 import {
     FaTools, FaCheckCircle, FaDollarSign, FaSearch,
-    FaMapMarkerAlt, FaWrench, FaBolt, FaChevronRight,
-    FaBell, FaClipboardCheck, FaCreditCard, FaStar, FaStarHalfAlt
+    FaMapMarkerAlt, FaWrench, FaChevronRight,
+    FaBell, FaStar, FaStarHalfAlt
 } from 'react-icons/fa';
 import './MaintenanceHome.css';
+import maintenanceService, {
+    type MaintenanceRequest,
+    type ProviderEarnings,
+} from '../../../../../services/maintenance.service';
+import notificationService, { type NotificationItem } from '../../../../../services/notification.service';
+import authService from '../../../../../services/auth.service';
+
+function timeAgo(iso: string): string {
+    const d = new Date(iso).getTime();
+    const ms = Date.now() - d;
+    const m = Math.floor(ms / 60_000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+}
 
 const MaintenanceHome: React.FC = () => {
     const navigate = useNavigate();
-    const hasData = true; // Toggle this to test empty states
+    const cached = authService.getCurrentUser?.();
+    const firstName = cached?.user?.firstName ?? 'there';
+
+    const [available, setAvailable] = useState<MaintenanceRequest[]>([]);
+    const [activeJobs, setActiveJobs] = useState<MaintenanceRequest[]>([]);
+    const [earnings, setEarnings] = useState<ProviderEarnings | null>(null);
+    const [notifs, setNotifs] = useState<NotificationItem[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                setLoading(true);
+                const [avail, mine, earn, notifList] = await Promise.all([
+                    maintenanceService.listAvailableJobs(),
+                    maintenanceService.listProviderRequests(['ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS', 'AWAITING_CONFIRMATION']),
+                    maintenanceService.getProviderEarnings(),
+                    notificationService.list({ limit: 6 }).then((p) => p.notifications).catch(() => [] as NotificationItem[]),
+                ]);
+                if (cancelled) return;
+                setAvailable(avail);
+                setActiveJobs(mine);
+                setEarnings(earn);
+                setNotifs(notifList);
+            } catch {
+                /* noop */
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    const renderRating = () => {
+        const score = earnings?.avgRating ?? 0;
+        const count = earnings?.completedJobs ?? 0;
+        const stars: React.ReactNode[] = [];
+        const full = Math.floor(score);
+        const hasHalf = score - full >= 0.5;
+        for (let i = 0; i < 5; i++) {
+            if (i < full) stars.push(<FaStar key={i} className="star-filled" />);
+            else if (i === full && hasHalf) stars.push(<FaStarHalfAlt key={i} className="star-filled" />);
+            else stars.push(<FaStar key={i} className="star-empty" />);
+        }
+        return { score, count, stars };
+    };
+
+    const ratingData = renderRating();
 
     return (
         <div className="maintenance-home-layout">
@@ -23,154 +88,119 @@ const MaintenanceHome: React.FC = () => {
 
                 <div className="maintenance-content-scroll">
                     <div className="maintenance-dashboard-container">
-
-                        {/* Welcome Section */}
                         <header className="welcome-section">
                             <div className="welcome-text">
-                                <h1>Good Morning, <span className="highlight">Ahmed!</span></h1>
-                                <p>{hasData ? "You have 3 new job requests today" : "No new job requests today"}</p>
+                                <h1>Welcome back, <span className="highlight">{firstName}</span></h1>
+                                <p>{loading ? 'Fetching your dashboard…' : `${available.length} open jobs nearby — let's get you booked.`}</p>
                             </div>
                         </header>
 
-                        {/* Quick Stats Cards */}
                         <section className="stats-grid">
                             <div className="stat-card">
                                 <div className="stat-icon blue"><FaSearch /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "5" : "0"}</h3>
-                                    <p className="stat-label">Available Jobs</p>
+                                    <h3 className="stat-value">{available.length}</h3>
+                                    <p className="stat-label">Available jobs</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon yellow"><FaWrench /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "2" : "0"}</h3>
-                                    <p className="stat-label">In Progress</p>
+                                    <h3 className="stat-value">{earnings?.activeJobs ?? activeJobs.length}</h3>
+                                    <p className="stat-label">Active jobs</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon green"><FaCheckCircle /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "18" : "0"}</h3>
+                                    <h3 className="stat-value">{earnings?.completedJobs ?? 0}</h3>
                                     <p className="stat-label">Completed</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon purple"><FaDollarSign /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "$1200" : "$0"}</h3>
-                                    <p className="stat-label">Earnings This Month</p>
+                                    <h3 className="stat-value">EGP {(earnings?.walletBalance ?? 0).toLocaleString()}</h3>
+                                    <p className="stat-label">Wallet balance</p>
                                 </div>
                             </div>
                         </section>
 
-                        {/* Main Grid Layout */}
                         <div className="dashboard-main-grid">
-
-                            {/* Left Column (Job Previews) */}
                             <div className="grid-left">
-
-                                {/* New Requests Preview */}
                                 <div className="section-card">
                                     <div className="section-header">
-                                        <h2>New Requests Preview</h2>
+                                        <h2>New job opportunities</h2>
                                         <button className="view-all-btn" onClick={() => navigate('/available-jobs')}>
-                                            View All Jobs <FaChevronRight />
+                                            View all jobs <FaChevronRight />
                                         </button>
                                     </div>
 
                                     <div className="job-list">
-                                        {hasData ? (
-                                            <>
-                                                <div className="job-item">
+                                        {available.length > 0 ? (
+                                            available.slice(0, 3).map((job) => (
+                                                <div className="job-item" key={job.id} onClick={() => navigate('/available-jobs')}>
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaTools /></div>
                                                         <div className="job-info">
-                                                            <h4>Leaking sink</h4>
+                                                            <h4>{job.title}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Cairo (2km away)</span>
-                                                                <span>Plumbing</span>
-                                                                <span>Oct 24, 2023</span>
+                                                                <span><FaMapMarkerAlt /> {job.property?.address ?? '—'}</span>
+                                                                <span>{job.category}</span>
+                                                                <span>{timeAgo(job.createdAt)}</span>
+                                                                {job.urgency === 'CRITICAL' && (
+                                                                    <span style={{ color: '#ef4444', fontWeight: 600 }}>Critical</span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="price">$40</span>
+                                                        <span className="price">EGP {Number(job.estimatedBudget ?? 0).toLocaleString() || 'Quote'}</span>
                                                     </div>
                                                 </div>
-
-                                                <div className="job-item">
-                                                    <div className="job-details">
-                                                        <div className="job-icon"><FaBolt /></div>
-                                                        <div className="job-info">
-                                                            <h4>Electrical issue</h4>
-                                                            <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Giza (5km away)</span>
-                                                                <span>Electrical</span>
-                                                                <span>Oct 23, 2023</span>
-                                                                <span style={{ color: '#ef4444', fontWeight: 600 }}>Urgent</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="job-action">
-                                                        <span className="price">$60</span>
-                                                    </div>
-                                                </div>
-                                            </>
+                                            ))
                                         ) : (
                                             <div className="empty-state-card-mini">
                                                 <div className="empty-icon"><FaSearch /></div>
-                                                <p>No new requests available</p>
+                                                <p>No new requests available right now</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Active Jobs Preview */}
                                 <div className="Active-jobs-section-card">
                                     <div className="section-header">
-                                        <h2>Active Jobs</h2>
+                                        <h2>Active jobs</h2>
+                                        <button className="view-all-btn" onClick={() => navigate('/my-jobs')}>
+                                            Open all <FaChevronRight />
+                                        </button>
                                     </div>
 
                                     <div className="job-list">
-                                        {hasData ? (
-                                            <>
-                                                <div className="job-item">
+                                        {activeJobs.length > 0 ? (
+                                            activeJobs.slice(0, 4).map((job) => (
+                                                <div className="job-item" key={job.id} onClick={() => navigate('/my-jobs')}>
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaWrench /></div>
                                                         <div className="job-info">
-                                                            <h4>Kitchen repair</h4>
+                                                            <h4>{job.title}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Maadi (3km away)</span>
-                                                                <span>Appliance</span>
-                                                                <span>Oct 22, 2023</span>
+                                                                <span><FaMapMarkerAlt /> {job.property?.address ?? '—'}</span>
+                                                                <span>{job.category}</span>
+                                                                <span>{job.tenant ? `${job.tenant.firstName} ${job.tenant.lastName}` : ''}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="status-badge in-progress">In Progress</span>
-                                                        <span className="price" style={{ marginLeft: '10px' }}>$80</span>
+                                                        <span className={`status-badge ${job.status === 'IN_PROGRESS' ? 'in-progress' : 'scheduled'}`}>
+                                                            {job.status.replace('_', ' ')}
+                                                        </span>
+                                                        <span className="price" style={{ marginLeft: '10px' }}>
+                                                            EGP {Number(job.agreedPrice ?? 0).toLocaleString()}
+                                                        </span>
                                                     </div>
                                                 </div>
-
-                                                <div className="job-item">
-                                                    <div className="job-details">
-                                                        <div className="job-icon"><FaTools /></div>
-                                                        <div className="job-info">
-                                                            <h4>Bathroom fix</h4>
-                                                            <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Nasr City (8km away)</span>
-                                                                <span>Plumbing</span>
-                                                                <span>Oct 21, 2023</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="job-action">
-                                                        <span className="status-badge scheduled">Tomorrow</span>
-                                                        <span className="price" style={{ marginLeft: '10px' }}>$120</span>
-                                                    </div>
-                                                </div>
-                                            </>
+                                            ))
                                         ) : (
                                             <div className="empty-state-card-mini">
                                                 <div className="empty-icon"><FaTools /></div>
@@ -179,12 +209,9 @@ const MaintenanceHome: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
-
                             </div>
 
-                            {/* Right Column (Notifications Panel) */}
                             <div className="grid-right">
-
                                 <div className="notif-premium">
                                     <header className="notif-header">
                                         <div className="notif-title-group">
@@ -192,106 +219,53 @@ const MaintenanceHome: React.FC = () => {
                                                 <FaBell />
                                                 <span className="active-dot"></span>
                                             </div>
-                                            <h3>Activity Feed</h3>
+                                            <h3>Activity feed</h3>
                                         </div>
                                     </header>
 
                                     <div className="notif-scroll-area">
-                                        {hasData ? (
-                                            <>
-                                                {/* Notification 1 */}
-                                                <div className="notif-card is-unread">
+                                        {notifs.length > 0 ? (
+                                            notifs.map((n) => (
+                                                <div key={n.id} className={`notif-card ${n.isRead ? '' : 'is-unread'}`}>
                                                     <div className="icon-orb system">
-                                                        <FaClipboardCheck />
+                                                        <FaBell />
                                                     </div>
                                                     <div className="notif-body">
                                                         <div className="notif-meta">
-                                                            <span className="notif-subject">New Job Posted</span>
-                                                            <span className="notif-timestamp">10m ago</span>
+                                                            <span className="notif-subject">{n.title}</span>
+                                                            <span className="notif-timestamp">{timeAgo(n.createdAt)}</span>
                                                         </div>
-                                                        <p className="notif-text">A new plumbing job is available near you.</p>
+                                                        <p className="notif-text">{n.body}</p>
                                                     </div>
                                                 </div>
-
-                                                {/* Notification 2 */}
-                                                <div className="notif-card">
-                                                    <div className="icon-orb maintenance">
-                                                        <FaWrench />
-                                                    </div>
-                                                    <div className="notif-body">
-                                                        <div className="notif-meta">
-                                                            <span className="notif-subject">Job Assigned</span>
-                                                            <span className="notif-timestamp">2h ago</span>
-                                                        </div>
-                                                        <p className="notif-text">You have been assigned to "Kitchen repair".</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Notification 3 */}
-                                                <div className="notif-card">
-                                                    <div className="icon-orb payment">
-                                                        <FaCreditCard />
-                                                    </div>
-                                                    <div className="notif-body">
-                                                        <div className="notif-meta">
-                                                            <span className="notif-subject">Payment Received</span>
-                                                            <span className="notif-timestamp">1d ago</span>
-                                                        </div>
-                                                        <p className="notif-text">Received $120 for "AC maintenance".</p>
-                                                    </div>
-                                                </div>
-                                            </>
+                                            ))
                                         ) : (
                                             <div className="empty-state-feed">
                                                 <div className="empty-feed-icon"><FaBell /></div>
-                                                <p>Stay tuned for updates</p>
+                                                <p>You're all caught up</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Rating Card */}
                                 <div className="rating-premium-card">
                                     <div className="rating-header">
-                                        <h3>Your Rating</h3>
+                                        <h3>Your rating</h3>
                                     </div>
                                     <div className="rating-body">
                                         <div className="rating-big-score">
-                                            <span>{hasData ? "4.8" : "0.0"}</span>
+                                            <span>{ratingData.score.toFixed(1)}</span>
                                             <span className="rating-max">/ 5</span>
                                         </div>
-                                        <div className="rating-stars">
-                                            {hasData ? (
-                                                <>
-                                                    <FaStar className="star-filled" />
-                                                    <FaStar className="star-filled" />
-                                                    <FaStar className="star-filled" />
-                                                    <FaStar className="star-filled" />
-                                                    <FaStarHalfAlt className="star-filled" />
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                </>
-                                            )}
-                                        </div>
+                                        <div className="rating-stars">{ratingData.stars}</div>
                                         <p className="rating-text">
-                                            {hasData ? "Based on 45 customer reviews." : "No reviews yet."}
+                                            {ratingData.count > 0
+                                                ? `Based on ${ratingData.count} completed jobs`
+                                                : 'No reviews yet'}
                                         </p>
                                     </div>
-                                    {hasData && (
-                                        <button className="view-reviews-btn">
-                                            View All Reviews <FaChevronRight />
-                                        </button>
-                                    )}
                                 </div>
-
                             </div>
-
                         </div>
                     </div>
 

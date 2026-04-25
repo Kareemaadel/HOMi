@@ -1,14 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSignOutAlt, FaBell } from 'react-icons/fa';
 import { authService } from '../../services/auth.service';
 import ConfirmModal from './ConfirmModal';
+import NotificationsBar from '../../features/home/components/TenantHomeComponents/NotificationsBar';
+import notificationService from '../../services/notification.service';
+import socketService from '../../services/socket.service';
 import './header.css';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notifBarOpen, setNotifBarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
   const location = useLocation();
@@ -76,6 +81,38 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Track unread notifications count for signed-in users
+  const refreshUnreadCount = useCallback(async () => {
+    if (!isSignedIn) {
+      setUnreadCount(0);
+      return;
+    }
+    try {
+      const c = await notificationService.unreadCount();
+      setUnreadCount(c);
+    } catch {
+      /* silent */
+    }
+  }, [isSignedIn]);
+
+  useEffect(() => { void refreshUnreadCount(); }, [refreshUnreadCount]);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    socketService.connect();
+    const onNew = () => setUnreadCount((c) => c + 1);
+    socketService.onNotificationNew(onNew);
+    const id = window.setInterval(refreshUnreadCount, 60_000);
+    return () => {
+      socketService.offNotificationNew(onNew);
+      window.clearInterval(id);
+    };
+  }, [isSignedIn, refreshUnreadCount]);
+
+  useEffect(() => {
+    if (!notifBarOpen) void refreshUnreadCount();
+  }, [notifBarOpen, refreshUnreadCount]);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -158,6 +195,19 @@ const Header = () => {
 
         {/* Mobile Menu Toggle & Right Spacer */}
         <div className="header-spacer right-spacer">
+          {isSignedIn && (
+            <button
+              type="button"
+              className="header-notif-btn"
+              onClick={() => setNotifBarOpen(true)}
+              aria-label="Open notifications"
+            >
+              <FaBell />
+              {unreadCount > 0 && (
+                <span className="header-notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+              )}
+            </button>
+          )}
           <button 
             type="button"
             ref={mobileToggleRef}
@@ -239,6 +289,10 @@ const Header = () => {
         onConfirm={confirmMobileLogout}
         onCancel={() => setShowLogoutConfirm(false)}
       />
+
+      {isSignedIn && (
+        <NotificationsBar isOpen={notifBarOpen} onClose={() => setNotifBarOpen(false)} />
+      )}
     </header>
   );
 };

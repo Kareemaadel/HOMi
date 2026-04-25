@@ -10,6 +10,7 @@ import type {
     VerifyPaymobPaymentInput,
     WalletTopupInitiateInput,
     WalletTopupVerifyInput,
+    TenantPaymentHistoryItem,
 } from '../interfaces/contract.interfaces.js';
 
 /**
@@ -335,6 +336,24 @@ class ContractController {
                 success: true,
                 message: 'Wallet top-up verified successfully.',
                 data: balance,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/payments/history
+     */
+    async getTenantPaymentHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const tenantId = (req as any).user.userId;
+            const limit = req.query.limit ? Number(req.query.limit) : 100;
+            const rows: TenantPaymentHistoryItem[] = await contractService.getTenantPaymentHistory(tenantId, { limit });
+
+            res.status(200).json({
+                success: true,
+                data: rows,
             });
         } catch (error) {
             next(error);

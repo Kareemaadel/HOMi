@@ -56,10 +56,13 @@ import Earnings from "./features/Maintenance/MaintenanceProvider/Earnings/pages/
 import TenantMaintenance from "./features/Maintenance/MaintenanceForTenants&Landlords/pages/TenantMaintenance";
 import LandlordMaintenance from "./features/Maintenance/MaintenanceForTenants&Landlords/pages/LandlordMaintenance";
 import MaintenanceProviderOnboarding from "./features/MaintenanceProvider/pages/MaintenanceProviderOnboarding";
+import MaintenanceConfirmationGate from "./features/Maintenance/MaintenanceForTenants&Landlords/components/MaintenanceConfirmationGate";
+import AdminMaintenanceConflicts from "./features/admin/pages/AdminMaintenanceConflicts";
 
 function App() {
   return (
     <BrowserRouter>
+      <MaintenanceConfirmationGate />
       <Routes>
         {/* Entry Point */}
         <Route path="/" element={<LoadingPage />} />
@@ -141,6 +144,7 @@ function App() {
         <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
         <Route path="/admin/maintenance-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceApprovals /></AuthGuard>} />
         <Route path="/admin/maintainers" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintainers /></AuthGuard>} />
+        <Route path="/admin/maintenance-conflicts" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceConflicts /></AuthGuard>} />
 
         {/* Auth Routes — public */}
         <Route path="/auth" element={<AuthPage />} />

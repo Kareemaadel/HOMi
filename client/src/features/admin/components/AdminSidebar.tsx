@@ -20,7 +20,8 @@ const AdminSidebar = () => {
         || location.pathname.startsWith('/admin/support-inbox');
     const propertiesOpen = location.pathname.startsWith('/admin/property-approvals');
     const maintenanceOpen = location.pathname.startsWith('/admin/maintenance-approvals')
-        || location.pathname.startsWith('/admin/maintainers');
+        || location.pathname.startsWith('/admin/maintainers')
+        || location.pathname.startsWith('/admin/maintenance-conflicts');
 
     const handleSignOut = () => {
         localStorage.removeItem('accessToken');
@@ -72,6 +73,7 @@ const AdminSidebar = () => {
                     <div className="admin-nav-sub">
                         <NavLink to="/admin/maintenance-approvals"><FiTool /> Maintenance Requests</NavLink>
                         <NavLink to="/admin/maintainers"><FiUsers /> Maintainers</NavLink>
+                        <NavLink to="/admin/maintenance-conflicts"><FiAlertTriangle /> Maintenance Conflicts</NavLink>
                     </div>
                 </details>
 

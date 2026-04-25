@@ -109,6 +109,26 @@ export interface MonthlyRentPaymentResponse {
     paidForMonth: string;
 }
 
+export type TenantPaymentHistoryType =
+    | 'CONTRACT_INITIAL'
+    | 'RENT_MONTHLY'
+    | 'MAINTENANCE'
+    | 'MAINTENANCE_REFUND';
+
+export interface TenantPaymentHistoryItem {
+    id: string;
+    createdAt: Date;
+    type: TenantPaymentHistoryType;
+    direction: 'DEBIT' | 'CREDIT';
+    amount: number;
+    currency: 'EGP';
+    status: 'SUCCESS';
+    reference: string;
+    description: string;
+    entityType: string | null;
+    entityId: string | null;
+}
+
 // ─── Contract Response ────────────────────────────────────────────────────────
 
 export interface ContractResponse {
