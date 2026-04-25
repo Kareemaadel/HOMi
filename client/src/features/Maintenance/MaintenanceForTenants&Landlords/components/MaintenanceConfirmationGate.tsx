@@ -13,29 +13,33 @@ import CompletionConfirmModal from './CompletionConfirmModal';
  */
 const MaintenanceConfirmationGate: React.FC = () => {
     const [pending, setPending] = useState<MaintenanceRequest | null>(null);
+    const [disabledByAuth, setDisabledByAuth] = useState(false);
 
     const cached = authService.getCurrentUser?.();
     const isTenant = cached?.user?.role === 'TENANT';
 
     const refresh = useCallback(async () => {
-        if (!isTenant) return;
+        if (!isTenant || disabledByAuth) return;
         try {
             const req = await maintenanceService.getAwaitingConfirmation();
             setPending(req);
-        } catch {
-            /* ignore — likely 401 if not authed yet */
+        } catch (err: any) {
+            if (err?.response?.status === 401) {
+                setDisabledByAuth(true);
+                socketService.disconnect();
+            }
         }
-    }, [isTenant]);
+    }, [isTenant, disabledByAuth]);
 
     useEffect(() => {
-        if (!isTenant) return;
+        if (!isTenant || disabledByAuth) return;
         refresh();
         const id = window.setInterval(refresh, 60_000);
         return () => window.clearInterval(id);
-    }, [isTenant, refresh]);
+    }, [isTenant, disabledByAuth, refresh]);
 
     useEffect(() => {
-        if (!isTenant) return;
+        if (!isTenant || disabledByAuth) return;
         const sock = socketService.connect();
         if (!sock) return;
         const handler = () => {
@@ -45,7 +49,7 @@ const MaintenanceConfirmationGate: React.FC = () => {
         return () => {
             socketService.offMaintenanceAwaitingConfirmation(handler);
         };
-    }, [isTenant, refresh]);
+    }, [isTenant, disabledByAuth, refresh]);
 
     if (!isTenant || !pending) return null;
 

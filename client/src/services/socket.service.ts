@@ -21,14 +21,21 @@ export interface ConversationReadEvent {
 
 class SocketService {
     private socket: Socket | null = null;
+    private forcedDisabled = false;
 
     connect(): Socket | null {
+        if (this.forcedDisabled) return null;
         const token = localStorage.getItem('accessToken');
         if (!token) {
+            this.disconnect();
             return null;
         }
 
-        if (this.socket?.connected) {
+        if (this.socket) {
+            this.socket.auth = { token };
+            if (!this.socket.connected && !this.socket.active) {
+                this.socket.connect();
+            }
             return this.socket;
         }
 
@@ -39,6 +46,16 @@ class SocketService {
             auth: { token },
             transports: ['websocket', 'polling'],
             withCredentials: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1500,
+        });
+
+        this.socket.on('connect_error', (err: any) => {
+            const message = String(err?.message ?? '').toLowerCase();
+            if (message.includes('unauthorized') || message.includes('authentication')) {
+                this.forcedDisabled = true;
+                this.disconnect();
+            }
         });
 
         return this.socket;
@@ -49,6 +66,10 @@ class SocketService {
             this.socket.disconnect();
             this.socket = null;
         }
+    }
+
+    resetAuthState(): void {
+        this.forcedDisabled = false;
     }
 
     joinConversation(conversationId: string): void {

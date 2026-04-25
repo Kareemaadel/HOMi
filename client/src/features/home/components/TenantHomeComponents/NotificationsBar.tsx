@@ -47,19 +47,24 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [disabledByAuth, setDisabledByAuth] = useState(false);
 
     const refresh = useCallback(async () => {
+        if (disabledByAuth) return;
         try {
             setLoading(true);
             const result = await notificationService.list({ limit: 50 });
             setNotifications(result.notifications);
             setUnreadCount(result.unreadCount);
-        } catch {
-            /* silent */
+        } catch (err: any) {
+            if (err?.response?.status === 401) {
+                setDisabledByAuth(true);
+                socketService.disconnect();
+            }
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [disabledByAuth]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -67,14 +72,16 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
     }, [isOpen, refresh]);
 
     useEffect(() => {
-        socketService.connect();
+        if (disabledByAuth) return;
+        const sock = socketService.connect();
+        if (!sock) return;
         const onNew = (n: NotificationItem) => {
             setNotifications((prev) => [n, ...prev]);
             setUnreadCount((c) => c + 1);
         };
         socketService.onNotificationNew(onNew);
         return () => { socketService.offNotificationNew(onNew); };
-    }, []);
+    }, [disabledByAuth]);
 
     const handleMarkAllRead = async () => {
         try {

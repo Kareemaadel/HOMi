@@ -14,6 +14,7 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [notifBarOpen, setNotifBarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [realtimeDisabled, setRealtimeDisabled] = useState(false);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
   const location = useLocation();
@@ -84,23 +85,28 @@ const Header = () => {
 
   // Track unread notifications count for signed-in users
   const refreshUnreadCount = useCallback(async () => {
-    if (!isSignedIn) {
+    if (!isSignedIn || realtimeDisabled) {
       setUnreadCount(0);
       return;
     }
     try {
       const c = await notificationService.unreadCount();
       setUnreadCount(c);
-    } catch {
-      /* silent */
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        setRealtimeDisabled(true);
+        setUnreadCount(0);
+        socketService.disconnect();
+      }
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, realtimeDisabled]);
 
   useEffect(() => { void refreshUnreadCount(); }, [refreshUnreadCount]);
 
   useEffect(() => {
-    if (!isSignedIn) return;
-    socketService.connect();
+    if (!isSignedIn || realtimeDisabled) return;
+    const socket = socketService.connect();
+    if (!socket) return;
     const onNew = () => setUnreadCount((c) => c + 1);
     socketService.onNotificationNew(onNew);
     const id = window.setInterval(refreshUnreadCount, 60_000);
@@ -108,7 +114,7 @@ const Header = () => {
       socketService.offNotificationNew(onNew);
       window.clearInterval(id);
     };
-  }, [isSignedIn, refreshUnreadCount]);
+  }, [isSignedIn, realtimeDisabled, refreshUnreadCount]);
 
   useEffect(() => {
     if (!notifBarOpen) void refreshUnreadCount();

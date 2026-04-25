@@ -7,6 +7,7 @@ import type {
     AuthenticationResponseJSON,
 } from '@simplewebauthn/browser';
 import apiClient from '../config/api';
+import socketService from './socket.service';
 import type {
     RegisterRequest,
     LoginRequest,
@@ -69,6 +70,7 @@ function persistLoginSession(data: LoginResponse, rememberMe: boolean): void {
     if (typeof data.passkeyEnabled === 'boolean') {
         localStorage.setItem('passkeyEnabled', data.passkeyEnabled ? '1' : '0');
     }
+    socketService.resetAuthState();
 }
 
 /**
@@ -158,6 +160,8 @@ class AuthService {
         localStorage.removeItem('profile');
         localStorage.removeItem('authProvider');
         localStorage.removeItem('passkeyEnabled');
+        socketService.disconnect();
+        socketService.resetAuthState();
     }
 
     /**
@@ -412,6 +416,8 @@ class AuthService {
         localStorage.removeItem('profile');
         localStorage.removeItem('authProvider');
         localStorage.removeItem('passkeyEnabled');
+        socketService.disconnect();
+        socketService.resetAuthState();
 
         return response.data;
     }

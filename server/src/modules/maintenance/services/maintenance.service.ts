@@ -92,6 +92,30 @@ function toNumber(value: unknown, fallback = 0): number {
     return Number.isFinite(n) ? n : fallback;
 }
 
+function normalizeCategory(value: string | null | undefined): string {
+    return String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function categoryMatchesProvider(requestCategory: string, providerCategories: string[]): boolean {
+    const req = normalizeCategory(requestCategory);
+    const providerNorm = providerCategories.map((c) => normalizeCategory(c)).filter(Boolean);
+    if (!req || providerNorm.length === 0) return false;
+
+    // "Other" providers should be able to see open jobs across categories.
+    if (providerNorm.includes('other')) return true;
+
+    // Exact normalized match first.
+    if (providerNorm.includes(req)) return true;
+
+    // Backward compatibility for older free-text categories.
+    return providerNorm.some((pc) => pc.includes(req) || req.includes(pc));
+}
+
 function partyMini(user?: User | null): PartyMini | undefined {
     if (!user) return undefined;
     const profile = (user as any).profile as Profile | undefined;
@@ -784,10 +808,6 @@ class MaintenanceService {
             );
         }
 
-        const providerCategories = new Set<string>();
-        providerCategories.add(app.category);
-        for (const c of app.categories ?? []) providerCategories.add(c);
-
         const where: any = { status: MaintenanceRequestStatus.OPEN };
         if (opts.category) where.category = opts.category;
 
@@ -797,7 +817,24 @@ class MaintenanceService {
             order: [['created_at', 'DESC']],
         });
 
-        const filtered = rows.filter((r) => providerCategories.has(r.category) || r.category === 'Other');
+        // IMPORTANT:
+        // Do not hard-block marketplace visibility by provider categories.
+        // Providers should still see open jobs and decide whether to apply.
+        // We only keep explicit user-applied filters (status/category/search).
+        const filtered = rows.filter((r) => {
+            const search = (opts.search ?? '').trim().toLowerCase();
+            if (!search) return true;
+            const hay = [
+                r.category,
+                r.title,
+                r.description,
+                ((r as any).property?.title as string | undefined) ?? '',
+                ((r as any).property?.address as string | undefined) ?? '',
+            ]
+                .join(' ')
+                .toLowerCase();
+            return hay.includes(search);
+        });
 
         // Mark which already have an application from this provider
         const myApps = await MaintenanceJobApplication.findAll({
