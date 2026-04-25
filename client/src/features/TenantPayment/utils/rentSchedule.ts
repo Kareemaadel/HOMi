@@ -27,6 +27,8 @@ const getCycleDueDate = (contract: LandlordContract, reference: Date): Date => {
 };
 
 const startOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+const isSameYearMonth = (a: Date, b: Date): boolean =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 
 const getNow = (nowInput?: Date): Date => {
     const cached = getTestingNowFromCache();
@@ -75,7 +77,7 @@ export const getRentInstallmentStats = (contract: LandlordContract, nowInput?: D
     for (let i = 0; i < leaseMonths; i += 1) {
         const ref = new Date(firstRef.getFullYear(), firstRef.getMonth() + i, 1);
         const dueDate = getCycleDueDate(contract, ref);
-        if (dueDate <= now) {
+        if (dueDate <= now || isSameYearMonth(dueDate, now)) {
             dueCount += 1;
             if (dueDate < now) overdueCount += 1;
         }

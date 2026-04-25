@@ -89,6 +89,10 @@ function safeDecrypt(value: string | null): string | null {
     }
 }
 
+function isSameYearMonth(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
 /**
  * Custom error class for contract errors
  */
@@ -811,11 +815,10 @@ class ContractService {
             }
 
             const now = testingClockService.getNow();
-            const dueDates = this.getContractDueDates(contract);
-            const dueUpToNow = dueDates.filter((d) => d <= now);
+            const payableInstallments = this.getPayableInstallmentDates(contract, now);
 
-            if (dueUpToNow.length === 0) {
-                throw new ContractError('No rent installment is due yet for this contract', 400, 'NO_INSTALLMENT_DUE');
+            if (payableInstallments.length === 0) {
+                throw new ContractError('No rent installment is payable yet for this contract', 400, 'NO_INSTALLMENT_DUE');
             }
 
             const paidRows = await ActivityLog.findAll({
@@ -837,9 +840,9 @@ class ContractService {
                 return sum + 1;
             }, 0);
 
-            const outstandingInstallments = Math.max(dueUpToNow.length - paidInstallments, 0);
+            const outstandingInstallments = Math.max(payableInstallments.length - paidInstallments, 0);
             if (outstandingInstallments <= 0) {
-                throw new ContractError('All due rent installments are already paid for this contract', 400, 'MONTHLY_RENT_ALREADY_PAID');
+                throw new ContractError('All payable rent installments are already paid for this contract', 400, 'MONTHLY_RENT_ALREADY_PAID');
             }
 
             const rentAmount = Number(contract.rent_amount ?? 0);
@@ -867,7 +870,7 @@ class ContractService {
             );
             const grossRentDue = rentAmount * outstandingInstallments;
             const netRentAmount = Math.max(grossRentDue - pendingCreditTotal, 0);
-            const overdueInstallmentDates = dueUpToNow.slice(paidInstallments);
+            const overdueInstallmentDates = payableInstallments.slice(paidInstallments);
             const lateInstallments = overdueInstallmentDates.filter((d) => d < now).length;
             const lateFeePerInstallment = Math.max(Number(contract.late_fee_amount ?? 0), 0);
             const lateFee = lateFeePerInstallment * lateInstallments;
@@ -1274,7 +1277,7 @@ class ContractService {
 
         const now = testingClockService.getNow();
         const dueDates = this.getContractDueDates(contract);
-        const dueUpToNow = dueDates.filter((d) => d <= now);
+        const payableInstallments = this.getPayableInstallmentDates(contract, now);
 
         const paidRows = await ActivityLog.findAll({
             where: {
@@ -1321,7 +1324,7 @@ class ContractService {
 
         const items: RentInstallmentItem[] = dueDates.map((dueDate, idx) => {
             const isPaidIdx = idx < paidInstallments;
-            const isDue = dueDate <= now;
+            const isDue = dueDate <= now || isSameYearMonth(dueDate, now);
             const isOverdue = dueDate < now && !isPaidIdx;
             let status: RentInstallmentStatus = 'UPCOMING';
             if (isPaidIdx) status = 'PAID';
@@ -1346,7 +1349,7 @@ class ContractService {
         });
 
         const overdueInstallments = items.filter((i) => i.status === 'OVERDUE').length;
-        const outstandingInstallments = Math.max(dueUpToNow.length - paidInstallments, 0);
+        const outstandingInstallments = Math.max(payableInstallments.length - paidInstallments, 0);
 
         // Compute net amount that would be debited for "Pay Now" (settles all currently-due)
         const grossRentDue = rentAmount * outstandingInstallments;
@@ -1365,7 +1368,7 @@ class ContractService {
             walletBalance,
             pendingLandlordCredit: pendingCreditTotal,
             paidInstallments,
-            dueInstallments: dueUpToNow.length,
+            dueInstallments: payableInstallments.length,
             overdueInstallments,
             outstandingInstallments,
             nextPayableIndex,
@@ -1616,6 +1619,11 @@ class ContractService {
             dueDates.push(this.getCycleDueDate(contract, ref));
         }
         return dueDates;
+    }
+
+    private getPayableInstallmentDates(contract: Contract, now: Date): Date[] {
+        const dueDates = this.getContractDueDates(contract);
+        return dueDates.filter((d) => d <= now || isSameYearMonth(d, now));
     }
 
     /**
