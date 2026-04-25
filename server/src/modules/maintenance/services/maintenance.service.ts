@@ -39,6 +39,7 @@ import { ContractMaintenanceResponsibility } from '../../contracts/models/Contra
 import { notificationService } from '../../notifications/services/notification.service.js';
 import { NotificationType as NotifType } from '../../notifications/models/Notification.js';
 import { getIO } from '../../../shared/realtime/socket.js';
+import { activityLogService } from '../../../shared/services/activity-log.service.js';
 import type {
     PostMaintenanceIssueInput,
     ProviderApplyInput,
@@ -420,12 +421,10 @@ class MaintenanceService {
         return MaintenanceChargeParty.TENANT;
     }
 
-    // ─── Resolve active rental for tenant ─────────────────────────────────
+    // ─── Resolve active rental(s) for tenant ───────────────────────────────
 
-    private async getActiveContractForTenant(
-        tenantId: string
-    ): Promise<{ contract: Contract; property: Property; landlordId: string }> {
-        const contract = await Contract.findOne({
+    private async getActiveContractsForTenant(tenantId: string): Promise<Contract[]> {
+        const rows = await Contract.findAll({
             where: {
                 tenant_id: tenantId,
                 status: ContractStatus.ACTIVE,
@@ -443,14 +442,44 @@ class MaintenanceService {
             order: [['created_at', 'DESC']],
         });
 
-        if (!contract) {
+        if (!rows.length) {
             throw new MaintenanceError(
                 'You must have an active rental to post a maintenance issue.',
                 400,
                 'NO_ACTIVE_RENTAL'
             );
         }
-        const property = (contract as any).property as Property;
+
+        return rows;
+    }
+
+    private async getActiveRentalForTenantSelection(
+        tenantId: string,
+        selection?: { contractId?: string; propertyId?: string }
+    ): Promise<{ contract: Contract; property: Property; landlordId: string }> {
+        const activeContracts = await this.getActiveContractsForTenant(tenantId);
+
+        let chosen: Contract | undefined;
+        if (selection?.contractId) {
+            chosen = activeContracts.find((c) => c.id === selection.contractId);
+        } else if (selection?.propertyId) {
+            chosen = activeContracts.find((c) => {
+                const p = (c as any).property as Property | undefined;
+                return p?.id === selection.propertyId;
+            });
+        } else {
+            chosen = activeContracts[0];
+        }
+
+        if (!chosen) {
+            throw new MaintenanceError(
+                'Selected property is not part of your active rentals.',
+                400,
+                'INVALID_ACTIVE_PROPERTY_SELECTION'
+            );
+        }
+
+        const property = (chosen as any).property as Property | undefined;
         if (!property) {
             throw new MaintenanceError(
                 'Active contract has no associated property.',
@@ -458,10 +487,19 @@ class MaintenanceService {
                 'CONTRACT_PROPERTY_MISSING'
             );
         }
+
+        if (selection?.contractId && selection?.propertyId && property.id !== selection.propertyId) {
+            throw new MaintenanceError(
+                'Selected contract and property do not match.',
+                400,
+                'CONTRACT_PROPERTY_MISMATCH'
+            );
+        }
+
         return {
-            contract,
+            contract: chosen,
             property,
-            landlordId: (contract as any).landlord_id,
+            landlordId: (chosen as any).landlord_id,
         };
     }
 
@@ -470,20 +508,58 @@ class MaintenanceService {
         property: PropertyMini;
         landlord: PartyMini;
         walletBalance: number;
+        activeRentals: Array<{
+            contractId: string;
+            property: PropertyMini;
+            landlord: PartyMini;
+        }>;
     }> {
-        const { contract, property, landlordId } = await this.getActiveContractForTenant(tenantId);
-        const [landlordUser, profile] = await Promise.all([
-            User.findByPk(landlordId, {
+        const activeContracts = await this.getActiveContractsForTenant(tenantId);
+        const first = activeContracts[0];
+        if (!first) {
+            throw new MaintenanceError(
+                'You must have an active rental to post a maintenance issue.',
+                400,
+                'NO_ACTIVE_RENTAL'
+            );
+        }
+        const firstProperty = (first as any).property as Property;
+
+        const landlordIds = Array.from(new Set(activeContracts.map((c) => String((c as any).landlord_id))));
+        const [landlords, profile] = await Promise.all([
+            User.findAll({
+                where: { id: { [Op.in]: landlordIds } },
                 attributes: ['id', 'email'],
                 include: [{ model: Profile, as: 'profile' }],
             }),
             Profile.findOne({ where: { user_id: tenantId }, attributes: ['wallet_balance'] }),
         ]);
+        const landlordById = new Map(landlords.map((u) => [u.id, u]));
+
+        const activeRentals = activeContracts.map((c) => {
+            const p = (c as any).property as Property | undefined;
+            if (!p) {
+                throw new MaintenanceError(
+                    'Active contract has no associated property.',
+                    400,
+                    'CONTRACT_PROPERTY_MISSING'
+                );
+            }
+            const landlord = landlordById.get(String((c as any).landlord_id));
+            return {
+                contractId: c.id,
+                property: propertyMini(p)!,
+                landlord: partyMini(landlord as any)!,
+            };
+        });
+
+        const firstLandlord = landlordById.get(String((first as any).landlord_id));
         return {
-            contractId: contract.id,
-            property: propertyMini(property)!,
-            landlord: partyMini(landlordUser as any)!,
+            contractId: first.id,
+            property: propertyMini(firstProperty)!,
+            landlord: partyMini(firstLandlord as any)!,
             walletBalance: toNumber((profile as any)?.wallet_balance),
+            activeRentals,
         };
     }
 
@@ -500,7 +576,10 @@ class MaintenanceService {
             throw new MaintenanceError('Description is required', 400, 'DESCRIPTION_REQUIRED');
         }
 
-        const { contract, property, landlordId } = await this.getActiveContractForTenant(tenantId);
+        const selection: { contractId?: string; propertyId?: string } = {};
+        if (input.contractId) selection.contractId = input.contractId;
+        if (input.propertyId) selection.propertyId = input.propertyId;
+        const { contract, property, landlordId } = await this.getActiveRentalForTenantSelection(tenantId, selection);
         const chargeParty = await this.deriveChargeParty(contract.id, input.category);
 
         const created = await MaintenanceRequest.create({
@@ -957,6 +1036,19 @@ class MaintenanceService {
 
             await tx.commit();
 
+            await activityLogService.log({
+                actor: { userId: tenantId, role: 'TENANT' },
+                action: 'MAINTENANCE_ESCROW_DEBIT',
+                entityType: 'MAINTENANCE_REQUEST',
+                entityId: request.id,
+                description: `Maintenance escrow reserved for "${request.title}".`,
+                metadata: {
+                    requestId: request.id,
+                    providerId: application.provider_id,
+                    amount: price,
+                },
+            });
+
             // Notify accepted provider
             await notificationService.create({
                 userId: application.provider_id,
@@ -1303,6 +1395,7 @@ class MaintenanceService {
             }
 
             const escrow = toNumber(req.escrow_amount);
+            const agreed = toNumber(req.agreed_price);
 
             if (input.solved) {
                 if (!input.rating || input.rating < 1 || input.rating > 5) {
@@ -1313,9 +1406,15 @@ class MaintenanceService {
                     );
                 }
 
-                // Release escrow to provider
-                if (escrow > 0) {
-                    await this.creditWallet(req.assigned_provider_id, escrow, tx);
+                let payoutAmount = escrow;
+                let tenantDebitedNow = 0;
+                if (payoutAmount <= 0 && agreed > 0) {
+                    await this.debitWallet(req.tenant_id, agreed, tx, 'INSUFFICIENT_WALLET_BALANCE');
+                    payoutAmount = agreed;
+                    tenantDebitedNow = agreed;
+                }
+                if (payoutAmount > 0) {
+                    await this.creditWallet(req.assigned_provider_id, payoutAmount, tx);
                 }
                 await req.update(
                     {
@@ -1350,7 +1449,7 @@ class MaintenanceService {
                             contract_id: req.contract_id,
                             landlord_id: req.landlord_id,
                             tenant_id: tenantId,
-                            amount: escrow,
+                            amount: payoutAmount,
                             status: LandlordMaintenanceChargeStatus.PENDING,
                             applied_at: null,
                         },
@@ -1360,13 +1459,24 @@ class MaintenanceService {
 
                 await tx.commit();
 
+                if (tenantDebitedNow > 0) {
+                    await activityLogService.log({
+                        actor: { userId: tenantId, role: 'TENANT' },
+                        action: 'MAINTENANCE_DIRECT_SETTLEMENT_DEBIT',
+                        entityType: 'MAINTENANCE_REQUEST',
+                        entityId: req.id,
+                        description: 'Maintenance settlement debited from wallet at completion confirmation.',
+                        metadata: { requestId: req.id, amount: tenantDebitedNow },
+                    });
+                }
+
                 // Notifications
                 await Promise.all([
                     notificationService.create({
                         userId: req.assigned_provider_id,
                         type: NotifType.MAINTENANCE_COMPLETED,
                         title: 'Job completed and paid',
-                        body: `Tenant confirmed the "${req.category}" job. EGP ${escrow.toFixed(2)} was added to your wallet.`,
+                        body: `Tenant confirmed the "${req.category}" job. EGP ${payoutAmount.toFixed(2)} was added to your wallet.`,
                         relatedEntityType: 'MaintenanceRequest',
                         relatedEntityId: req.id,
                         data: { rating: Math.round(input.rating) },
@@ -1394,10 +1504,10 @@ class MaintenanceService {
                         userId: req.landlord_id,
                         type: NotifType.MAINTENANCE_LANDLORD_CHARGE,
                         title: 'Maintenance charge will reduce next rent',
-                        body: `EGP ${escrow.toFixed(2)} will be deducted from the tenant's next rent payment because this maintenance was your responsibility.`,
+                        body: `EGP ${payoutAmount.toFixed(2)} will be deducted from the tenant's next rent payment because this maintenance was your responsibility.`,
                         relatedEntityType: 'MaintenanceRequest',
                         relatedEntityId: req.id,
-                        data: { amount: escrow },
+                        data: { amount: payoutAmount },
                     });
                 }
 
@@ -1608,15 +1718,28 @@ class MaintenanceService {
             where: { user_id: providerId },
             attributes: ['wallet_balance'],
         });
-        const completed = await MaintenanceRequest.findAll({
+        const completedOrResolved = await MaintenanceRequest.findAll({
             where: {
                 assigned_provider_id: providerId,
-                status: MaintenanceRequestStatus.COMPLETED,
+                status: {
+                    [Op.in]: [
+                        MaintenanceRequestStatus.COMPLETED,
+                        MaintenanceRequestStatus.RESOLVED_BY_ADMIN,
+                    ],
+                },
             },
             include: this.getRequestIncludes(),
             order: [['tenant_confirmed_at', 'DESC']],
         });
-        const totalEarned = completed.reduce(
+
+        const payable = completedOrResolved.filter((r) => {
+            if (r.status === MaintenanceRequestStatus.COMPLETED) return true;
+            if (r.status !== MaintenanceRequestStatus.RESOLVED_BY_ADMIN) return false;
+            const conflict = (r as any).conflict as MaintenanceConflict | undefined;
+            return conflict?.resolution === MaintenanceConflictResolution.CHARGE_TENANT;
+        });
+
+        const totalEarned = payable.reduce(
             (sum, r) => sum + toNumber(r.agreed_price),
             0
         );
@@ -1638,12 +1761,12 @@ class MaintenanceService {
             },
         });
         const recent = await Promise.all(
-            completed.slice(0, 8).map((r) => this.formatRequest(r))
+            payable.slice(0, 8).map((r) => this.formatRequest(r))
         );
         return {
             walletBalance: toNumber((profile as any)?.wallet_balance),
             totalEarned: Number(totalEarned.toFixed(2)),
-            completedJobs: completed.length,
+            completedJobs: payable.length,
             activeJobs: active,
             avgRating: Number(avg.toFixed(2)),
             recentCompleted: recent,
@@ -1725,11 +1848,19 @@ class MaintenanceService {
             if (!req) throw new MaintenanceError('Request not found', 404, 'REQUEST_NOT_FOUND');
 
             const escrow = toNumber(req.escrow_amount);
+            const agreed = toNumber(req.agreed_price);
+            let payoutAmount = escrow;
+            let tenantDebitedNow = 0;
 
             if (input.resolution === MaintenanceConflictResolution.CHARGE_TENANT) {
-                // Pay provider, tenant loses their wallet money (escrow)
-                if (escrow > 0 && req.assigned_provider_id) {
-                    await this.creditWallet(req.assigned_provider_id, escrow, tx);
+                // Pay provider atomically; if escrow is missing, debit tenant now.
+                if (payoutAmount <= 0 && agreed > 0) {
+                    await this.debitWallet(req.tenant_id, agreed, tx, 'INSUFFICIENT_WALLET_BALANCE');
+                    payoutAmount = agreed;
+                    tenantDebitedNow = agreed;
+                }
+                if (payoutAmount > 0 && req.assigned_provider_id) {
+                    await this.creditWallet(req.assigned_provider_id, payoutAmount, tx);
                 }
                 await req.update(
                     {
@@ -1748,7 +1879,7 @@ class MaintenanceService {
                             contract_id: req.contract_id,
                             landlord_id: req.landlord_id,
                             tenant_id: req.tenant_id,
-                            amount: escrow,
+                            amount: payoutAmount,
                             status: LandlordMaintenanceChargeStatus.PENDING,
                             applied_at: null,
                         },
@@ -1790,6 +1921,30 @@ class MaintenanceService {
             );
 
             await tx.commit();
+
+            if (input.resolution === MaintenanceConflictResolution.CHARGE_TENANT) {
+                await activityLogService.log({
+                    actor: { userId: req.tenant_id, role: 'TENANT' },
+                    action: 'MAINTENANCE_DISPUTE_CHARGED_TENANT',
+                    entityType: 'MAINTENANCE_REQUEST',
+                    entityId: req.id,
+                    description: 'Admin resolved maintenance dispute in favour of provider.',
+                    metadata: {
+                        requestId: req.id,
+                        amount: payoutAmount,
+                        tenantDebitedNow,
+                    },
+                });
+            } else if (escrow > 0) {
+                await activityLogService.log({
+                    actor: { userId: req.tenant_id, role: 'TENANT' },
+                    action: 'MAINTENANCE_DISPUTE_REFUNDED_TENANT',
+                    entityType: 'MAINTENANCE_REQUEST',
+                    entityId: req.id,
+                    description: 'Admin resolved maintenance dispute in favour of tenant (wallet refunded).',
+                    metadata: { requestId: req.id, refundedAmount: escrow },
+                });
+            }
 
             const charged =
                 input.resolution === MaintenanceConflictResolution.CHARGE_TENANT

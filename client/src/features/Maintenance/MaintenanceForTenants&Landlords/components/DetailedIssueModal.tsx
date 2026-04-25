@@ -4,7 +4,6 @@ import {
     FaExclamationCircle, FaUpload, FaCheckCircle, FaTrash, FaWallet,
     FaHome, FaMapMarkerAlt
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
 import './DetailedIssueModal.css';
 import { MAINTENANCE_CATEGORIES } from '../../constants/categories';
 import maintenanceService, {
@@ -46,7 +45,6 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({
     isViewOnly = false,
     initialData = null
 }) => {
-    const navigate = useNavigate();
     const [category, setCategory] = useState<string>('Plumbing');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -56,6 +54,7 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedContractId, setSelectedContractId] = useState<string>('');
 
     const [context, setContext] = useState<TenantMaintenanceContext | null>(null);
     const [loadingContext, setLoadingContext] = useState(false);
@@ -69,7 +68,10 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({
                 setLoadingContext(true);
                 setError(null);
                 const ctx = await maintenanceService.getTenantContext();
-                if (!cancelled) setContext(ctx);
+                if (!cancelled) {
+                    setContext(ctx);
+                    setSelectedContractId(ctx.contractId);
+                }
             } catch (err: any) {
                 if (cancelled) return;
                 const msg =
@@ -107,6 +109,7 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({
             setBudget('');
             setUrgency('MEDIUM');
             setImagesBase64([]);
+            setSelectedContractId('');
         }
     }, [isOpen, isViewOnly, initialData]);
 
@@ -145,7 +148,10 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({
         }
         try {
             setIsSubmitting(true);
+            const selectedRental = context?.activeRentals?.find((r) => r.contractId === selectedContractId);
             const created = await maintenanceService.postIssue({
+                contractId: selectedContractId || context?.contractId,
+                propertyId: selectedRental?.property.id ?? context?.property.id,
                 category,
                 title: title.trim(),
                 description: description.trim(),
@@ -239,7 +245,7 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#475569', fontSize: '0.9rem' }}>
                                                 <FaMapMarkerAlt /> {context.property.address}
                                             </div>
-                                            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                 <span style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: 6,
                                                     fontSize: '0.85rem', color: '#0f172a', background: '#fff',
@@ -247,18 +253,41 @@ const DetailedIssueModal: React.FC<DetailedIssueModalProps> = ({
                                                 }}>
                                                     <FaWallet color="#16a34a" /> Wallet: <strong>EGP {Number(context.walletBalance).toFixed(2)}</strong>
                                                 </span>
-                                                <button type="button"
-                                                    onClick={() => navigate('/balance')}
-                                                    style={{
-                                                        background: 'transparent', color: '#6366f1', border: 'none',
-                                                        cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
-                                                    }}>Top up wallet</button>
                                             </div>
                                         </div>
                                     </>
                                 ) : (
                                     <div style={{ padding: '0.5rem', color: '#b91c1c' }}>{error ?? 'No active rental.'}</div>
                                 )}
+                            </div>
+                        )}
+
+                        {!isViewOnly && context?.activeRentals?.length > 1 && (
+                            <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                <label><FaHome /> Select Property to Maintain</label>
+                                <select
+                                    value={selectedContractId}
+                                    onChange={(e) => {
+                                        const nextContractId = e.target.value;
+                                        setSelectedContractId(nextContractId);
+                                        const chosen = context.activeRentals.find((r) => r.contractId === nextContractId);
+                                        if (chosen) {
+                                            setContext((prev) => prev ? {
+                                                ...prev,
+                                                contractId: chosen.contractId,
+                                                property: chosen.property,
+                                                landlord: chosen.landlord,
+                                            } : prev);
+                                        }
+                                    }}
+                                    disabled={loadingContext}
+                                >
+                                    {context.activeRentals.map((r) => (
+                                        <option key={r.contractId} value={r.contractId}>
+                                            {r.property.title} - {r.property.address}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         )}
 

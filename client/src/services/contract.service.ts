@@ -76,6 +76,31 @@ interface MonthlyRentPaymentApiResponse {
     };
 }
 
+export type TenantPaymentHistoryType =
+    | 'CONTRACT_INITIAL'
+    | 'RENT_MONTHLY'
+    | 'MAINTENANCE'
+    | 'MAINTENANCE_REFUND';
+
+export interface TenantPaymentHistoryItem {
+    id: string;
+    createdAt: string;
+    type: TenantPaymentHistoryType;
+    direction: 'DEBIT' | 'CREDIT';
+    amount: number;
+    currency: 'EGP';
+    status: 'SUCCESS';
+    reference: string;
+    description: string;
+    entityType: string | null;
+    entityId: string | null;
+}
+
+interface TenantPaymentHistoryApiResponse {
+    success: boolean;
+    data: TenantPaymentHistoryItem[];
+}
+
 export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
 export type RentDueDate = '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH';
 
@@ -219,6 +244,13 @@ class ContractService {
 
     async payMonthlyRentFromBalance(contractId: string): Promise<MonthlyRentPaymentApiResponse['data']> {
         const response = await apiClient.post<MonthlyRentPaymentApiResponse>(`/contracts/${contractId}/payments/balance/pay-rent`);
+        return response.data.data;
+    }
+
+    async getPaymentHistory(limit = 100): Promise<TenantPaymentHistoryItem[]> {
+        const response = await apiClient.get<TenantPaymentHistoryApiResponse>('/contracts/payments/history', {
+            params: { limit },
+        });
         return response.data.data;
     }
 

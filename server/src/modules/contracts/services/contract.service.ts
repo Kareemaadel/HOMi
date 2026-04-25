@@ -36,6 +36,7 @@ import type {
     WalletTopupVerifyInput,
 } from '../interfaces/contract.interfaces.js';
 import { activityLogService } from '../../../shared/services/activity-log.service.js';
+import { ActivityLog } from '../../admin/models/ActivityLog.js';
 
 // ─── Duration map ─────────────────────────────────────────────────────────────
 
@@ -1078,6 +1079,66 @@ class ContractService {
             await transaction.rollback();
             throw error;
         }
+    }
+
+    async getTenantPaymentHistory(
+        tenantId: string,
+        opts: { limit?: number } = {}
+    ): Promise<import('../interfaces/contract.interfaces.js').TenantPaymentHistoryItem[]> {
+        const limit = Math.min(Math.max(opts.limit ?? 100, 1), 300);
+        const actions = [
+            'CONTRACT_PAID_FROM_BALANCE',
+            'MONTHLY_RENT_PAID_FROM_BALANCE',
+            'MAINTENANCE_ESCROW_DEBIT',
+            'MAINTENANCE_DISPUTE_CHARGED_TENANT',
+            'MAINTENANCE_DISPUTE_REFUNDED_TENANT',
+            'MAINTENANCE_DIRECT_SETTLEMENT_DEBIT',
+        ];
+
+        const rows = await ActivityLog.findAll({
+            where: {
+                actor_user_id: tenantId,
+                action: { [Op.in]: actions },
+            },
+            order: [['created_at', 'DESC']],
+            limit,
+        });
+
+        return rows.map((row) => {
+            const metadata = (row.metadata ?? {}) as Record<string, any>;
+            const action = row.action;
+            const amountRaw =
+                metadata.amount ??
+                metadata.debitedAmount ??
+                metadata.refundedAmount ??
+                metadata.netAmount ??
+                0;
+            const amount = Number(amountRaw ?? 0);
+
+            const isCredit = action === 'MAINTENANCE_DISPUTE_REFUNDED_TENANT';
+            const type =
+                action === 'CONTRACT_PAID_FROM_BALANCE'
+                    ? 'CONTRACT_INITIAL'
+                    : action === 'MONTHLY_RENT_PAID_FROM_BALANCE'
+                        ? 'RENT_MONTHLY'
+                        : action === 'MAINTENANCE_DISPUTE_REFUNDED_TENANT'
+                            ? 'MAINTENANCE_REFUND'
+                            : 'MAINTENANCE';
+
+            return {
+                id: row.id,
+                createdAt: row.created_at,
+                type,
+                direction: isCredit ? 'CREDIT' : 'DEBIT',
+                amount: Math.abs(Number.isFinite(amount) ? amount : 0),
+                currency: 'EGP',
+                status: 'SUCCESS',
+                reference: row.entity_id ?? row.id,
+                description: row.description,
+                entityType: row.entity_type ?? null,
+                entityId: row.entity_id ?? null,
+            };
+        });
     }
 
     // ─── Private Helpers ──────────────────────────────────────────────────────

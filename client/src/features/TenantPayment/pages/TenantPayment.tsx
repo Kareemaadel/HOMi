@@ -28,7 +28,11 @@ import {
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
-import contractService, { type LandlordContract, type WalletTopupPaymentMethod } from '../../../services/contract.service';
+import contractService, {
+    type LandlordContract,
+    type WalletTopupPaymentMethod,
+    type TenantPaymentHistoryItem,
+} from '../../../services/contract.service';
 import rentalRequestService, { type MyRentalRequest } from '../../../services/rental-request.service';
 import { authService } from '../../../services/auth.service';
 import paymentMethodService, { type SavedPaymentMethod } from '../../../services/payment-method.service';
@@ -64,6 +68,7 @@ const TenantPayment: React.FC = () => {
     const [dataError, setDataError] = useState<string | null>(null);
     const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
     const [tenantRequests, setTenantRequests] = useState<MyRentalRequest[]>([]);
+    const [paymentHistory, setPaymentHistory] = useState<TenantPaymentHistoryItem[]>([]);
     const [savedMethods, setSavedMethods] = useState<SavedPaymentMethod[]>([]);
     const [walletBalance, setWalletBalance] = useState(0);
 
@@ -101,15 +106,17 @@ const TenantPayment: React.FC = () => {
         setDataError(null);
 
         try {
-            const [contractsRes, requestsRes, methods, wallet] = await Promise.all([
+            const [contractsRes, requestsRes, methods, wallet, history] = await Promise.all([
                 contractService.getTenantContracts({ page: 1, limit: 50 }),
                 rentalRequestService.getMyRequests({ page: 1, limit: 50 }),
                 paymentMethodService.getMyMethods(),
                 contractService.getWalletBalance(),
+                contractService.getPaymentHistory(120),
             ]);
 
             setTenantContracts(contractsRes.data ?? []);
             setTenantRequests(requestsRes.data ?? []);
+            setPaymentHistory(history ?? []);
             setSavedMethods(methods);
             setWalletBalance(Number(wallet.balance ?? 0));
             setPaymentActionError(null);
@@ -259,7 +266,7 @@ const TenantPayment: React.FC = () => {
     const canAffordPendingPayment = walletBalance >= pendingTotalDue;
 
     const hasUpcomingPayments = activeContracts.length > 0 || Boolean(pendingPaymentContract);
-    const hasPaymentHistory = paidContracts.length > 0;
+    const hasPaymentHistory = paymentHistory.length > 0;
     const hasPendingRequests = tenantRequests.some((r) => r.status === 'APPROVED' || r.status === 'PENDING');
 
     const getNextDueDateLabel = (): string => {
@@ -311,13 +318,14 @@ const TenantPayment: React.FC = () => {
         return rows.sort((a, b) => a.dueAt - b.dueAt);
     }, [activeContracts, pendingPaymentContract]);
 
-    const historyRows = [...paidContracts]
+    const historyRows = [...paymentHistory]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .map((c) => ({
-            date: formatLongDate(c.createdAt),
-            ref: `${c.property?.title ?? 'Rent Payment'} - ${c.contractId}`,
-            amount: getTotalContractCharge(c),
-            status: 'Success',
+        .map((row) => ({
+            date: formatLongDate(row.createdAt),
+            ref: row.description || row.reference,
+            amount: Number(row.amount ?? 0),
+            direction: row.direction,
+            status: row.status === 'SUCCESS' ? 'Success' : 'Failed',
         }));
 
     const contractsByRentalRequestId = useMemo(() => {
@@ -610,7 +618,7 @@ const TenantPayment: React.FC = () => {
                                 <tr key={`${row.ref}-${row.date}`}>
                                     <td>{row.date}</td>
                                     <td className="font-medium">{row.ref}</td>
-                                    <td>{formatMoney(row.amount)}</td>
+                                    <td>{row.direction === 'CREDIT' ? '+' : '-'} {formatMoney(row.amount)}</td>
                                     <td><span className="pill success">{row.status}</span></td>
                                     <td className="text-right">
                                         <button className="icon-btn"><Download size={16} /></button>

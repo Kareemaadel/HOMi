@@ -171,6 +171,11 @@ export interface TenantMaintenanceContext {
     property: PropertyMini;
     landlord: PartyMini;
     walletBalance: number;
+    activeRentals: Array<{
+        contractId: string;
+        property: PropertyMini;
+        landlord: PartyMini;
+    }>;
 }
 
 export interface ProviderEarnings {
@@ -185,6 +190,8 @@ export interface ProviderEarnings {
 // ─── Inputs ──────────────────────────────────────────────────────────────────
 
 export interface PostMaintenanceIssuePayload {
+    propertyId?: string;
+    contractId?: string;
     category: string;
     title: string;
     description: string;
