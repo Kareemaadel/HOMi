@@ -106,9 +106,12 @@ export interface LandlordContract {
     id: string;
     contractId: string;
     leaseId: string | null;
+    rentalRequestId?: string;
     status: LandlordContractStatus;
+    paymentStatus?: 'PENDING' | 'PAID' | 'FAILED';
     rentAmount: number | null;
     securityDeposit: number | null;
+    serviceFee?: number;
     rentDueDate: RentDueDate | null;
     lateFeeAmount: number | null;
     maxOccupants: number | null;
@@ -120,6 +123,7 @@ export interface LandlordContract {
     tenantEmergencyPhone?: string | null;
     propertyRegistrationNumber: string | null;
     landlordSignedAt: string | null;
+    paymentVerifiedAt?: string | null;
     createdAt: string;
     landlord?: ContractParty;
     tenant?: ContractParty;

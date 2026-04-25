@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
@@ -64,6 +64,7 @@ const TenantPayment: React.FC = () => {
     const [successMessage, setSuccessMessage] = useState('Payment completed successfully.');
 
     const location = useLocation();
+    const navigate = useNavigate();
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [dataError, setDataError] = useState<string | null>(null);
     const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
@@ -133,40 +134,93 @@ const TenantPayment: React.FC = () => {
 
         const params = new URLSearchParams(location.search);
         const walletTopupFlag = params.get('walletTopup');
+
+        if (walletTopupFlag !== '1') return;
+
+        // ── Diagnostic: dump everything Paymob sent back ──────────────────
         const successFlag = params.get('success');
+        const pendingFlag = params.get('pending');
+        const isVoidedFlag = params.get('is_voided');
         const transactionIdRaw = params.get('id') || params.get('transaction_id') || '';
         const transactionId = Number(transactionIdRaw);
 
-        if (walletTopupFlag !== '1') return;
-        if (successFlag === 'false') {
-            setActiveTab('topup');
-            setTopupError('Top-up was not completed. Please try again.');
-            return;
-        }
+        console.log('[WalletTopup] Paymob redirect received:', {
+            fullSearch: location.search,
+            successFlag,
+            pendingFlag,
+            isVoidedFlag,
+            transactionIdRaw,
+            transactionId,
+            allParams: Object.fromEntries(params.entries()),
+        });
+        // ─────────────────────────────────────────────────────────────────
+
+        setActiveTab('topup');
+
+        // No transaction ID → cannot verify anything
         if (!transactionIdRaw || !Number.isFinite(transactionId) || transactionId <= 0) {
+            console.warn('[WalletTopup] No valid transaction ID in redirect — cannot verify.');
+            setTopupError('Payment callback is missing the transaction ID. Please contact support.');
+            const cleanUrl = `${location.pathname}`;
+            globalThis.history.replaceState({}, document.title, cleanUrl);
             return;
         }
+
+        // ── ALWAYS verify server-side when a transaction ID exists ────────
+        // Do NOT trust success=false from the redirect URL. Paymob's own docs
+        // say redirect params are for UX only. The server-side verify call
+        // is authoritative — especially in sandbox/test mode where the ACS
+        // emulator often redirects with success=false even for succeeded payments.
+        // ─────────────────────────────────────────────────────────────────
+        console.log('[WalletTopup] Attempting server-side verification for transactionId:', transactionId);
 
         topupVerifiedRef.current = true;
-        setActiveTab('topup');
-        setIsTopupVerifying(true);
 
-        void (async () => {
+        const doVerify = async () => {
+            // Auth retry: AuthGuard restores token async, so wait if needed
+            let accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                console.log('[WalletTopup] No token yet, waiting 2s for session restore...');
+                await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+                accessToken = localStorage.getItem('accessToken');
+            }
+
+            if (!accessToken) {
+                console.warn('[WalletTopup] Still no access token after wait. Aborting.');
+                setTopupError('Session expired. Please log in and try again.');
+                const cleanUrl = `${location.pathname}`;
+                globalThis.history.replaceState({}, document.title, cleanUrl);
+                return;
+            }
+
+            setIsTopupVerifying(true);
             try {
+                console.log('[WalletTopup] Calling verifyWalletTopup with transactionId:', transactionId);
                 const response = await contractService.verifyWalletTopup(transactionId);
+                console.log('[WalletTopup] Verification success! New balance:', response.balance);
                 setWalletBalance(Number(response.balance ?? 0));
                 setTopupError(null);
                 setSuccessMessage('Wallet top-up completed successfully.');
                 setShowSuccessToast(true);
                 await loadPaymentData();
-            } catch {
-                setTopupError('Wallet top-up verification failed. Please retry top-up.');
+            } catch (err: unknown) {
+                console.error('[WalletTopup] Server-side verification failed:', err);
+                const ex = err as { response?: { data?: { message?: string } } };
+                const serverMsg = ex.response?.data?.message;
+                console.error('[WalletTopup] Server error message:', serverMsg);
+                setTopupError(
+                    typeof serverMsg === 'string' && serverMsg.trim()
+                        ? serverMsg
+                        : 'Wallet top-up verification failed. Please retry.'
+                );
             } finally {
                 setIsTopupVerifying(false);
                 const cleanUrl = `${location.pathname}`;
                 globalThis.history.replaceState({}, document.title, cleanUrl);
             }
-        })();
+        };
+
+        void doVerify();
     }, [location.pathname, location.search]);
 
     const activeContract = useMemo(
@@ -236,15 +290,48 @@ const TenantPayment: React.FC = () => {
             status: 'Success',
         }));
 
+    const contractsByRentalRequestId = useMemo(() => {
+        const map = new Map<string, LandlordContract>();
+        tenantContracts.forEach((contract) => {
+            const requestId = contract.rentalRequestId;
+            if (requestId) {
+                map.set(requestId, contract);
+            }
+        });
+        return map;
+    }, [tenantContracts]);
+
     const requestCards = tenantRequests
         .filter((r) => r.status === 'APPROVED' || r.status === 'PENDING')
-        .map((r) => ({
-            id: r.id,
-            property: r.property.title,
-            status: r.status === 'APPROVED' ? 'Accepted' : 'Pending',
-            price: Number(r.property.monthlyPrice ?? 0),
-            loc: r.property.address,
-        }));
+        .map((r) => {
+            const relatedContract = contractsByRentalRequestId.get(r.id);
+            const rent = Number(relatedContract?.rentAmount ?? r.property.monthlyPrice ?? 0);
+            const deposit = Number(relatedContract?.securityDeposit ?? r.property.securityDeposit ?? 0);
+            const serviceFee = Number(relatedContract?.serviceFee ?? 10);
+            const totalDue = rent + deposit + serviceFee;
+            const contractStatus = relatedContract?.status;
+            const paymentStatus = relatedContract?.paymentStatus;
+
+            let statusLabel = r.status === 'APPROVED' ? 'Accepted' : 'Pending';
+            if (contractStatus === 'ACTIVE') statusLabel = 'Active Lease';
+            else if (contractStatus === 'PENDING_PAYMENT') statusLabel = 'Awaiting Payment';
+            else if (contractStatus === 'PENDING_TENANT') statusLabel = 'Awaiting Signature';
+
+            return {
+                id: r.id,
+                property: r.property.title,
+                status: statusLabel,
+                loc: r.property.address,
+                rent,
+                deposit,
+                serviceFee,
+                totalDue,
+                contractId: relatedContract?.id ?? null,
+                contractStatus: contractStatus ?? null,
+                paymentStatus: paymentStatus ?? null,
+                paymentVerifiedAt: relatedContract?.paymentVerifiedAt ?? null,
+            };
+        });
 
     const successfulPaymentsLabel = `${historyRows.length} successful payment${historyRows.length === 1 ? '' : 's'}`;
     const hasSavedMethods = savedMethods.length > 0;
@@ -257,10 +344,13 @@ const TenantPayment: React.FC = () => {
         });
     };
 
-    const handlePayFromBalance = async () => {
-        if (!pendingPaymentContract) return;
+    const handlePayFromBalance = async (contractId?: string) => {
+        const targetContractId = contractId ?? pendingPaymentContract?.id;
+        if (!targetContractId) return;
+        const targetContract = tenantContracts.find((contract) => contract.id === targetContractId);
+        const targetRequiredAmount = targetContract ? getTotalContractCharge(targetContract) : pendingTotalDue;
 
-        if (walletBalance < pendingTotalDue) {
+        if (walletBalance < targetRequiredAmount) {
             setPaymentActionError('Insufficient wallet balance to complete this payment.');
             return;
         }
@@ -269,7 +359,7 @@ const TenantPayment: React.FC = () => {
         setPaymentActionError(null);
 
         try {
-            const result = await contractService.payContractFromBalance(pendingPaymentContract.id);
+            const result = await contractService.payContractFromBalance(targetContractId);
             setWalletBalance(Number(result.remainingBalance ?? 0));
             setSuccessMessage(`Payment of ${formatMoney(Number(result.debitedAmount ?? 0))} deducted from your wallet successfully.`);
             setShowSuccessToast(true);
@@ -316,7 +406,10 @@ const TenantPayment: React.FC = () => {
 
     const getRequestActionLabel = (status: string): string => {
         if (status === 'Pending') return 'Under Review';
-        if (!pendingPaymentContract) return 'Awaiting Contract';
+        if (status === 'Active Lease') return 'View Active Lease';
+        if (status === 'Awaiting Signature') return 'Review Contract';
+        if (status === 'Accepted') return 'Awaiting Contract';
+        if (!pendingPaymentContract) return 'Awaiting Payment';
         if (isProcessingPayment) return 'Processing...';
         return 'Pay';
     };
@@ -480,14 +573,51 @@ const TenantPayment: React.FC = () => {
                                     <p className="location-tag"><MapPin size={12}/> {req.loc}</p>
                                 </div>
                                 <div className="app-card-footer">
-                                    <div className="price-group">
-                                        <span>Offer</span>
-                                        <span>{formatMoney(req.price)}</span>
+                                    <div className="price-group payment-breakdown">
+                                        <span className="payment-breakdown-title">Payment Details</span>
+                                        <div className="payment-breakdown-row">
+                                            <span>Rent</span>
+                                            <span>{formatMoney(req.rent)}</span>
+                                        </div>
+                                        <div className="payment-breakdown-row">
+                                            <span>Security Deposit</span>
+                                            <span>{formatMoney(req.deposit)}</span>
+                                        </div>
+                                        <div className="payment-breakdown-row">
+                                            <span>Service Fee</span>
+                                            <span>{formatMoney(req.serviceFee)}</span>
+                                        </div>
+                                        <div className="payment-breakdown-total">
+                                            <span>Total Due</span>
+                                            <span>{formatMoney(req.totalDue)}</span>
+                                        </div>
+                                        {req.paymentStatus === 'PAID' && (
+                                            <span className="payment-receipt-tag">
+                                                Receipt Issued {req.paymentVerifiedAt ? `• ${formatLongDate(req.paymentVerifiedAt)}` : ''}
+                                            </span>
+                                        )}
                                     </div>
                                     <button
                                         className="btn-app-action"
-                                        disabled={req.status !== 'Accepted' || !pendingPaymentContract || isProcessingPayment}
-                                        onClick={handlePayFromBalance}
+                                        disabled={
+                                            isProcessingPayment ||
+                                            req.status === 'Pending' ||
+                                            req.status === 'Accepted' ||
+                                            req.contractStatus === 'PENDING_TENANT'
+                                        }
+                                        onClick={() => {
+                                            if (req.contractStatus === 'ACTIVE') {
+                                                navigate('/actives');
+                                                return;
+                                            }
+                                            if (req.contractStatus === 'PENDING_TENANT') {
+                                                navigate('/tenant-contracts');
+                                                return;
+                                            }
+                                            if (req.contractStatus === 'PENDING_PAYMENT' && req.contractId) {
+                                                void handlePayFromBalance(req.contractId);
+                                            }
+                                        }}
                                     >
                                         {getRequestActionLabel(req.status)}
                                     </button>

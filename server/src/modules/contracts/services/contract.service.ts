@@ -624,9 +624,25 @@ class ContractService {
         const verification = await paymobService.verifyTransaction(input.transaction_id);
         const expectedAmountCents = this.calculateContractTotalAmountCents(contract);
 
-        const isOrderMatched = !!contract.paymob_order_id && verification.orderId === contract.paymob_order_id;
-        const isAmountMatched = verification.amountCents === expectedAmountCents;
+        // Normalize both sides to Number — Sequelize returns BIGINT as string
+        const storedOrderId = Number(contract.paymob_order_id ?? 0);
+        const paymobOrderId = Number(verification.orderId ?? 0);
+        const isOrderMatched = storedOrderId > 0 && paymobOrderId === storedOrderId;
+        const isAmountMatched = Number(verification.amountCents) === Number(expectedAmountCents);
         const isSuccess = verification.success && !verification.pending && !verification.isVoided && !verification.isRefunded;
+
+        console.log('[PaymobVerify] Contract payment verification:', {
+            transactionId: input.transaction_id,
+            storedOrderId,
+            paymobOrderId,
+            isOrderMatched,
+            expectedAmountCents,
+            actualAmountCents: verification.amountCents,
+            isAmountMatched,
+            isSuccess,
+            paymobSuccess: verification.success,
+            paymobPending: verification.pending,
+        });
 
         if (!isSuccess || !isOrderMatched || !isAmountMatched) {
             await contract.update({
@@ -836,9 +852,26 @@ class ContractService {
             }
 
             const verification = await paymobService.verifyTransaction(input.transaction_id);
-            const isOrderMatched = verification.orderId === pendingOrderId;
-            const isAmountMatched = verification.amountCents === pendingAmountCents;
+            // Normalize both sides to Number — Sequelize returns BIGINT as string
+            const paymobOrderId = Number(verification.orderId ?? 0);
+            const isOrderMatched = paymobOrderId > 0 && paymobOrderId === pendingOrderId;
+            const isAmountMatched = Number(verification.amountCents) === Number(pendingAmountCents);
             const isSuccess = verification.success && !verification.pending && !verification.isVoided && !verification.isRefunded;
+
+            console.log('[WalletTopup] Verification details:', {
+                transactionId: input.transaction_id,
+                pendingOrderId,
+                paymobOrderId,
+                isOrderMatched,
+                pendingAmountCents,
+                actualAmountCents: verification.amountCents,
+                isAmountMatched,
+                isSuccess,
+                paymobSuccess: verification.success,
+                paymobPending: verification.pending,
+                rawOrderId: (profile as any).wallet_pending_order_id,
+                rawOrderIdType: typeof (profile as any).wallet_pending_order_id,
+            });
 
             if (!isSuccess || !isOrderMatched || !isAmountMatched) {
                 await profile.update(
@@ -850,7 +883,8 @@ class ContractService {
                     { transaction }
                 );
 
-                throw new ContractError('Wallet top-up verification failed. Please retry top-up.', 400, 'TOPUP_VERIFICATION_FAILED');
+                const failReason = !isSuccess ? 'Transaction not successful' : !isOrderMatched ? 'Order ID mismatch' : 'Amount mismatch';
+                throw new ContractError(`Wallet top-up verification failed: ${failReason}. Please retry top-up.`, 400, 'TOPUP_VERIFICATION_FAILED');
             }
 
             const currentBalance = Number((profile as any).wallet_balance ?? 0);

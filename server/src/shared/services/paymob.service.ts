@@ -188,7 +188,17 @@ class PaymobService {
                 };
             };
         }>(`/api/acceptance/transactions/${transactionId}`, {
-            params: { auth_token: authToken },
+            // Paymob's GET transaction endpoint uses 'token', not 'auth_token'
+            params: { token: authToken },
+        });
+
+        console.log('[PaymobService] verifyTransaction raw response:', {
+            transactionId,
+            id: response.data.id,
+            success: response.data.success,
+            pending: response.data.pending,
+            amountCents: response.data.amount_cents,
+            orderId: response.data.order?.id,
         });
 
         const data = response.data;
@@ -211,7 +221,7 @@ class PaymobService {
             pending: data.pending,
             amountCents: data.amount_cents,
             currency: data.currency,
-            orderId: data.order?.id ?? 0,
+            orderId: Number(data.order?.id ?? 0),
             isVoided: data.is_voided,
             isRefunded: data.is_refunded,
             ...(cardToken ? { cardToken } : {}),
