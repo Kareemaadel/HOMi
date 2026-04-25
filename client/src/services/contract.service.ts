@@ -66,6 +66,16 @@ interface BalancePaymentApiResponse {
     };
 }
 
+interface MonthlyRentPaymentApiResponse {
+    success: boolean;
+    data: {
+        contract: LandlordContract;
+        remainingBalance: number;
+        debitedAmount: number;
+        paidForMonth: string;
+    };
+}
+
 export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
 export type RentDueDate = '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH';
 
@@ -204,6 +214,11 @@ class ContractService {
 
     async payContractFromBalance(contractId: string): Promise<BalancePaymentApiResponse['data']> {
         const response = await apiClient.post<BalancePaymentApiResponse>(`/contracts/${contractId}/payments/balance/pay`);
+        return response.data.data;
+    }
+
+    async payMonthlyRentFromBalance(contractId: string): Promise<MonthlyRentPaymentApiResponse['data']> {
+        const response = await apiClient.post<MonthlyRentPaymentApiResponse>(`/contracts/${contractId}/payments/balance/pay-rent`);
         return response.data.data;
     }
 

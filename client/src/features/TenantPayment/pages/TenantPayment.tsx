@@ -32,6 +32,7 @@ import contractService, { type LandlordContract, type WalletTopupPaymentMethod }
 import rentalRequestService, { type MyRentalRequest } from '../../../services/rental-request.service';
 import { authService } from '../../../services/auth.service';
 import paymentMethodService, { type SavedPaymentMethod } from '../../../services/payment-method.service';
+import { formatDateLabel, getRentCycleSummary } from '../utils/rentSchedule';
 
 type TabType = 'overview' | 'upcoming' | 'history' | 'topup' | 'methods' | 'pending';
 
@@ -48,12 +49,6 @@ const formatLongDate = (isoDate: string): string => {
     const parsed = new Date(isoDate);
     if (Number.isNaN(parsed.getTime())) return 'N/A';
     return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
-};
-
-const getDueDayFromContract = (rentDueDate: string | null | undefined): number => {
-    if (rentDueDate === '1ST_OF_MONTH') return 1;
-    if (rentDueDate === '5TH_OF_MONTH') return 5;
-    return 1;
 };
 
 const TenantPayment: React.FC = () => {
@@ -234,7 +229,8 @@ const TenantPayment: React.FC = () => {
     );
 
     const hasCurrentBalance = walletBalance > 0;
-    const hasNextRent = Boolean(activeContract);
+    const activeContracts = useMemo(() => tenantContracts.filter((contract) => contract.status === 'ACTIVE'), [tenantContracts]);
+    const hasNextRent = activeContracts.length > 0;
 
     const getTotalContractCharge = (contract: LandlordContract): number => {
         const rent = Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0);
@@ -243,7 +239,7 @@ const TenantPayment: React.FC = () => {
         return rent + deposit + serviceFee;
     };
 
-    const nextRentAmount = Number(activeContract?.rentAmount ?? activeContract?.property?.monthlyPrice ?? 0);
+    const nextRentAmount = Number(activeContracts[0]?.rentAmount ?? activeContracts[0]?.property?.monthlyPrice ?? 0);
     const paidContracts = tenantContracts.filter((c) => c.status === 'ACTIVE');
     const annualSpendAmount = paidContracts.reduce((sum, c) => sum + Number(c.rentAmount ?? c.property?.monthlyPrice ?? 0), 0);
     const hasAnnualSpend = paidContracts.length > 0;
@@ -251,35 +247,57 @@ const TenantPayment: React.FC = () => {
         const pendingTotalDue = pendingPaymentContract ? getTotalContractCharge(pendingPaymentContract) : 0;
     const canAffordPendingPayment = walletBalance >= pendingTotalDue;
 
-    const hasUpcomingPayments = Boolean(activeContract);
+    const hasUpcomingPayments = activeContracts.length > 0 || Boolean(pendingPaymentContract);
     const hasPaymentHistory = paidContracts.length > 0;
     const hasPendingRequests = tenantRequests.some((r) => r.status === 'APPROVED' || r.status === 'PENDING');
 
     const getNextDueDateLabel = (): string => {
-        if (!activeContract) return 'No active lease';
-        const dueDay = getDueDayFromContract(activeContract.rentDueDate);
-        const now = new Date();
-        const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
-        if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
-        const diffDays = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-        return `Due in ${diffDays} day${diffDays === 1 ? '' : 's'} (${formatShortDate(dueDate.toISOString())})`;
+        if (!activeContracts.length) return 'No active lease';
+        const nextCycle = activeContracts
+            .map((contract) => getRentCycleSummary(contract))
+            .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())[0];
+        return `Due in ${nextCycle.daysUntilDue} day${nextCycle.daysUntilDue === 1 ? '' : 's'} (${formatShortDate(nextCycle.dueDate.toISOString())})`;
     };
 
-    const upcomingPayments = activeContract
-        ? Array.from({ length: 3 }, (_, idx) => {
-              const dueDay = getDueDayFromContract(activeContract.rentDueDate);
-              const base = new Date();
-              const date = new Date(base.getFullYear(), base.getMonth() + idx, dueDay);
-              const status = idx === 0 && activeContract.status === 'PENDING_PAYMENT' ? 'Active' : 'Scheduled';
+    const upcomingPayments = useMemo(() => {
+        const rows: Array<{
+            contractId: string;
+            title: string;
+            propertyTitle: string;
+            date: string;
+            amount: number;
+            status: 'Active' | 'Scheduled' | 'Paid';
+            dueAt: number;
+        }> = [];
 
-              return {
-                  title: `${date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
-                  date: formatShortDate(date.toISOString()),
-                  amount: nextRentAmount,
-                  status,
-              };
-          })
-        : [];
+        if (pendingPaymentContract) {
+            rows.push({
+                contractId: pendingPaymentContract.id,
+                title: 'Initial Contract Payment',
+                propertyTitle: pendingPaymentContract.property?.title ?? 'Property',
+                date: formatShortDate(new Date().toISOString()),
+                amount: getTotalContractCharge(pendingPaymentContract),
+                status: 'Active',
+                dueAt: Date.now(),
+            });
+        }
+
+        activeContracts.forEach((contract) => {
+            const cycle = getRentCycleSummary(contract);
+            const amount = Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0);
+            rows.push({
+                contractId: contract.id,
+                title: `${cycle.dueDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
+                propertyTitle: contract.property?.title ?? 'Property',
+                date: formatShortDate(cycle.dueDate.toISOString()),
+                amount,
+                status: cycle.isPaidForCurrentCycle ? 'Paid' : 'Scheduled',
+                dueAt: cycle.dueDate.getTime(),
+            });
+        });
+
+        return rows.sort((a, b) => a.dueAt - b.dueAt);
+    }, [activeContracts, pendingPaymentContract]);
 
     const historyRows = [...paidContracts]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -374,6 +392,46 @@ const TenantPayment: React.FC = () => {
         }
     };
 
+    const handlePayUpcomingRent = async (contractId: string) => {
+        const contract = tenantContracts.find((item) => item.id === contractId);
+        if (!contract) return;
+
+        const requiredAmount =
+            contract.status === 'PENDING_PAYMENT'
+                ? getTotalContractCharge(contract)
+                : Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0);
+
+        if (walletBalance < requiredAmount) {
+            setActiveTab('topup');
+            setPaymentActionError('Insufficient wallet balance. Please top up your wallet before paying rent.');
+            return;
+        }
+
+        const isConfirmed = globalThis.confirm(`Pay ${formatMoney(requiredAmount)} from your wallet now?`);
+        if (!isConfirmed) return;
+
+        setIsProcessingPayment(true);
+        setPaymentActionError(null);
+        try {
+            if (contract.status === 'PENDING_PAYMENT') {
+                const result = await contractService.payContractFromBalance(contract.id);
+                setWalletBalance(Number(result.remainingBalance ?? 0));
+            } else {
+                const result = await contractService.payMonthlyRentFromBalance(contract.id);
+                setWalletBalance(Number(result.remainingBalance ?? 0));
+            }
+            setSuccessMessage(`Payment of ${formatMoney(requiredAmount)} completed successfully.`);
+            setShowSuccessToast(true);
+            await loadPaymentData();
+        } catch (error: unknown) {
+            const ex = error as { response?: { data?: { message?: string } } };
+            const message = ex.response?.data?.message || 'Could not complete rent payment.';
+            setPaymentActionError(message);
+        } finally {
+            setIsProcessingPayment(false);
+        }
+    };
+
     const handleStartTopup = async () => {
         const amount = Number(topupAmount);
 
@@ -398,8 +456,8 @@ const TenantPayment: React.FC = () => {
         }
     };
 
-    const getUpcomingActionLabel = (isActive: boolean): string => {
-        if (!isActive) return 'Manage';
+    const getUpcomingActionLabel = (status: 'Active' | 'Scheduled' | 'Paid'): string => {
+        if (status === 'Paid') return 'Paid';
         if (isProcessingPayment) return 'Processing...';
         return 'Pay';
     };
@@ -438,7 +496,7 @@ const TenantPayment: React.FC = () => {
                         <TrendingUp size={16} className={hasNextRent ? 'text-success' : 'text-muted'} />
                     </div>
                     <div className="flex-baseline">
-                        <h3 className={hasNextRent ? '' : 'text-muted'}>{formatMoney(hasNextRent ? nextRentAmount : 0)}</h3>
+                            <h3 className={hasNextRent ? '' : 'text-muted'}>{formatMoney(hasNextRent ? nextRentAmount : 0)}</h3>
                         <span className="sub-label">/mo</span>
                     </div>
                     <div className="due-indicator">
@@ -481,7 +539,7 @@ const TenantPayment: React.FC = () => {
             {hasUpcomingPayments ? (
                 <div className="list-container">
                     {upcomingPayments.map((item) => (
-                        <div className="list-row" key={`${item.title}-${item.date}`}>
+                        <div className="list-row" key={`${item.contractId}-${item.dueAt}-${item.title}`}>
                             <div className="row-main">
                                 <div className="calendar-box">
                                     <span className="month">{item.date.split(' ')[0]}</span>
@@ -489,17 +547,23 @@ const TenantPayment: React.FC = () => {
                                 </div>
                                 <div className="row-text">
                                     <h5>{item.title}</h5>
-                                    <p>{item.status === 'Active' ? 'Awaiting wallet payment' : 'Automatic payment scheduled'}</p>
+                                    <p>
+                                        {item.propertyTitle} - {item.status === 'Active'
+                                            ? 'Awaiting wallet payment'
+                                            : item.status === 'Paid'
+                                                ? 'Current rent cycle already paid'
+                                                : 'Scheduled monthly rent'}
+                                    </p>
                                 </div>
                             </div>
                             <div className="row-actions">
                                 <span className="row-amount">{formatMoney(item.amount)}</span>
                                 <button
-                                    className={item.status === 'Active' ? 'btn-pay-now' : 'btn-manage-ghost'}
-                                    onClick={item.status === 'Active' ? handlePayFromBalance : undefined}
-                                    disabled={item.status === 'Active' && isProcessingPayment}
+                                    className={item.status === 'Paid' ? 'btn-manage-ghost' : 'btn-pay-now'}
+                                    onClick={item.status === 'Paid' ? undefined : () => void handlePayUpcomingRent(item.contractId)}
+                                    disabled={item.status === 'Paid' || isProcessingPayment}
                                 >
-                                    {getUpcomingActionLabel(item.status === 'Active')}
+                                    {getUpcomingActionLabel(item.status)}
                                 </button>
                             </div>
                         </div>

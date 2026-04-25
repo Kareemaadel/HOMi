@@ -102,6 +102,13 @@ export interface ContractBalancePaymentResponse {
     debitedAmount: number;
 }
 
+export interface MonthlyRentPaymentResponse {
+    contract: ContractResponse;
+    remainingBalance: number;
+    debitedAmount: number;
+    paidForMonth: string;
+}
+
 // ─── Contract Response ────────────────────────────────────────────────────────
 
 export interface ContractResponse {

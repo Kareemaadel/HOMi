@@ -286,6 +286,25 @@ class ContractController {
     }
 
     /**
+     * POST /api/contracts/:id/payments/balance/pay-rent
+     */
+    async payMonthlyRentFromBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const result = await contractService.payMonthlyRentFromBalance(id as string, tenantId);
+
+            res.status(200).json({
+                success: true,
+                message: `Monthly rent for ${result.paidForMonth} paid from wallet balance.`,
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * POST /api/contracts/payments/wallet/topup/initiate
      */
     async initiateWalletTopup(req: Request, res: Response, next: NextFunction): Promise<void> {

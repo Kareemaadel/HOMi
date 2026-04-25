@@ -5,16 +5,26 @@ const UpcomingPayment = ({
     amount,
     dueDate,
     dueInLabel,
+    dueTone,
+    onPayNow,
+    onTopUp,
+    isPaying,
+    isCurrentCyclePaid,
 }: {
     amount: number;
     dueDate: string;
     dueInLabel: string;
+    dueTone: 'safe' | 'urgent';
+    onPayNow: () => void;
+    onTopUp: () => void;
+    isPaying: boolean;
+    isCurrentCyclePaid: boolean;
 }) => {
     return (
         <div className="payment-card">
             <div className="payment-header">
                 <h3>Upcoming Payment</h3>
-                <span className="due-tag">Due in {dueInLabel}</span>
+                <span className={`due-tag ${dueTone}`}>Due in {dueInLabel}</span>
             </div>
             <div className="amount-display">
                 <span className="currency">$</span>
@@ -27,13 +37,18 @@ const UpcomingPayment = ({
                 </div>
                 <div className="detail-row">
                     <span>Payment Method</span>
-                    <strong>Not available</strong>
+                    <strong>Wallet Balance</strong>
                 </div>
             </div>
-            <button className="pay-now-btn">
-                Pay Now <FaArrowRight />
+            <button className="pay-now-btn" onClick={onPayNow} disabled={isPaying || isCurrentCyclePaid}>
+                {isCurrentCyclePaid ? 'Paid This Cycle' : isPaying ? 'Processing...' : 'Pay Now'} {!isPaying && !isCurrentCyclePaid && <FaArrowRight />}
             </button>
-            <p className="autopay-note">Autopay status is not available yet.</p>
+            <button className="pay-now-btn secondary" onClick={onTopUp} disabled={isPaying}>
+                Top Up Wallet
+            </button>
+            <p className="autopay-note">
+                Once this month rent is paid, next due date moves to the following monthly cycle.
+            </p>
         </div>
     );
 };

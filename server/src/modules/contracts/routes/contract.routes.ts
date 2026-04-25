@@ -564,6 +564,12 @@ router.post(
 );
 
 router.post(
+    '/:id/payments/balance/pay-rent',
+    protect,
+    contractController.payMonthlyRentFromBalance.bind(contractController)
+);
+
+router.post(
     '/payments/wallet/topup/initiate',
     protect,
     validate(WalletTopupInitiateSchema),

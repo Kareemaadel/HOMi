@@ -30,6 +30,7 @@ import type {
     VerifyPaymobPaymentInput,
     PaymobCheckoutResponse,
     WalletBalanceResponse,
+    MonthlyRentPaymentResponse,
     WalletTopupCheckoutResponse,
     WalletTopupInitiateInput,
     WalletTopupVerifyInput,
@@ -758,6 +759,105 @@ class ContractService {
         }
     }
 
+    async payMonthlyRentFromBalance(contractId: string, tenantId: string): Promise<MonthlyRentPaymentResponse> {
+        const transaction = await sequelize.transaction();
+
+        try {
+            const contract = await Contract.findByPk(contractId, {
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+
+            if (!contract) {
+                throw new ContractError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
+            }
+
+            if (contract.tenant_id !== tenantId) {
+                throw new ContractError('You do not have permission to pay rent for this contract', 403, 'FORBIDDEN');
+            }
+
+            if (contract.status !== ContractStatus.ACTIVE) {
+                throw new ContractError('Monthly rent can only be paid for active contracts', 400, 'CONTRACT_NOT_ACTIVE');
+            }
+
+            const profile = await Profile.findOne({
+                where: { user_id: tenantId },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+
+            if (!profile) {
+                throw new ContractError('Tenant profile not found', 404, 'PROFILE_NOT_FOUND');
+            }
+
+            const now = new Date();
+            const currentDueDate = this.getCycleDueDate(contract, now);
+            const nextCycleStart = this.getCycleDueDate(contract, new Date(currentDueDate.getFullYear(), currentDueDate.getMonth() + 1, 1));
+            const paidAt = contract.payment_verified_at ? new Date(contract.payment_verified_at) : null;
+            const isCurrentCyclePaid = paidAt ? paidAt >= currentDueDate && paidAt < nextCycleStart : false;
+
+            if (isCurrentCyclePaid) {
+                throw new ContractError('Current month rent is already paid for this contract', 400, 'MONTHLY_RENT_ALREADY_PAID');
+            }
+
+            const rentAmount = Number(contract.rent_amount ?? 0);
+            if (!Number.isFinite(rentAmount) || rentAmount <= 0) {
+                throw new ContractError('Monthly rent amount is not configured for this contract', 400, 'INVALID_RENT_AMOUNT');
+            }
+
+            const availableBalance = Number((profile as any).wallet_balance ?? 0);
+            if (availableBalance < rentAmount) {
+                throw new ContractError('Insufficient wallet balance to pay monthly rent', 400, 'INSUFFICIENT_WALLET_BALANCE');
+            }
+
+            const remainingBalance = Math.max(availableBalance - rentAmount, 0);
+            await profile.update({ wallet_balance: remainingBalance }, { transaction });
+
+            await contract.update(
+                {
+                    payment_verified_at: now,
+                    payment_status: ContractPaymentStatus.PAID,
+                },
+                { transaction }
+            );
+
+            const paidForMonth = currentDueDate.toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric',
+            });
+
+            await activityLogService.log({
+                actor: { userId: tenantId, role: 'TENANT' },
+                action: 'MONTHLY_RENT_PAID_FROM_BALANCE',
+                entityType: 'CONTRACT',
+                entityId: contract.id,
+                description: `Monthly rent paid from wallet balance for ${paidForMonth}.`,
+                metadata: {
+                    contractId: contract.id,
+                    paidForMonth,
+                    debitedAmount: rentAmount,
+                    remainingBalance,
+                },
+            });
+
+            await transaction.commit();
+
+            const refreshedContract = await Contract.findByPk(contract.id, {
+                include: this.getContractDetailIncludes(),
+            });
+
+            return {
+                contract: this.formatContractResponse(refreshedContract ?? contract, true, true),
+                remainingBalance,
+                debitedAmount: rentAmount,
+                paidForMonth,
+            };
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+    }
+
     async initiateWalletTopup(
         tenantId: string,
         input: WalletTopupInitiateInput
@@ -1053,6 +1153,21 @@ class ContractService {
         const deposit = Number(contract.security_deposit ?? 0);
         const fee = Number(contract.service_fee ?? 0);
         return rent + deposit + fee;
+    }
+
+    private getCycleDueDate(contract: Contract, referenceDate: Date): Date {
+        const year = referenceDate.getFullYear();
+        const month = referenceDate.getMonth();
+
+        if (contract.rent_due_date === '5TH_OF_MONTH') {
+            return new Date(year, month, 5);
+        }
+
+        if (contract.rent_due_date === 'LAST_DAY_OF_MONTH') {
+            return new Date(year, month + 1, 0);
+        }
+
+        return new Date(year, month, 1);
     }
 
     /**
