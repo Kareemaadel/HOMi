@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { FiCheck, FiCheckCircle, FiFileText, FiHome, FiLogOut, FiX, FiClock, FiAlertTriangle, FiActivity, FiMessageCircle, FiUsers, FiTool } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiCheck, FiCheckCircle, FiFileText, FiX, FiClock } from 'react-icons/fi';
 import adminService, { type PendingApprovalProperty } from '../../../services/admin.service';
+import AdminSidebar from '../components/AdminSidebar';
 import './adminDashboard.css';
 import './AdminPropertyApprovals.css';
 
@@ -111,16 +112,6 @@ const AdminPropertyApprovals = () => {
         }
     };
 
-    const handleSignOut = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('profile');
-        localStorage.removeItem('authProvider');
-        sessionStorage.removeItem('refreshToken');
-        navigate('/admin/auth/login', { replace: true });
-    };
-
     const sortedProperties = [...pendingProperties].sort((a, b) => {
         const timeA = new Date(a.createdAt).getTime();
         const timeB = new Date(b.createdAt).getTime();
@@ -129,23 +120,7 @@ const AdminPropertyApprovals = () => {
 
     return (
         <div className="admin-shell">
-            <aside className="admin-sidebar">
-                <div className="admin-brand-card">
-                    <p className="admin-brand-team">Admin Team</p>
-                    <h2>HOMi <span>Admin</span></h2>
-                    <p>Moderation workspace</p>
-                </div>
-                <nav className="admin-nav">
-                    <NavLink to="/admin/dashboard"><FiHome /> Dashboard</NavLink>
-                    <NavLink to="/admin/property-approvals"><FiFileText /> Property Approvals</NavLink>
-                    <NavLink to="/admin/maintenance-approvals"><FiTool /> Maintenance Requests</NavLink>
-                    <NavLink to="/admin/user-reports"><FiAlertTriangle /> User Reports</NavLink>
-                    <NavLink to="/admin/user-management"><FiUsers /> User Management</NavLink>
-                    <NavLink to="/admin/support-inbox"><FiMessageCircle /> Help Center</NavLink>
-                    <NavLink to="/admin/activity-logs"><FiActivity /> Activity Logs</NavLink>
-                </nav>
-                <button className="admin-signout" onClick={handleSignOut} type="button"><FiLogOut /> Sign out</button>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <header className="admin-header">
@@ -153,7 +128,6 @@ const AdminPropertyApprovals = () => {
                         <h1>Property Approvals</h1>
                         <p>Review submissions and verify listings quickly.</p>
                     </div>
-                    <div className="admin-avatar">A</div>
                 </header>
 
                 {loading ? (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { FiActivity, FiAlertTriangle, FiFileText, FiHome, FiLogOut, FiMessageCircle, FiUsers } from 'react-icons/fi';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import adminService, { type AdminManagedUser } from '../../../services/admin.service';
+import AdminSidebar from '../components/AdminSidebar';
 import './adminDashboard.css';
 import './AdminUserManagement.css';
 
@@ -62,16 +62,6 @@ const AdminUserManagement = () => {
     useEffect(() => {
         void fetchUsers();
     }, []);
-
-    const handleSignOut = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('profile');
-        localStorage.removeItem('authProvider');
-        sessionStorage.removeItem('refreshToken');
-        navigate('/admin/auth/login', { replace: true });
-    };
 
     const handleBan = async () => {
         if (!banUser) return;
@@ -151,22 +141,7 @@ const AdminUserManagement = () => {
 
     return (
         <div className="admin-shell">
-            <aside className="admin-sidebar">
-                <div className="admin-brand-card">
-                    <p className="admin-brand-team">Admin Team</p>
-                    <h2>HOMi <span>Admin</span></h2>
-                    <p>User management center</p>
-                </div>
-                <nav className="admin-nav">
-                    <NavLink to="/admin/dashboard"><FiHome /> Dashboard</NavLink>
-                    <NavLink to="/admin/property-approvals"><FiFileText /> Property Approvals</NavLink>
-                    <NavLink to="/admin/user-reports"><FiAlertTriangle /> User Reports</NavLink>
-                    <NavLink to="/admin/user-management"><FiUsers /> User Management</NavLink>
-                    <NavLink to="/admin/support-inbox"><FiMessageCircle /> Help Center</NavLink>
-                    <NavLink to="/admin/activity-logs"><FiActivity /> Activity Logs</NavLink>
-                </nav>
-                <button className="admin-signout" onClick={handleSignOut} type="button"><FiLogOut /> Sign out</button>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <header className="admin-header">
@@ -174,7 +149,6 @@ const AdminUserManagement = () => {
                         <h1>User Management</h1>
                         <p>Full system data for landlords and tenants.</p>
                     </div>
-                    <div className="admin-avatar">A</div>
                 </header>
 
                 {loading ? (

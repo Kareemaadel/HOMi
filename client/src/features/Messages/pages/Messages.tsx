@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../../components/global/header';
 import LandlordSidebar from '../../../components/global/Landlord/sidebar';
 import TenantSidebar from '../../../components/global/Tenant/sidebar';
+import MaintenanceSideBar from '../../Maintenance/MaintenanceProvider/SideBar/MaintenanceSideBar';
 import ChatSidebar from '../components/ChatSidebar';
 import ChatWindow from '../components/ChatWindow';
 import { authService } from '../../../services/auth.service';
@@ -108,7 +109,11 @@ const Messages: React.FC = () => {
   const currentUserId = currentUser?.user?.id ?? null;
   const userRole = currentUser?.user?.role;
 
-  const SidebarComponent = userRole === 'TENANT' ? TenantSidebar : LandlordSidebar;
+  const SidebarComponent = userRole === 'TENANT'
+    ? TenantSidebar
+    : userRole === 'MAINTENANCE_PROVIDER'
+      ? MaintenanceSideBar
+      : LandlordSidebar;
 
   const [conversations, setConversations] = useState<ConversationDto[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);

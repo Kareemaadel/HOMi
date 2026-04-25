@@ -196,6 +196,19 @@ export interface PendingMaintenanceApplication {
     createdAt: string;
 }
 
+export interface AdminManagedMaintainer extends AdminManagedUser {
+    providerType: 'CENTER' | 'INDIVIDUAL' | null;
+    applicationStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+    applicationSubmittedAt: string | null;
+    reviewedAt: string | null;
+    businessName: string | null;
+    category: string | null;
+    categories: string[] | null;
+    numberOfEmployees: number | null;
+    companyLocation: string | null;
+    notes: string | null;
+}
+
 class AdminService {
     async getDashboardStats() {
         const response = await apiClient.get<{ success: boolean; data: AdminStatsResponse }>('/admin/dashboard/stats');
@@ -245,6 +258,13 @@ class AdminService {
     async getUsersForManagement() {
         const response = await apiClient.get<{ success: boolean; data: { landlords: AdminManagedUser[]; tenants: AdminManagedUser[] } }>(
             '/admin/users/management/all'
+        );
+        return response.data.data;
+    }
+
+    async getMaintainersForManagement() {
+        const response = await apiClient.get<{ success: boolean; data: { centers: AdminManagedMaintainer[]; individuals: AdminManagedMaintainer[] } }>(
+            '/admin/users/management/maintainers'
         );
         return response.data.data;
     }

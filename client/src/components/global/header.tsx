@@ -27,6 +27,7 @@ const Header = () => {
 
   const signedInRole = getSignedInRole();
   const isSignedIn = Boolean(localStorage.getItem('accessToken')) && signedInRole !== null;
+  const isMaintainer = signedInRole === 'MAINTENANCE_PROVIDER';
   const howItWorksPath = signedInRole === 'TENANT' ? '/for-tenants' : '/for-landlords';
   const howItWorksBrowsePath = isSignedIn ? howItWorksPath : '/how-it-works-choose';
   const howItWorksNavActive =
@@ -124,20 +125,24 @@ const Header = () => {
           <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
             Home
           </Link>
-          <Link
-            to={howItWorksBrowsePath}
-            className={`nav-link ${howItWorksNavActive ? 'active' : ''}`}
-            onClick={(e) => {
-              if (!isSignedIn) return;
-              e.preventDefault();
-              navigate(howItWorksPath, { state: { fromAppNavbar: true } });
-            }}
-          >
-            How It Works
-          </Link>
-          <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
-            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
-          </Link>
+          {!isMaintainer && (
+            <Link
+              to={howItWorksBrowsePath}
+              className={`nav-link ${howItWorksNavActive ? 'active' : ''}`}
+              onClick={(e) => {
+                if (!isSignedIn) return;
+                e.preventDefault();
+                navigate(howItWorksPath, { state: { fromAppNavbar: true } });
+              }}
+            >
+              How It Works
+            </Link>
+          )}
+          {!isMaintainer && (
+            <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
+              HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
+            </Link>
+          )}
           <Link to="/get-help" className={`nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
             Get Help
           </Link>
@@ -173,20 +178,24 @@ const Header = () => {
           <Link to={isSignedIn ? dashboardPath : '/'} className={`mobile-nav-link ${location.pathname === dashboardPath || (!isSignedIn && location.pathname === '/') ? 'active' : ''}`}>
             Home
           </Link>
-          <Link
-            to={howItWorksBrowsePath}
-            className={`mobile-nav-link ${howItWorksNavActive ? 'active' : ''}`}
-            onClick={(e) => {
-              if (!isSignedIn) return;
-              e.preventDefault();
-              navigate(howItWorksPath, { state: { fromAppNavbar: true } });
-            }}
-          >
-            How It Works
-          </Link>
-          <Link to="/homi-plus" className={`mobile-nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
-            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
-          </Link>
+          {!isMaintainer && (
+            <Link
+              to={howItWorksBrowsePath}
+              className={`mobile-nav-link ${howItWorksNavActive ? 'active' : ''}`}
+              onClick={(e) => {
+                if (!isSignedIn) return;
+                e.preventDefault();
+                navigate(howItWorksPath, { state: { fromAppNavbar: true } });
+              }}
+            >
+              How It Works
+            </Link>
+          )}
+          {!isMaintainer && (
+            <Link to="/homi-plus" className={`mobile-nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
+              HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
+            </Link>
+          )}
           <Link to="/get-help" className={`mobile-nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
             Get Help
           </Link>

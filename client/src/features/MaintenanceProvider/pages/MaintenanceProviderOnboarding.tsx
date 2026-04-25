@@ -7,6 +7,11 @@ import './MaintenanceProviderOnboarding.css';
 type ProviderType = 'CENTER' | 'INDIVIDUAL';
 type ViewMode = 'apply' | 'login';
 type Lang = 'en' | 'ar';
+type LoginStatusPopup = {
+    title: string;
+    body: string;
+    extra?: string;
+};
 
 const TEXT = {
     en: {
@@ -95,6 +100,11 @@ const TEXT = {
         cameraError: 'Camera access failed. You can still upload files manually.',
         submitError: 'Could not submit your application.',
         signinError: 'Could not sign in.',
+        pendingPopupTitle: 'Request Still Under Review',
+        pendingPopupBody: 'Your request is still under review by admin. Please try again later.',
+        bannedPopupTitle: 'Account Restricted',
+        bannedPopupBody: 'Your maintainer account is currently banned by admin.',
+        closePopup: 'Close',
         successTitle: 'Request Received Successfully',
         successBody: 'Your maintenance provider request is now pending admin approval. We will contact you soon after review.',
         successCta: 'Go to Provider Sign In',
@@ -186,6 +196,11 @@ const TEXT = {
         cameraError: 'تعذر الوصول للكاميرا. يمكنك رفع الملفات يدويًا.',
         submitError: 'تعذر إرسال الطلب.',
         signinError: 'تعذر تسجيل الدخول.',
+        pendingPopupTitle: 'طلبك لسه تحت المراجعة',
+        pendingPopupBody: 'طلبك ما زال قيد مراجعة الإدارة. حاول مرة تانية لاحقًا.',
+        bannedPopupTitle: 'الحساب موقوف',
+        bannedPopupBody: 'حساب الفني متوقوف حاليًا من الإدارة.',
+        closePopup: 'إغلاق',
         successTitle: 'تم استلام طلبك بنجاح',
         successBody: 'طلب فني الصيانة بتاعك دلوقتي قيد المراجعة عند الإدارة. هنتواصل معاك قريب بعد المراجعة.',
         successCta: 'الذهاب لتسجيل دخول الفني',
@@ -201,6 +216,7 @@ const MaintenanceProviderOnboarding = () => {
     const [error, setError] = useState<string | null>(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [validationPopup, setValidationPopup] = useState<string | null>(null);
+    const [loginStatusPopup, setLoginStatusPopup] = useState<LoginStatusPopup | null>(null);
 
     const [providerType, setProviderType] = useState<ProviderType>('INDIVIDUAL');
     const [selectedCenterCategories, setSelectedCenterCategories] = useState<string[]>([]);
@@ -604,9 +620,38 @@ const MaintenanceProviderOnboarding = () => {
             const next = authService.resolvePostAuthRoute(result);
             navigate(next, { replace: true });
         } catch (err: unknown) {
-            const msg = typeof err === 'object' && err !== null && 'response' in err
-                ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+            const data = typeof err === 'object' && err !== null && 'response' in err
+                ? (err as { response?: { data?: { message?: string; code?: string; details?: { reason?: string; message?: string; banUntil?: string | null; isUnlimited?: boolean } } } }).response?.data
                 : null;
+            const code = data?.code;
+            const msg = data?.message;
+
+            if (code === 'MAINTENANCE_REQUEST_PENDING' || msg?.toLowerCase().includes('under review')) {
+                setLoginStatusPopup({
+                    title: t.pendingPopupTitle,
+                    body: msg || t.pendingPopupBody,
+                });
+                return;
+            }
+
+            if (code === 'ACCOUNT_BANNED') {
+                const details = data?.details;
+                const untilText = details?.isUnlimited
+                    ? (lang === 'ar' ? 'مدة الإيقاف: غير محدد' : 'Ban duration: Unlimited')
+                    : details?.banUntil
+                        ? `${lang === 'ar' ? 'تاريخ انتهاء الإيقاف' : 'Ban until'}: ${new Date(details.banUntil).toLocaleString()}`
+                        : undefined;
+                const reasonText = details?.reason
+                    ? `${lang === 'ar' ? 'السبب' : 'Reason'}: ${details.reason}`
+                    : undefined;
+                setLoginStatusPopup({
+                    title: t.bannedPopupTitle,
+                    body: details?.message || msg || t.bannedPopupBody,
+                    extra: [reasonText, untilText].filter(Boolean).join('\n'),
+                });
+                return;
+            }
+
             setError(msg || t.signinError);
         } finally {
             setLoading(false);
@@ -853,6 +898,24 @@ const MaintenanceProviderOnboarding = () => {
                         <div className="mp-success-actions">
                             <button type="button" onClick={() => setValidationPopup(null)}>
                                 {lang === 'ar' ? 'تمام' : 'OK'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {loginStatusPopup && (
+                <div className="mp-success-overlay" onClick={() => setLoginStatusPopup(null)}>
+                    <div className="mp-success-card" onClick={(e) => e.stopPropagation()}>
+                        <img src="/logo.png" alt="HOMi" className="mp-success-logo" />
+                        <h2>{loginStatusPopup.title}</h2>
+                        <p>{loginStatusPopup.body}</p>
+                        {loginStatusPopup.extra && (
+                            <p style={{ whiteSpace: 'pre-line', marginTop: 10 }}>{loginStatusPopup.extra}</p>
+                        )}
+                        <div className="mp-success-actions">
+                            <button type="button" onClick={() => setLoginStatusPopup(null)}>
+                                {t.closePopup}
                             </button>
                         </div>
                     </div>

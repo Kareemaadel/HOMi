@@ -9,9 +9,11 @@ import {
 interface SettingsSidebarProps {
     activeTab: string;
     setActiveTab: (tab: string) => void;
+    role?: string | null;
 }
 
-const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, setActiveTab }) => {
+const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, setActiveTab, role }) => {
+    const isMaintainer = role === 'MAINTENANCE_PROVIDER';
     const menuItems = [
         { id: 'profile', label: 'My Profile', icon: <FaUser /> },
         { id: 'billing', label: 'Plan & Billing', icon: <FaCreditCard /> }, // NEW
@@ -20,11 +22,14 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, setActiveT
         { id: 'privacy', label: 'Privacy & Data', icon: <FaUserShield /> }, // NEW
         { id: 'preferences', label: 'Preferences', icon: <FaCog /> },
     ];
+    const visibleItems = isMaintainer
+        ? menuItems.filter((item) => item.id !== 'billing' && item.id !== 'privacy')
+        : menuItems;
 
     return (
         <aside className="internal-settings-sidebar">
             <nav className="settings-nav">
-                {menuItems.map((item) => (
+                {visibleItems.map((item) => (
                     <button
                         key={item.id}
                         className={`nav-item ${activeTab === item.id ? 'active' : ''}`}

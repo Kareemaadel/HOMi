@@ -176,3 +176,16 @@ export interface PendingMaintenanceApplication {
     notes: string | null;
     createdAt: Date;
 }
+
+export interface AdminManagedMaintainer extends AdminManagedUser {
+    providerType: 'CENTER' | 'INDIVIDUAL' | null;
+    applicationStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+    applicationSubmittedAt: Date | null;
+    reviewedAt: Date | null;
+    businessName: string | null;
+    category: string | null;
+    categories: string[] | null;
+    numberOfEmployees: number | null;
+    companyLocation: string | null;
+    notes: string | null;
+}

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { FiUsers, FiHome, FiCheckCircle, FiFileText, FiLogOut, FiTrendingUp, FiBarChart2, FiAlertTriangle, FiActivity, FiMessageCircle, FiTool } from 'react-icons/fi';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { FiUsers, FiHome, FiCheckCircle, FiFileText, FiTrendingUp, FiBarChart2 } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import adminService from '../../../services/admin.service';
 import type { AdminStatsResponse } from '../../../services/admin.service';
+import AdminSidebar from '../components/AdminSidebar';
 import './adminDashboard.css';
 
 const isUnauthorizedError = (error: unknown) =>
@@ -57,16 +58,6 @@ const AdminDashboard = () => {
         void fetchData();
     }, []);
 
-    const handleSignOut = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('profile');
-        localStorage.removeItem('authProvider');
-        sessionStorage.removeItem('refreshToken');
-        navigate('/admin/auth/login', { replace: true });
-    };
-
     const usersTrend = buildTrend(stats?.totalUsers || 0, [0.52, 0.58, 0.67, 0.76, 0.87, 1]);
     const propertyTrend = buildTrend(stats?.totalProperties || 0, [0.44, 0.53, 0.61, 0.72, 0.88, 1]);
     const interactionsTrend = buildTrend(
@@ -79,25 +70,7 @@ const AdminDashboard = () => {
 
     return (
         <div className="admin-shell">
-            <aside className="admin-sidebar">
-                <div className="admin-brand-card">
-                    <p className="admin-brand-team">Admin Team</p>
-                    <h2>HOMi <span>Admin</span></h2>
-                    <p>Control center</p>
-                </div>
-                <nav className="admin-nav">
-                    <NavLink to="/admin/dashboard" end><FiHome /> Dashboard</NavLink>
-                    <NavLink to="/admin/property-approvals"><FiFileText /> Property Approvals</NavLink>
-                    <NavLink to="/admin/maintenance-approvals"><FiTool /> Maintenance Requests</NavLink>
-                    <NavLink to="/admin/user-reports"><FiAlertTriangle /> User Reports</NavLink>
-                    <NavLink to="/admin/user-management"><FiUsers /> User Management</NavLink>
-                    <NavLink to="/admin/support-inbox"><FiMessageCircle /> Help Center</NavLink>
-                    <NavLink to="/admin/activity-logs"><FiActivity /> Activity Logs</NavLink>
-                </nav>
-                <button className="admin-signout" onClick={handleSignOut} type="button">
-                    <FiLogOut /> Sign out
-                </button>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <header className="admin-header">
@@ -105,7 +78,6 @@ const AdminDashboard = () => {
                         <h1>Dashboard Overview</h1>
                         <p>Live platform health, growth, and moderation visibility.</p>
                     </div>
-                    <div className="admin-avatar">A</div>
                 </header>
 
                 {loading ? (

@@ -2,8 +2,19 @@ import React from 'react';
 import './Notifications.css';
 import { FaEnvelope, FaMobileAlt, FaBell } from 'react-icons/fa';
 
-const Notifications: React.FC = () => {
-  const notificationTypes = [
+interface NotificationsProps {
+  role?: string | null;
+}
+
+const Notifications: React.FC<NotificationsProps> = ({ role }) => {
+  const isMaintainer = role === 'MAINTENANCE_PROVIDER';
+  const notificationTypes = isMaintainer ? [
+    { id: 'job_request', title: 'Job Requests', desc: 'When you receive a new maintenance request' },
+    { id: 'job_status', title: 'Job Status Updates', desc: 'Accepted, in-progress, and completed updates' },
+    { id: 'payout', title: 'Earnings & Payouts', desc: 'Payout confirmations and delays' },
+    { id: 'support', title: 'Support Replies', desc: 'Messages from admin/support team' },
+    { id: 'system', title: 'Security & System', desc: 'Login alerts and account security notices' },
+  ] : [
     { id: 'rental', title: 'Rental Requests', desc: 'When someone applies to your listing' },
     { id: 'payment', title: 'Payment Alerts', desc: 'Confirmations and failed transactions' },
     { id: 'maintenance', title: 'Maintenance Updates', desc: 'Status changes on repair tickets' },

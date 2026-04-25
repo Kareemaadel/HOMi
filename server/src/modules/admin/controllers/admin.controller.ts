@@ -250,6 +250,18 @@ class AdminController {
         }
     }
 
+    async getMaintainersForManagement(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const maintainers = await adminService.getMaintainersForManagement();
+            res.status(200).json({
+                success: true,
+                data: maintainers,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async banUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const adminId = (req as any).user?.userId;

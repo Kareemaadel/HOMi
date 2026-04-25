@@ -4,6 +4,7 @@ import Header from '../../../components/global/header';
 import GuestNavbar from '../../../components/guest/GuestNavbar';
 import TenantSidebar from '../../../components/global/Tenant/sidebar';
 import LandlordSidebar from '../../../components/global/Landlord/sidebar';
+import MaintenanceSideBar from '../../Maintenance/MaintenanceProvider/SideBar/MaintenanceSideBar';
 import Footer from '../../../components/global/footer';
 import AuthModal from '../../../components/global/AuthModal';
 import authService from '../../../services/auth.service';
@@ -42,14 +43,14 @@ const GetHelp: React.FC = () => {
   /** Guest marketing chrome: no session, or explicit entry from guest pages (e.g. Help Center link). */
   const useGuestChrome = !user || fromGuestHome;
   const showDashboardSidebar =
-    Boolean(user) && (role === 'LANDLORD' || role === 'TENANT') && !useGuestChrome;
+    Boolean(user) && (role === 'LANDLORD' || role === 'TENANT' || role === 'MAINTENANCE_PROVIDER') && !useGuestChrome;
 
   const openSupportChat = () => {
     if (!user) {
       setShowAuthModal(true);
       return;
     }
-    if (role !== 'LANDLORD' && role !== 'TENANT') {
+    if (role !== 'LANDLORD' && role !== 'TENANT' && role !== 'MAINTENANCE_PROVIDER') {
       return;
     }
     setSupportChatOpen(true);
@@ -84,6 +85,7 @@ const GetHelp: React.FC = () => {
     <div className="help-page-layout">
       {showDashboardSidebar && role === 'LANDLORD' ? <LandlordSidebar /> : null}
       {showDashboardSidebar && role === 'TENANT' ? <TenantSidebar /> : null}
+      {showDashboardSidebar && role === 'MAINTENANCE_PROVIDER' ? <MaintenanceSideBar /> : null}
 
       <div
         className={`help-main-content ${!showDashboardSidebar ? 'help-main-fullwidth' : ''} ${

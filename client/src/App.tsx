@@ -35,6 +35,7 @@ import AdminActivityLogs from "./features/admin/pages/AdminActivityLogs";
 import AdminUserManagement from "./features/admin/pages/AdminUserManagement";
 import AdminSupportInbox from "./features/admin/pages/AdminSupportInbox";
 import AdminMaintenanceApprovals from "./features/admin/pages/AdminMaintenanceApprovals";
+import AdminMaintainers from "./features/admin/pages/AdminMaintainers";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -139,6 +140,7 @@ function App() {
         <Route path="/admin/activity-logs" element={<AuthGuard allowedRoles={['ADMIN']}><AdminActivityLogs /></AuthGuard>} />
         <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
         <Route path="/admin/maintenance-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceApprovals /></AuthGuard>} />
+        <Route path="/admin/maintainers" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintainers /></AuthGuard>} />
 
         {/* Auth Routes — public */}
         <Route path="/auth" element={<AuthPage />} />

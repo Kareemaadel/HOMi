@@ -5,7 +5,12 @@ import { FaCamera, FaIdBadge, FaEnvelope, FaPhone, FaMapMarkerAlt, FaUserCircle 
 import { authService } from '../../../services/auth.service';
 import type { UserResponse, ProfileResponse, UpdateProfileRequest } from '../../../types/auth.types';
 
-const MyProfile: React.FC = () => {
+interface MyProfileProps {
+    role?: string | null;
+}
+
+const MyProfile: React.FC<MyProfileProps> = ({ role }) => {
+    const isMaintainer = role === 'MAINTENANCE_PROVIDER';
     const [user, setUser] = useState<UserResponse | null>(null);
     const [profile, setProfile] = useState<ProfileResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -27,11 +32,15 @@ const MyProfile: React.FC = () => {
     const originalBio = profile?.bio ?? '';
     const originalLocation = profile?.currentLocation ?? '';
     const hasChanges =
-        firstName !== originalFirstName ||
-        lastName !== originalLastName ||
-        phone !== originalPhone ||
-        bio !== originalBio ||
-        currentLocation !== originalLocation;
+        (isMaintainer
+            ? bio !== originalBio
+            : (
+                firstName !== originalFirstName ||
+                lastName !== originalLastName ||
+                phone !== originalPhone ||
+                bio !== originalBio ||
+                currentLocation !== originalLocation
+            ));
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -130,12 +139,12 @@ const MyProfile: React.FC = () => {
         setMessage(null);
         try {
             // ── Client-side validation ────────────────────────────────────
-            if (!firstName.trim()) {
+            if (!isMaintainer && !firstName.trim()) {
                 setMessage({ type: 'error', text: 'First name cannot be empty.' });
                 setSaving(false);
                 return;
             }
-            if (!lastName.trim()) {
+            if (!isMaintainer && !lastName.trim()) {
                 setMessage({ type: 'error', text: 'Last name cannot be empty.' });
                 setSaving(false);
                 return;
@@ -148,15 +157,17 @@ const MyProfile: React.FC = () => {
             const orig = cached?.profile;
             const payload: UpdateProfileRequest = {};
 
-            if (firstName !== (orig?.firstName ?? '')) payload.firstName = firstName;
-            if (lastName !== (orig?.lastName ?? '')) payload.lastName = lastName;
-            // Only include phone if it's non-empty AND different from original
-            if (phone && phone !== (orig?.phoneNumber ?? '')) payload.phone = phone;
+            if (!isMaintainer) {
+                if (firstName !== (orig?.firstName ?? '')) payload.firstName = firstName;
+                if (lastName !== (orig?.lastName ?? '')) payload.lastName = lastName;
+                // Only include phone if it's non-empty AND different from original
+                if (phone && phone !== (orig?.phoneNumber ?? '')) payload.phone = phone;
+            }
             if (bio !== (orig?.bio ?? '')) {
                 const nextBio = bio.trim();
                 payload.bio = nextBio === '' ? undefined : nextBio;
             }
-            if (currentLocation !== (orig?.currentLocation ?? '')) {
+            if (!isMaintainer && currentLocation !== (orig?.currentLocation ?? '')) {
                 payload.currentLocation = currentLocation.trim() || null;
             }
 
@@ -247,16 +258,18 @@ const MyProfile: React.FC = () => {
                     <h3>{`${firstName} ${lastName}`.trim() || 'User'}</h3>
                     <p>{getRoleLabel(user?.role)}</p>
                 </div>
-                <div className="identity-stats">
-                    <div className="stat">
-                        <span>Active Since</span>
-                        <strong>{formatDate(user?.createdAt)}</strong>
+                {!isMaintainer && (
+                    <div className="identity-stats">
+                        <div className="stat">
+                            <span>Active Since</span>
+                            <strong>{formatDate(user?.createdAt)}</strong>
+                        </div>
+                        <div className="stat">
+                            <span>Points</span>
+                            <strong>{profile?.gamificationPoints ?? 0}</strong>
+                        </div>
                     </div>
-                    <div className="stat">
-                        <span>Points</span>
-                        <strong>{profile?.gamificationPoints ?? 0}</strong>
-                    </div>
-                </div>
+                )}
             </div>
 
             <div className="profile-edit-surface">
@@ -289,6 +302,8 @@ const MyProfile: React.FC = () => {
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
                                 placeholder="First name"
+                                readOnly={isMaintainer}
+                                style={isMaintainer ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
                             />
                         </div>
                     </div>
@@ -301,6 +316,8 @@ const MyProfile: React.FC = () => {
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
                                 placeholder="Last name"
+                                readOnly={isMaintainer}
+                                style={isMaintainer ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
                             />
                         </div>
                     </div>
@@ -326,6 +343,8 @@ const MyProfile: React.FC = () => {
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 placeholder="+1 (555) 000-0000"
+                                readOnly={isMaintainer}
+                                style={isMaintainer ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
                             />
                         </div>
                     </div>
@@ -347,18 +366,20 @@ const MyProfile: React.FC = () => {
                             />
                         </div>
                     </div>
-                    <div className="modern-field">
-                        <FaMapMarkerAlt className="field-icon" />
-                        <div className="field-content">
-                            <label>Current location</label>
-                            <input
-                                type="text"
-                                value={currentLocation}
-                                onChange={(e) => setCurrentLocation(e.target.value)}
-                                placeholder="City, Country"
-                            />
+                    {!isMaintainer && (
+                        <div className="modern-field">
+                            <FaMapMarkerAlt className="field-icon" />
+                            <div className="field-content">
+                                <label>Current location</label>
+                                <input
+                                    type="text"
+                                    value={currentLocation}
+                                    onChange={(e) => setCurrentLocation(e.target.value)}
+                                    placeholder="City, Country"
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <button

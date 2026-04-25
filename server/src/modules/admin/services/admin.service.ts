@@ -16,6 +16,7 @@ import type {
     AdminManagedUser,
     AdminSupportInboxItem,
     PendingMaintenanceApplication,
+    AdminManagedMaintainer,
 } from '../interfaces/admin.interfaces.js';
 import { Conversation, Message } from '../../messages/models/index.js';
 import { resolveSupportInboxAdminId } from '../../messages/services/support.service.js';
@@ -564,6 +565,94 @@ class AdminService {
         return {
             landlords: mappedUsers.filter((user) => user.role === UserRole.LANDLORD),
             tenants: mappedUsers.filter((user) => user.role === UserRole.TENANT),
+        };
+    }
+
+    async getMaintainersForManagement(): Promise<{ centers: AdminManagedMaintainer[]; individuals: AdminManagedMaintainer[] }> {
+        const users = await User.findAll({
+            where: {
+                role: UserRole.MAINTENANCE_PROVIDER,
+            },
+            paranoid: false,
+            include: [
+                {
+                    model: Profile,
+                    as: 'profile',
+                },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+
+        const applications = await MaintenanceProviderApplication.findAll({
+            where: {
+                user_id: users.map((user) => user.id),
+            },
+            order: [['created_at', 'DESC']],
+        });
+        const applicationMap = new Map(applications.map((application) => [application.user_id, application]));
+
+        const mappedUsers: AdminManagedMaintainer[] = users.map((user) => {
+            const application = applicationMap.get(user.id);
+            return {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                isVerified: user.is_verified,
+                emailVerified: user.email_verified,
+                resetTokenHash: user.reset_token_hash ?? null,
+                resetTokenExpires: user.reset_token_expires ?? null,
+                emailVerificationTokenHash: user.email_verification_token_hash ?? null,
+                emailVerificationTokenExpires: user.email_verification_token_expires ?? null,
+                isBanned: user.is_banned,
+                banReason: user.ban_reason ?? null,
+                banMessage: user.ban_message ?? null,
+                banUntil: user.ban_until ?? null,
+                bannedByAdminId: user.banned_by_admin_id ?? null,
+                banCreatedAt: user.ban_created_at ?? null,
+                createdAt: user.created_at,
+                updatedAt: user.updated_at,
+                deletedAt: user.deleted_at ?? null,
+                profile: user.profile
+                    ? {
+                        id: user.profile.id,
+                        userId: user.profile.user_id,
+                        firstName: user.profile.first_name,
+                        lastName: user.profile.last_name,
+                        phoneNumber: user.profile.phone_number,
+                        bio: user.profile.bio ?? null,
+                        avatarUrl: user.profile.avatar_url ?? null,
+                        currentLocation: user.profile.current_location ?? null,
+                        nationalIdEncrypted: user.profile.national_id ?? null,
+                        nationalIdDecrypted: user.profile.getDecryptedNationalId(),
+                        gender: user.profile.gender ?? null,
+                        birthdate: user.profile.birthdate ? String(user.profile.birthdate) : null,
+                        gamificationPoints: user.profile.gamification_points,
+                        preferredBudgetMin: user.profile.preferred_budget_min !== null ? Number(user.profile.preferred_budget_min) : null,
+                        preferredBudgetMax: user.profile.preferred_budget_max !== null ? Number(user.profile.preferred_budget_max) : null,
+                        walletBalance: Number(user.profile.wallet_balance),
+                        walletPendingOrderId: user.profile.wallet_pending_order_id ?? null,
+                        walletPendingAmountCents: user.profile.wallet_pending_amount_cents ?? null,
+                        walletPendingSaveCard: user.profile.wallet_pending_save_card,
+                        createdAt: user.profile.created_at,
+                        updatedAt: user.profile.updated_at,
+                    }
+                    : null,
+                providerType: application?.provider_type || null,
+                applicationStatus: application?.status || null,
+                applicationSubmittedAt: application?.created_at || null,
+                reviewedAt: application?.reviewed_at || null,
+                businessName: application?.business_name || null,
+                category: application?.category || null,
+                categories: application?.categories || null,
+                numberOfEmployees: application?.number_of_employees || null,
+                companyLocation: application?.company_location || null,
+                notes: application?.notes || null,
+            };
+        });
+
+        return {
+            centers: mappedUsers.filter((user) => user.providerType === 'CENTER'),
+            individuals: mappedUsers.filter((user) => user.providerType === 'INDIVIDUAL'),
         };
     }
 
