@@ -204,7 +204,20 @@ const TenantPayment: React.FC = () => {
             setIsTopupVerifying(true);
             try {
                 console.log('[WalletTopup] Calling verifyWalletTopup with transactionId:', transactionId);
-                const response = await contractService.verifyWalletTopup(transactionId);
+
+                // Paymob upstream can occasionally time out; retry once on timeout.
+                // The backend records each successful verification and treats
+                // duplicate calls as idempotent, so this is safe.
+                let response: Awaited<ReturnType<typeof contractService.verifyWalletTopup>>;
+                try {
+                    response = await contractService.verifyWalletTopup(transactionId);
+                } catch (firstErr: any) {
+                    const isTimeout = firstErr?.code === 'ECONNABORTED' || /timeout/i.test(firstErr?.message ?? '');
+                    if (!isTimeout) throw firstErr;
+                    console.warn('[WalletTopup] First verify attempt timed out — retrying once.');
+                    response = await contractService.verifyWalletTopup(transactionId);
+                }
+
                 console.log('[WalletTopup] Verification success! New balance:', response.balance);
                 setWalletBalance(Number(response.balance ?? 0));
                 setTopupError(null);
@@ -213,13 +226,16 @@ const TenantPayment: React.FC = () => {
                 await loadPaymentData();
             } catch (err: unknown) {
                 console.error('[WalletTopup] Server-side verification failed:', err);
-                const ex = err as { response?: { data?: { message?: string } } };
+                const ex = err as { code?: string; message?: string; response?: { data?: { message?: string } } };
                 const serverMsg = ex.response?.data?.message;
+                const isTimeout = ex.code === 'ECONNABORTED' || /timeout/i.test(ex.message ?? '');
                 console.error('[WalletTopup] Server error message:', serverMsg);
                 setTopupError(
                     typeof serverMsg === 'string' && serverMsg.trim()
                         ? serverMsg
-                        : 'Wallet top-up verification failed. Please retry.'
+                        : isTimeout
+                            ? 'Payment provider is slow right now. The payment may already be credited — refresh the page in a minute and your balance should update. If not, retry the top-up.'
+                            : 'Wallet top-up verification failed. Please retry.'
                 );
             } finally {
                 setIsTopupVerifying(false);

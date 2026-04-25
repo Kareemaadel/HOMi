@@ -1019,6 +1019,33 @@ class ContractService {
     }
 
     async verifyWalletTopup(tenantId: string, input: WalletTopupVerifyInput): Promise<WalletBalanceResponse> {
+        // ── Idempotency guard ─────────────────────────────────────────────
+        // Frontend may retry verify after a transient network/Paymob timeout.
+        // If we already credited this transaction earlier, simply return the
+        // current balance instead of failing with NO_PENDING_TOPUP.
+        const targetTxId = Number(input.transaction_id);
+        const verifiedRows = await ActivityLog.findAll({
+            where: {
+                actor_user_id: tenantId,
+                action: 'WALLET_TOPUP_VERIFIED',
+            },
+            order: [['created_at', 'DESC']],
+            limit: 25,
+        });
+
+        const alreadyVerified = verifiedRows.some((row) => {
+            const meta = (row.metadata ?? {}) as Record<string, any>;
+            return Number(meta.transactionId) === targetTxId;
+        });
+
+        if (alreadyVerified) {
+            const currentProfile = await Profile.findOne({ where: { user_id: tenantId } });
+            return {
+                balance: Number((currentProfile as any)?.wallet_balance ?? 0),
+                currency: 'EGP',
+            };
+        }
+
         const transaction = await sequelize.transaction();
 
         try {
@@ -1122,6 +1149,22 @@ class ContractService {
             }
 
             await transaction.commit();
+
+            // Record verification so retries are idempotent and history is auditable.
+            await activityLogService.log({
+                actor: { userId: tenantId, role: 'TENANT' },
+                action: 'WALLET_TOPUP_VERIFIED',
+                entityType: 'PROFILE',
+                entityId: tenantId,
+                description: `Wallet top-up of ${(pendingAmountCents / 100).toFixed(2)} EGP verified.`,
+                metadata: {
+                    transactionId: Number(input.transaction_id),
+                    orderId: pendingOrderId,
+                    amountCents: pendingAmountCents,
+                    creditedAmount: pendingAmountCents / 100,
+                    newBalance: updatedBalance,
+                },
+            });
 
             return {
                 balance: updatedBalance,

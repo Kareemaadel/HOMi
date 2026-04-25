@@ -368,9 +368,14 @@ class ContractService {
     }
 
     async verifyWalletTopup(transactionId: number): Promise<WalletBalanceApiResponse['data']> {
-        const response = await apiClient.post<WalletBalanceApiResponse>('/contracts/payments/wallet/topup/verify', {
-            transaction_id: transactionId,
-        });
+        // Paymob transaction-lookup can occasionally take 15–30s end-to-end.
+        // Override the default 10s client timeout so we don't bail before the
+        // backend (which itself retries once on upstream timeout).
+        const response = await apiClient.post<WalletBalanceApiResponse>(
+            '/contracts/payments/wallet/topup/verify',
+            { transaction_id: transactionId },
+            { timeout: 60000 }
+        );
         return response.data.data;
     }
 
