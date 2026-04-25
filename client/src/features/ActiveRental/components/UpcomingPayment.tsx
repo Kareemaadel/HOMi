@@ -10,6 +10,8 @@ const UpcomingPayment = ({
     onTopUp,
     isPaying,
     isCurrentCyclePaid,
+    outstandingInstallments,
+    estimatedLateFee,
 }: {
     amount: number;
     dueDate: string;
@@ -19,6 +21,8 @@ const UpcomingPayment = ({
     onTopUp: () => void;
     isPaying: boolean;
     isCurrentCyclePaid: boolean;
+    outstandingInstallments: number;
+    estimatedLateFee: number;
 }) => {
     return (
         <div className="payment-card">
@@ -39,6 +43,18 @@ const UpcomingPayment = ({
                     <span>Payment Method</span>
                     <strong>Wallet Balance</strong>
                 </div>
+                {outstandingInstallments > 1 && (
+                    <div className="detail-row arrears">
+                        <span>Outstanding Months</span>
+                        <strong>{outstandingInstallments} installments</strong>
+                    </div>
+                )}
+                {estimatedLateFee > 0 && (
+                    <div className="detail-row arrears">
+                        <span>Estimated Late Fees</span>
+                        <strong>${estimatedLateFee.toLocaleString()}</strong>
+                    </div>
+                )}
             </div>
             <button className="pay-now-btn" onClick={onPayNow} disabled={isPaying || isCurrentCyclePaid}>
                 {isCurrentCyclePaid ? 'Paid This Cycle' : isPaying ? 'Processing...' : 'Pay Now'} {!isPaying && !isCurrentCyclePaid && <FaArrowRight />}
@@ -47,7 +63,9 @@ const UpcomingPayment = ({
                 Top Up Wallet
             </button>
             <p className="autopay-note">
-                Once this month rent is paid, next due date moves to the following monthly cycle.
+                {outstandingInstallments > 1
+                    ? 'Arrears detected: payment will settle all unpaid months up to current cycle.'
+                    : 'Once this month rent is paid, next due date moves to the following monthly cycle.'}
             </p>
         </div>
     );

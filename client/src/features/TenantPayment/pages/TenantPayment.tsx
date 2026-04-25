@@ -36,7 +36,7 @@ import contractService, {
 import rentalRequestService, { type MyRentalRequest } from '../../../services/rental-request.service';
 import { authService } from '../../../services/auth.service';
 import paymentMethodService, { type SavedPaymentMethod } from '../../../services/payment-method.service';
-import { formatDateLabel, getRentCycleSummary } from '../utils/rentSchedule';
+import { formatDateLabel, getRentCycleSummary, getRentInstallmentStats } from '../utils/rentSchedule';
 
 type TabType = 'overview' | 'upcoming' | 'history' | 'topup' | 'methods' | 'pending';
 
@@ -285,6 +285,8 @@ const TenantPayment: React.FC = () => {
             status: 'Active' | 'Scheduled';
             dueAt: number;
             canPay: boolean;
+            outstandingInstallments: number;
+            estimatedLateFee: number;
         }> = [];
 
         if (pendingPaymentContract) {
@@ -297,26 +299,45 @@ const TenantPayment: React.FC = () => {
                 status: 'Active',
                 dueAt: Date.now(),
                 canPay: true,
+                outstandingInstallments: 1,
+                estimatedLateFee: 0,
             });
         }
 
         activeContracts.forEach((contract) => {
             const cycle = getRentCycleSummary(contract);
             const amount = Number(contract.rentAmount ?? contract.property?.monthlyPrice ?? 0);
+            const stats = getRentInstallmentStats(contract);
+            const paidInstallments = paymentHistory
+                .filter((row) =>
+                    row.type === 'RENT_MONTHLY' &&
+                    row.direction === 'DEBIT' &&
+                    row.entityId === contract.id
+                )
+                .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+            const outstandingInstallments = Math.max(stats.dueCount - paidInstallments, 0);
+            const overdueOutstanding = Math.max(stats.overdueCount - paidInstallments, 0);
+            const lateFeePerInstallment = Math.max(Number(contract.lateFeeAmount ?? 0), 0);
+            const estimatedLateFee = overdueOutstanding * lateFeePerInstallment;
+            const totalAmount = Math.max(outstandingInstallments, 1) * amount + estimatedLateFee;
             rows.push({
                 contractId: contract.id,
-                title: `${cycle.dueDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
+                title: outstandingInstallments > 1
+                    ? `${outstandingInstallments} Unpaid Rent Installments`
+                    : `${cycle.dueDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
                 propertyTitle: contract.property?.title ?? 'Property',
                 date: formatShortDate(cycle.dueDate.toISOString()),
-                amount,
+                amount: totalAmount,
                 status: 'Scheduled',
                 dueAt: cycle.dueDate.getTime(),
                 canPay: !cycle.isPaidForCurrentCycle,
+                outstandingInstallments,
+                estimatedLateFee,
             });
         });
 
         return rows.sort((a, b) => a.dueAt - b.dueAt);
-    }, [activeContracts, pendingPaymentContract]);
+    }, [activeContracts, pendingPaymentContract, paymentHistory]);
 
     const historyRows = [...paymentHistory]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -525,8 +546,11 @@ const TenantPayment: React.FC = () => {
                                         {item.propertyTitle} - {item.status === 'Active'
                                             ? 'Awaiting wallet payment'
                                             : item.canPay
-                                                ? 'Scheduled monthly rent'
+                                                ? item.outstandingInstallments > 1
+                                                    ? `${item.outstandingInstallments} months unpaid (arrears)`
+                                                    : 'Scheduled monthly rent'
                                                 : 'Current cycle already paid'}
+                                        {item.estimatedLateFee > 0 ? ` • Late fee est. ${formatMoney(item.estimatedLateFee)}` : ''}
                                     </p>
                                 </div>
                             </div>

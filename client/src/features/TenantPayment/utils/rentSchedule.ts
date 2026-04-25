@@ -8,6 +8,11 @@ export interface RentCycleSummary {
     isPaidForCurrentCycle: boolean;
 }
 
+export interface RentInstallmentStats {
+    dueCount: number;
+    overdueCount: number;
+}
+
 const getDueDay = (rentDueDate: LandlordContract['rentDueDate'], reference: Date): number => {
     if (rentDueDate === '5TH_OF_MONTH') return 5;
     if (rentDueDate === 'LAST_DAY_OF_MONTH') {
@@ -23,9 +28,13 @@ const getCycleDueDate = (contract: LandlordContract, reference: Date): Date => {
 
 const startOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-export const getRentCycleSummary = (contract: LandlordContract, nowInput?: Date): RentCycleSummary => {
+const getNow = (nowInput?: Date): Date => {
     const cached = getTestingNowFromCache();
-    const now = nowInput ? startOfDay(nowInput) : startOfDay(cached ?? new Date());
+    return nowInput ? startOfDay(nowInput) : startOfDay(cached ?? new Date());
+};
+
+export const getRentCycleSummary = (contract: LandlordContract, nowInput?: Date): RentCycleSummary => {
+    const now = getNow(nowInput);
     const baseCycleDue = getCycleDueDate(contract, now);
     const currentCycleDue = baseCycleDue < now
         ? getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1))
@@ -45,6 +54,26 @@ export const getRentCycleSummary = (contract: LandlordContract, nowInput?: Date)
         daysUntilDue,
         isPaidForCurrentCycle,
     };
+};
+
+export const getRentInstallmentStats = (contract: LandlordContract, nowInput?: Date): RentInstallmentStats => {
+    const now = getNow(nowInput);
+    const moveIn = startOfDay(new Date(contract.moveInDate));
+    if (Number.isNaN(moveIn.getTime())) return { dueCount: 0, overdueCount: 0 };
+    const leaseMonths = Math.max(Number(contract.leaseDurationMonths ?? 0), 0);
+    if (leaseMonths <= 0) return { dueCount: 0, overdueCount: 0 };
+
+    let dueCount = 0;
+    let overdueCount = 0;
+    for (let i = 0; i < leaseMonths; i += 1) {
+        const ref = new Date(moveIn.getFullYear(), moveIn.getMonth() + i, 1);
+        const dueDate = getCycleDueDate(contract, ref);
+        if (dueDate <= now) {
+            dueCount += 1;
+            if (dueDate < now) overdueCount += 1;
+        }
+    }
+    return { dueCount, overdueCount };
 };
 
 export const formatMoney = (amount: number): string =>

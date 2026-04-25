@@ -64,6 +64,11 @@
 
 .detail-row span { color: #94a3b8; }
 
+.detail-row.arrears span,
+.detail-row.arrears strong {
+    color: #fca5a5;
+}
+
 .pay-now-btn {
     width: 100%;
     background: #3b82f6;

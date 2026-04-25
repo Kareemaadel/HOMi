@@ -109,6 +109,7 @@ export interface MonthlyRentPaymentResponse {
     paidForMonth: string;
     lateFeeApplied?: number;
     wasLate?: boolean;
+    installmentsPaid?: number;
 }
 
 export type TenantPaymentHistoryType =
@@ -129,6 +130,7 @@ export interface TenantPaymentHistoryItem {
     description: string;
     entityType: string | null;
     entityId: string | null;
+    installmentsCount?: number;
 }
 
 // ─── Contract Response ────────────────────────────────────────────────────────

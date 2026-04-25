@@ -10,7 +10,7 @@ import QuickActions from '../components/QuickActions';
 import MaintenanceStatus from '../components/MaintenanceStatus';
 import contractService, { type LandlordContract } from '../../../services/contract.service';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
-import { formatDateLabel, getRentCycleSummary } from '../../TenantPayment/utils/rentSchedule';
+import { formatDateLabel, getRentCycleSummary, getRentInstallmentStats } from '../../TenantPayment/utils/rentSchedule';
 
 const ActiveRental: React.FC = () => {
     const location = useLocation();
@@ -20,21 +20,25 @@ const ActiveRental: React.FC = () => {
     const [propertyDetails, setPropertyDetails] = useState<PropertyResponse | null>(null);
     const [walletBalance, setWalletBalance] = useState(0);
     const [isPayingRent, setIsPayingRent] = useState(false);
+    const [paymentHistory, setPaymentHistory] = useState<import('../../../services/contract.service').TenantPaymentHistoryItem[]>([]);
 
     useEffect(() => {
         const loadContracts = async () => {
             setIsLoading(true);
             try {
-                const [contractsRes, walletRes] = await Promise.all([
+                const [contractsRes, walletRes, historyRes] = await Promise.all([
                     contractService.getTenantContracts({ page: 1, limit: 50 }),
                     contractService.getWalletBalance(),
+                    contractService.getPaymentHistory(250),
                 ]);
                 const activeContracts = (contractsRes.data ?? []).filter((contract) => contract.status === 'ACTIVE');
                 setContracts(activeContracts);
                 setWalletBalance(Number(walletRes.balance ?? 0));
+                setPaymentHistory(historyRes ?? []);
             } catch {
                 setContracts([]);
                 setWalletBalance(0);
+                setPaymentHistory([]);
             } finally {
                 setIsLoading(false);
             }
@@ -110,6 +114,22 @@ const ActiveRental: React.FC = () => {
     const dueDateLabel = rentCycle ? formatDateLabel(rentCycle.dueDate) : 'N/A';
     const dueInLabel = rentCycle ? `${rentCycle.daysUntilDue} day${rentCycle.daysUntilDue === 1 ? '' : 's'}` : 'N/A';
     const dueTone = rentCycle && rentCycle.daysUntilDue > 7 ? 'safe' : 'urgent';
+    const installmentStats = useMemo(
+        () => (selectedContract ? getRentInstallmentStats(selectedContract) : { dueCount: 0, overdueCount: 0 }),
+        [selectedContract]
+    );
+    const paidInstallments = useMemo(() => {
+        if (!selectedContract) return 0;
+        return paymentHistory
+            .filter((row) =>
+                row.type === 'RENT_MONTHLY' &&
+                row.direction === 'DEBIT' &&
+                row.entityId === selectedContract.id
+            )
+            .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+    }, [paymentHistory, selectedContract]);
+    const outstandingInstallments = Math.max(installmentStats.dueCount - paidInstallments, 0);
+    const estimatedLateFee = Math.max(Number(selectedContract?.lateFeeAmount ?? 0), 0) * Math.max(installmentStats.overdueCount - paidInstallments, 0);
 
     const rentalData = useMemo(() => {
         if (!selectedContract) return null;
@@ -152,6 +172,13 @@ const ActiveRental: React.FC = () => {
         try {
             const result = await contractService.payMonthlyRentFromBalance(selectedContract.id);
             setWalletBalance(Number(result.remainingBalance ?? 0));
+            const installments = Math.max(Number(result.installmentsPaid ?? 1), 1);
+            const lateFee = Number(result.lateFeeApplied ?? 0);
+            globalThis.alert(
+                installments > 1 || lateFee > 0
+                    ? `Payment completed. Settled ${installments} installment(s)${lateFee > 0 ? ` with late fee ${lateFee.toFixed(2)}` : ''}.`
+                    : 'Monthly rent payment completed successfully.'
+            );
             setContracts((prev) =>
                 prev.map((contract) =>
                     contract.id === selectedContract.id
@@ -206,6 +233,8 @@ const ActiveRental: React.FC = () => {
                                 dueDate={dueDateLabel}
                                 dueInLabel={dueInLabel}
                                 dueTone={dueTone}
+                                outstandingInstallments={outstandingInstallments}
+                                estimatedLateFee={estimatedLateFee}
                                 onPayNow={handlePayNow}
                                 onTopUp={() => navigate('/tenant-payment?tab=topup')}
                                 isPaying={isPayingRent}

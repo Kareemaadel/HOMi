@@ -792,8 +792,8 @@ class ContractService {
                 throw new ContractError('You do not have permission to pay rent for this contract', 403, 'FORBIDDEN');
             }
 
-            if (contract.status !== ContractStatus.ACTIVE) {
-                throw new ContractError('Monthly rent can only be paid for active contracts', 400, 'CONTRACT_NOT_ACTIVE');
+            if (contract.status !== ContractStatus.ACTIVE && contract.status !== ContractStatus.EXPIRED) {
+                throw new ContractError('Monthly rent can only be paid for active or expired contracts with pending dues', 400, 'CONTRACT_NOT_PAYABLE');
             }
 
             const profile = await Profile.findOne({
@@ -807,17 +807,35 @@ class ContractService {
             }
 
             const now = testingClockService.getNow();
-            const baseDueDate = this.getCycleDueDate(contract, now); // This month's due date
-            const nextCycleStart = this.getCycleDueDate(contract, new Date(now.getFullYear(), now.getMonth() + 1, 1));
-            const paidAt = contract.payment_verified_at ? new Date(contract.payment_verified_at) : null;
-            const isCurrentCyclePaid = Boolean(
-                paidAt &&
-                paidAt >= baseDueDate &&
-                paidAt < nextCycleStart
-            );
+            const dueDates = this.getContractDueDates(contract);
+            const dueUpToNow = dueDates.filter((d) => d <= now);
 
-            if (isCurrentCyclePaid) {
-                throw new ContractError('Current month rent is already paid for this contract', 400, 'MONTHLY_RENT_ALREADY_PAID');
+            if (dueUpToNow.length === 0) {
+                throw new ContractError('No rent installment is due yet for this contract', 400, 'NO_INSTALLMENT_DUE');
+            }
+
+            const paidRows = await ActivityLog.findAll({
+                where: {
+                    actor_user_id: tenantId,
+                    action: 'MONTHLY_RENT_PAID_FROM_BALANCE',
+                    entity_type: 'CONTRACT',
+                    entity_id: contract.id,
+                },
+                order: [['created_at', 'ASC']],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+
+            const paidInstallments = paidRows.reduce((sum, row) => {
+                const meta = (row.metadata ?? {}) as Record<string, any>;
+                const byInstallments = Number(meta.installmentsPaid ?? 0);
+                if (Number.isFinite(byInstallments) && byInstallments > 0) return sum + byInstallments;
+                return sum + 1;
+            }, 0);
+
+            const outstandingInstallments = Math.max(dueUpToNow.length - paidInstallments, 0);
+            if (outstandingInstallments <= 0) {
+                throw new ContractError('All due rent installments are already paid for this contract', 400, 'MONTHLY_RENT_ALREADY_PAID');
             }
 
             const rentAmount = Number(contract.rent_amount ?? 0);
@@ -843,8 +861,12 @@ class ContractService {
                 (sum, c) => sum + Number((c as any).amount ?? 0),
                 0
             );
-            const netRentAmount = Math.max(rentAmount - pendingCreditTotal, 0);
-            const lateFee = now > baseDueDate ? Math.max(Number(contract.late_fee_amount ?? 0), 0) : 0;
+            const grossRentDue = rentAmount * outstandingInstallments;
+            const netRentAmount = Math.max(grossRentDue - pendingCreditTotal, 0);
+            const overdueInstallmentDates = dueUpToNow.slice(paidInstallments);
+            const lateInstallments = overdueInstallmentDates.filter((d) => d < now).length;
+            const lateFeePerInstallment = Math.max(Number(contract.late_fee_amount ?? 0), 0);
+            const lateFee = lateFeePerInstallment * lateInstallments;
             const totalToDebit = netRentAmount + lateFee;
 
             const availableBalance = Number((profile as any).wallet_balance ?? 0);
@@ -873,10 +895,12 @@ class ContractService {
                 { transaction }
             );
 
-            const paidForMonth = baseDueDate.toLocaleDateString('en-US', {
-                month: 'long',
-                year: 'numeric',
-            });
+            const coveredRange = overdueInstallmentDates.map((d) =>
+                d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+            );
+            const paidForMonth = coveredRange.length > 1
+                ? `${coveredRange[0]} - ${coveredRange[coveredRange.length - 1]}`
+                : coveredRange[0] ?? 'Current cycle';
 
             await activityLogService.log({
                 actor: { userId: tenantId, role: 'TENANT' },
@@ -890,8 +914,10 @@ class ContractService {
                     debitedAmount: totalToDebit,
                     lateFeeApplied: lateFee,
                     wasLate: lateFee > 0,
+                    installmentsPaid: outstandingInstallments,
                     landlordMaintenanceCredit: pendingCreditTotal,
                     rentAmount,
+                    grossRentDue,
                     remainingBalance,
                 },
             });
@@ -909,6 +935,7 @@ class ContractService {
                 paidForMonth,
                 lateFeeApplied: lateFee,
                 wasLate: lateFee > 0,
+                installmentsPaid: outstandingInstallments,
             };
         } catch (error) {
             await transaction.rollback();
@@ -1146,6 +1173,11 @@ class ContractService {
                             ? 'MAINTENANCE_REFUND'
                             : 'MAINTENANCE';
 
+            const installmentsCount =
+                action === 'MONTHLY_RENT_PAID_FROM_BALANCE'
+                    ? Math.max(Number(metadata.installmentsPaid ?? 1), 1)
+                    : null;
+
             return {
                 id: row.id,
                 createdAt: row.created_at,
@@ -1158,6 +1190,7 @@ class ContractService {
                 description: row.description,
                 entityType: row.entity_type ?? null,
                 entityId: row.entity_id ?? null,
+                ...(installmentsCount ? { installmentsCount } : {}),
             };
         });
     }
@@ -1304,6 +1337,19 @@ class ContractService {
         }
 
         return new Date(year, month, 1);
+    }
+
+    private getContractDueDates(contract: Contract): Date[] {
+        const moveIn = new Date(contract.move_in_date as any);
+        if (Number.isNaN(moveIn.getTime())) return [];
+
+        const leaseMonths = Math.max(Number(contract.lease_duration_months ?? 0), 0);
+        const dueDates: Date[] = [];
+        for (let i = 0; i < leaseMonths; i += 1) {
+            const ref = new Date(moveIn.getFullYear(), moveIn.getMonth() + i, 1);
+            dueDates.push(this.getCycleDueDate(contract, ref));
+        }
+        return dueDates;
     }
 
     /**
