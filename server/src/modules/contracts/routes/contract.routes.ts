@@ -593,6 +593,18 @@ router.post(
     contractController.payMonthlyRentFromBalance.bind(contractController)
 );
 
+router.get(
+    '/:id/installments',
+    protect,
+    contractController.getContractInstallments.bind(contractController)
+);
+
+router.patch(
+    '/:id/autopay',
+    protect,
+    contractController.updateAutopay.bind(contractController)
+);
+
 router.post(
     '/payments/wallet/topup/initiate',
     protect,

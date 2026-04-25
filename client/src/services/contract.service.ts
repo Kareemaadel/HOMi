@@ -110,11 +110,58 @@ interface TestingClockState {
     enabled: boolean;
     offsetDays: number;
     now: string;
+    autopay?: { contractsSettled: number };
 }
 
 interface TestingClockApiResponse {
     success: boolean;
     data: TestingClockState;
+}
+
+export type RentInstallmentStatus = 'PAID' | 'DUE' | 'OVERDUE' | 'UPCOMING';
+
+export interface RentInstallmentItem {
+    index: number;
+    label: string;
+    dueDate: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    totalAmount: number;
+    status: RentInstallmentStatus;
+    isPaid: boolean;
+    paidAt: string | null;
+}
+
+export interface ContractInstallments {
+    contractId: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    rentDueDate: string | null;
+    leaseDurationMonths: number;
+    autopayEnabled: boolean;
+    walletBalance: number;
+    pendingLandlordCredit: number;
+    paidInstallments: number;
+    dueInstallments: number;
+    overdueInstallments: number;
+    outstandingInstallments: number;
+    nextPayableIndex: number | null;
+    nextPayableTotal: number;
+    items: RentInstallmentItem[];
+    now: string;
+}
+
+interface ContractInstallmentsApiResponse {
+    success: boolean;
+    data: ContractInstallments;
+}
+
+interface AutopayApiResponse {
+    success: boolean;
+    data: {
+        contractId: string;
+        autopayEnabled: boolean;
+    };
 }
 
 export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
@@ -291,6 +338,16 @@ class ContractService {
 
     async payMonthlyRentFromBalance(contractId: string): Promise<MonthlyRentPaymentApiResponse['data']> {
         const response = await apiClient.post<MonthlyRentPaymentApiResponse>(`/contracts/${contractId}/payments/balance/pay-rent`);
+        return response.data.data;
+    }
+
+    async getContractInstallments(contractId: string): Promise<ContractInstallments> {
+        const response = await apiClient.get<ContractInstallmentsApiResponse>(`/contracts/${contractId}/installments`);
+        return response.data.data;
+    }
+
+    async setContractAutopay(contractId: string, enabled: boolean): Promise<AutopayApiResponse['data']> {
+        const response = await apiClient.patch<AutopayApiResponse>(`/contracts/${contractId}/autopay`, { enabled });
         return response.data.data;
     }
 

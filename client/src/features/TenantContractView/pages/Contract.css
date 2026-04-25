@@ -123,6 +123,10 @@
   background: #d0009f;
 }
 
+.card-status-bar[data-status='expired'] {
+  background: #94a3b8;
+}
+
 .tenant-card-body {
   padding: 32px;
 }
@@ -168,6 +172,11 @@
 .status-tag.pending_payment {
   background: #fff9db;
   color: #d0009f;
+}
+
+.status-tag.expired {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .tenant-contract-card h3 {

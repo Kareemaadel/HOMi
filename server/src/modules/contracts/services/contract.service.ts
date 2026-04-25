@@ -35,6 +35,10 @@ import type {
     WalletTopupCheckoutResponse,
     WalletTopupInitiateInput,
     WalletTopupVerifyInput,
+    ContractInstallmentsResponse,
+    RentInstallmentItem,
+    RentInstallmentStatus,
+    AutopayUpdateResponse,
 } from '../interfaces/contract.interfaces.js';
 import { activityLogService } from '../../../shared/services/activity-log.service.js';
 import { ActivityLog } from '../../admin/models/ActivityLog.js';
@@ -1195,6 +1199,214 @@ class ContractService {
         });
     }
 
+    /**
+     * Build a per-installment view of a contract's monthly rent schedule.
+     * Each installment carries a status (PAID / DUE / OVERDUE / UPCOMING),
+     * the late-fee that applies (if any) and whether it has been settled.
+     */
+    async getContractInstallments(
+        contractId: string,
+        tenantId: string
+    ): Promise<ContractInstallmentsResponse> {
+        const contract = await Contract.findByPk(contractId);
+        if (!contract) {
+            throw new ContractError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
+        }
+        if (contract.tenant_id !== tenantId) {
+            throw new ContractError('You do not have permission to view this contract', 403, 'FORBIDDEN');
+        }
+        if (
+            contract.status !== ContractStatus.ACTIVE &&
+            contract.status !== ContractStatus.EXPIRED
+        ) {
+            throw new ContractError(
+                'Installments are only available for active or expired contracts',
+                400,
+                'CONTRACT_NOT_PAYABLE'
+            );
+        }
+
+        const profile = await Profile.findOne({ where: { user_id: tenantId } });
+        const walletBalance = Number((profile as any)?.wallet_balance ?? 0);
+
+        const now = testingClockService.getNow();
+        const dueDates = this.getContractDueDates(contract);
+        const dueUpToNow = dueDates.filter((d) => d <= now);
+
+        const paidRows = await ActivityLog.findAll({
+            where: {
+                actor_user_id: tenantId,
+                action: 'MONTHLY_RENT_PAID_FROM_BALANCE',
+                entity_type: 'CONTRACT',
+                entity_id: contract.id,
+            },
+            order: [['created_at', 'ASC']],
+        });
+
+        const paidInstallments = paidRows.reduce((sum, row) => {
+            const meta = (row.metadata ?? {}) as Record<string, any>;
+            const byInstallments = Number(meta.installmentsPaid ?? 0);
+            if (Number.isFinite(byInstallments) && byInstallments > 0) return sum + byInstallments;
+            return sum + 1;
+        }, 0);
+
+        const flatPaidDates: Array<{ paidAt: Date }> = [];
+        paidRows.forEach((row) => {
+            const meta = (row.metadata ?? {}) as Record<string, any>;
+            const count = Math.max(Number(meta.installmentsPaid ?? 1), 1);
+            for (let i = 0; i < count; i += 1) {
+                flatPaidDates.push({ paidAt: new Date(row.created_at) });
+            }
+        });
+
+        const { LandlordMaintenanceCharge, LandlordMaintenanceChargeStatus } = await import(
+            '../../maintenance/models/LandlordMaintenanceCharge.js'
+        );
+        const pendingCharges = await LandlordMaintenanceCharge.findAll({
+            where: {
+                contract_id: contract.id,
+                status: LandlordMaintenanceChargeStatus.PENDING,
+            },
+        });
+        const pendingCreditTotal = pendingCharges.reduce(
+            (sum, c) => sum + Number((c as any).amount ?? 0),
+            0
+        );
+
+        const rentAmount = Number(contract.rent_amount ?? 0);
+        const lateFeeAmount = Math.max(Number(contract.late_fee_amount ?? 0), 0);
+
+        const items: RentInstallmentItem[] = dueDates.map((dueDate, idx) => {
+            const isPaidIdx = idx < paidInstallments;
+            const isDue = dueDate <= now;
+            const isOverdue = dueDate < now && !isPaidIdx;
+            let status: RentInstallmentStatus = 'UPCOMING';
+            if (isPaidIdx) status = 'PAID';
+            else if (isOverdue) status = 'OVERDUE';
+            else if (isDue) status = 'DUE';
+
+            const installmentLateFee = status === 'OVERDUE' ? lateFeeAmount : 0;
+
+            return {
+                index: idx,
+                label: dueDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                dueDate: dueDate.toISOString(),
+                rentAmount,
+                lateFeeAmount: installmentLateFee,
+                totalAmount: rentAmount + installmentLateFee,
+                status,
+                isPaid: isPaidIdx,
+                paidAt: flatPaidDates[idx]?.paidAt
+                    ? (flatPaidDates[idx]!.paidAt as Date).toISOString()
+                    : null,
+            };
+        });
+
+        const overdueInstallments = items.filter((i) => i.status === 'OVERDUE').length;
+        const outstandingInstallments = Math.max(dueUpToNow.length - paidInstallments, 0);
+
+        // Compute net amount that would be debited for "Pay Now" (settles all currently-due)
+        const grossRentDue = rentAmount * outstandingInstallments;
+        const netRentAmount = Math.max(grossRentDue - pendingCreditTotal, 0);
+        const lateFee = lateFeeAmount * overdueInstallments;
+        const nextPayableTotal = netRentAmount + lateFee;
+        const nextPayableIndex = paidInstallments < dueDates.length ? paidInstallments : null;
+
+        return {
+            contractId: contract.id,
+            rentAmount,
+            lateFeeAmount,
+            rentDueDate: contract.rent_due_date ?? null,
+            leaseDurationMonths: contract.lease_duration_months,
+            autopayEnabled: Boolean((contract as any).autopay_enabled),
+            walletBalance,
+            pendingLandlordCredit: pendingCreditTotal,
+            paidInstallments,
+            dueInstallments: dueUpToNow.length,
+            overdueInstallments,
+            outstandingInstallments,
+            nextPayableIndex,
+            nextPayableTotal,
+            items,
+            now: now.toISOString(),
+        };
+    }
+
+    /**
+     * Toggle autopay for a contract. When enabled, due installments are
+     * automatically settled from the wallet balance whenever
+     * `runAutopaySweepForTenant` runs (e.g., on testing-clock advance).
+     */
+    async setContractAutopay(
+        contractId: string,
+        tenantId: string,
+        enabled: boolean
+    ): Promise<AutopayUpdateResponse> {
+        const contract = await Contract.findByPk(contractId);
+        if (!contract) {
+            throw new ContractError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
+        }
+        if (contract.tenant_id !== tenantId) {
+            throw new ContractError('You do not have permission to modify this contract', 403, 'FORBIDDEN');
+        }
+        if (
+            contract.status !== ContractStatus.ACTIVE &&
+            contract.status !== ContractStatus.EXPIRED
+        ) {
+            throw new ContractError(
+                'Autopay can only be configured for active or expired contracts',
+                400,
+                'CONTRACT_NOT_PAYABLE'
+            );
+        }
+
+        await contract.update({ autopay_enabled: Boolean(enabled) });
+
+        await activityLogService.log({
+            actor: { userId: tenantId, role: 'TENANT' },
+            action: enabled ? 'CONTRACT_AUTOPAY_ENABLED' : 'CONTRACT_AUTOPAY_DISABLED',
+            entityType: 'CONTRACT',
+            entityId: contract.id,
+            description: `Tenant ${enabled ? 'enabled' : 'disabled'} autopay for contract ${contract.contract_id}.`,
+            metadata: { contractId: contract.id },
+        });
+
+        return {
+            contractId: contract.id,
+            autopayEnabled: Boolean((contract as any).autopay_enabled),
+        };
+    }
+
+    /**
+     * Settle all autopay-eligible contracts for a tenant.
+     * - Walks through every ACTIVE/EXPIRED contract with autopay enabled.
+     * - Skips contracts that have no outstanding installments or insufficient balance.
+     * - Each contract is settled in its own transaction (atomic per-contract).
+     * Used after the testing clock advances so simulated months actually
+     * collect payment without manual interaction.
+     */
+    async runAutopaySweepForTenant(tenantId: string): Promise<{ contractsSettled: number }> {
+        const contracts = await Contract.findAll({
+            where: {
+                tenant_id: tenantId,
+                autopay_enabled: true,
+                status: { [Op.in]: [ContractStatus.ACTIVE, ContractStatus.EXPIRED] },
+            },
+        });
+
+        let contractsSettled = 0;
+        for (const contract of contracts) {
+            try {
+                await this.payMonthlyRentFromBalance(contract.id, tenantId);
+                contractsSettled += 1;
+            } catch {
+                // Insufficient balance / no dues / etc. — skip silently for sweep.
+            }
+        }
+
+        return { contractsSettled };
+    }
+
     // ─── Private Helpers ──────────────────────────────────────────────────────
 
     /**
@@ -1344,9 +1556,20 @@ class ContractService {
         if (Number.isNaN(moveIn.getTime())) return [];
 
         const leaseMonths = Math.max(Number(contract.lease_duration_months ?? 0), 0);
+        if (leaseMonths <= 0) return [];
+
+        // First installment must fall on/after move-in (e.g., move-in Apr 15 +
+        // 1ST_OF_MONTH ⇒ first due is May 1, not Apr 1).
+        let firstRef = new Date(moveIn.getFullYear(), moveIn.getMonth(), 1);
+        let firstDue = this.getCycleDueDate(contract, firstRef);
+        if (firstDue < moveIn) {
+            firstRef = new Date(firstRef.getFullYear(), firstRef.getMonth() + 1, 1);
+            firstDue = this.getCycleDueDate(contract, firstRef);
+        }
+
         const dueDates: Date[] = [];
         for (let i = 0; i < leaseMonths; i += 1) {
-            const ref = new Date(moveIn.getFullYear(), moveIn.getMonth() + i, 1);
+            const ref = new Date(firstRef.getFullYear(), firstRef.getMonth() + i, 1);
             dueDates.push(this.getCycleDueDate(contract, ref));
         }
         return dueDates;

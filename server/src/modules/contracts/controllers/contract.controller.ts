@@ -31,10 +31,25 @@ class ContractController {
         try {
             const days = Number((req.body as any)?.days ?? 15);
             const state = contractService.advanceTestingClock(days);
+
+            // After clock advances, autopay-eligible contracts for the calling
+            // tenant settle automatically so the simulated time-jump reflects
+            // reality (no skipped months while testing).
+            let autopay = { contractsSettled: 0 };
+            try {
+                const userId = (req as any).user?.userId as string | undefined;
+                const role = (req as any).user?.role as string | undefined;
+                if (userId && role === 'TENANT') {
+                    autopay = await contractService.runAutopaySweepForTenant(userId);
+                }
+            } catch {
+                // Sweep failures are non-fatal: clock state still moves forward.
+            }
+
             res.status(200).json({
                 success: true,
                 message: `Testing clock advanced by ${Math.max(0, Math.floor(days))} day(s).`,
-                data: state,
+                data: { ...state, autopay },
             });
         } catch (error) {
             next(error);
@@ -372,6 +387,42 @@ class ContractController {
                 success: true,
                 message: 'Wallet top-up verified successfully.',
                 data: balance,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/:id/installments
+     */
+    async getContractInstallments(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const data = await contractService.getContractInstallments(id as string, tenantId);
+            res.status(200).json({
+                success: true,
+                data,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PATCH /api/contracts/:id/autopay
+     */
+    async updateAutopay(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const enabled = Boolean((req.body as any)?.enabled);
+            const data = await contractService.setContractAutopay(id as string, tenantId, enabled);
+            res.status(200).json({
+                success: true,
+                message: `Autopay ${enabled ? 'enabled' : 'disabled'} for contract.`,
+                data,
             });
         } catch (error) {
             next(error);

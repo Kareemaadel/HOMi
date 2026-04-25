@@ -6,6 +6,7 @@ import ConfirmModal from './ConfirmModal';
 import NotificationsBar from '../../features/home/components/TenantHomeComponents/NotificationsBar';
 import notificationService from '../../services/notification.service';
 import socketService from '../../services/socket.service';
+import TestingClockBadge from './TestingClockBadge';
 import './header.css';
 
 const Header = () => {
@@ -201,6 +202,7 @@ const Header = () => {
 
         {/* Mobile Menu Toggle & Right Spacer */}
         <div className="header-spacer right-spacer">
+          {isSignedIn && signedInRole === 'TENANT' && <TestingClockBadge />}
           {isSignedIn && (
             <button
               type="button"

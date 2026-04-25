@@ -74,6 +74,14 @@
 
 .status-badge.active { color: #10b981; }
 .status-badge.expiring-soon { color: #f59e0b; }
+.status-badge.ended { color: #ef4444; }
+
+.status-badge.late-payments {
+    top: 44px;
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.25);
+    background: rgba(254, 226, 226, 0.92);
+}
 
 .card-body {
     padding: 1.5rem;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './ActiveRental.css';
 import Header from '../../../components/global/header';
@@ -11,6 +11,8 @@ import MaintenanceStatus from '../components/MaintenanceStatus';
 import contractService, { type LandlordContract } from '../../../services/contract.service';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
 import { formatDateLabel, getRentCycleSummary, getRentInstallmentStats } from '../../TenantPayment/utils/rentSchedule';
+import type { TenantPaymentHistoryItem } from '../../../services/contract.service';
+import InstallmentsModal from '../components/InstallmentsModal';
 
 const ActiveRental: React.FC = () => {
     const location = useLocation();
@@ -18,34 +20,48 @@ const ActiveRental: React.FC = () => {
     const [contracts, setContracts] = useState<LandlordContract[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [propertyDetails, setPropertyDetails] = useState<PropertyResponse | null>(null);
-    const [walletBalance, setWalletBalance] = useState(0);
     const [isPayingRent, setIsPayingRent] = useState(false);
-    const [paymentHistory, setPaymentHistory] = useState<import('../../../services/contract.service').TenantPaymentHistoryItem[]>([]);
+    const [paymentHistory, setPaymentHistory] = useState<TenantPaymentHistoryItem[]>([]);
+    const [showInstallments, setShowInstallments] = useState(false);
+
+    const loadContracts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [contractsRes, historyRes] = await Promise.all([
+                contractService.getTenantContracts({ page: 1, limit: 50 }),
+                contractService.getPaymentHistory(250),
+            ]);
+            const all = contractsRes.data ?? [];
+            const payableContracts = all.filter((contract) => {
+                if (contract.status === 'ACTIVE') return true;
+                if (contract.status !== 'EXPIRED') return false;
+                const stats = getRentInstallmentStats(contract);
+                const paidInstallments = (historyRes ?? [])
+                    .filter((row) =>
+                        row.type === 'RENT_MONTHLY' &&
+                        row.direction === 'DEBIT' &&
+                        row.entityId === contract.id
+                    )
+                    .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                const outstanding = Math.max(stats.dueCount - paidInstallments, 0);
+                return outstanding > 0;
+            });
+            setContracts(payableContracts);
+            setPaymentHistory(historyRes ?? []);
+        } catch {
+            setContracts([]);
+            setPaymentHistory([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        const loadContracts = async () => {
-            setIsLoading(true);
-            try {
-                const [contractsRes, walletRes, historyRes] = await Promise.all([
-                    contractService.getTenantContracts({ page: 1, limit: 50 }),
-                    contractService.getWalletBalance(),
-                    contractService.getPaymentHistory(250),
-                ]);
-                const activeContracts = (contractsRes.data ?? []).filter((contract) => contract.status === 'ACTIVE');
-                setContracts(activeContracts);
-                setWalletBalance(Number(walletRes.balance ?? 0));
-                setPaymentHistory(historyRes ?? []);
-            } catch {
-                setContracts([]);
-                setWalletBalance(0);
-                setPaymentHistory([]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         void loadContracts();
-    }, []);
+        const handler = () => { void loadContracts(); };
+        globalThis.addEventListener('homi:testing-clock-changed', handler);
+        return () => globalThis.removeEventListener('homi:testing-clock-changed', handler);
+    }, [loadContracts]);
 
     const contractIdFromQuery = useMemo(() => {
         const params = new URLSearchParams(location.search);
@@ -130,6 +146,7 @@ const ActiveRental: React.FC = () => {
     }, [paymentHistory, selectedContract]);
     const outstandingInstallments = Math.max(installmentStats.dueCount - paidInstallments, 0);
     const estimatedLateFee = Math.max(Number(selectedContract?.lateFeeAmount ?? 0), 0) * Math.max(installmentStats.overdueCount - paidInstallments, 0);
+    const totalDueNow = Math.max(outstandingInstallments, 1) * Number(selectedContract?.rentAmount ?? selectedContract?.property?.monthlyPrice ?? 0) + estimatedLateFee;
 
     const rentalData = useMemo(() => {
         if (!selectedContract) return null;
@@ -153,47 +170,15 @@ const ActiveRental: React.FC = () => {
         };
     }, [propertyDetails, selectedContract]);
 
-    const handlePayNow = async () => {
+    const handlePayNow = () => {
         if (!selectedContract || !rentalData || isPayingRent) return;
-        if (rentCycle?.isPaidForCurrentCycle) {
-            globalThis.alert('This month rent is already paid. Next cycle will be due on the shown due date.');
-            return;
-        }
+        setShowInstallments(true);
+    };
 
-        if (walletBalance < rentalData.monthlyRent) {
-            navigate('/tenant-payment?tab=topup');
-            return;
-        }
-
-        const confirmed = globalThis.confirm(`Pay ${rentalData.monthlyRent.toFixed(2)} from wallet for this month's rent?`);
-        if (!confirmed) return;
-
+    const handleInstallmentsPaid = async () => {
         setIsPayingRent(true);
         try {
-            const result = await contractService.payMonthlyRentFromBalance(selectedContract.id);
-            setWalletBalance(Number(result.remainingBalance ?? 0));
-            const installments = Math.max(Number(result.installmentsPaid ?? 1), 1);
-            const lateFee = Number(result.lateFeeApplied ?? 0);
-            globalThis.alert(
-                installments > 1 || lateFee > 0
-                    ? `Payment completed. Settled ${installments} installment(s)${lateFee > 0 ? ` with late fee ${lateFee.toFixed(2)}` : ''}.`
-                    : 'Monthly rent payment completed successfully.'
-            );
-            setContracts((prev) =>
-                prev.map((contract) =>
-                    contract.id === selectedContract.id
-                        ? { ...contract, paymentVerifiedAt: result.contract.paymentVerifiedAt }
-                        : contract
-                )
-            );
-        } catch (error: unknown) {
-            const ex = error as { response?: { data?: { message?: string } } };
-            const message = ex.response?.data?.message ?? 'Could not complete rent payment.';
-            if (message.includes('Insufficient wallet balance')) {
-                navigate('/tenant-payment?tab=topup');
-                return;
-            }
-            globalThis.alert(message);
+            await loadContracts();
         } finally {
             setIsPayingRent(false);
         }
@@ -235,10 +220,11 @@ const ActiveRental: React.FC = () => {
                                 dueTone={dueTone}
                                 outstandingInstallments={outstandingInstallments}
                                 estimatedLateFee={estimatedLateFee}
+                                totalDue={totalDueNow}
                                 onPayNow={handlePayNow}
                                 onTopUp={() => navigate('/tenant-payment?tab=topup')}
                                 isPaying={isPayingRent}
-                                isCurrentCyclePaid={Boolean(rentCycle?.isPaidForCurrentCycle)}
+                                isCurrentCyclePaid={outstandingInstallments <= 0}
                             />
                             
                             <div className="support-card">
@@ -258,6 +244,16 @@ const ActiveRental: React.FC = () => {
                 </div>
                 <Footer />
             </div>
+            {showInstallments && selectedContract && (
+                <InstallmentsModal
+                    contractId={selectedContract.id}
+                    contractTitle={rentalData?.title ?? 'Contract'}
+                    onClose={() => setShowInstallments(false)}
+                    onPaid={() => {
+                        void handleInstallmentsPaid();
+                    }}
+                />
+            )}
         </div>
     );
 };

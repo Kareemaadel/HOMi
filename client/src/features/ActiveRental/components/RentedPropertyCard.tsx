@@ -10,7 +10,8 @@ interface RentedPropertyProps {
     address: string;
     leaseEnd: string;
     image: string | null;
-    status: 'Active' | 'Expiring Soon' | 'Pending Renewal';
+    status: 'Active' | 'Expiring Soon' | 'Pending Renewal' | 'Ended';
+    latePayments?: boolean;
   };
 }
 
@@ -35,6 +36,9 @@ const RentedPropertyCard: React.FC<RentedPropertyProps> = ({ property }) => {
         <span className={`status-badge ${property.status.toLowerCase().replaceAll(' ', '-')}`}>
           {property.status}
         </span>
+        {property.latePayments && (
+          <span className="status-badge late-payments">Late Payments</span>
+        )}
       </div>
       
       <div className="card-body">

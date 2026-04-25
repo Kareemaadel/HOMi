@@ -6,8 +6,9 @@ import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import RentedPropertyCard from '../components/RentedPropertyCard';
-import contractService, { type LandlordContract } from '../../../services/contract.service';
+import contractService, { type LandlordContract, type TenantPaymentHistoryItem } from '../../../services/contract.service';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
+import { getRentInstallmentStats } from '../../TenantPayment/utils/rentSchedule';
 
 const MyActives: React.FC = () => {
     // Hooks for routing and state
@@ -16,22 +17,45 @@ const MyActives: React.FC = () => {
     const [contracts, setContracts] = useState<LandlordContract[]>([]);
     const [propertyById, setPropertyById] = useState<Record<string, PropertyResponse>>({});
     const [isLoading, setIsLoading] = useState(true);
+    const [paymentHistory, setPaymentHistory] = useState<TenantPaymentHistoryItem[]>([]);
 
     useEffect(() => {
         const loadActiveContracts = async () => {
             setIsLoading(true);
             try {
-                const response = await contractService.getTenantContracts({ page: 1, limit: 50 });
-                const activeOnly = (response.data ?? []).filter((contract) => contract.status === 'ACTIVE');
-                setContracts(activeOnly);
+                const [response, history] = await Promise.all([
+                    contractService.getTenantContracts({ page: 1, limit: 50 }),
+                    contractService.getPaymentHistory(250),
+                ]);
+                setPaymentHistory(history ?? []);
+                const allContracts = response.data ?? [];
+                const visibleContracts = allContracts.filter((contract) => {
+                    if (contract.status === 'ACTIVE') return true;
+                    if (contract.status !== 'EXPIRED') return false;
+                    const stats = getRentInstallmentStats(contract);
+                    const paidInstallments = (history ?? [])
+                        .filter((row) =>
+                            row.type === 'RENT_MONTHLY' &&
+                            row.direction === 'DEBIT' &&
+                            row.entityId === contract.id
+                        )
+                        .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                    const outstanding = Math.max(stats.dueCount - paidInstallments, 0);
+                    return outstanding > 0;
+                });
+                setContracts(visibleContracts);
             } catch {
                 setContracts([]);
+                setPaymentHistory([]);
             } finally {
                 setIsLoading(false);
             }
         };
 
         void loadActiveContracts();
+        const handler = () => { void loadActiveContracts(); };
+        globalThis.addEventListener('homi:testing-clock-changed', handler);
+        return () => globalThis.removeEventListener('homi:testing-clock-changed', handler);
     }, []);
 
     useEffect(() => {
@@ -85,7 +109,8 @@ const MyActives: React.FC = () => {
         return end.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
-    const getLeaseStatus = (contract: LandlordContract): 'Active' | 'Expiring Soon' | 'Pending Renewal' => {
+    const getLeaseStatus = (contract: LandlordContract): 'Active' | 'Expiring Soon' | 'Pending Renewal' | 'Ended' => {
+        if (contract.status === 'EXPIRED') return 'Ended';
         const start = new Date(contract.moveInDate);
         if (Number.isNaN(start.getTime())) return 'Active';
 
@@ -106,6 +131,15 @@ const MyActives: React.FC = () => {
                 propertyDetails?.images?.[0]?.imageUrl ||
                 null;
 
+            const stats = getRentInstallmentStats(contract);
+            const paidInstallments = paymentHistory
+                .filter((row) =>
+                    row.type === 'RENT_MONTHLY' &&
+                    row.direction === 'DEBIT' &&
+                    row.entityId === contract.id
+                )
+                .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+            const outstanding = Math.max(stats.dueCount - paidInstallments, 0);
             return {
                 id: contract.id,
                 title: propertyDetails?.title || contract.property?.title || 'Property',
@@ -113,9 +147,10 @@ const MyActives: React.FC = () => {
                 leaseEnd: formatLeaseEnd(contract),
                 status: getLeaseStatus(contract),
                 image: realImage,
+                latePayments: outstanding > 0,
             };
         });
-    }, [contracts, propertyById]);
+    }, [contracts, paymentHistory, propertyById]);
 
     const hasData = activeRentals.length > 0;
     let rentalsContent: React.ReactNode;

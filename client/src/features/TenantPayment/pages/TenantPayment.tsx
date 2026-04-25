@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
+import InstallmentsModal from '../../ActiveRental/components/InstallmentsModal';
 import contractService, {
     type LandlordContract,
     type WalletTopupPaymentMethod,
@@ -71,6 +72,8 @@ const TenantPayment: React.FC = () => {
     const [paymentHistory, setPaymentHistory] = useState<TenantPaymentHistoryItem[]>([]);
     const [savedMethods, setSavedMethods] = useState<SavedPaymentMethod[]>([]);
     const [walletBalance, setWalletBalance] = useState(0);
+
+    const [installmentsTarget, setInstallmentsTarget] = useState<{ contractId: string; title: string } | null>(null);
 
     const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
     const [topupAmount, setTopupAmount] = useState('');
@@ -129,6 +132,9 @@ const TenantPayment: React.FC = () => {
 
     useEffect(() => {
         void loadPaymentData();
+        const handler = () => { void loadPaymentData(); };
+        globalThis.addEventListener('homi:testing-clock-changed', handler);
+        return () => globalThis.removeEventListener('homi:testing-clock-changed', handler);
     }, []);
 
     useEffect(() => {
@@ -236,7 +242,23 @@ const TenantPayment: React.FC = () => {
     );
 
     const hasCurrentBalance = walletBalance > 0;
-    const activeContracts = useMemo(() => tenantContracts.filter((contract) => contract.status === 'ACTIVE'), [tenantContracts]);
+    const activeContracts = useMemo(
+        () =>
+            tenantContracts.filter((contract) => {
+                if (contract.status === 'ACTIVE') return true;
+                if (contract.status !== 'EXPIRED') return false;
+                const stats = getRentInstallmentStats(contract);
+                const paidInstallments = paymentHistory
+                    .filter((row) =>
+                        row.type === 'RENT_MONTHLY' &&
+                        row.direction === 'DEBIT' &&
+                        row.entityId === contract.id
+                    )
+                    .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                return Math.max(stats.dueCount - paidInstallments, 0) > 0;
+            }),
+        [tenantContracts, paymentHistory]
+    );
     const nextUnpaidRent = useMemo(() => {
         const ranked = activeContracts.map((contract) => ({
             contract,
@@ -282,7 +304,7 @@ const TenantPayment: React.FC = () => {
             propertyTitle: string;
             date: string;
             amount: number;
-            status: 'Active' | 'Scheduled';
+            status: 'Active' | 'Scheduled' | 'Ended';
             dueAt: number;
             canPay: boolean;
             outstandingInstallments: number;
@@ -320,17 +342,19 @@ const TenantPayment: React.FC = () => {
             const lateFeePerInstallment = Math.max(Number(contract.lateFeeAmount ?? 0), 0);
             const estimatedLateFee = overdueOutstanding * lateFeePerInstallment;
             const totalAmount = Math.max(outstandingInstallments, 1) * amount + estimatedLateFee;
+            const isEnded = contract.status === 'EXPIRED';
+            const titleSuffix = isEnded ? ' (Lease Ended)' : '';
             rows.push({
                 contractId: contract.id,
-                title: outstandingInstallments > 1
+                title: (outstandingInstallments > 1
                     ? `${outstandingInstallments} Unpaid Rent Installments`
-                    : `${cycle.dueDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`,
+                    : `${cycle.dueDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} Rent`) + titleSuffix,
                 propertyTitle: contract.property?.title ?? 'Property',
                 date: formatShortDate(cycle.dueDate.toISOString()),
                 amount: totalAmount,
-                status: 'Scheduled',
+                status: isEnded ? 'Ended' : 'Scheduled',
                 dueAt: cycle.dueDate.getTime(),
-                canPay: !cycle.isPaidForCurrentCycle,
+                canPay: !cycle.isPaidForCurrentCycle || isEnded,
                 outstandingInstallments,
                 estimatedLateFee,
             });
@@ -375,6 +399,8 @@ const TenantPayment: React.FC = () => {
             if (contractStatus === 'ACTIVE') statusLabel = 'Active Lease';
             else if (contractStatus === 'PENDING_PAYMENT') statusLabel = 'Awaiting Payment';
             else if (contractStatus === 'PENDING_TENANT') statusLabel = 'Awaiting Signature';
+            else if (contractStatus === 'EXPIRED') statusLabel = 'Lease Ended';
+            else if (contractStatus === 'TERMINATED') statusLabel = 'Lease Terminated';
 
             return {
                 id: r.id,
@@ -556,9 +582,18 @@ const TenantPayment: React.FC = () => {
                             </div>
                             <div className="row-actions">
                                 <span className="row-amount">{formatMoney(item.amount)}</span>
-                                <span className={`pill ${item.canPay ? 'scheduled' : 'success'}`}>
-                                    {item.canPay ? 'Scheduled' : 'Paid'}
+                                <span className={`pill ${item.status === 'Ended' ? 'ended' : item.canPay ? 'scheduled' : 'success'}`}>
+                                    {item.status === 'Ended' ? 'Ended (Late)' : item.canPay ? 'Scheduled' : 'Paid'}
                                 </span>
+                                {item.canPay && item.status !== 'Active' && (
+                                    <button
+                                        type="button"
+                                        className="btn-pay-now"
+                                        onClick={() => setInstallmentsTarget({ contractId: item.contractId, title: item.propertyTitle })}
+                                    >
+                                        Pay Now
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -936,6 +971,17 @@ const TenantPayment: React.FC = () => {
                 onClose={() => setIsMethodModalOpen(false)}
                 onSaved={handlePaymentMethodSaved}
             />
+
+            {installmentsTarget && (
+                <InstallmentsModal
+                    contractId={installmentsTarget.contractId}
+                    contractTitle={installmentsTarget.title}
+                    onClose={() => setInstallmentsTarget(null)}
+                    onPaid={() => {
+                        void loadPaymentData();
+                    }}
+                />
+            )}
         </div>
     );
 };

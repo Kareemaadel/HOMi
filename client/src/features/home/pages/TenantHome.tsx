@@ -23,7 +23,6 @@ const TenantHome: React.FC = () => {
   const [isCheckingContracts, setIsCheckingContracts] = useState<boolean>(true);
   const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
   const [activeRentalIndex, setActiveRentalIndex] = useState(0);
-  const [timeOffsetDays, setTimeOffsetDays] = useState(0);
   const [simulatedNow, setSimulatedNow] = useState<Date>(new Date());
   const [activePropertyDetails, setActivePropertyDetails] = useState<PropertyResponse | null>(null);
   const navigate = useNavigate(); 
@@ -55,7 +54,6 @@ const TenantHome: React.FC = () => {
       ]);
       setTenantContracts(contractsRes.data ?? []);
       setActiveRentalIndex(0);
-      setTimeOffsetDays(Number(clock.offsetDays ?? 0));
       setSimulatedNow(new Date(clock.now));
     } catch {
       setTenantContracts([]);
@@ -66,6 +64,9 @@ const TenantHome: React.FC = () => {
 
   useEffect(() => {
     void loadDashboardData();
+    const handleClockChange = () => { void loadDashboardData(); };
+    globalThis.addEventListener('homi:testing-clock-changed', handleClockChange);
+    return () => globalThis.removeEventListener('homi:testing-clock-changed', handleClockChange);
   }, []);
 
   const activeContracts = useMemo(
@@ -126,20 +127,6 @@ const TenantHome: React.FC = () => {
     activeSummaryText = `You have ${openPaymentContractsCount} pending ${paymentLabel} and ${maintenanceAreasCount} maintenance ${areaLabel} in your lease.`;
   }
 
-  const handleAdvance15Days = async () => {
-    const next = await contractService.advanceTestingClock(15);
-    setTimeOffsetDays(Number(next.offsetDays ?? 0));
-    setSimulatedNow(new Date(next.now));
-    await loadDashboardData();
-  };
-
-  const handleResetTimeSimulation = async () => {
-    const next = await contractService.resetTestingClock();
-    setTimeOffsetDays(Number(next.offsetDays ?? 0));
-    setSimulatedNow(new Date(next.now));
-    await loadDashboardData();
-  };
-
   if (isCheckingContracts) {
     return (
       <div className="tenant-dashboard-root">
@@ -170,26 +157,6 @@ const TenantHome: React.FC = () => {
               ) : (
                 <p>Welcome to your new dashboard. Let's get you into your dream home!</p>
               )}
-            </div>
-            <div className="time-travel-controls">
-              <div className="time-travel-meta">
-                <strong>Testing Date:</strong>{' '}
-                {simulatedNow.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                {timeOffsetDays > 0 ? ` (+${timeOffsetDays} days)` : ''}
-              </div>
-              <div className="time-travel-actions">
-                <button type="button" className="time-travel-btn" onClick={handleAdvance15Days}>
-                  Advance +15 days
-                </button>
-                <button
-                  type="button"
-                  className="time-travel-btn reset"
-                  onClick={handleResetTimeSimulation}
-                  disabled={timeOffsetDays === 0}
-                >
-                  Reset
-                </button>
-              </div>
             </div>
           </header>
 

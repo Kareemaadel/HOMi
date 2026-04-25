@@ -112,6 +112,48 @@ export interface MonthlyRentPaymentResponse {
     installmentsPaid?: number;
 }
 
+export type RentInstallmentStatus = 'PAID' | 'DUE' | 'OVERDUE' | 'UPCOMING';
+
+export interface RentInstallmentItem {
+    index: number;
+    label: string;
+    dueDate: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    totalAmount: number;
+    status: RentInstallmentStatus;
+    isPaid: boolean;
+    paidAt: string | null;
+}
+
+export interface ContractInstallmentsResponse {
+    contractId: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    rentDueDate: string | null;
+    leaseDurationMonths: number;
+    autopayEnabled: boolean;
+    walletBalance: number;
+    pendingLandlordCredit: number;
+    paidInstallments: number;
+    dueInstallments: number;
+    overdueInstallments: number;
+    outstandingInstallments: number;
+    nextPayableIndex: number | null;
+    nextPayableTotal: number;
+    items: RentInstallmentItem[];
+    now: string;
+}
+
+export interface AutopayUpdateInput {
+    enabled: boolean;
+}
+
+export interface AutopayUpdateResponse {
+    contractId: string;
+    autopayEnabled: boolean;
+}
+
 export type TenantPaymentHistoryType =
     | 'CONTRACT_INITIAL'
     | 'RENT_MONTHLY'

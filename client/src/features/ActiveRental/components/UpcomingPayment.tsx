@@ -12,6 +12,7 @@ const UpcomingPayment = ({
     isCurrentCyclePaid,
     outstandingInstallments,
     estimatedLateFee,
+    totalDue,
 }: {
     amount: number;
     dueDate: string;
@@ -23,7 +24,9 @@ const UpcomingPayment = ({
     isCurrentCyclePaid: boolean;
     outstandingInstallments: number;
     estimatedLateFee: number;
+    totalDue: number;
 }) => {
+    const hasOutstanding = outstandingInstallments > 0;
     return (
         <div className="payment-card">
             <div className="payment-header">
@@ -56,8 +59,14 @@ const UpcomingPayment = ({
                     </div>
                 )}
             </div>
+            {hasOutstanding && (
+                <div className="payment-total-line">
+                    <span>Total:</span>
+                    <strong>${totalDue.toLocaleString()}</strong>
+                </div>
+            )}
             <button className="pay-now-btn" onClick={onPayNow} disabled={isPaying || isCurrentCyclePaid}>
-                {isCurrentCyclePaid ? 'Paid This Cycle' : isPaying ? 'Processing...' : 'Pay Now'} {!isPaying && !isCurrentCyclePaid && <FaArrowRight />}
+                {isCurrentCyclePaid ? 'No Outstanding Dues' : isPaying ? 'Processing...' : 'Pay Now'} {!isPaying && !isCurrentCyclePaid && <FaArrowRight />}
             </button>
             <button className="pay-now-btn secondary" onClick={onTopUp} disabled={isPaying}>
                 Top Up Wallet

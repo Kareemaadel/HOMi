@@ -91,7 +91,7 @@ const Contract: React.FC = () => {
             const response = await contractService.getTenantContracts({ page: 1, limit: 50 });
             const mapped = (response.data || [])
                 .map(mapContract)
-                .filter((c) => c.status === 'PENDING_TENANT' || c.status === 'PENDING_PAYMENT' || c.status === 'ACTIVE');
+                .filter((c) => c.status === 'PENDING_TENANT' || c.status === 'PENDING_PAYMENT' || c.status === 'ACTIVE' || c.status === 'EXPIRED');
             setContracts(mapped);
         } catch {
             setContracts([]);
@@ -102,7 +102,12 @@ const Contract: React.FC = () => {
         const timer = window.setTimeout(() => {
             void fetchContracts();
         }, 0);
-        return () => window.clearTimeout(timer);
+        const handler = () => { void fetchContracts(); };
+        globalThis.addEventListener('homi:testing-clock-changed', handler);
+        return () => {
+            window.clearTimeout(timer);
+            globalThis.removeEventListener('homi:testing-clock-changed', handler);
+        };
     }, [fetchContracts]);
 
     const hasContracts = contracts.length > 0;
@@ -112,7 +117,7 @@ const Contract: React.FC = () => {
             PENDING_TENANT: { label: 'Pending Signature', color: 'blue' },
             PENDING_PAYMENT: { label: 'Pending Payment', color: 'yellow' },
             ACTIVE: { label: 'Active Lease', color: 'green' },
-            EXPIRED: { label: 'Expired', color: 'gray' },
+            EXPIRED: { label: 'Lease Ended', color: 'gray' },
         };
         return map[status];
     };
@@ -160,12 +165,19 @@ const Contract: React.FC = () => {
                                                 onClick={() => {
                                                     if (contract.status === 'PENDING_PAYMENT') {
                                                         globalThis.location.href = '/tenant-payment?tab=pending';
+                                                    } else if (contract.status === 'EXPIRED') {
+                                                        globalThis.location.href = '/tenant-payment?tab=upcoming';
                                                     } else {
                                                         setSelectedContract(contract);
                                                     }
                                                 }}
                                             >
-                                                {contract.status === 'PENDING_PAYMENT' ? 'Pay Now' : 'View Details'} <ChevronRight size={16}/>
+                                                {contract.status === 'PENDING_PAYMENT'
+                                                    ? 'Pay Now'
+                                                    : contract.status === 'EXPIRED'
+                                                        ? 'Settle Dues'
+                                                        : 'View Details'}
+                                                <ChevronRight size={16}/>
                                             </button>
                                         </div>
                                     </div>

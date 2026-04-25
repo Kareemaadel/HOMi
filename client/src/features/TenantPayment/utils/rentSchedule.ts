@@ -63,10 +63,17 @@ export const getRentInstallmentStats = (contract: LandlordContract, nowInput?: D
     const leaseMonths = Math.max(Number(contract.leaseDurationMonths ?? 0), 0);
     if (leaseMonths <= 0) return { dueCount: 0, overdueCount: 0 };
 
+    let firstRef = new Date(moveIn.getFullYear(), moveIn.getMonth(), 1);
+    let firstDue = getCycleDueDate(contract, firstRef);
+    if (firstDue < moveIn) {
+        firstRef = new Date(firstRef.getFullYear(), firstRef.getMonth() + 1, 1);
+        firstDue = getCycleDueDate(contract, firstRef);
+    }
+
     let dueCount = 0;
     let overdueCount = 0;
     for (let i = 0; i < leaseMonths; i += 1) {
-        const ref = new Date(moveIn.getFullYear(), moveIn.getMonth() + i, 1);
+        const ref = new Date(firstRef.getFullYear(), firstRef.getMonth() + i, 1);
         const dueDate = getCycleDueDate(contract, ref);
         if (dueDate <= now) {
             dueCount += 1;
