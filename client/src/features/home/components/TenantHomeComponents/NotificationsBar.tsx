@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { FaTimes, FaBell, FaCheckDouble, FaTrashAlt } from 'react-icons/fa';
+import { createPortal } from 'react-dom';
 import './NotificationsBar.css';
 import notificationService, { type NotificationItem } from '../../../../services/notification.service';
 import socketService from '../../../../services/socket.service';
@@ -130,7 +131,7 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
         };
     }, [isOpen]);
 
-    return (
+    const panel = (
         <div className={`notif-bar-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
             <div
                 className={`notif-sidebar-container ${isOpen ? 'slide-in' : ''}`}
@@ -215,6 +216,8 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
         </div>
     );
+
+    return createPortal(panel, document.body);
 };
 
 export default NotificationsBar;
