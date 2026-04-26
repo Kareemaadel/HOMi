@@ -202,7 +202,7 @@ const Header = () => {
 
         {/* Mobile Menu Toggle & Right Spacer */}
         <div className="header-spacer right-spacer">
-          {isSignedIn && signedInRole === 'TENANT' && <TestingClockBadge />}
+          {isSignedIn && <TestingClockBadge />}
           {isSignedIn && (
             <button
               type="button"

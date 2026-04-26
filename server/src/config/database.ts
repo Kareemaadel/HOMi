@@ -116,6 +116,22 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 ALTER TABLE IF EXISTS "profiles"
                     ADD COLUMN IF NOT EXISTS "current_location" VARCHAR(255);
             `);
+            // ── Rental requests: replace the legacy (tenant_id, property_id)
+            //    unique constraint with a PARTIAL unique index so tenants can
+            //    re-apply after a previous request was declined or after a
+            //    contract has ended. The constraint must only fire for the
+            //    in-flight PENDING row.
+            await sequelize.query(`
+                ALTER TABLE IF EXISTS "rental_requests"
+                    DROP CONSTRAINT IF EXISTS "unique_tenant_property_request";
+            `);
+            await sequelize.query(`DROP INDEX IF EXISTS "unique_tenant_property_request";`);
+            await sequelize.query(`
+                CREATE UNIQUE INDEX IF NOT EXISTS "uniq_pending_rental_request_per_tenant_property"
+                ON "rental_requests" ("tenant_id", "property_id")
+                WHERE "status" = 'PENDING';
+            `);
+
             // ── Safely drop any stale FK constraints that Sequelize alter-mode
             //    may try to recreate, causing SequelizeUnknownConstraintError.
             //    Each block is fully idempotent — safe to run on every startup.

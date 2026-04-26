@@ -40,7 +40,7 @@ class TestingClockService {
     }
 
     private isEnabled(): boolean {
-        return env.NODE_ENV !== 'production';
+        return env.TEST_DATE === true;
     }
 }
 

@@ -8,7 +8,8 @@ import Footer from '../../../components/global/footer';
 import RentedPropertyCard from '../components/RentedPropertyCard';
 import contractService, { type LandlordContract, type TenantPaymentHistoryItem } from '../../../services/contract.service';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
-import { getRentInstallmentStats } from '../../TenantPayment/utils/rentSchedule';
+import { getPrepaidInstallmentsCount, getRentInstallmentStats } from '../../TenantPayment/utils/rentSchedule';
+import { getEffectiveNow } from '../../../shared/utils/testingClock';
 
 const MyActives: React.FC = () => {
     // Hooks for routing and state
@@ -29,17 +30,28 @@ const MyActives: React.FC = () => {
                 ]);
                 setPaymentHistory(history ?? []);
                 const allContracts = response.data ?? [];
+                // Show:
+                //  • ACTIVE contracts (regardless of whether move-in is past or future)
+                //  • EXPIRED contracts that still have outstanding rent dues
+                // The "Starting Soon" label below is rendered for ACTIVE contracts
+                // whose moveInDate is later than the test-aware "now".
                 const visibleContracts = allContracts.filter((contract) => {
                     if (contract.status === 'ACTIVE') return true;
                     if (contract.status !== 'EXPIRED') return false;
                     const stats = getRentInstallmentStats(contract);
+                    // Seed with the activation prepay (always 1 month for an
+                    // active/expired contract) so the first scheduled installment
+                    // is correctly recognised as paid before any monthly debit.
                     const paidInstallments = (history ?? [])
                         .filter((row) =>
                             row.type === 'RENT_MONTHLY' &&
                             row.direction === 'DEBIT' &&
                             row.entityId === contract.id
                         )
-                        .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                        .reduce(
+                            (sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1),
+                            getPrepaidInstallmentsCount(contract)
+                        );
                     const outstanding = Math.max(stats.dueCount - paidInstallments, 0);
                     return outstanding > 0;
                 });
@@ -99,6 +111,9 @@ const MyActives: React.FC = () => {
         };
     }, [contracts]);
 
+    const formatDate = (value: Date): string =>
+        value.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
     const formatLeaseEnd = (contract: LandlordContract): string => {
         const start = new Date(contract.moveInDate);
         if (Number.isNaN(start.getTime())) return 'N/A';
@@ -106,18 +121,35 @@ const MyActives: React.FC = () => {
         const end = new Date(start);
         end.setMonth(end.getMonth() + Number(contract.leaseDurationMonths ?? 0));
 
-        return end.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        return formatDate(end);
     };
 
-    const getLeaseStatus = (contract: LandlordContract): 'Active' | 'Expiring Soon' | 'Pending Renewal' | 'Ended' => {
+    const formatLeaseStart = (contract: LandlordContract): string => {
+        const start = new Date(contract.moveInDate);
+        if (Number.isNaN(start.getTime())) return 'N/A';
+        return formatDate(start);
+    };
+
+    /**
+     * Lease status is computed against the test-aware "now" so toggling the
+     * testing clock instantly relabels cards (e.g. a contract with move-in
+     * tomorrow flips to "Starting Soon" before the simulated date, then to
+     * "Active" once the clock advances past it).
+     */
+    const getLeaseStatus = (
+        contract: LandlordContract
+    ): 'Starting Soon' | 'Active' | 'Expiring Soon' | 'Pending Renewal' | 'Ended' => {
         if (contract.status === 'EXPIRED') return 'Ended';
+        const now = getEffectiveNow();
         const start = new Date(contract.moveInDate);
         if (Number.isNaN(start.getTime())) return 'Active';
+
+        if (start.getTime() > now.getTime()) return 'Starting Soon';
 
         const end = new Date(start);
         end.setMonth(end.getMonth() + Number(contract.leaseDurationMonths ?? 0));
 
-        const daysLeft = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         if (daysLeft <= 30) return 'Expiring Soon';
         return 'Active';
     };
@@ -138,16 +170,33 @@ const MyActives: React.FC = () => {
                     row.direction === 'DEBIT' &&
                     row.entityId === contract.id
                 )
-                .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                .reduce(
+                    (sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1),
+                    getPrepaidInstallmentsCount(contract)
+                );
             const outstanding = Math.max(stats.dueCount - paidInstallments, 0);
+            const leaseStatus = getLeaseStatus(contract);
+            // Show "Late Payments" badge only when there are genuinely overdue
+            // installments — i.e. installments whose due date is already in the
+            // past AND that haven't been paid yet. A rent that is merely "due
+            // soon" (within the next 30 days) is NOT late.
+            const overdueUnpaid = Math.max(stats.overdueCount - paidInstallments, 0);
+            const showLatePayments = leaseStatus !== 'Starting Soon' && leaseStatus !== 'Ended' && overdueUnpaid > 0;
+            // A separate flag for expired contracts that still carry unpaid rent —
+            // these get distinct messaging so the tenant knows the lease is over
+            // but there is still a balance to settle.
+            const endedWithDebt = leaseStatus === 'Ended' && outstanding > 0;
             return {
                 id: contract.id,
                 title: propertyDetails?.title || contract.property?.title || 'Property',
                 address: propertyDetails?.address || contract.property?.address || 'Address unavailable',
+                leaseStart: formatLeaseStart(contract),
                 leaseEnd: formatLeaseEnd(contract),
-                status: getLeaseStatus(contract),
+                status: leaseStatus,
                 image: realImage,
-                latePayments: outstanding > 0,
+                latePayments: showLatePayments,
+                endedWithDebt,
+                unpaidMonths: endedWithDebt ? outstanding : 0,
             };
         });
     }, [contracts, paymentHistory, propertyById]);

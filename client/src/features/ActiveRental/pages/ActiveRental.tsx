@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './ActiveRental.css';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
@@ -8,21 +8,41 @@ import DetailedRentCard from '../components/DetailedRentCard';
 import UpcomingPayment from '../components/UpcomingPayment';
 import QuickActions from '../components/QuickActions';
 import MaintenanceStatus from '../components/MaintenanceStatus';
-import contractService, { type LandlordContract } from '../../../services/contract.service';
+import contractService, { type ContractInstallments, type LandlordContract } from '../../../services/contract.service';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
-import { formatDateLabel, getRentCycleSummary, getRentInstallmentStats } from '../../TenantPayment/utils/rentSchedule';
-import type { TenantPaymentHistoryItem } from '../../../services/contract.service';
+import {
+    formatDateLabel,
+    getPrepaidInstallmentsCount,
+    getRentInstallmentStats,
+} from '../../TenantPayment/utils/rentSchedule';
 import InstallmentsModal from '../components/InstallmentsModal';
+import OverdueRentTable from '../components/OverdueRentTable';
+
+const formatDate = (date?: string): string => {
+    if (!date) return 'N/A';
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return 'N/A';
+    return parsed.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
+const formatLeaseEnd = (moveInDate?: string, durationMonths?: number): string => {
+    if (!moveInDate) return 'N/A';
+    const start = new Date(moveInDate);
+    if (Number.isNaN(start.getTime())) return 'N/A';
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + Number(durationMonths ?? 0));
+    return formatDate(end.toISOString());
+};
 
 const ActiveRental: React.FC = () => {
-    const location = useLocation();
     const navigate = useNavigate();
     const [contracts, setContracts] = useState<LandlordContract[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [propertyDetails, setPropertyDetails] = useState<PropertyResponse | null>(null);
     const [isPayingRent, setIsPayingRent] = useState(false);
-    const [paymentHistory, setPaymentHistory] = useState<TenantPaymentHistoryItem[]>([]);
     const [showInstallments, setShowInstallments] = useState(false);
+    const [installmentsData, setInstallmentsData] = useState<ContractInstallments | null>(null);
+    const [preferredContractId, setPreferredContractId] = useState<string>('');
 
     const loadContracts = useCallback(async () => {
         setIsLoading(true);
@@ -42,15 +62,44 @@ const ActiveRental: React.FC = () => {
                         row.direction === 'DEBIT' &&
                         row.entityId === contract.id
                     )
-                    .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                    .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), getPrepaidInstallmentsCount(contract));
                 const outstanding = Math.max(stats.dueCount - paidInstallments, 0);
                 return outstanding > 0;
             });
             setContracts(payableContracts);
-            setPaymentHistory(historyRes ?? []);
+
+            const installmentsRows = await Promise.allSettled(
+                payableContracts.map(async (contract) => ({
+                    contractId: contract.id,
+                    installments: await contractService.getContractInstallments(contract.id),
+                }))
+            );
+
+            const ranked = installmentsRows
+                .filter((row): row is PromiseFulfilledResult<{ contractId: string; installments: ContractInstallments }> => row.status === 'fulfilled')
+                .map((row) => {
+                    const dueOrOverdue = row.value.installments.items.filter(
+                        (item) => item.status === 'DUE' || item.status === 'OVERDUE'
+                    ).length;
+                    const nextDisplay = row.value.installments.items.find(
+                        (item) => item.status === 'DUE' || item.status === 'OVERDUE' || item.status === 'UPCOMING'
+                    );
+                    const nextDueAt = nextDisplay ? new Date(nextDisplay.dueDate).getTime() : Number.POSITIVE_INFINITY;
+                    return {
+                        contractId: row.value.contractId,
+                        dueOrOverdue,
+                        nextDueAt,
+                    };
+                })
+                .sort((a, b) => {
+                    if (a.dueOrOverdue !== b.dueOrOverdue) return b.dueOrOverdue - a.dueOrOverdue;
+                    return a.nextDueAt - b.nextDueAt;
+                });
+
+            setPreferredContractId(ranked[0]?.contractId ?? payableContracts[0]?.id ?? '');
         } catch {
             setContracts([]);
-            setPaymentHistory([]);
+            setPreferredContractId('');
         } finally {
             setIsLoading(false);
         }
@@ -63,19 +112,14 @@ const ActiveRental: React.FC = () => {
         return () => globalThis.removeEventListener('homi:testing-clock-changed', handler);
     }, [loadContracts]);
 
-    const contractIdFromQuery = useMemo(() => {
-        const params = new URLSearchParams(location.search);
-        return params.get('contractId') ?? '';
-    }, [location.search]);
-
     const selectedContract = useMemo(() => {
         if (!contracts.length) return null;
-        if (contractIdFromQuery) {
-            const matched = contracts.find((contract) => contract.id === contractIdFromQuery);
-            if (matched) return matched;
+        if (preferredContractId) {
+            const preferred = contracts.find((contract) => contract.id === preferredContractId);
+            if (preferred) return preferred;
         }
         return contracts[0];
-    }, [contracts, contractIdFromQuery]);
+    }, [contracts, preferredContractId]);
 
     useEffect(() => {
         const propertyId = selectedContract?.property?.id;
@@ -106,47 +150,82 @@ const ActiveRental: React.FC = () => {
         };
     }, [selectedContract?.property?.id]);
 
-    const formatDate = (date?: string) => {
-        if (!date) return 'N/A';
-        const parsed = new Date(date);
-        if (Number.isNaN(parsed.getTime())) return 'N/A';
-        return parsed.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-    };
+    useEffect(() => {
+        if (!selectedContract?.id) {
+            setInstallmentsData(null);
+            return;
+        }
 
-    const formatLeaseEnd = (moveInDate?: string, durationMonths?: number) => {
-        if (!moveInDate) return 'N/A';
-        const start = new Date(moveInDate);
-        if (Number.isNaN(start.getTime())) return 'N/A';
-        const end = new Date(start);
-        end.setMonth(end.getMonth() + Number(durationMonths ?? 0));
-        return formatDate(end.toISOString());
-    };
+        let cancelled = false;
 
-    const rentCycle = useMemo(() => {
-        if (!selectedContract) return null;
-        return getRentCycleSummary(selectedContract);
-    }, [selectedContract]);
+        const loadInstallments = async () => {
+            try {
+                const data = await contractService.getContractInstallments(selectedContract.id);
+                if (!cancelled) setInstallmentsData(data);
+            } catch {
+                if (!cancelled) setInstallmentsData(null);
+            }
+        };
 
-    const dueDateLabel = rentCycle ? formatDateLabel(rentCycle.dueDate) : 'N/A';
-    const dueInLabel = rentCycle ? `${rentCycle.daysUntilDue} day${rentCycle.daysUntilDue === 1 ? '' : 's'}` : 'N/A';
-    const dueTone = rentCycle && rentCycle.daysUntilDue > 7 ? 'safe' : 'urgent';
-    const installmentStats = useMemo(
-        () => (selectedContract ? getRentInstallmentStats(selectedContract) : { dueCount: 0, overdueCount: 0 }),
-        [selectedContract]
+        void loadInstallments();
+        const handler = () => { void loadInstallments(); };
+        globalThis.addEventListener('homi:testing-clock-changed', handler);
+        return () => {
+            cancelled = true;
+            globalThis.removeEventListener('homi:testing-clock-changed', handler);
+        };
+    }, [selectedContract?.id]);
+
+    const overdueItems = useMemo(
+        () => (installmentsData?.items ?? []).filter((item) => item.status === 'OVERDUE'),
+        [installmentsData]
     );
-    const paidInstallments = useMemo(() => {
-        if (!selectedContract) return 0;
-        return paymentHistory
-            .filter((row) =>
-                row.type === 'RENT_MONTHLY' &&
-                row.direction === 'DEBIT' &&
-                row.entityId === selectedContract.id
-            )
-            .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
-    }, [paymentHistory, selectedContract]);
-    const outstandingInstallments = Math.max(installmentStats.dueCount - paidInstallments, 0);
-    const estimatedLateFee = Math.max(Number(selectedContract?.lateFeeAmount ?? 0), 0) * Math.max(installmentStats.overdueCount - paidInstallments, 0);
-    const totalDueNow = Math.max(outstandingInstallments, 1) * Number(selectedContract?.rentAmount ?? selectedContract?.property?.monthlyPrice ?? 0) + estimatedLateFee;
+    const payableItems = useMemo(
+        () => (installmentsData?.items ?? []).filter((item) => item.status === 'DUE' || item.status === 'OVERDUE'),
+        [installmentsData]
+    );
+    /** Show the inline arrears table when more than one month is unpaid OR any month is overdue. */
+    const isInArrears = useMemo(
+        () => overdueItems.length > 0 || payableItems.length > 1,
+        [overdueItems.length, payableItems.length]
+    );
+    const nextDisplayInstallment = useMemo(() => {
+        if (payableItems.length > 0) return payableItems[0];
+        return (installmentsData?.items ?? []).find((item) => item.status === 'UPCOMING') ?? null;
+    }, [installmentsData, payableItems]);
+    const dueDateLabel = nextDisplayInstallment ? formatDateLabel(nextDisplayInstallment.dueDate) : 'N/A';
+
+    /** Smart countdown: positive = future, negative = overdue */
+    const dueInDays = useMemo((): number | null => {
+        if (!installmentsData?.now || !nextDisplayInstallment?.dueDate) return null;
+        const now = new Date(installmentsData.now);
+        const due = new Date(nextDisplayInstallment.dueDate);
+        if (Number.isNaN(now.getTime()) || Number.isNaN(due.getTime())) return null;
+        return Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    }, [installmentsData?.now, nextDisplayInstallment?.dueDate]);
+
+    /**
+     * Human-readable relative label shown next to the due date.
+     *   future  → "5 days"
+     *   today   → "today"
+     *   overdue → "3 days overdue"
+     */
+    const dueInLabel = useMemo((): string => {
+        if (dueInDays === null) return '';
+        if (dueInDays > 0) return `${dueInDays} day${dueInDays === 1 ? '' : 's'}`;
+        if (dueInDays === 0) return 'today';
+        const abs = Math.abs(dueInDays);
+        return `${abs} day${abs === 1 ? '' : 's'} overdue`;
+    }, [dueInDays]);
+
+    const outstandingInstallments = payableItems.length;
+
+    /** urgent when there are any unpaid payable installments (DUE or OVERDUE) */
+    const dueTone: 'safe' | 'urgent' = outstandingInstallments > 0 ? 'urgent' : 'safe';
+
+    const estimatedLateFee = overdueItems
+        .reduce((sum, item) => sum + Number(item.lateFeeAmount ?? 0), 0);
+    const totalDueNow = Number(installmentsData?.nextPayableTotal ?? 0);
 
     const rentalData = useMemo(() => {
         if (!selectedContract) return null;
@@ -206,6 +285,7 @@ const ActiveRental: React.FC = () => {
                     <QuickActions />
 
                     {!isLoading && rentalData && (
+                    <>
                     <div className="active-rental-content">
                         <section className="main-rental-info">
                             <DetailedRentCard rental={rentalData} />
@@ -225,6 +305,7 @@ const ActiveRental: React.FC = () => {
                                 onTopUp={() => navigate('/tenant-payment?tab=topup')}
                                 isPaying={isPayingRent}
                                 isCurrentCyclePaid={outstandingInstallments <= 0}
+                                isInArrears={isInArrears}
                             />
                             
                             <div className="support-card">
@@ -240,6 +321,14 @@ const ActiveRental: React.FC = () => {
                             </div>
                         </aside>
                     </div>
+                    {isInArrears && installmentsData && (
+                        <OverdueRentTable
+                            installments={installmentsData}
+                            onPayNow={handlePayNow}
+                            isPaying={isPayingRent}
+                        />
+                    )}
+                    </>
                     )}
                 </div>
                 <Footer />

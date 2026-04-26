@@ -76,11 +76,77 @@
 .status-badge.expiring-soon { color: #f59e0b; }
 .status-badge.ended { color: #ef4444; }
 
+.status-badge.starting-soon {
+    color: #1d4ed8;
+    background: rgba(219, 234, 254, 0.95);
+    border-color: rgba(29, 78, 216, 0.28);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge.starting-soon .badge-icon {
+    font-size: 0.78rem;
+}
+
 .status-badge.late-payments {
     top: 44px;
     color: #dc2626;
     border-color: rgba(220, 38, 38, 0.25);
     background: rgba(254, 226, 226, 0.92);
+}
+
+.status-badge.ended-debt {
+    top: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #7c2d12;
+    border-color: rgba(124, 45, 18, 0.3);
+    background: rgba(254, 215, 170, 0.95);
+}
+
+/* Card-level treatment when lease ended with unpaid rent */
+.rented-property-card.ended-with-debt {
+    border-color: #fca5a5;
+    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1), 0 0 0 1px rgba(252, 165, 165, 0.4);
+}
+
+.rented-property-card.ended-with-debt:hover {
+    border-color: #ef4444;
+    box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.5);
+}
+
+.rented-property-card.ended-with-debt .view-details-arrow.ended {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.rented-property-card.ended-with-debt:hover .view-details-arrow.ended {
+    background: #ef4444;
+    color: white;
+}
+
+/* Warning notice inside ended-with-debt cards */
+.ended-debt-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.ended-debt-notice svg {
+    color: #ea580c;
+    font-size: 0.95rem;
+    margin-top: 1px;
+    flex-shrink: 0;
 }
 
 .card-body {

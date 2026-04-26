@@ -1,5 +1,5 @@
 import apiClient from '../config/api';
-import { clearTestingClockCache, saveTestingClockSnapshot } from '../shared/utils/testingClock';
+import { clearTestingClockCache, isTestDateEnabled, saveTestingClockSnapshot } from '../shared/utils/testingClock';
 
 export interface ContractPaymentTerms {
     rentAmount: number | null;
@@ -266,8 +266,23 @@ interface ContractListResponse {
     };
 }
 
+/**
+ * Stub returned by testing-clock helpers when the client is built with
+ * `VITE_TEST_DATE=false`. Mimics the disabled state from the server so the
+ * rest of the app never sees `enabled: true` in that mode.
+ */
+const buildDisabledTestingClockState = (): TestingClockState => ({
+    enabled: false,
+    offsetDays: 0,
+    now: new Date().toISOString(),
+});
+
 class ContractService {
     async getTestingClock(): Promise<TestingClockState> {
+        if (!isTestDateEnabled()) {
+            clearTestingClockCache();
+            return buildDisabledTestingClockState();
+        }
         const response = await apiClient.get<TestingClockApiResponse>('/contracts/testing/clock');
         saveTestingClockSnapshot({
             now: response.data.data.now,
@@ -277,6 +292,9 @@ class ContractService {
     }
 
     async advanceTestingClock(days = 15): Promise<TestingClockState> {
+        if (!isTestDateEnabled()) {
+            return buildDisabledTestingClockState();
+        }
         const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/advance', { days });
         saveTestingClockSnapshot({
             now: response.data.data.now,
@@ -286,6 +304,10 @@ class ContractService {
     }
 
     async resetTestingClock(): Promise<TestingClockState> {
+        if (!isTestDateEnabled()) {
+            clearTestingClockCache();
+            return buildDisabledTestingClockState();
+        }
         const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/reset');
         if (Number(response.data.data.offsetDays ?? 0) === 0) {
             clearTestingClockCache();

@@ -69,17 +69,21 @@ class RentalRequestService {
             );
         }
 
-        // Check if tenant already has a request for this property
-        const existingRequest = await RentalRequest.findOne({
+        // Block ONLY when an in-flight (PENDING) request already exists for this
+        // tenant/property pair. Historical APPROVED/DECLINED requests are kept
+        // for audit but must NOT prevent the tenant from re-applying after a
+        // contract has ended or a previous request was declined.
+        const existingPendingRequest = await RentalRequest.findOne({
             where: {
                 tenant_id: tenantId,
                 property_id: input.property_id,
+                status: RentalRequestStatus.PENDING,
             },
         });
 
-        if (existingRequest) {
+        if (existingPendingRequest) {
             throw new RentalRequestError(
-                'You already have a rental request for this property',
+                'You already have a pending rental request for this property',
                 409,
                 'DUPLICATE_REQUEST'
             );

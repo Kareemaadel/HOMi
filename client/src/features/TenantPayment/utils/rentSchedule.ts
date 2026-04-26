@@ -27,8 +27,11 @@ const getCycleDueDate = (contract: LandlordContract, reference: Date): Date => {
 };
 
 const startOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-const isSameYearMonth = (a: Date, b: Date): boolean =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+const isWithinNextDays = (from: Date, target: Date, days: number): boolean => {
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const deltaDays = Math.ceil((target.getTime() - from.getTime()) / msPerDay);
+    return deltaDays >= 0 && deltaDays <= days;
+};
 
 const getNow = (nowInput?: Date): Date => {
     const cached = getTestingNowFromCache();
@@ -58,6 +61,23 @@ export const getRentCycleSummary = (contract: LandlordContract, nowInput?: Date)
     };
 };
 
+/**
+ * Mirror of the server's `getPrepaidInstallmentsCount`.
+ *
+ * The activation payment for a contract always covers the first month of rent
+ * (in addition to the security deposit and service fee), so once a contract is
+ * ACTIVE/EXPIRED the first scheduled installment is treated as already paid —
+ * regardless of whether the move-in date and the first scheduled due date fall
+ * in the same calendar month.
+ */
+export const getPrepaidInstallmentsCount = (contract: LandlordContract): number => {
+    if (contract.status !== 'ACTIVE' && contract.status !== 'EXPIRED') return 0;
+    if (Number(contract.leaseDurationMonths ?? 0) <= 0) return 0;
+    const moveIn = new Date(contract.moveInDate);
+    if (Number.isNaN(moveIn.getTime())) return 0;
+    return 1;
+};
+
 export const getRentInstallmentStats = (contract: LandlordContract, nowInput?: Date): RentInstallmentStats => {
     const now = getNow(nowInput);
     const moveIn = startOfDay(new Date(contract.moveInDate));
@@ -77,7 +97,7 @@ export const getRentInstallmentStats = (contract: LandlordContract, nowInput?: D
     for (let i = 0; i < leaseMonths; i += 1) {
         const ref = new Date(firstRef.getFullYear(), firstRef.getMonth() + i, 1);
         const dueDate = getCycleDueDate(contract, ref);
-        if (dueDate <= now || isSameYearMonth(dueDate, now)) {
+        if (dueDate <= now || isWithinNextDays(now, dueDate, 30)) {
             dueCount += 1;
             if (dueDate < now) overdueCount += 1;
         }
@@ -88,5 +108,8 @@ export const getRentInstallmentStats = (contract: LandlordContract, nowInput?: D
 export const formatMoney = (amount: number): string =>
     `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const formatDateLabel = (date: Date): string =>
-    date.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+export const formatDateLabel = (date: Date | string | number): string => {
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(parsed.getTime())) return 'N/A';
+    return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+};

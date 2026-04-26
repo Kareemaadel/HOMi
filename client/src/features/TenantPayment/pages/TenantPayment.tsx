@@ -37,7 +37,12 @@ import contractService, {
 import rentalRequestService, { type MyRentalRequest } from '../../../services/rental-request.service';
 import { authService } from '../../../services/auth.service';
 import paymentMethodService, { type SavedPaymentMethod } from '../../../services/payment-method.service';
-import { formatDateLabel, getRentCycleSummary, getRentInstallmentStats } from '../utils/rentSchedule';
+import {
+    formatDateLabel,
+    getPrepaidInstallmentsCount,
+    getRentCycleSummary,
+    getRentInstallmentStats,
+} from '../utils/rentSchedule';
 
 type TabType = 'overview' | 'upcoming' | 'history' | 'topup' | 'methods' | 'pending';
 
@@ -270,7 +275,7 @@ const TenantPayment: React.FC = () => {
                         row.direction === 'DEBIT' &&
                         row.entityId === contract.id
                     )
-                    .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                    .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), getPrepaidInstallmentsCount(contract));
                 return Math.max(stats.dueCount - paidInstallments, 0) > 0;
             }),
         [tenantContracts, paymentHistory]
@@ -352,7 +357,7 @@ const TenantPayment: React.FC = () => {
                     row.direction === 'DEBIT' &&
                     row.entityId === contract.id
                 )
-                .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), 0);
+                .reduce((sum, row) => sum + Math.max(Number(row.installmentsCount ?? 1), 1), getPrepaidInstallmentsCount(contract));
             const outstandingInstallments = Math.max(stats.dueCount - paidInstallments, 0);
             const overdueOutstanding = Math.max(stats.overdueCount - paidInstallments, 0);
             const lateFeePerInstallment = Math.max(Number(contract.lateFeeAmount ?? 0), 0);

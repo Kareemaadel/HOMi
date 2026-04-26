@@ -89,8 +89,10 @@ function safeDecrypt(value: string | null): string | null {
     }
 }
 
-function isSameYearMonth(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+function isWithinNextDays(from: Date, target: Date, days: number): boolean {
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const deltaDays = Math.ceil((target.getTime() - from.getTime()) / msPerDay);
+    return deltaDays >= 0 && deltaDays <= days;
 }
 
 /**
@@ -833,12 +835,13 @@ class ContractService {
                 lock: transaction.LOCK.UPDATE,
             });
 
+            const prepaidInstallments = this.getPrepaidInstallmentsCount(contract);
             const paidInstallments = paidRows.reduce((sum, row) => {
                 const meta = (row.metadata ?? {}) as Record<string, any>;
                 const byInstallments = Number(meta.installmentsPaid ?? 0);
                 if (Number.isFinite(byInstallments) && byInstallments > 0) return sum + byInstallments;
                 return sum + 1;
-            }, 0);
+            }, prepaidInstallments);
 
             const outstandingInstallments = Math.max(payableInstallments.length - paidInstallments, 0);
             if (outstandingInstallments <= 0) {
@@ -1289,14 +1292,25 @@ class ContractService {
             order: [['created_at', 'ASC']],
         });
 
+        const prepaidInstallments = this.getPrepaidInstallmentsCount(contract);
         const paidInstallments = paidRows.reduce((sum, row) => {
             const meta = (row.metadata ?? {}) as Record<string, any>;
             const byInstallments = Number(meta.installmentsPaid ?? 0);
             if (Number.isFinite(byInstallments) && byInstallments > 0) return sum + byInstallments;
             return sum + 1;
-        }, 0);
+        }, prepaidInstallments);
 
         const flatPaidDates: Array<{ paidAt: Date }> = [];
+        // Seed the first N entries with the contract's activation-payment date so
+        // the prepaid installments expose a meaningful "paidAt" in the UI.
+        if (prepaidInstallments > 0) {
+            const activationPaidAt = (contract as any).payment_verified_at
+                ? new Date((contract as any).payment_verified_at)
+                : new Date((contract as any).updated_at ?? Date.now());
+            for (let i = 0; i < prepaidInstallments; i += 1) {
+                flatPaidDates.push({ paidAt: activationPaidAt });
+            }
+        }
         paidRows.forEach((row) => {
             const meta = (row.metadata ?? {}) as Record<string, any>;
             const count = Math.max(Number(meta.installmentsPaid ?? 1), 1);
@@ -1324,7 +1338,7 @@ class ContractService {
 
         const items: RentInstallmentItem[] = dueDates.map((dueDate, idx) => {
             const isPaidIdx = idx < paidInstallments;
-            const isDue = dueDate <= now || isSameYearMonth(dueDate, now);
+            const isDue = dueDate <= now || isWithinNextDays(now, dueDate, 30);
             const isOverdue = dueDate < now && !isPaidIdx;
             let status: RentInstallmentStatus = 'UPCOMING';
             if (isPaidIdx) status = 'PAID';
@@ -1623,7 +1637,32 @@ class ContractService {
 
     private getPayableInstallmentDates(contract: Contract, now: Date): Date[] {
         const dueDates = this.getContractDueDates(contract);
-        return dueDates.filter((d) => d <= now || isSameYearMonth(d, now));
+        return dueDates.filter((d) => d <= now || isWithinNextDays(now, d, 30));
+    }
+
+    /**
+     * Initial contract activation payment ALWAYS includes one full rent
+     * installment in addition to the security deposit and service fee — that's
+     * literally what the tenant pays on the PENDING_PAYMENT screen
+     * (see `calculateContractTotalAmount`: rent + deposit + fee).
+     *
+     * Therefore once a contract is ACTIVE/EXPIRED, the very first scheduled
+     * installment is already paid, regardless of whether the move-in date and
+     * the first scheduled due date fall in the same calendar month.
+     *
+     * Without this, a tenant who moves in mid-month with a `1ST_OF_MONTH` due
+     * cycle would see next month's installment marked as DUE even though they
+     * already paid for it at activation, and the wallet flow would try to
+     * double-charge them.
+     */
+    private getPrepaidInstallmentsCount(contract: Contract): number {
+        const leaseMonths = Math.max(Number(contract.lease_duration_months ?? 0), 0);
+        if (leaseMonths <= 0) return 0;
+        if (contract.status !== ContractStatus.ACTIVE && contract.status !== ContractStatus.EXPIRED) {
+            return 0;
+        }
+        const dueDates = this.getContractDueDates(contract);
+        return dueDates.length > 0 ? 1 : 0;
     }
 
     /**

@@ -23,6 +23,22 @@ const formatDateLabel = (iso: string): string => {
     return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
 };
 
+const isWithinNextDays = (from: Date, target: Date, days: number): boolean => {
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const deltaDays = Math.ceil((target.getTime() - from.getTime()) / msPerDay);
+    return deltaDays >= 0 && deltaDays <= days;
+};
+
+const getDisplayStatus = (item: RentInstallmentItem, nowIso: string): RentInstallmentStatus => {
+    if (item.isPaid || item.status === 'PAID') return 'PAID';
+    const now = new Date(nowIso);
+    const due = new Date(item.dueDate);
+    if (Number.isNaN(now.getTime()) || Number.isNaN(due.getTime())) return item.status;
+    if (due < now) return 'OVERDUE';
+    if (isWithinNextDays(now, due, 30)) return 'DUE';
+    return 'UPCOMING';
+};
+
 const statusBadge = (status: RentInstallmentStatus) => {
     if (status === 'PAID') return { label: 'Paid', className: 'paid', icon: <FaCheckCircle /> };
     if (status === 'OVERDUE') return { label: 'Overdue', className: 'overdue', icon: <FaExclamationTriangle /> };
@@ -60,19 +76,28 @@ const InstallmentsModal: React.FC<InstallmentsModalProps> = ({ contractId, contr
 
     const summary = useMemo(() => {
         if (!data) return null;
-        const totalRentDue = data.outstandingInstallments * data.rentAmount;
-        const lateFee = Math.max(data.overdueInstallments - 0, 0) * data.lateFeeAmount;
+        const statusList = data.items.map((item) => getDisplayStatus(item, data.now));
+        const payableCount = statusList.filter((status) => status === 'DUE' || status === 'OVERDUE').length;
+        const overdueCount = statusList.filter((status) => status === 'OVERDUE').length;
+        const totalRentDue = payableCount * data.rentAmount;
+        const lateFee = overdueCount * data.lateFeeAmount;
         return {
             totalRentDue,
             lateFee,
             netToPay: data.nextPayableTotal,
             credit: data.pendingLandlordCredit,
+            payableCount,
+            overdueCount,
         };
     }, [data]);
 
     const handlePayAll = async () => {
         if (!data || isPaying) return;
-        if (data.outstandingInstallments <= 0) {
+        const payableCount = data.items.filter((item) => {
+            const status = getDisplayStatus(item, data.now);
+            return status === 'DUE' || status === 'OVERDUE';
+        }).length;
+        if (payableCount <= 0) {
             setErrorMessage('All due installments are already paid.');
             return;
         }
@@ -82,7 +107,7 @@ const InstallmentsModal: React.FC<InstallmentsModalProps> = ({ contractId, contr
         }
 
         const confirmed = globalThis.confirm(
-            `Settle ${data.outstandingInstallments} installment(s) for ${formatMoney(data.nextPayableTotal)} from wallet?\n\nThis is processed atomically — if anything fails, no changes are saved.`
+            `Settle ${payableCount} installment(s) for ${formatMoney(data.nextPayableTotal)} from wallet?\n\nThis is processed atomically — if anything fails, no changes are saved.`
         );
         if (!confirmed) return;
 
@@ -187,7 +212,7 @@ const InstallmentsModal: React.FC<InstallmentsModalProps> = ({ contractId, contr
                                 </thead>
                                 <tbody>
                                     {data.items.map((item: RentInstallmentItem) => {
-                                        const badge = statusBadge(item.status);
+                                        const badge = statusBadge(getDisplayStatus(item, data.now));
                                         return (
                                             <tr key={item.index} className={`row-${badge.className}`}>
                                                 <td>{item.index + 1}</td>
@@ -208,15 +233,15 @@ const InstallmentsModal: React.FC<InstallmentsModalProps> = ({ contractId, contr
                             </table>
                         </div>
 
-                        {summary && data.outstandingInstallments > 0 && (
+                        {summary && summary.payableCount > 0 && (
                             <section className="installments-totals">
                                 <div className="installments-totals-row">
-                                    <span>Outstanding rent ({data.outstandingInstallments} months)</span>
+                                    <span>Outstanding rent ({summary.payableCount} months)</span>
                                     <strong>{formatMoney(summary.totalRentDue)}</strong>
                                 </div>
                                 {summary.lateFee > 0 && (
                                     <div className="installments-totals-row warn">
-                                        <span>Late fees ({data.overdueInstallments} overdue)</span>
+                                        <span>Late fees ({summary.overdueCount} overdue)</span>
                                         <strong>{formatMoney(summary.lateFee)}</strong>
                                     </div>
                                 )}
@@ -245,11 +270,11 @@ const InstallmentsModal: React.FC<InstallmentsModalProps> = ({ contractId, contr
                                 type="button"
                                 className="installments-btn primary"
                                 onClick={handlePayAll}
-                                disabled={isPaying || data.outstandingInstallments <= 0}
+                                disabled={isPaying || !summary || summary.payableCount <= 0}
                             >
                                 {isPaying
                                     ? 'Processing...'
-                                    : data.outstandingInstallments <= 0
+                                    : !summary || summary.payableCount <= 0
                                         ? 'No Outstanding Dues'
                                         : `Pay ${formatMoney(data.nextPayableTotal)} From Wallet`}
                             </button>
