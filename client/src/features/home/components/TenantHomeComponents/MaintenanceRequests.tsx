@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTools, FaHistory, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import type { LandlordContract } from '../../../../services/contract.service';
@@ -9,6 +10,7 @@ interface MaintenanceRequestsProps {
 }
 
 const MaintenanceRequests: React.FC<MaintenanceRequestsProps> = ({ contract }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const maintenanceResponsibilities = contract?.maintenanceResponsibilities ?? [];
@@ -20,13 +22,13 @@ const MaintenanceRequests: React.FC<MaintenanceRequestsProps> = ({ contract }) =
       <header className="maintenance-top-nav">
         <div className="section-title">
           <div className="title-icon-ring"><FaTools /></div>
-          <h3>Maintenance</h3>
+          <h3>{t('tenantHomeComponents.maintenance')}</h3>
         </div>
 
         <div className="maintenance-header-actions">
-          <span className="request-id-pill">No open requests</span>
+          <span className="request-id-pill">{t('tenantHomeComponents.noOpenRequests')}</span>
           <button className="btn-ghost-history" onClick={() => navigate('/maintenance-requests')}>
-            <FaHistory /> <span>History</span>
+            <FaHistory /> <span>{t('tenantHomeComponents.history')}</span>
           </button>
         </div>
       </header>
@@ -35,31 +37,31 @@ const MaintenanceRequests: React.FC<MaintenanceRequestsProps> = ({ contract }) =
         {hasResponsibilities ? (
           <div className="request-body">
             <div className="issue-details">
-              <h4 className="issue-subject">Lease Responsibilities</h4>
+              <h4 className="issue-subject">{t('tenantHomeComponents.leaseResponsibilities')}</h4>
               <div className="tech-eta-card" style={{ display: 'block' }}>
                 {topResponsibilities.map((responsibility) => (
                   <p key={responsibility.id} className="eta-text" style={{ marginBottom: '8px' }}>
                     <strong>{responsibility.area}:</strong>{' '}
-                    {responsibility.responsibleParty === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                    {responsibility.responsibleParty === 'LANDLORD' ? t('tenantHomeComponents.landlord') : t('tenantHomeComponents.tenant')}
                   </p>
                 ))}
               </div>
             </div>
 
             <div className="request-timeline">
-              <div className="status-badge-premium">Configured</div>
+              <div className="status-badge-premium">{t('tenantHomeComponents.configured')}</div>
             </div>
           </div>
         ) : (
           <div className="request-body">
             <div className="issue-details">
-              <h4 className="issue-subject">No maintenance items yet</h4>
+              <h4 className="issue-subject">{t('tenantHomeComponents.noMaintenanceItems')}</h4>
               <div className="tech-eta-card" style={{ display: 'block' }}>
-                <p className="eta-text">Once maintenance requests are available, they will appear here.</p>
+                <p className="eta-text">{t('tenantHomeComponents.maintenanceItemsAppearHere')}</p>
               </div>
             </div>
             <div className="request-timeline">
-              <div className="status-badge-premium">Clear</div>
+              <div className="status-badge-premium">{t('landlordHomeComponents.clear')}</div>
             </div>
           </div>
         )}
@@ -70,9 +72,9 @@ const MaintenanceRequests: React.FC<MaintenanceRequestsProps> = ({ contract }) =
           <div className="cta-icon-box">
             <FaTools className="floating-icon" />
           </div>
-          <h4>Need maintenance support?</h4>
+          <h4>{t('tenantHomeComponents.needMaintenanceSupport')}</h4>
           <button className="btn-new-request" onClick={() => navigate('/maintenance-requests')}>
-            <FaPlus /> <span>New Maintenance Request</span>
+            <FaPlus /> <span>{t('tenantHomeComponents.newMaintenanceRequest')}</span>
           </button>
         </div>
       </div>

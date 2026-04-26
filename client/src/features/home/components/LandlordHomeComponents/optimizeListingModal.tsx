@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   FiX, 
   FiCamera, 
@@ -16,6 +17,7 @@ interface OptimizeListingModalProps {
 }
 
 const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   return (
     <div className="olm-overlay animate-fade-in">
       <div className="olm-modal-container animate-slide-up">
@@ -23,8 +25,8 @@ const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) 
         {/* Header */}
         <div className="olm-header">
           <div>
-            <h2>Optimize Your Listing</h2>
-            <p>Improve your listing to attract more tenants and secure faster bookings.</p>
+            <h2>{t('landlordHomeComponents.optimizeYourListing')}</h2>
+            <p>{t('landlordHomeComponents.improveListingAttract')}</p>
           </div>
           <button className="olm-close-btn" onClick={onClose}>
             <FiX size={24} />
@@ -46,16 +48,16 @@ const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) 
               </svg>
               <div className="olm-score-text">
                 <span className="olm-percentage">70%</span>
-                <span className="olm-label">Score</span>
+                <span className="olm-label">{t('landlordHomeComponents.score')}</span>
               </div>
             </div>
             <div className="olm-score-breakdown">
-              <h3>Listing Score: 70%</h3>
-              <p>Almost there! Just a few tweaks to make your listing perfect.</p>
+              <h3>{t('landlordHomeComponents.listingScore')}: 70%</h3>
+              <p>{t('landlordHomeComponents.almostThere')}</p>
               <div className="olm-breakdown-list">
-                <span className="olm-status-item olm-success"><FiCheckCircle /> Photos</span>
-                <span className="olm-status-item olm-success"><FiCheckCircle /> Description</span>
-                <span className="olm-status-item olm-error"><FiXCircle /> Amenities</span>
+                <span className="olm-status-item olm-success"><FiCheckCircle /> {t('landlordHomeComponents.photos')}</span>
+                <span className="olm-status-item olm-success"><FiCheckCircle /> {t('landlordHomeComponents.description')}</span>
+                <span className="olm-status-item olm-error"><FiXCircle /> {t('landlordHomeComponents.amenities')}</span>
               </div>
             </div>
           </div>
@@ -67,11 +69,11 @@ const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) 
             <div className="olm-tip-card">
               <div className="olm-tip-header">
                 <div className="olm-icon-wrapper olm-bg-blue"><FiCamera /></div>
-                <h4>Photos Quality</h4>
+                <h4>{t('landlordHomeComponents.photosQuality')}</h4>
               </div>
               <ul className="olm-checklist">
-                <li><FiCheckCircle className="olm-check-icon" /> Add high-quality, bright images</li>
-                <li><FiCheckCircle className="olm-check-icon" /> Show all rooms (bedroom, kitchen, bath)</li>
+                <li><FiCheckCircle className="olm-check-icon" /> {t('landlordHomeComponents.addHighQualityBright')}</li>
+                <li><FiCheckCircle className="olm-check-icon" /> {t('landlordHomeComponents.showAllRooms')}</li>
               </ul>
               <div className="olm-progress-bar"><div className="olm-progress-fill olm-fill-100 olm-bg-blue"></div></div>
             </div>
@@ -80,11 +82,11 @@ const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) 
             <div className="olm-tip-card">
               <div className="olm-tip-header">
                 <div className="olm-icon-wrapper olm-bg-purple"><FiAlignLeft /></div>
-                <h4>Description Quality</h4>
+                <h4>{t('landlordHomeComponents.descriptionQuality')}</h4>
               </div>
               <ul className="olm-checklist">
-                <li><FiCheckCircle className="olm-check-icon" /> Write a clear, detailed description</li>
-                <li><FiCheckCircle className="olm-check-icon" /> Highlight key features (e.g., balcony)</li>
+                <li><FiCheckCircle className="olm-check-icon" /> {t('landlordHomeComponents.writeClearDetailed')}</li>
+                <li><FiCheckCircle className="olm-check-icon" /> {t('landlordHomeComponents.highlightKeyFeatures')}</li>
               </ul>
               <div className="olm-progress-bar"><div className="olm-progress-fill olm-fill-100 olm-bg-purple"></div></div>
             </div>
@@ -93,11 +95,11 @@ const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) 
             <div className="olm-tip-card">
               <div className="olm-tip-header">
                 <div className="olm-icon-wrapper olm-bg-green"><FiDollarSign /></div>
-                <h4>Pricing Strategy</h4>
+                <h4>{t('landlordHomeComponents.pricingStrategy')}</h4>
               </div>
               <ul className="olm-checklist">
-                <li><div className="olm-dot"></div> Set competitive pricing for your area</li>
-                <li><div className="olm-dot"></div> Compare with similar local properties</li>
+                <li><div className="olm-dot"></div> {t('landlordHomeComponents.setCompetitivePricingStrategy')}</li>
+                <li><div className="olm-dot"></div> {t('landlordHomeComponents.compareSimilarLocal')}</li>
               </ul>
               <div className="olm-progress-bar"><div className="olm-progress-fill olm-fill-50 olm-bg-green"></div></div>
             </div>
@@ -109,10 +111,10 @@ const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) 
         {/* CTA Footer */}
         <div className="olm-footer">
           <button className="olm-btn-secondary" onClick={onClose}>
-            <FiEdit3 /> Edit Property
+            <FiEdit3 /> {t('landlordHomeComponents.editProperty')}
           </button>
           <button className="olm-btn-primary" onClick={onClose}>
-            <FiTrendingUp /> Improve Now
+            <FiTrendingUp /> {t('landlordHomeComponents.improveNow')}
           </button>
         </div>
 
@@ -121,4 +123,4 @@ const OptimizeListingModal: React.FC<OptimizeListingModalProps> = ({ onClose }) 
   );
 };
 
-export default OptimizeListingModal;
+export default OptimizeListingModal;

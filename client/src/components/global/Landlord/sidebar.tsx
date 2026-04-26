@@ -7,22 +7,26 @@ import {
   FaInbox,
   FaSignature
 } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import './sidebar.css';
 import { authService } from '../../../services/auth.service';
 import { useMessagingUnreadDot } from '../../../hooks/useMessagingUnreadDot';
 import ConfirmModal from '../ConfirmModal';
 
+
 const Sidebar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [userName, setUserName] = useState('Guest');
-  const [userRole, setUserRole] = useState('Not signed in');
+  const [userName, setUserName] = useState(t('sidebar.loading'));
+  const [userRole, setUserRole] = useState(t('sidebar.loading'));
   const [avatarSrc, setAvatarSrc] = useState(
     'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=80'
   );
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const hasMessagingUnread = useMessagingUnreadDot();
+
 
   useEffect(() => {
     const load = () => {
@@ -30,12 +34,13 @@ const Sidebar = () => {
       if (cached) {
         const { profile, user } = cached;
         setUserName(`${profile.firstName} ${profile.lastName}`.trim() || user.email);
-        setUserRole(user.role === 'LANDLORD' ? 'Landlord' : 'Tenant');
+        setUserRole(user.role === 'LANDLORD' ? t('sidebar.landlord') : t('sidebar.tenant'));
         const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(
           `${profile.firstName} ${profile.lastName}`.trim() || 'User'
         )}&background=6366f1&color=fff&size=80`;
         setAvatarSrc(profile.avatarUrl || fallback);
       }
+
     };
 
     load();
@@ -66,19 +71,20 @@ const Sidebar = () => {
       {/* 2. Navigation */}
       <nav className="sidebar-nav">
         <ul>
-          <li><a href="/landlord-home" className={location.pathname === "/landlord-home" ? "active" : ""}><FaHome /> <span>Home</span></a></li>
-          <li><a href="/my-properties" className={location.pathname === "/my-properties" ? "active" : ""}><FaBuilding /> <span>My Properties</span></a></li>
-          <li><a href="/rental-requests" className={location.pathname === "/rental-requests" ? "active" : ""}><FaInbox /> <span>Rental Requests</span></a></li>
+          <li><a href="/landlord-home" className={location.pathname === "/landlord-home" ? "active" : ""}><FaHome /> <span>{t('sidebar.home')}</span></a></li>
+          <li><a href="/my-properties" className={location.pathname === "/my-properties" ? "active" : ""}><FaBuilding /> <span>{t('sidebar.myProperties')}</span></a></li>
+          <li><a href="/rental-requests" className={location.pathname === "/rental-requests" ? "active" : ""}><FaInbox /> <span>{t('sidebar.rentalRequests')}</span></a></li>
 
-          <div className="nav-divider">Management</div>
+          <div className="nav-divider">{t('sidebar.management')}</div>
 
-          <li><a href="/landlord-maintenance" className={location.pathname === "/landlord-maintenance" ? "active" : ""}><FaTools /> <span>Maintenance</span></a></li>
-          <li><a href="/landlord-payment" className={location.pathname === "/landlord-payment" ? "active" : ""}><FaCreditCard /> <span>Payments</span></a></li>
-          <li><a href="/landlord-contracts" className={location.pathname === "/landlord-contracts" ? "active" : ""}><FaSignature /> <span>Contracts</span></a></li>
-          <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">Messages {hasMessagingUnread ? <em className="notif-dot" aria-hidden /> : null}</span></a></li>
+          <li><a href="/landlord-maintenance" className={location.pathname === "/landlord-maintenance" ? "active" : ""}><FaTools /> <span>{t('sidebar.maintenance')}</span></a></li>
+          <li><a href="/landlord-payment" className={location.pathname === "/landlord-payment" ? "active" : ""}><FaCreditCard /> <span>{t('sidebar.payments')}</span></a></li>
+          <li><a href="/landlord-contracts" className={location.pathname === "/landlord-contracts" ? "active" : ""}><FaSignature /> <span>{t('sidebar.contracts')}</span></a></li>
+          <li><a href="/messages" className={location.pathname === "/messages" ? "active" : ""}><FaEnvelope /> <span className="badge-wrap">{t('sidebar.messages')} {hasMessagingUnread ? <em className="notif-dot" aria-hidden /> : null}</span></a></li>
 
         </ul>
       </nav>
+
 
       {/* 3. User Section */}
       <div className="sidebar-footer">
@@ -90,24 +96,26 @@ const Sidebar = () => {
             onError={() => setAvatarSrc(fallbackAvatar)}
           />
           <div className="user-text">
-            <p className="user-name">{userName || 'Loading…'}</p>
+            <p className="user-name">{userName}</p>
             <p className="user-role">{userRole}</p>
           </div>
         </div>
-        <button className="logout-btn" onClick={handleLogout} title="Sign out">
+        <button className="logout-btn" onClick={handleLogout} title={t('sidebar.signOut')}>
           <FaSignOutAlt />
         </button>
       </div>
 
+
       <ConfirmModal
         isOpen={showLogoutConfirm}
-        title="Sign out"
-        message="Are you sure you want to sign out?"
-        confirmText="Sign out"
-        cancelText="Cancel"
+        title={t('confirmModal.signOutTitle')}
+        message={t('confirmModal.signOutMessage')}
+        confirmText={t('confirmModal.confirm')}
+        cancelText={t('confirmModal.cancel')}
         onConfirm={confirmLogout}
         onCancel={() => setShowLogoutConfirm(false)}
       />
+
     </aside>
   );
 };

@@ -20,6 +20,10 @@
     overflow: hidden;
 }
 
+[dir="rtl"] .auth-split-wrapper {
+    flex-direction: row-reverse !important;
+}
+
 /* --- LEFT SIDE: HERO (66%) --- */
 .auth-hero-side {
     flex: 2.5; /* 66.6% of the width */

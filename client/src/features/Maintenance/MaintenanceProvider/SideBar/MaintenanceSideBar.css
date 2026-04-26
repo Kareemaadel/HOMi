@@ -185,3 +185,16 @@
 .sidebar-nav:hover::-webkit-scrollbar-thumb {
     background-color: #d1d5db;
 }
+
+/* RTL Support - Keep Sidebar on the Left */
+[dir="rtl"] .sidebar {
+    left: 0 !important;
+    right: auto !important;
+    border-right: 1px solid var(--border-color, #e5e7eb) !important;
+    border-left: none !important;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02) !important;
+}
+
+[dir="rtl"] .sidebar-nav li a:hover {
+    transform: translateX(4px);
+}

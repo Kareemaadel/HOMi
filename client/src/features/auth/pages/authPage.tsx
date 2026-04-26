@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SignIn from '../components/signin.tsx';
 import SignUp from '../components/signup.tsx';
 import { GoogleLoginBtn } from '../components/GoogleLoginBtn.tsx';
@@ -8,6 +9,7 @@ import './authPage.css';
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
   /** Shared for email sign-in and Google — single checkbox lives on the Sign In form. */
   const [rememberMe, setRememberMe] = useState(false);
@@ -50,7 +52,7 @@ const AuthPage = () => {
   if (!sessionResolved) {
     return (
       <div className="auth-split-wrapper" style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--auth-text-muted)', fontSize: 15 }}>Loading…</p>
+        <p style={{ color: 'var(--auth-text-muted)', fontSize: 15 }}>{t('auth.loading')}</p>
       </div>
     );
   }
@@ -64,9 +66,9 @@ const AuthPage = () => {
           className="hero-img-full"
         />
         <div className="hero-text-overlay">
-          <div className="glass-badge">Premium Living</div>
-          <h2>Discover the art of <br /><span>Modern Living.</span></h2>
-          <p>The most exclusive properties at your fingertips.</p>
+          <div className="glass-badge">{t('auth.premiumLiving')}</div>
+          <h2>{t('auth.discoverArt')} <br /><span>{t('auth.modernLiving')}</span></h2>
+          <p>{t('auth.exclusiveProperties')}</p>
         </div>
       </div>
 
@@ -74,8 +76,8 @@ const AuthPage = () => {
         <div className="auth-content-container">
           <header className="auth-brand-header">
             <img src="/logo.png" alt="Logo" className="auth-main-logo" />
-            <h1>{activeTab === "signin" ? "Welcome back" : "Get started"}</h1>
-            <p>Please enter your details to continue</p>
+            <h1>{activeTab === "signin" ? t('auth.welcomeBack') : t('auth.getStarted')}</h1>
+            <p>{t('auth.enterDetails')}</p>
           </header>
 
           <div className="social-auth-grid">
@@ -83,7 +85,7 @@ const AuthPage = () => {
           </div>
 
           <div className="auth-ui-divider">
-            <span>or email</span>
+            <span>{t('auth.orEmail')}</span>
           </div>
 
           <div className="tab-switcher">
@@ -92,13 +94,13 @@ const AuthPage = () => {
               className={activeTab === "signin" ? "active" : ""} 
               onClick={() => setActiveTab("signin")}
             >
-              Sign In
+              {t('auth.signIn')}
             </button>
             <button 
               className={activeTab === "signup" ? "active" : ""} 
               onClick={() => setActiveTab("signup")}
             >
-              Sign Up
+              {t('auth.signUp')}
             </button>
           </div>
 

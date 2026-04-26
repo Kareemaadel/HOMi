@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import confetti from 'canvas-confetti';
 import { 
   FaTimes, FaBed, FaBath, FaParking, FaImage, 
@@ -43,6 +44,7 @@ interface AddPropertyModalProps {
 }
 
 const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) => {
+  const { t } = useTranslation();
   const map = useMap();
   useEffect(() => {
     // @ts-expect-error — leaflet-control-geocoder augments L.Control at runtime
@@ -51,7 +53,7 @@ const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng
     const control = L.Control.geocoder({
       geocoder,
       defaultMarkGeocode: false,
-      placeholder: "Search in Egypt...",
+      placeholder: t('rentalRequests.searchPlaceholder', { defaultValue: "Search in Egypt..." }),
     })
       .on('markgeocode', (e: { geocode: { center: L.LatLng } }) => {
         const { center } = e.geocode;
@@ -59,12 +61,12 @@ const SearchField = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng
           map.setView(center, 16);
           onLocationSelect(center.lat, center.lng);
         } else {
-          alert("Please select a location within Egypt.");
+          alert(t('landlordHomeComponents.egyptOnly', { defaultValue: "Please select a location within Egypt." }));
         }
       })
       .addTo(map);
     return () => { map.removeControl(control); };
-  }, [map, onLocationSelect]);
+  }, [map, onLocationSelect, t]);
   return null;
 };
 
@@ -95,6 +97,7 @@ const MapEventsHandler = ({ position, onLocationSelect }: { position: { lat: num
 };
 
 const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onPropertyAdded }) => {
+  const { t } = useTranslation();
   const cachedUser = authService.getCurrentUser();
 
   const isCachedFullyVerified = Boolean(
@@ -138,16 +141,16 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
 
   // Maintenance State
   const [maintenance, setMaintenance] = useState<Record<string, 'landlord' | 'tenant'>>({
-    "Structural Repairs": 'landlord',
-    "Interior Appliances": 'tenant',
-    "Utility Bills": 'tenant',
-    "Plumbing": 'landlord',
-    "Electrical": 'landlord',
-    "HVAC/Air": 'landlord',
-    "Pest Control": 'tenant',
-    "Exterior Maintenance": 'landlord',
-    "Common Areas": 'landlord',
-    "Security Systems": 'landlord',
+    "structural": 'landlord',
+    "appliances": 'tenant',
+    "utilities": 'tenant',
+    "plumbing": 'landlord',
+    "electrical": 'landlord',
+    "hvac": 'landlord',
+    "pest": 'tenant',
+    "exterior": 'landlord',
+    "common": 'landlord',
+    "security": 'landlord',
   });
 
   const amenitiesList = [
@@ -204,21 +207,21 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
 
   const getStepValidationError = (currentStep: number): string | null => {
     if (currentStep === 1) {
-      if (!title.trim()) return 'Please enter a property title before continuing.';
+      if (!title.trim()) return t('landlordHomeComponents.titleRequired', { defaultValue: 'Please enter a property title before continuing.' });
 
       const parsedMonthlyPrice = Number(monthlyPrice);
       const parsedSecurityDeposit = Number(securityDeposit);
 
       if (!monthlyPrice || Number.isNaN(parsedMonthlyPrice) || parsedMonthlyPrice <= 0) {
-        return 'Please enter a valid monthly price greater than 0.';
+        return t('landlordHomeComponents.priceInvalid', { defaultValue: 'Please enter a valid monthly price greater than 0.' });
       }
 
       if (!securityDeposit || Number.isNaN(parsedSecurityDeposit) || parsedSecurityDeposit < 0) {
-        return 'Please enter a valid security deposit.';
+        return t('landlordHomeComponents.depositInvalid', { defaultValue: 'Please enter a valid security deposit.' });
       }
 
       if (!availabilityDate) {
-        return 'Please select an availability date before continuing.';
+        return t('landlordHomeComponents.dateRequired', { defaultValue: 'Please select an availability date before continuing.' });
       }
     }
 
@@ -228,33 +231,33 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
       const parsedSqft = Number(sqft);
 
       if (!beds || Number.isNaN(parsedBeds) || parsedBeds <= 0) {
-        return 'Please enter a valid number of bedrooms.';
+        return t('landlordHomeComponents.bedsRequired', { defaultValue: 'Please enter a valid number of bedrooms.' });
       }
 
       if (!baths || Number.isNaN(parsedBaths) || parsedBaths <= 0) {
-        return 'Please enter a valid number of bathrooms.';
+        return t('landlordHomeComponents.bathsRequired', { defaultValue: 'Please enter a valid number of bathrooms.' });
       }
 
       if (!sqft || Number.isNaN(parsedSqft) || parsedSqft <= 0) {
-        return 'Please enter a valid property area in sqft.';
+        return t('landlordHomeComponents.areaRequired', { defaultValue: 'Please enter a valid property area in sqft.' });
       }
 
       if (uploadedImages.length === 0) {
-        return 'Please upload at least one property photo before continuing.';
+        return t('landlordHomeComponents.photosRequired', { defaultValue: 'Please upload at least one property photo before continuing.' });
       }
 
       if (uploadedDocuments.length === 0) {
-        return 'Please upload at least one legal ownership document before continuing.';
+        return t('landlordHomeComponents.docsRequired', { defaultValue: 'Please upload at least one legal ownership document before continuing.' });
       }
     }
 
     if (currentStep === 3) {
-      if (!position) return 'Please choose a map location before continuing.';
-      if (!city.trim()) return 'Please enter the city before continuing.';
-      if (!area.trim()) return 'Please enter the area/neighborhood before continuing.';
-      if (!streetName.trim()) return 'Please enter the street name before continuing.';
-      if (!buildingNumber.trim()) return 'Please enter the building number before continuing.';
-      if (!unitApt.trim()) return 'Please enter the unit/apartment before continuing.';
+      if (!position) return t('landlordHomeComponents.locationRequired', { defaultValue: 'Please choose a map location before continuing.' });
+      if (!city.trim()) return t('landlordHomeComponents.cityRequired', { defaultValue: 'Please enter the city before continuing.' });
+      if (!area.trim()) return t('landlordHomeComponents.areaReq', { defaultValue: 'Please enter the area/neighborhood before continuing.' });
+      if (!streetName.trim()) return t('landlordHomeComponents.streetRequired', { defaultValue: 'Please enter the street name before continuing.' });
+      if (!buildingNumber.trim()) return t('landlordHomeComponents.bldgRequired', { defaultValue: 'Please enter the building number before continuing.' });
+      if (!unitApt.trim()) return t('landlordHomeComponents.unitRequired', { defaultValue: 'Please enter the unit/apartment before continuing.' });
     }
 
     return null;
@@ -349,7 +352,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     setLocationError(null);
 
     if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser.');
+      setLocationError(t('landlordHomeComponents.geoNotSupported', { defaultValue: 'Geolocation is not supported by your browser.' }));
       return;
     }
 
@@ -360,7 +363,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
 
         if (!EGYPT_BOUNDS.contains(L.latLng(latitude, longitude))) {
           setIsLocating(false);
-          setLocationError('Current location appears to be outside Egypt. Please pin manually.');
+          setLocationError(t('landlordHomeComponents.outsideEgypt', { defaultValue: 'Current location appears to be outside Egypt. Please pin manually.' }));
           return;
         }
 
@@ -371,11 +374,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
       (error) => {
         setIsLocating(false);
         if (error.code === error.PERMISSION_DENIED) {
-          setLocationError('Location permission was denied. Please allow it and try again.');
+          setLocationError(t('landlordHomeComponents.geoDenied', { defaultValue: 'Location permission was denied. Please allow it and try again.' }));
           return;
         }
 
-        setLocationError('Could not get your current location. Please try again.');
+        setLocationError(t('landlordHomeComponents.geoFailed', { defaultValue: 'Could not get your current location. Please try again.' }));
       },
       {
         enableHighAccuracy: true,
@@ -401,22 +404,22 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     setSubmitError(null);
 
     if (uploadedImages.length === 0) {
-      alert('Please upload at least one property image from your device.');
+      alert(t('landlordHomeComponents.photosRequired'));
       return;
     }
 
     if (uploadedDocuments.length === 0) {
-      alert('Please upload at least one legal ownership document.');
+      alert(t('landlordHomeComponents.docsRequired'));
       return;
     }
 
     if (!title.trim() || !aboutProperty.trim()) {
-      setSubmitError('Please provide both property title and description.');
+      setSubmitError(t('landlordHomeComponents.titleDescRequired', { defaultValue: 'Please provide both property title and description.' }));
       return;
     }
 
     if (!position || !city.trim() || !area.trim() || !streetName.trim() || !buildingNumber.trim() || !unitApt.trim()) {
-      setSubmitError('Please complete location details and pin the map location.');
+      setSubmitError(t('landlordHomeComponents.locationIncomplete', { defaultValue: 'Please complete location details and pin the map location.' }));
       return;
     }
 
@@ -434,7 +437,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
       Number.isNaN(parsedBaths) ||
       Number.isNaN(parsedSqft)
     ) {
-      setSubmitError('Please enter valid numeric values for price, deposit, bedrooms, bathrooms, and area.');
+      setSubmitError(t('landlordHomeComponents.numericError', { defaultValue: 'Please enter valid numeric values for price, deposit, bedrooms, bathrooms, and area.' }));
       return;
     }
 
@@ -488,7 +491,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
     } catch (error: unknown) {
       setLoading(false);
       const ex = error as { response?: { data?: { message?: string } } };
-      setSubmitError(ex.response?.data?.message || 'Failed to publish property. Please try again.');
+      setSubmitError(ex.response?.data?.message || t('myProperties.errors.saveFailed'));
     }
   };
 
@@ -524,21 +527,21 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
   };
 
   return (
-    <div className="property-modal-overlay" onClick={onClose}>
+    <div className="property-modal-overlay" onClick={onClose} dir="ltr">
       <div className={`property-modal-container ${isSuccess ? 'success-mode' : ''} ${step === 4 ? 'wide-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
         {!isSuccess ? (
           <>
             <div className="property-modal-header">
               <div className="header-titles">
-                <h2>List New Property</h2>
-                <p>Step {step} of 4: {
-                  step === 1 ? "Basic Details" : 
-                  step === 2 ? "Specifications" : 
-                  step === 3 ? "Location Details" : "Responsibility & Finalize"
+                <h2>{t('landlordHomeComponents.listNewProperty', { defaultValue: 'List New Property' })}</h2>
+                <p>{t('landlordHome.step')} {step} {t('guestHome.of')} 4: {
+                  step === 1 ? t('myProperties.tabs.general') : 
+                  step === 2 ? t('myProperties.tabs.media') : 
+                  step === 3 ? t('myProperties.labels.locationDetails') : t('myProperties.tabs.maintenance')
                 }</p>
               </div>
               <button className="example-fill-btn" onClick={loadExampleProperty}>
-                Load Example Property
+                {t('landlordHomeComponents.loadExample', { defaultValue: 'Load Example Property' })}
               </button>
               <button className="close-btn" onClick={onClose}><FaTimes /></button>
             </div>
@@ -550,7 +553,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
             {showVerificationWarning && (
               <div className="verification-warning-banner" role="alert" aria-live="polite">
                 <FaExclamationTriangle className="verification-warning-icon" aria-hidden="true" />
-                <span>Your account must be verified before adding a property.</span>
+                <span>{t('landlordHomeComponents.verificationRequired', { defaultValue: 'Your account must be verified before adding a property.' })}</span>
               </div>
             )}
 
@@ -564,39 +567,39 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
               {step === 1 && (
                 <div className="step-view animate-fade-in">
                   <div className="field-group">
-                    <label>Property Title</label>
+                    <label>{t('myProperties.labels.marketingTitle')}</label>
                     <input type="text" placeholder="e.g. Modern Sunset Loft" className="premium-input" value={title} onChange={(e) => setTitle(e.target.value)} />
                   </div>
                   <div className="form-row">
                     <div className="field-group">
-                      <label>Type</label>
+                      <label>{t('guestHome.propertyType')}</label>
                       <select className="premium-select" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
-                        <option value="Apartment">Apartment</option>
-                        <option value="Villa">Villa</option>
-                        <option value="Student Room">Student Room</option>
+                        <option value="Apartment">{t('guestHome.apartments')}</option>
+                        <option value="Villa">{t('guestHome.villas')}</option>
+                        <option value="Student Room">{t('guestHome.sharedRooms')}</option>
                       </select>
                     </div>
                     <div className="field-group">
-                      <label><FaChair /> Furnishing</label>
+                      <label><FaChair /> {t('guestHome.furnishing')}</label>
                       <select className="premium-select" value={furnishing} onChange={(e) => setFurnishing(e.target.value)}>
-                        <option value="Fully Furnished">Fully Furnished</option>
-                        <option value="Semi-Furnished">Semi-Furnished</option>
-                        <option value="Unfurnished">Unfurnished</option>
+                        <option value="Fully Furnished">{t('tenantHomeComponents.fullyFurnished')}</option>
+                        <option value="Semi-Furnished">{t('tenantHomeComponents.semiFurnished')}</option>
+                        <option value="Unfurnished">{t('myProperties.unfurnished')}</option>
                       </select>
                     </div>
                   </div>
                   <div className="form-row">
                     <div className="field-group">
-                      <label>Monthly Price ($)</label>
+                      <label>{t('myProperties.labels.monthlyRent')} ($)</label>
                       <input type="number" placeholder="2400" className="premium-input" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} />
                     </div>
                     <div className="field-group">
-                      <label><FaShieldAlt /> Security Deposit ($)</label>
+                      <label><FaShieldAlt /> {t('myProperties.labels.securityDeposit')} ($)</label>
                       <input type="number" placeholder="1000" className="premium-input" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
                     </div>
                   </div>
                   <div className="field-group">
-                    <label><FaCalendarAlt /> Availability Date</label>
+                    <label><FaCalendarAlt /> {t('rentalRequests.labels.moveIn')}</label>
                     <input type="date" className="premium-input" value={availabilityDate} onChange={(e) => setAvailabilityDate(e.target.value)} />
                   </div>
                 </div>
@@ -605,14 +608,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
               {step === 2 && (
                 <div className="step-view animate-fade-in">
                   <div className="specs-grid">
-                    <div className="spec-item"><FaBed /><input type="number" placeholder="Beds" value={beds} onChange={(e) => setBeds(e.target.value)} /></div>
-                    <div className="spec-item"><FaBath /><input type="number" placeholder="Baths" value={baths} onChange={(e) => setBaths(e.target.value)} /></div>
-                    <div className="spec-item"><FaLayerGroup /><input type="number" placeholder="Floor" value={floor} onChange={(e) => setFloor(e.target.value)} /></div>
-                    <div className="spec-item"><FaParking /><input type="number" placeholder="Parking" value={parking} onChange={(e) => setParking(e.target.value)} /></div>
-                    <div className="spec-item"><span className="sqft-label">Sqft</span><input type="number" placeholder="Area" value={sqft} onChange={(e) => setSqft(e.target.value)} /></div>
+                    <div className="spec-item"><FaBed /><input type="number" placeholder={t('myProperties.beds')} value={beds} onChange={(e) => setBeds(e.target.value)} /></div>
+                    <div className="spec-item"><FaBath /><input type="number" placeholder={t('myProperties.baths')} value={baths} onChange={(e) => setBaths(e.target.value)} /></div>
+                    <div className="spec-item"><FaLayerGroup /><input type="number" placeholder={t('landlordHome.step')} value={floor} onChange={(e) => setFloor(e.target.value)} /></div>
+                    <div className="spec-item"><FaParking /><input type="number" placeholder={t('landlordHomeComponents.amenities')} value={parking} onChange={(e) => setParking(e.target.value)} /></div>
+                    <div className="spec-item"><span className="sqft-label">{t('myProperties.sqft')}</span><input type="number" placeholder={t('guestHome.area')} value={sqft} onChange={(e) => setSqft(e.target.value)} /></div>
                   </div>
                   <div className="photo-upload-section">
-                    <label><FaImage /> Property Photos</label>
+                    <label><FaImage /> {t('myProperties.labels.propertyGallery')}</label>
                     <div className="upload-grid">
                       <input
                         ref={fileInputRef}
@@ -624,7 +627,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                       />
                       <button type="button" className="upload-placeholder" onClick={handleUploadClick}>
                         <FaCloudUploadAlt />
-                        <span>Upload</span>
+                        <span>{t('myProperties.labels.uploadNew')}</span>
                       </button>
                       {uploadedImages.map((img, index) => (
                         <div key={`property-img-${index}`} className="upload-attachment-tile">
@@ -649,9 +652,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
 
                   {/* Legal Ownership Documents Upload */}
                   <div className="photo-upload-section" style={{ marginTop: '20px' }}>
-                    <label><FaShieldAlt /> Legal Ownership Documents</label>
+                    <label><FaShieldAlt /> {t('landlordHomeComponents.ownershipDocs', { defaultValue: 'Legal Ownership Documents' })}</label>
                     <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                        Upload files (PDFs/Images) proving your ownership. These are required for Admin verification.
+                        {t('landlordHomeComponents.docsInstruction', { defaultValue: 'Upload files (PDFs/Images) proving your ownership. These are required for Admin verification.' })}
                     </p>
                     <div className="upload-grid">
                       <input
@@ -664,7 +667,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                       />
                       <button type="button" className="upload-placeholder" onClick={handleDocUploadClick}>
                         <FaCloudUploadAlt />
-                        <span>Upload Docs</span>
+                        <span>{t('myProperties.labels.uploadNew')} Docs</span>
                       </button>
                       {uploadedDocuments.map((doc, index) => (
                         <div key={`ownership-doc-${index}`} className="upload-attachment-tile">
@@ -700,17 +703,17 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                         <FaMapMarkedAlt size={40} />
                         {position ? (
                           <div className="coord-badge">
-                            Location Set: {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
+                            {t('landlordHomeComponents.locationSet', { defaultValue: 'Location Set' })}: {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
                           </div>
                         ) : (
-                          <p>Pinpoint the location in Egypt</p>
+                          <p>{t('landlordHomeComponents.pinpoint', { defaultValue: 'Pinpoint the location in Egypt' })}</p>
                         )}
                         <div className="map-quick-actions">
                           <button className="map-trigger-btn" onClick={() => setIsMapActive(true)}>
-                            {position ? "Change Location" : "Open Interactive Map"}
+                            {position ? t('landlordHomeComponents.changeLocation', { defaultValue: "Change Location" }) : t('landlordHomeComponents.openMap', { defaultValue: "Open Interactive Map" })}
                           </button>
                           <button className="current-location-btn" onClick={handleUseCurrentLocation} disabled={isLocating}>
-                            {isLocating ? 'Locating...' : 'Use Current Location'}
+                            {isLocating ? t('auth.loading') : t('landlordHomeComponents.useCurrentLoc', { defaultValue: 'Use Current Location' })}
                           </button>
                         </div>
                         {locationError && <p className="location-error-text">{locationError}</p>}
@@ -730,9 +733,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                         </MapContainer>
                         <div className="map-action-bar">
                           <button className="current-location-btn" onClick={handleUseCurrentLocation} disabled={isLocating}>
-                            {isLocating ? 'Locating...' : 'Use Current Location'}
+                            {isLocating ? t('auth.loading') : t('landlordHomeComponents.useCurrentLoc', { defaultValue: 'Use Current Location' })}
                           </button>
-                          <button className="confirm-map-btn" onClick={() => setIsMapActive(false)}>Confirm Location</button>
+                          <button className="confirm-map-btn" onClick={() => setIsMapActive(false)}>{t('confirmModal.confirm')}</button>
                         </div>
                       </div>
                     )}
@@ -741,28 +744,28 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
 
                   <div className="address-grid-structured">
                     <div className="field-group">
-                      <label><FaCity /> City</label>
+                      <label><FaCity /> {t('landlordHomeComponents.city', { defaultValue: 'City' })}</label>
                       <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Cairo" className="premium-input" />
                     </div>
                     <div className="field-group">
-                      <label><FaMapMarkerAlt /> Area / Neighborhood</label>
+                      <label><FaMapMarkerAlt /> {t('guestHome.area')}</label>
                       <input type="text" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Maadi" className="premium-input" />
                     </div>
                     <div className="field-group">
-                      <label>Street Name</label>
+                      <label>{t('landlordHomeComponents.street', { defaultValue: 'Street Name' })}</label>
                       <input type="text" placeholder="Street 9" className="premium-input" value={streetName} onChange={(e) => setStreetName(e.target.value)} />
                     </div>
                     <div className="form-row-triple">
                         <div className="field-group">
-                            <label><FaBuilding /> Bldg #</label>
+                            <label><FaBuilding /> {t('landlordHomeComponents.bldgNumber', { defaultValue: 'Bldg #' })}</label>
                             <input type="text" placeholder="102" className="premium-input" value={buildingNumber} onChange={(e) => setBuildingNumber(e.target.value)} />
                         </div>
                         <div className="field-group">
-                            <label>Floor</label>
+                            <label>{t('landlordHome.step')}</label>
                             <input type="text" placeholder="12" className="premium-input" value={floor} onChange={(e) => setFloor(e.target.value)} />
                         </div>
                         <div className="field-group">
-                            <label>Unit/Apt</label>
+                            <label>{t('rentalRequests.card.unit', { defaultValue: 'Unit/Apt' })}</label>
                             <input type="text" placeholder="4B" className="premium-input" value={unitApt} onChange={(e) => setUnitApt(e.target.value)} />
                         </div>
                     </div>
@@ -776,16 +779,16 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                     <div className="section-header-flex">
                       <FaTools className="header-icon" />
                       <div>
-                        <label className="section-subtitle">Maintenance Responsibilities</label>
-                        <p className="section-desc">Who handles these tasks?</p>
-                        <p className="maintenance-legend">L = Landlord, T = Tenant</p>
+                        <label className="section-subtitle">{t('myProperties.tabs.maintenance')}</label>
+                        <p className="section-desc">{t('myProperties.labels.maintenanceInstruction')}</p>
+                        <p className="maintenance-legend">L = {t('tenantHomeComponents.landlord')}, T = {t('tenantHomeComponents.tenant')}</p>
                       </div>
                     </div>
                     
                     <div className="maintenance-grid">
                       {Object.entries(maintenance).map(([type, assigned]) => (
                         <div key={type} className="maintenance-card">
-                          <span className="m-title">{type}</span>
+                          <span className="m-title">{t(`myProperties.maintenanceTypes.${type}`)}</span>
                           <div className="m-toggle-group">
                             <button 
                               className={`m-btn ${assigned === 'landlord' ? 'active landlord' : ''}`}
@@ -805,39 +808,44 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                     </div>
                   </div>
 
-                  <div className="final-details-box">
+                  <div className="details-box">
                     <div className="field-group">
-                      <label>About Property</label>
-                      <textarea placeholder="Describe the atmosphere..." className="premium-textarea" rows={3} value={aboutProperty} onChange={(e) => setAboutProperty(e.target.value)}></textarea>
+                      <label>{t('landlordHomeComponents.aboutProperty', { defaultValue: 'About Property' })}</label>
+                      <textarea 
+                        className="premium-textarea" 
+                        placeholder={t('landlordHomeComponents.aboutPlaceholder', { defaultValue: 'Describe what makes your property special...' })} 
+                        value={aboutProperty} 
+                        onChange={(e) => setAboutProperty(e.target.value)}
+                      />
                     </div>
-                    <div className="dual-grid-section">
-                      <div className="grid-col">
-                        <label className="section-subtitle">Amenities</label>
-                        <div className="chip-container">
-                          {amenitiesList.map(item => (
-                            <label key={item} className="amenity-chip mini">
-                              <input
-                                type="checkbox"
-                                checked={selectedAmenities.includes(item)}
-                                onChange={() => toggleChip(item, selectedAmenities, setSelectedAmenities)}
-                              /> <span>{item}</span>
-                            </label>
-                          ))}
-                        </div>
+
+                    <div className="chips-section">
+                      <label>{t('myProperties.labels.coreAmenities')}</label>
+                      <div className="chips-grid">
+                        {amenitiesList.map(item => (
+                          <button 
+                            key={item} 
+                            className={`chip ${selectedAmenities.includes(item) ? 'active' : ''}`}
+                            onClick={() => toggleChip(item, selectedAmenities, setSelectedAmenities)}
+                          >
+                            {item}
+                          </button>
+                        ))}
                       </div>
-                      <div className="grid-col">
-                        <label className="section-subtitle">House Rules</label>
-                        <div className="chip-container">
-                          {houseRules.map(rule => (
-                            <label key={rule} className="amenity-chip mini rule">
-                              <input
-                                type="checkbox"
-                                checked={selectedHouseRules.includes(rule)}
-                                onChange={() => toggleChip(rule, selectedHouseRules, setSelectedHouseRules)}
-                              /> <span>{rule}</span>
-                            </label>
-                          ))}
-                        </div>
+                    </div>
+
+                    <div className="chips-section">
+                      <label>{t('myProperties.labels.houseRules')}</label>
+                      <div className="chips-grid">
+                        {houseRules.map(item => (
+                          <button 
+                            key={item} 
+                            className={`chip ${selectedHouseRules.includes(item) ? 'active' : ''}`}
+                            onClick={() => toggleChip(item, selectedHouseRules, setSelectedHouseRules)}
+                          >
+                            {item}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -846,39 +854,43 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
             </div>
 
             <div className="property-modal-footer">
-              {step > 1 ? (
-                <button className="btn-secondary" onClick={prevStep}><FaChevronLeft /> Back</button>
-              ) : <div />}
+              {step > 1 && (
+                <button className="footer-nav-btn prev" onClick={prevStep}>
+                  <FaChevronLeft /> {t('common.back')}
+                </button>
+              )}
               {step < 4 ? (
-                <button className="btn-primary" onClick={nextStep}>Continue <FaChevronRight /></button>
+                <button className="footer-nav-btn next" onClick={nextStep}>
+                  {t('common.next')} <FaChevronRight />
+                </button>
               ) : (
-                <button className="btn-success" onClick={handlePublish} disabled={loading}>
-                  {loading ? <div className="spinner"></div> : <>Publish Property <FaRocket /></>}
+                <button className="publish-final-btn" onClick={handlePublish} disabled={loading}>
+                  {loading ? <div className="spinner-mini"></div> : <><FaRocket /> {t('landlordHomeComponents.publishListing', { defaultValue: 'Publish Listing' })}</>}
                 </button>
               )}
             </div>
           </>
         ) : (
-          <div className="success-animation-view">
-              <div className="checkmark-wrapper">
-                <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                  <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                  <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                </svg>
-              </div>
-              <div className="success-text-content">
-                <h2>Pending Approval</h2>
-                <p>Your property has been submitted and is waiting for admin review.</p>
-                <button
-                  className="final-close-btn"
-                  onClick={() => {
-                    onPropertyAdded?.();
-                    onClose();
-                  }}
-                >
-                  Done
-                </button>
-              </div>
+          <div className="success-state animate-fade-in">
+            <div className="checkmark-wrapper">
+              <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>
+            </div>
+            <div className="success-text-content">
+              <h2>{t('landlordHomeComponents.pendingApproval', { defaultValue: 'Pending Approval' })}</h2>
+              <p>{t('landlordHomeComponents.successDesc')}</p>
+              <button
+                className="final-close-btn"
+                onClick={() => {
+                  onPropertyAdded?.();
+                  onClose();
+                }}
+              >
+                {t('landlordHomeComponents.viewPortfolio')}
+              </button>
+            </div>
           </div>
         )}
       </div>

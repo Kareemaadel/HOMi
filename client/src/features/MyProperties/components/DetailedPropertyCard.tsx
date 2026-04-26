@@ -1,9 +1,10 @@
 // client\src\features\MyProperties\components\DetailedPropertyCard.tsx
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, 
-  FaUserCircle, FaCalendarAlt, FaTools, FaEllipsisH 
+import { useTranslation } from 'react-i18next';
+import {
+  FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined,
+  FaUserCircle, FaCalendarAlt, FaTools, FaEllipsisH
 } from 'react-icons/fa';
 import ManagePropertyModal from './ManagePropertyModal'; // Import the new modal
 import './DetailedPropertyCard.css';
@@ -28,27 +29,35 @@ export type LandlordPropertyRow = {
 };
 
 const DetailedPropertyCard = ({ property }: { property: LandlordPropertyRow }) => {
+  const { t } = useTranslation();
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const status = String(property?.status || '').toLowerCase();
   const isManageLocked = status === 'pending_approval' || status === 'rejected';
+
+  // Status translation helper
+  const getStatusLabel = (status: string) => {
+    const key = status === 'draft' ? 'maintenance' : status;
+    return t(`myProperties.status.${key}`, { defaultValue: status });
+  };
+
   const manageLockMessage =
     status === 'pending_approval'
-      ? 'Locked while pending admin approval'
+      ? t('myProperties.lockedPendingApproval')
       : status === 'rejected'
-        ? 'Locked because listing is rejected'
+        ? t('myProperties.lockedRejected')
         : '';
 
   return (
     <>
       <div className="detailed-card">
         <div className="detailed-image-section">
-            <img src={property.images && property.images.length > 0 ? (property.images[0].image_url || property.images[0].imageUrl) : "/rentblue.jpg"} alt={property.name} />
+          <img src={property.images && property.images.length > 0 ? (property.images[0].image_url || property.images[0].imageUrl) : "/rentblue.jpg"} alt={property.name} />
           <div className="image-overlay-tags">
             <span className={`detailed-badge ${property.status}`}>
-              {property.status === 'draft' ? 'maintenance' : property.status}
+              {getStatusLabel(property.status)}
             </span>
             {property.status === 'draft' && (
-              <span className="maintenance-tag"><FaTools /> Maintenance</span>
+              <span className="maintenance-tag"><FaTools /> {t('myProperties.status.maintenance')}</span>
             )}
           </div>
         </div>
@@ -63,15 +72,15 @@ const DetailedPropertyCard = ({ property }: { property: LandlordPropertyRow }) =
           </div>
 
           <div className="detailed-specs">
-            <span><FaBed /> <strong>{property.beds}</strong> Beds</span>
-            <span><FaBath /> <strong>{property.baths}</strong> Baths</span>
-            <span><FaRulerCombined /> <strong>{property.sqft}</strong> sqft</span>
+            <span><FaBed /> <strong>{property.beds}</strong> {t('myProperties.beds')}</span>
+            <span><FaBath /> <strong>{property.baths}</strong> {t('myProperties.baths')}</span>
+            <span><FaRulerCombined /> <strong>{property.sqft}</strong> {t('myProperties.sqft')}</span>
           </div>
 
           <div className="occupancy-container">
             <div className="occupancy-header">
-              <label>Portfolio Performance</label>
-              <span>{property.occupancyRate}% Occupancy</span>
+              <label>{t('landlordHomeComponents.propertyAnalytics')}</label>
+              <span>{property.occupancyRate}% {t('myProperties.occupancy')}</span>
             </div>
             <div className="occupancy-bar">
               <div className="occupancy-fill" style={{ width: `${property.occupancyRate}%` }}></div>
@@ -82,14 +91,14 @@ const DetailedPropertyCard = ({ property }: { property: LandlordPropertyRow }) =
             <div className="info-group">
               <FaUserCircle className="icon" />
               <div>
-                <label>Current Tenant</label>
-                <p>{property.tenantName || 'Unoccupied'}</p>
+                <label>{t('landlordHomeComponents.currentTenant')}</label>
+                <p>{property.tenantName || t('landlordHome.noCurrentTenant')}</p>
               </div>
             </div>
             <div className="info-group">
               <FaCalendarAlt className="icon" />
               <div>
-                <label>Lease Expiry</label>
+                <label>{t('tenantHomeComponents.period')}</label>
                 <p>{property.leaseEnd || '—'}</p>
               </div>
             </div>
@@ -99,7 +108,7 @@ const DetailedPropertyCard = ({ property }: { property: LandlordPropertyRow }) =
         <div className="detailed-stats-section">
           <div className="financial-overview">
             <div className="stat-pill">
-              <label>Annual Yield</label>
+              <label>{t('myProperties.yield')}</label>
               <span className="yield-up">+{property.yield}%</span>
             </div>
             <div className="main-price">
@@ -116,9 +125,9 @@ const DetailedPropertyCard = ({ property }: { property: LandlordPropertyRow }) =
               disabled={isManageLocked}
               title={manageLockMessage}
             >
-              Manage Unit
+              {t('myProperties.manageProperty')}
             </button>
-            <button className="history-btn">View History</button>
+            <button className="history-btn">{t('tenantHomeComponents.history')}</button>
           </div>
         </div>
       </div>
@@ -126,9 +135,9 @@ const DetailedPropertyCard = ({ property }: { property: LandlordPropertyRow }) =
       {/* RENDER MODAL */}
       {isManageModalOpen && (
         createPortal(
-          <ManagePropertyModal 
-            property={property} 
-            onClose={() => setIsManageModalOpen(false)} 
+          <ManagePropertyModal
+            property={property}
+            onClose={() => setIsManageModalOpen(false)}
           />,
           document.body
         )

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   FiMapPin, FiMoreHorizontal, FiMaximize, 
   FiArrowUpRight, FiCheckCircle, FiClock 
@@ -26,7 +27,7 @@ const PropertyCard = ({
   address = "Downtown, Dubai",
   status = "Occupied",
   price = "2,500",
-  tenantName = "No current tenant",
+  tenantName,
   paymentStatus = "Pending",
   beds = 3,
   baths = 2,
@@ -34,9 +35,11 @@ const PropertyCard = ({
   imageUrl = "/rentblue.jpg",
   id
 }: PropertyCardProps) => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const propertyData = { id, name, address, status, price, beds, baths, sqft, tenantName };
+  const displayTenantName = tenantName || t('landlordHomeComponents.noCurrentTenant');
+  const propertyData = { id, name, address, status, price, beds, baths, sqft, tenantName: displayTenantName };
 
   return (
     <>
@@ -56,7 +59,7 @@ const PropertyCard = ({
 
           <div className="prop-media-overlay">
             <div className="manage-glass-pill">
-              <span>Property Analytics</span>
+              <span>{t('landlordHomeComponents.propertyAnalytics')}</span>
               <FiArrowUpRight />
             </div>
           </div>
@@ -73,10 +76,10 @@ const PropertyCard = ({
           {/* New Section: Tenant Snapshot */}
           <div className="tenant-snapshot">
             <div className="tenant-info">
-              <div className="tenant-avatar">{tenantName.charAt(0)}</div>
+              <div className="tenant-avatar">{displayTenantName.charAt(0)}</div>
               <div className="tenant-details">
-                <span className="label">Current Tenant</span>
-                <span className="name">{tenantName || 'No current tenant'}</span>
+                <span className="label">{t('landlordHomeComponents.currentTenant')}</span>
+                <span className="name">{displayTenantName}</span>
               </div>
             </div>
             <div className={`payment-status ${paymentStatus.toLowerCase()}`}>
@@ -86,16 +89,16 @@ const PropertyCard = ({
           </div>
 
           <div className="prop-specs-minimal">
-            <div className="spec-unit"><b>{beds}</b><span>Beds</span></div>
+            <div className="spec-unit"><b>{beds}</b><span>{t('landlordHomeComponents.beds')}</span></div>
             <div className="spec-divider"></div>
-            <div className="spec-unit"><b>{baths}</b><span>Baths</span></div>
+            <div className="spec-unit"><b>{baths}</b><span>{t('landlordHomeComponents.baths')}</span></div>
             <div className="spec-divider"></div>
-            <div className="spec-unit"><b>{sqft}</b><span>sqft</span></div>
+            <div className="spec-unit"><b>{sqft}</b><span>{t('landlordHomeComponents.sqft')}</span></div>
           </div>
 
           <div className="prop-footer">
             <div className="price-stack">
-              <span className="price-label">Net Monthly Income</span>
+              <span className="price-label">{t('landlordHomeComponents.netMonthlyIncome')}</span>
               <div className="price-display">
                 <span className="price-amt">${price}</span>
                 <span className="price-period">/mo</span>

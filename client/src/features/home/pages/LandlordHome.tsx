@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
@@ -16,11 +17,12 @@ import contractService, { type LandlordContract } from '../../../services/contra
 import './landlordHome.css';
 
 const LandlordHome = () => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
   const [properties, setProperties] = useState<PropertyResponse[]>([]);
   const [contracts, setContracts] = useState<LandlordContract[]>([]);
-  const [landlordName, setLandlordName] = useState('Landlord');
+  const [landlordName, setLandlordName] = useState(t('sidebar.loading'));
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProperties = useCallback(async () => {
@@ -36,7 +38,7 @@ const LandlordHome = () => {
       setLandlordName(
         currentUser.profile?.firstName ||
         currentUser.user?.email?.split('@')[0] ||
-        'Landlord'
+        t('sidebar.landlord')
       );
 
       const [propertiesResponse, contractsResponse] = await Promise.all([
@@ -52,7 +54,7 @@ const LandlordHome = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const getContractPaymentStatus = (contract: LandlordContract): string => {
     return ((contract as unknown as { paymentStatus?: string }).paymentStatus || 'PENDING').toUpperCase();
@@ -97,7 +99,7 @@ const LandlordHome = () => {
         ((prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant &&
           `${(prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant?.firstName || ''} ${(prop as unknown as { tenant?: { firstName?: string; lastName?: string } }).tenant?.lastName || ''}`.trim())
       ) ||
-      'No current tenant',
+      t('landlordHome.noCurrentTenant'),
     paymentStatus: prop.status?.toLowerCase() === 'rented' ? 'Paid' : 'Pending',
   }));
 
@@ -107,22 +109,22 @@ const LandlordHome = () => {
         <Sidebar />
         <div className="main-content">
           <Header />
-          
+
           <main className="dashboard-container">
             {isLoading ? (
               <div className="loading-state" style={{ textAlign: 'center', padding: '2rem' }}>
-                Loading Home page...
+                {t('landlordHome.loadingHomePage')}
               </div>
             ) : hasData ? (
               /* =========================================
                  PREMIUM POPULATED STATE (Dashboard)
                  ========================================= */
               <div className="dashboard-content-wrapper animate-fade-in">
-                
+
                 <header className="welcome-section">
                   <div className="welcome-text">
-                    <h1>Welcome Back, <span className="highlight-gradient">{landlordName}!</span></h1>
-                    <p>Manage your properties, track occupancy, and review incoming requests.</p>
+                    <h1>{t('landlordHome.welcomeBack')}, <span className="highlight-gradient">{landlordName}!</span></h1>
+                    <p>{t('landlordHome.managePropertiesTrack')}</p>
                   </div>
                 </header>
 
@@ -131,7 +133,7 @@ const LandlordHome = () => {
                   <div className="action-widget">
                     <AddPropertyCard onClick={() => setIsModalOpen(true)} />
                   </div>
-                  
+
                   <div className="payment-widget">
                     <PaymentState
                       upcomingPayouts={upcomingTotal}
@@ -150,18 +152,18 @@ const LandlordHome = () => {
                   <div className="section-header">
                     <div className="header-title-group">
                       <div className="header-icon"><FiHome size={20} /></div>
-                      <h2>Your Portfolio</h2>
-                      <span className="status-badge">{mappedProperties.length} Active Listings</span>
+                      <h2>{t('landlordHome.yourPortfolio')}</h2>
+                      <span className="status-badge">{t('landlordHome.activeListings', { count: mappedProperties.length })}</span>
                     </div>
                     <button className="btn-text-primary" onClick={() => setIsModalOpen(true)}>
-                      <FiPlus size={18} /> Add New
+                      <FiPlus size={18} /> {t('landlordHome.addNew')}
                     </button>
                   </div>
 
                   <div className="properties-grid">
                     {mappedProperties.map(prop => (
-                      <PropertyCard 
-                        key={prop.id} 
+                      <PropertyCard
+                        key={prop.id}
                         name={prop.name}
                         address={prop.address}
                         status={prop.status}
@@ -184,7 +186,7 @@ const LandlordHome = () => {
                  PREMIUM EMPTY STATE (Onboarding)
                  ========================================= */
               <div className="lh-onboarding-wrapper animate-fade-in">
-                
+
                 {/* 1. Hero Section */}
                 <section className="lh-hero-banner">
                   <div className="lh-hero-blobs">
@@ -192,14 +194,14 @@ const LandlordHome = () => {
                     <div className="lh-blob blob-2"></div>
                   </div>
                   <div className="lh-hero-content">
-                    <h1>Start listing your property today</h1>
-                    <p>Reach thousands of tenants, manage your portfolio, and maximize your earnings all in one place.</p>
+                    <h1>{t('landlordHome.startListingToday')}</h1>
+                    <p>{t('landlordHome.reachThousandsTenants')}</p>
                     <div className="lh-hero-actions">
                       <button className="lh-btn-primary" onClick={() => setIsModalOpen(true)}>
-                        <FiPlus size={20} /> Add Property
+                        <FiPlus size={20} /> {t('landlordHome.addProperty')}
                       </button>
                       <button className="lh-btn-secondary">
-                        Learn How It Works
+                        {t('guestNavbar.howItWorks')}
                       </button>
                     </div>
                   </div>
@@ -207,36 +209,36 @@ const LandlordHome = () => {
 
                 <div className="lh-onboarding-split">
                   <div className="lh-onboarding-main">
-                    
+
                     {/* 2. Getting Started Cards */}
                     <div className="lh-getting-started">
                       <div className="lh-cards-grid">
                         <div className="lh-onboarding-card" onClick={() => setIsModalOpen(true)} style={{ cursor: 'pointer' }}>
                           <div className="lh-card-icon bg-blue"><FiHome /></div>
-                          <span className="lh-step-badge">Step 1</span>
-                          <h4>Add Your First Property</h4>
-                          <p>Enter details, upload photos, and set your asking price.</p>
+                          <span className="lh-step-badge">{t('landlordHome.step')} 1</span>
+                          <h4>{t('landlordHome.addFirstProperty')}</h4>
+                          <p>{t('landlordHome.enterDetailsUpload')}</p>
                         </div>
-                        
+
                         {/* 👈 CLICK HANDLER ADDED FOR OPTIMIZE MODAL */}
                         <div className="lh-onboarding-card" onClick={() => setIsOptimizeModalOpen(true)} style={{ cursor: 'pointer' }}>
                           <div className="lh-card-icon bg-purple"><FiCamera /></div>
-                          <span className="lh-step-badge">Step 2</span>
-                          <h4>Optimize Listing</h4>
-                          <p>Learn how to take photos that attract the best tenants.</p>
+                          <span className="lh-step-badge">{t('landlordHome.step')} 2</span>
+                          <h4>{t('landlordHome.optimizeListing')}</h4>
+                          <p>{t('landlordHome.learnPhotosAttract')}</p>
                         </div>
 
                         <div className="lh-onboarding-card">
                           <div className="lh-card-icon bg-green"><FiCreditCard /></div>
-                          <span className="lh-step-badge">Step 3</span>
-                          <h4>Setup Payments</h4>
-                          <p>Connect your bank account to receive rent securely.</p>
+                          <span className="lh-step-badge">{t('landlordHome.step')} 3</span>
+                          <h4>{t('landlordHome.setupPayments')}</h4>
+                          <p>{t('landlordHome.connectBankReceive')}</p>
                         </div>
                         <div className="lh-onboarding-card">
                           <div className="lh-card-icon bg-orange"><FiBookOpen /></div>
-                          <span className="lh-step-badge">Step 4</span>
-                          <h4>About HOMI</h4>
-                          <p>Read our quick guide on managing requests and contracts.</p>
+                          <span className="lh-step-badge">{t('landlordHome.step')} 4</span>
+                          <h4>{t('landlordHome.aboutHomi')}</h4>
+                          <p>{t('landlordHome.readQuickGuide')}</p>
                         </div>
                       </div>
                     </div>
@@ -246,10 +248,10 @@ const LandlordHome = () => {
                       <div className="lh-empty-icon-wrapper">
                         <FiHome size={32} />
                       </div>
-                      <h3>You haven't listed any properties yet.</h3>
-                      <p>Your portfolio is waiting to be built. Click below to start.</p>
+                      <h3>{t('landlordHome.haventListedProperties')}</h3>
+                      <p>{t('landlordHome.portfolioWaitingBuilt')}</p>
                       <button className="lh-btn-outline" onClick={() => setIsModalOpen(true)}>
-                        <FiPlus /> Add Property
+                        <FiPlus /> {t('landlordHome.addProperty')}
                       </button>
                     </div>
 
@@ -257,34 +259,34 @@ const LandlordHome = () => {
 
                   {/* Right Panel: Notifications & Tips */}
                   <aside className="lh-onboarding-sidebar">
-                    
+
                     {/* 5. Notifications Panel */}
                     <div className="lh-widget lh-welcome-widget">
                       <div className="lh-widget-header">
-                        <h4>Welcome to HOMI! 🎉</h4>
+                        <h4>{t('landlordHome.welcomeToHomi')}</h4>
                       </div>
-                      <p>Start by adding your first property. Once listed, you'll be able to track views, requests, and earnings right here.</p>
+                      <p>{t('landlordHome.startByAddingFirst')}</p>
                     </div>
 
                     {/* 4. Tips Section */}
                     <div className="lh-widget lh-tips-widget">
-                      <h4>Tips to Get Tenants Faster</h4>
+                      <h4>{t('landlordHome.tipsGetTenantsFaster')}</h4>
                       <ul className="lh-tips-list">
                         <li>
                           <div className="lh-tip-icon"><FiCamera /></div>
-                          <span>Add high-quality photos</span>
+                          <span>{t('landlordHome.highQualityPhotos')}</span>
                         </li>
                         <li>
                           <div className="lh-tip-icon"><FiStar /></div>
-                          <span>Set competitive pricing</span>
+                          <span>{t('landlordHome.setCompetitivePricing')}</span>
                         </li>
                         <li>
                           <div className="lh-tip-icon"><FiZap /></div>
-                          <span>Respond quickly to inquiries</span>
+                          <span>{t('landlordHome.respondQuickly')}</span>
                         </li>
                         <li>
                           <div className="lh-tip-icon"><FiMessageSquare /></div>
-                          <span>Write clear, honest descriptions</span>
+                          <span>{t('landlordHome.clearHonestDescriptions')}</span>
                         </li>
                       </ul>
                     </div>

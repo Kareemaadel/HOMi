@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FiDollarSign, FiArrowRight, FiClock, FiCheckCircle } from 'react-icons/fi';
 import './PaymentState.css';
 
@@ -9,21 +10,22 @@ interface PaymentStateProps {
   isLoading?: boolean;
 }
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-});
-
 const PaymentState: React.FC<PaymentStateProps> = ({
   upcomingPayouts,
   recentlyReceived,
   isLoading = false,
 }) => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  const upcomingValue = isLoading ? 'Loading...' : currencyFormatter.format(upcomingPayouts);
-  const receivedValue = isLoading ? 'Loading...' : currencyFormatter.format(recentlyReceived);
+  const currencyFormatter = new Intl.NumberFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  });
+
+  const upcomingValue = isLoading ? t('sidebar.loading') : currencyFormatter.format(upcomingPayouts);
+  const receivedValue = isLoading ? t('sidebar.loading') : currencyFormatter.format(recentlyReceived);
 
   return (
     <div className="payment-state-card">
@@ -32,7 +34,7 @@ const PaymentState: React.FC<PaymentStateProps> = ({
           <div className="icon-wrapper">
             <FiDollarSign />
           </div>
-          <h3>Financial Overview</h3>
+          <h3>{t('landlordHomeComponents.financialOverview')}</h3>
         </div>
       </div>
       
@@ -40,7 +42,7 @@ const PaymentState: React.FC<PaymentStateProps> = ({
         <div className="payment-row">
           <div className="payment-info">
             <FiClock className="icon-pending" />
-            <span>Upcoming Payouts</span>
+            <span>{t('landlordHomeComponents.upcomingPayouts')}</span>
           </div>
           <span className="payment-amount">{upcomingValue}</span>
         </div>
@@ -48,7 +50,7 @@ const PaymentState: React.FC<PaymentStateProps> = ({
         <div className="payment-row">
           <div className="payment-info">
             <FiCheckCircle className="icon-success" />
-            <span>Recently Received</span>
+            <span>{t('landlordHomeComponents.recentlyReceived')}</span>
           </div>
           <span className="payment-amount">{receivedValue}</span>
         </div>
@@ -60,7 +62,7 @@ const PaymentState: React.FC<PaymentStateProps> = ({
           className="btn-view-finance"
           onClick={() => navigate('/landlord-payment')} 
         >
-          View Finances <FiArrowRight size={16} />
+          {t('landlordHomeComponents.viewFinances')} <FiArrowRight size={16} />
         </button>
       </div>
     </div>

@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { FaRobot, FaCheckCircle, FaStar } from 'react-icons/fa';
 import './tenantAI.css';
 
 const TenantAI = () => {
+  const { t } = useTranslation();
   const recommendations = [
     { id: 1, name: "Sarah Jenkins", score: 98, reason: "Excellent credit, 3yr stable job", property: "Skyline Apts" },
     { id: 2, name: "Michael Chen", score: 85, reason: "Verified income, 100% on-time payments", property: "Sunset Loft" }
@@ -12,12 +14,12 @@ const TenantAI = () => {
       <div className="ai-header">
         <div className="ai-title">
           <FaRobot className="ai-icon" />
-          <h3>AI Tenant Insights</h3>
+          <h3>{t('landlordHomeComponents.aiTenantInsights')}</h3>
         </div>
-        <span className="ai-badge">Live Analysis</span>
+        <span className="ai-badge">{t('landlordHomeComponents.liveAnalysis')}</span>
       </div>
 
-      <p className="ai-description">Based on background checks, income stability, and rental history.</p>
+      <p className="ai-description">{t('landlordHomeComponents.aiDescription')}</p>
 
       <div className="recommendation-list">
         {recommendations.map(tenant => (
@@ -32,7 +34,7 @@ const TenantAI = () => {
               </div>
               <div className="tenant-info">
                 <h4>{tenant.name}</h4>
-                <p>Applying for: <strong>{tenant.property}</strong></p>
+                <p>{t('landlordHomeComponents.applyingFor')}: <strong>{tenant.property}</strong></p>
               </div>
             </div>
             
@@ -41,13 +43,13 @@ const TenantAI = () => {
               <span>{tenant.reason}</span>
             </div>
             
-            <button className="approve-btn">Review Application</button>
+            <button className="approve-btn">{t('landlordHomeComponents.reviewApplication')}</button>
           </div>
         ))}
       </div>
 
       <div className="ai-footer-note">
-        <FaStar /> Upgrade to Pro for deeper criminal background analysis.
+        <FaStar /> {t('landlordHomeComponents.upgradeToPro')}
       </div>
     </div>
   );

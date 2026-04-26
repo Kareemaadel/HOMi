@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
@@ -11,12 +12,14 @@ import type { LandlordRentalRequest } from '../../../services/rental-request.ser
 import './RentalRequests.css';
 
 const RentalRequests: React.FC = () => {
+    const { t, i18n } = useTranslation();
     const [activeTab, setActiveTab] = useState('pending');
     const [requests, setRequests] = useState<LandlordRentalRequest[]>([]);
 
     const formatDate = (date?: string) => {
-        if (!date) return 'Flexible';
-        return new Date(date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        if (!date) return t('rentalRequests.flexible', { defaultValue: 'Flexible' });
+        const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
+        return new Date(date).toLocaleDateString(locale, { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
     const refreshRequests = useCallback(async () => {
@@ -43,9 +46,9 @@ const RentalRequests: React.FC = () => {
             applicant: {
                 name: `${req.tenant.firstName} ${req.tenant.lastName}`.trim(),
                 image: req.tenant.avatarUrl || 'https://i.pravatar.cc/150?u=fallback',
-                occupation: 'Tenant',
+                occupation: t('sidebar.tenant'),
                 company: '',
-                income: 'Verified',
+                income: t('rentalRequests.card.verified', { defaultValue: 'Verified' }),
                 creditScore: 720,
                 matchScore: 85,
             },
@@ -64,7 +67,7 @@ const RentalRequests: React.FC = () => {
             habits: req.tenant.habits || [],
             appliedOnDate: formatDate(req.createdAt),
         }));
-    }, [requests]);
+    }, [requests, t, i18n.language]);
 
     const tabCounts = useMemo(() => ({
         pending: mappedRequests.filter((req) => req.status === 'pending').length,
@@ -82,15 +85,15 @@ const RentalRequests: React.FC = () => {
     }, [activeTab, mappedRequests]);
 
     return (
-        <div className="layout-wrapper">
+        <div className="layout-wrapper" dir="ltr">
             <Sidebar />
             <div className="main-content">
                 <Header />
                 <main className="rental-requests-page">
                     <header className="page-intro">
                         <div className="intro-text">
-                            <h1>Rental Requests</h1>
-                            <p>Screen applicants and manage your property pipeline.</p>
+                            <h1>{t('rentalRequests.requests')}</h1>
+                            <p>{t('rentalRequests.managingRequests', { count: mappedRequests.length })}</p>
                         </div>
                         <StatsOverview totalApplicants={mappedRequests.length} />
                     </header>
@@ -109,8 +112,8 @@ const RentalRequests: React.FC = () => {
                             <div className="rr-empty-state-icon">
                                 <FaInbox />
                             </div>
-                            <h3 className="rr-empty-state-title">No rental applications yet</h3>
-                            <p className="rr-empty-state-text">We'll notify you as soon as someone applies.</p>
+                            <h3 className="rr-empty-state-title">{t('rentalRequests.noRequestsFound')}</h3>
+                            <p className="rr-empty-state-text">{t('rentalRequests.noRequestsText')}</p>
                         </div>
                     )}
 

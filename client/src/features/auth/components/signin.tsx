@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { authService } from '../../../services/auth.service';
 import type { LoginRequest } from '../../../types/auth.types';
@@ -13,6 +14,7 @@ interface SignInProps {
 
 const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
@@ -46,8 +48,8 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
         return;
       }
       const errorMessage = axios.isAxiosError(err)
-        ? err.response?.data?.message || 'Login failed. Please check your credentials.'
-        : 'Login failed. Please check your credentials.';
+        ? err.response?.data?.message || t('auth.loginFailed')
+        : t('auth.loginFailed');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -59,7 +61,7 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
 
   const handlePasskeySignIn = async () => {
     if (!identifierTrimmed) {
-      setError('Enter your email or phone first.');
+      setError(t('auth.enterEmailPhoneFirst'));
       return;
     }
 
@@ -72,15 +74,15 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
       navigate('/', { state: { next: nextPath, force: true } });
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data?.code === 'NO_PASSKEYS') {
-        setError('No passkey is registered for this account. Sign in with your password and enable biometrics in Settings.');
+        setError(t('auth.noPasskeyRegistered'));
         return;
       }
       if (axios.isAxiosError(err) && err.response?.data?.code === 'INVALID_CREDENTIALS') {
-        setError('Account not found for this email or phone.');
+        setError(t('auth.accountNotFound'));
         return;
       }
       const msg =
-        err instanceof Error ? err.message : 'Passkey sign-in failed. Use your password or try again.';
+        err instanceof Error ? err.message : t('auth.passkeySignInFailed');
       setError(msg);
     } finally {
       setPasskeyLoading(false);
@@ -107,7 +109,7 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
         <input 
           type="text" 
           name="identifier"
-          placeholder="Email Address or Phone" 
+          placeholder={t('auth.email')} 
           value={formData.identifier}
           onChange={handleChange}
           disabled={loading}
@@ -120,7 +122,7 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
         <input 
           type="password" 
           name="password"
-          placeholder="Password" 
+          placeholder={t('auth.password')} 
           value={formData.password}
           onChange={handleChange}
           disabled={loading}
@@ -137,14 +139,14 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
             onChange={(e) => onRememberMeChange(e.target.checked)}
             disabled={loading}
           />
-          <span className="remember-me-text">Remember me</span>
+          <span className="remember-me-text">{t('auth.rememberMe')}</span>
         </label>
-        <a href="/forgot-password" className="auth-forgot-link">Forgot password?</a>
+        <a href="/forgot-password" className="auth-forgot-link">{t('auth.forgotPassword')}</a>
       </div>
 
       <button type="submit" className="btn-primary-v2" disabled={loading}>
         <LogIn size={18}/> 
-        <span>{loading ? 'Signing in...' : 'Sign In'}</span>
+        <span>{loading ? t('auth.loading') : t('auth.signIn')}</span>
       </button>
 
       {canTryPasskey && (
@@ -154,7 +156,7 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
           disabled={passkeyLoading || loading}
           onClick={handlePasskeySignIn}
         >
-          <span>{passkeyLoading ? 'Verifying fingerprint / Face ID...' : 'Use fingerprint / Face ID'}</span>
+          <span>{passkeyLoading ? t('auth.verifyingPasskey') : t('auth.usePasskey')}</span>
         </button>
       )}
     </form>

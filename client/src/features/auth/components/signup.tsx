@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, UserPlus, PhoneCall } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface SignUpFormData {
   firstName: string;
@@ -11,6 +12,7 @@ interface SignUpFormData {
 }
 
 const SignUp: React.FC = () => {
+  const { t } = useTranslation();
   const [strength, setStrength] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -49,7 +51,7 @@ const SignUp: React.FC = () => {
     setFormError(null);
 
     if (!agreeToTerms) {
-      setFormError('Please agree to the Terms & Conditions to continue.');
+      setFormError(t('auth.agreeToTermsError'));
       return;
     }
 
@@ -57,9 +59,7 @@ const SignUp: React.FC = () => {
     // eslint-disable-next-line no-useless-escape -- mirrors server Joi pattern literally
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/]).{8,}$/;
     if (!passwordRegex.test(formData.password)) {
-      setFormError(
-        'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character (e.g. @$!%*?&).'
-      );
+      setFormError(t('auth.passwordRequirementError'));
       return;
     }
 
@@ -84,7 +84,7 @@ const SignUp: React.FC = () => {
           <input 
             type="text" 
             name="firstName"
-            placeholder="First Name" 
+            placeholder={t('auth.firstName')} 
             value={formData.firstName}
             onChange={handleChange}
             required 
@@ -95,7 +95,7 @@ const SignUp: React.FC = () => {
           <input 
             type="text"
             name="lastName" 
-            placeholder="Last Name" 
+            placeholder={t('auth.lastName')} 
             value={formData.lastName}
             onChange={handleChange}
             required 
@@ -108,7 +108,7 @@ const SignUp: React.FC = () => {
         <input 
           type="email" 
           name="email"
-          placeholder="Email" 
+          placeholder={t('auth.email')} 
           value={formData.email}
           onChange={handleChange}
           required 
@@ -120,7 +120,7 @@ const SignUp: React.FC = () => {
         <input 
           type="tel" 
           name="phone"
-          placeholder="Phone Number" 
+          placeholder={t('auth.phone')} 
           value={formData.phone}
           onChange={handleChange}
           required 
@@ -132,7 +132,7 @@ const SignUp: React.FC = () => {
         <input 
           type="password" 
           name="password"
-          placeholder="Password" 
+          placeholder={t('auth.password')} 
           value={formData.password}
           onChange={handleChange}
           required 
@@ -152,14 +152,14 @@ const SignUp: React.FC = () => {
           onChange={(e) => setAgreeToTerms(e.target.checked)}
         />
         <span className="remember-me-text">
-          I agree to the{' '}
-          <a href="#terms" className="terms-inline-link">Terms &amp; Conditions</a>
+          {t('auth.agreeToTerms')}{' '}
+          <a href="#terms" className="terms-inline-link">{t('auth.termsAndConditions')}</a>
         </span>
       </label>
 
       <button type="submit" className="btn-primary-v2">
         <UserPlus size={18}/> 
-        <span>Create Account</span>
+        <span>{t('auth.signUp')}</span>
       </button>
     </form>
   );

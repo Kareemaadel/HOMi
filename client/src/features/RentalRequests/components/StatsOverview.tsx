@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaUsers, FaChartLine, FaClock } from 'react-icons/fa';
 import './StatsOverview.css';
 
@@ -7,6 +8,7 @@ interface StatsOverviewProps {
 }
 
 const StatsOverview: React.FC<StatsOverviewProps> = ({ totalApplicants }) => {
+    const { t } = useTranslation();
     return (
         <div className="stats-container">
             <div className="stat-card">
@@ -14,7 +16,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ totalApplicants }) => {
                     <FaUsers />
                 </div>
                 <div className="stat-content">
-                    <label>Total Applicants</label>
+                    <label>{t('rentalRequests.stats.totalRequests')}</label>
                     <div className="stat-value-group">
                         <h2>{totalApplicants}</h2>
                         <span className="trend positive">+12%</span>
@@ -27,7 +29,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ totalApplicants }) => {
                     <FaChartLine />
                 </div>
                 <div className="stat-content">
-                    <label>Avg. Match Score</label>
+                    <label>{t('rentalRequests.stats.avgMatchScore', { defaultValue: 'Avg. Match Score' })}</label>
                     <div className="stat-value-group">
                         <h2>92%</h2>
                         <span className="trend neutral">Solid</span>
@@ -40,7 +42,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ totalApplicants }) => {
                     <FaClock />
                 </div>
                 <div className="stat-content">
-                    <label>Avg. Response</label>
+                    <label>{t('rentalRequests.stats.avgResponse')}</label>
                     <div className="stat-value-group">
                         <h2>4.5h</h2>
                         <span className="trend positive">-20m</span>

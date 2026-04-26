@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiBell, FiDollarSign, FiTool, FiUserPlus, FiChevronRight } from 'react-icons/fi';
 import './Notifications.css';
 import NotificationBar from './NotificationBar';
@@ -17,29 +18,30 @@ interface LandlordAlert {
   createdAt: string;
 }
 
-const relativeTime = (value: string): string => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Just now';
-
-  const diffMs = Date.now() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-
-  if (diffMinutes < 1) return 'Just now';
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  return date.toLocaleDateString();
-};
-
 const Notifications: React.FC = () => {
+  const { t } = useTranslation();
   const [isBarOpen, setIsBarOpen] = useState(false);
   const [alerts, setAlerts] = useState<LandlordAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const relativeTime = (value: string): string => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('landlordHomeComponents.justNow');
+
+    const diffMs = Date.now() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return t('landlordHomeComponents.justNow');
+    if (diffMinutes < 60) return t('landlordHomeComponents.minutesAgo', { count: diffMinutes });
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return t('landlordHomeComponents.hoursAgo', { count: diffHours });
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return t('landlordHomeComponents.daysAgo', { count: diffDays });
+
+    return date.toLocaleDateString();
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -63,9 +65,9 @@ const Notifications: React.FC = () => {
         ]);
 
         const requestAlerts: LandlordAlert[] = (requestsResponse.data ?? []).map((request) => {
-          let requestTitle = 'New Rental Request';
-          if (request.status === 'APPROVED') requestTitle = 'Request Approved';
-          if (request.status === 'DECLINED') requestTitle = 'Request Declined';
+          let requestTitle = t('landlordHomeComponents.newRentalRequest');
+          if (request.status === 'APPROVED') requestTitle = t('landlordHomeComponents.requestApproved');
+          if (request.status === 'DECLINED') requestTitle = t('landlordHomeComponents.requestDeclined');
 
           return {
             id: `req-${request.id}`,
@@ -83,8 +85,8 @@ const Notifications: React.FC = () => {
           return {
             id: `contract-${contract.id}`,
             type: 'payment',
-            title: contract.status === 'ACTIVE' ? 'Lease Active' : `Contract ${contract.status}`,
-            desc: `${propertyTitle} • ${contract.status === 'PENDING_PAYMENT' ? 'Payment pending' : `Contract ${contract.status.replace(/_/g, ' ')}`}`,
+            title: contract.status === 'ACTIVE' ? t('landlordHomeComponents.leaseActive') : `Contract ${contract.status}`,
+            desc: `${propertyTitle} • ${contract.status === 'PENDING_PAYMENT' ? t('landlordHomeComponents.paymentPending') : `Contract ${contract.status.replace(/_/g, ' ')}`}`,
             time: relativeTime(contract.createdAt),
             unread: contract.status === 'PENDING_LANDLORD' || contract.status === 'PENDING_TENANT',
             createdAt: contract.createdAt,
@@ -94,7 +96,7 @@ const Notifications: React.FC = () => {
         const propertyAlerts: LandlordAlert[] = (propertiesResponse.data ?? []).map((property) => ({
           id: `property-${property.id}`,
           type: 'maintenance',
-          title: property.status === 'Published' ? 'Listing Published' : `Listing ${property.status}`,
+          title: property.status === 'Published' ? t('landlordHomeComponents.listingPublished') : `Listing ${property.status}`,
           desc: `${property.title} listed at $${property.monthlyPrice}/month`,
           time: relativeTime(property.createdAt),
           unread: property.status === 'Draft',
@@ -124,10 +126,10 @@ const Notifications: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   const hasUnread = useMemo(() => alerts.some((a) => a.unread), [alerts]);
-  const emptyStateMessage = isLoading ? 'Loading activity...' : 'No recent activity yet.';
+  const emptyStateMessage = isLoading ? t('landlordHomeComponents.loadingActivity') : t('landlordHomeComponents.noRecentActivity');
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -147,10 +149,10 @@ const Notifications: React.FC = () => {
               <FiBell />
               {hasUnread && <span className="active-dot"></span>}
             </div>
-            <h3>Activity Feed</h3>
+            <h3>{t('landlordHomeComponents.activityFeed')}</h3>
           </div>
           <button className="btn-mark-all">
-            <span>Clear</span>
+            <span>{t('landlordHomeComponents.clear')}</span>
           </button>
         </header>
 
@@ -183,7 +185,7 @@ const Notifications: React.FC = () => {
         </div>
 
         <button className="btn-history-expand" onClick={() => setIsBarOpen(true)}>
-          See All Activity
+          {t('landlordHomeComponents.seeAllActivity')}
         </button>
       </div>
 
