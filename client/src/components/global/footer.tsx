@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   FaTwitter, 
   FaLinkedinIn, 
@@ -10,6 +11,7 @@ import {
 import './footer.css';
 
 const Footer = () => {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -26,7 +28,7 @@ const Footer = () => {
               <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
             </Link>
             <p className="brand-description">
-              The premium, end-to-end platform modernizing the real estate rental market for landlords and tenants alike.
+              {t('footer.brandDescription')}
             </p>
             
             {/* Social Media */}
@@ -40,45 +42,45 @@ const Footer = () => {
 
           {/* Platform Links */}
           <div className="footer-links">
-            <h4>Platform</h4>
-            <Link to="/browse-properties">Browse Homes</Link>
-            <Link to="/for-landlords">List a Property</Link>
-            <Link to="/homi-plus">HOMI Pro</Link>
-            <Link to="/pricing">Pricing & Fees</Link>
-            <Link to="/roommate-matching">Roommate Matching</Link>
+            <h4>{t('footer.platform')}</h4>
+            <Link to="/browse-properties">{t('footer.browseHomes')}</Link>
+            <Link to="/for-landlords">{t('footer.listProperty')}</Link>
+            <Link to="/homi-plus">{t('footer.homiPro')}</Link>
+            <Link to="/pricing">{t('footer.pricingFees')}</Link>
+            <Link to="/roommate-matching">{t('footer.roommateMatching')}</Link>
           </div>
 
           {/* Resources Links */}
           <div className="footer-links">
-            <h4>Resources</h4>
-            <Link to="/about-us">About Us</Link>
-            <Link to="/get-help">Help Center</Link>
-            <Link to="/blog">Real Estate Blog</Link>
-            <Link to="/careers">Careers</Link>
+            <h4>{t('footer.resources')}</h4>
+            <Link to="/about-us">{t('footer.aboutUs')}</Link>
+            <Link to="/get-help">{t('footer.helpCenter')}</Link>
+            <Link to="/blog">{t('footer.blog')}</Link>
+            <Link to="/careers">{t('footer.careers')}</Link>
           </div>
 
           {/* Contact & Legal */}
           <div className="footer-links">
-            <h4>Contact & Legal</h4>
+            <h4>{t('footer.contactLegal')}</h4>
             <div className="footer-contact-info">
               <a href="mailto:support@homi.com"><FaEnvelope /> support@homi.com</a>
               <a href="tel:+18005550199"><FaPhoneAlt /> +1 (800) 555-0199</a>
             </div>
             <div className="footer-divider"></div>
-            <Link to="/terms">Terms of Service</Link>
-            <Link to="/privacy">Privacy Policy</Link>
-            <Link to="/trust">Trust & Safety</Link>
+            <Link to="/terms">{t('footer.terms')}</Link>
+            <Link to="/privacy">{t('footer.privacy')}</Link>
+            <Link to="/trust">{t('footer.trust')}</Link>
           </div>
 
         </div>
 
         {/* Footer Bottom */}
         <div className="footer-bottom">
-          <p>© {currentYear} HOMI Technologies Inc. All rights reserved.</p>
+          <p>{t('footer.copyright', { year: currentYear })}</p>
           <div className="footer-bottom-links">
-            <Link to="/sitemap">Sitemap</Link>
+            <Link to="/sitemap">{t('footer.sitemap')}</Link>
             <span className="dot">•</span>
-            <span>English (US)</span>
+            <span>{t('footer.language')}</span>
           </div>
         </div>
       </div>

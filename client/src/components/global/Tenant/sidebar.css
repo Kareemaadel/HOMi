@@ -184,3 +184,12 @@
     display: none;
   }
 }
+
+/* RTL Support */
+[dir="rtl"] .sidebar {
+  border-right: 1px solid #eef2f6;
+}
+
+[dir="rtl"] .sidebar-nav ul li a:hover {
+  transform: translateX(4px);
+}
