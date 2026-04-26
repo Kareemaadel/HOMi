@@ -405,11 +405,14 @@ router.get('/properties/pending', adminController.getPendingProperties.bind(admi
  *               code: "PROPERTY_NOT_FOUND"
  */
 router.patch('/properties/:id/verify', adminController.verifyProperty.bind(adminController));
+router.get('/maintenance-providers/pending', adminController.getPendingMaintenanceApplications.bind(adminController));
+router.patch('/maintenance-providers/:id/review', adminController.reviewMaintenanceApplication.bind(adminController));
 router.get('/reports/listings', adminController.getListingReports.bind(adminController));
 router.delete('/reports/:reportId/remove-listing', adminController.removeReportedListing.bind(adminController));
 router.get('/activity-logs', adminController.getActivityLogs.bind(adminController));
 router.get('/users/:userId/profile', adminController.getUserProfile.bind(adminController));
 router.get('/users/management/all', adminController.getUsersForManagement.bind(adminController));
+router.get('/users/management/maintainers', adminController.getMaintainersForManagement.bind(adminController));
 router.patch('/users/:userId/ban', adminController.banUser.bind(adminController));
 router.patch('/users/:userId/unban', adminController.unbanUser.bind(adminController));
 router.get('/properties/:propertyId/details', adminController.getPropertyDetails.bind(adminController));

@@ -1,20 +1,83 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import Header from '../../../../../components/global/header';
 import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
 import {
     FaTools, FaCheckCircle, FaDollarSign, FaSearch,
-    FaMapMarkerAlt, FaWrench, FaBolt, FaChevronRight,
-    FaBell, FaClipboardCheck, FaCreditCard, FaStar, FaStarHalfAlt
+    FaMapMarkerAlt, FaWrench, FaChevronRight,
+    FaBell, FaStar, FaStarHalfAlt
 } from 'react-icons/fa';
 import './MaintenanceHome.css';
+import maintenanceService, {
+    type MaintenanceRequest,
+    type ProviderEarnings,
+} from '../../../../../services/maintenance.service';
+import notificationService, { type NotificationItem } from '../../../../../services/notification.service';
+import authService from '../../../../../services/auth.service';
+
+function timeAgo(iso: string): string {
+    const d = new Date(iso).getTime();
+    const ms = Date.now() - d;
+    const m = Math.floor(ms / 60_000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+}
 
 const MaintenanceHome: React.FC = () => {
-    const { t } = useTranslation();
     const navigate = useNavigate();
-    const hasData = true; // Toggle this to test empty states
+    const cached = authService.getCurrentUser?.();
+    const firstName = cached?.user?.firstName ?? 'there';
+
+    const [available, setAvailable] = useState<MaintenanceRequest[]>([]);
+    const [activeJobs, setActiveJobs] = useState<MaintenanceRequest[]>([]);
+    const [earnings, setEarnings] = useState<ProviderEarnings | null>(null);
+    const [notifs, setNotifs] = useState<NotificationItem[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                setLoading(true);
+                const [avail, mine, earn, notifList] = await Promise.all([
+                    maintenanceService.listAvailableJobs(),
+                    maintenanceService.listProviderRequests(['ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS', 'AWAITING_CONFIRMATION']),
+                    maintenanceService.getProviderEarnings(),
+                    notificationService.list({ limit: 6 }).then((p) => p.notifications).catch(() => [] as NotificationItem[]),
+                ]);
+                if (cancelled) return;
+                setAvailable(avail);
+                setActiveJobs(mine);
+                setEarnings(earn);
+                setNotifs(notifList);
+            } catch {
+                /* noop */
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    const renderRating = () => {
+        const score = earnings?.avgRating ?? 0;
+        const count = earnings?.completedJobs ?? 0;
+        const stars: React.ReactNode[] = [];
+        const full = Math.floor(score);
+        const hasHalf = score - full >= 0.5;
+        for (let i = 0; i < 5; i++) {
+            if (i < full) stars.push(<FaStar key={i} className="star-filled" />);
+            else if (i === full && hasHalf) stars.push(<FaStarHalfAlt key={i} className="star-filled" />);
+            else stars.push(<FaStar key={i} className="star-empty" />);
+        }
+        return { score, count, stars };
+    };
+
+    const ratingData = renderRating();
 
     return (
         <div className="maintenance-home-layout">
@@ -25,168 +88,130 @@ const MaintenanceHome: React.FC = () => {
 
                 <div className="maintenance-content-scroll">
                     <div className="maintenance-dashboard-container">
-
-                        {/* Welcome Section */}
                         <header className="welcome-section">
                             <div className="welcome-text">
-                                <h1>{t('maintenanceHome.goodMorning')}, <span className="highlight">{t('maintenanceHome.providerName')}!</span></h1>
-                                <p>{hasData ? t('maintenanceHome.jobRequestsCount', { count: 3 }) : t('maintenanceHome.noJobRequests')}</p>
+                                <h1>Welcome back, <span className="highlight">{firstName}</span></h1>
+                                <p>{loading ? 'Fetching your dashboard…' : `${available.length} open jobs nearby — let's get you booked.`}</p>
                             </div>
                         </header>
 
-                        {/* Quick Stats Cards */}
                         <section className="stats-grid">
                             <div className="stat-card">
                                 <div className="stat-icon blue"><FaSearch /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "5" : "0"}</h3>
-                                    <p className="stat-label">{t('maintenanceHome.availableJobs')}</p>
+                                    <h3 className="stat-value">{available.length}</h3>
+                                    <p className="stat-label">Available jobs</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon yellow"><FaWrench /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "2" : "0"}</h3>
-                                    <p className="stat-label">{t('maintenanceHome.inProgress')}</p>
+                                    <h3 className="stat-value">{earnings?.activeJobs ?? activeJobs.length}</h3>
+                                    <p className="stat-label">Active jobs</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon green"><FaCheckCircle /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "18" : "0"}</h3>
-                                    <p className="stat-label">{t('maintenanceHome.completed')}</p>
+                                    <h3 className="stat-value">{earnings?.completedJobs ?? 0}</h3>
+                                    <p className="stat-label">Completed</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon purple"><FaDollarSign /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "1200" : "0"} EGP</h3>
-                                    <p className="stat-label">{t('maintenanceHome.earningsThisMonth')}</p>
+                                    <h3 className="stat-value">EGP {(earnings?.walletBalance ?? 0).toLocaleString()}</h3>
+                                    <p className="stat-label">Wallet balance</p>
                                 </div>
                             </div>
                         </section>
 
-                        {/* Main Grid Layout */}
                         <div className="dashboard-main-grid">
-
-                            {/* Left Column (Job Previews) */}
                             <div className="grid-left">
-
-                                {/* New Requests Preview */}
                                 <div className="section-card">
                                     <div className="section-header">
-                                        <h2>{t('maintenanceHome.newRequestsPreview')}</h2>
+                                        <h2>New job opportunities</h2>
                                         <button className="view-all-btn" onClick={() => navigate('/available-jobs')}>
-                                            {t('maintenanceHome.viewAllJobs')} <FaChevronRight />
+                                            View all jobs <FaChevronRight />
                                         </button>
                                     </div>
 
                                     <div className="job-list">
-                                        {hasData ? (
-                                            <>
-                                                <div className="job-item">
+                                        {available.length > 0 ? (
+                                            available.slice(0, 3).map((job) => (
+                                                <div className="job-item" key={job.id} onClick={() => navigate('/available-jobs')}>
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaTools /></div>
                                                         <div className="job-info">
-                                                            <h4>{t('maintenanceHome.leakingSink')}</h4>
+                                                            <h4>{job.title}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Cairo', dist: 2 })}</span>
-                                                                <span>{t('maintenanceHome.plumbing')}</span>
-                                                                <span>Oct 24, 2023</span>
+                                                                <span><FaMapMarkerAlt /> {job.property?.address ?? '—'}</span>
+                                                                <span>{job.category}</span>
+                                                                <span>{timeAgo(job.createdAt)}</span>
+                                                                {job.urgency === 'CRITICAL' && (
+                                                                    <span style={{ color: '#ef4444', fontWeight: 600 }}>Critical</span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="price">40 EGP</span>
+                                                        <span className="price">EGP {Number(job.estimatedBudget ?? 0).toLocaleString() || 'Quote'}</span>
                                                     </div>
                                                 </div>
-
-                                                <div className="job-item">
-                                                    <div className="job-details">
-                                                        <div className="job-icon"><FaBolt /></div>
-                                                        <div className="job-info">
-                                                            <h4>{t('maintenanceHome.electricalIssue')}</h4>
-                                                            <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Giza', dist: 5 })}</span>
-                                                                <span>{t('maintenanceHome.electrical')}</span>
-                                                                <span>Oct 23, 2023</span>
-                                                                <span style={{ color: '#ef4444', fontWeight: 600 }}>{t('maintenanceHome.urgent')}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="job-action">
-                                                        <span className="price">60 EGP</span>
-                                                    </div>
-                                                </div>
-                                            </>
+                                            ))
                                         ) : (
                                             <div className="empty-state-card-mini">
                                                 <div className="empty-icon"><FaSearch /></div>
-                                                <p>{t('maintenanceHome.noNewRequests')}</p>
+                                                <p>No new requests available right now</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Active Jobs Preview */}
                                 <div className="Active-jobs-section-card">
                                     <div className="section-header">
-                                        <h2>{t('maintenanceHome.activeJobs')}</h2>
+                                        <h2>Active jobs</h2>
+                                        <button className="view-all-btn" onClick={() => navigate('/my-jobs')}>
+                                            Open all <FaChevronRight />
+                                        </button>
                                     </div>
 
                                     <div className="job-list">
-                                        {hasData ? (
-                                            <>
-                                                <div className="job-item">
+                                        {activeJobs.length > 0 ? (
+                                            activeJobs.slice(0, 4).map((job) => (
+                                                <div className="job-item" key={job.id} onClick={() => navigate('/my-jobs')}>
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaWrench /></div>
                                                         <div className="job-info">
-                                                            <h4>{t('maintenanceHome.kitchenRepair')}</h4>
+                                                            <h4>{job.title}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Maadi', dist: 3 })}</span>
-                                                                <span>{t('maintenanceHome.appliance')}</span>
-                                                                <span>Oct 22, 2023</span>
+                                                                <span><FaMapMarkerAlt /> {job.property?.address ?? '—'}</span>
+                                                                <span>{job.category}</span>
+                                                                <span>{job.tenant ? `${job.tenant.firstName} ${job.tenant.lastName}` : ''}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="status-badge in-progress">{t('maintenanceHome.inProgress')}</span>
-                                                        <span className="price" style={{ marginLeft: '10px' }}>80 EGP</span>
+                                                        <span className={`status-badge ${job.status === 'IN_PROGRESS' ? 'in-progress' : 'scheduled'}`}>
+                                                            {job.status.replace('_', ' ')}
+                                                        </span>
+                                                        <span className="price" style={{ marginLeft: '10px' }}>
+                                                            EGP {Number(job.agreedPrice ?? 0).toLocaleString()}
+                                                        </span>
                                                     </div>
                                                 </div>
-
-                                                <div className="job-item">
-                                                    <div className="job-details">
-                                                        <div className="job-icon"><FaTools /></div>
-                                                        <div className="job-info">
-                                                            <h4>{t('maintenanceHome.bathroomFix')}</h4>
-                                                            <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Nasr City', dist: 8 })}</span>
-                                                                <span>{t('maintenanceHome.plumbing')}</span>
-                                                                <span>Oct 21, 2023</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="job-action">
-                                                        <span className="status-badge scheduled">{t('maintenanceHome.tomorrow')}</span>
-                                                        <span className="price" style={{ marginLeft: '10px' }}>120 EGP</span>
-                                                    </div>
-                                                </div>
-                                            </>
+                                            ))
                                         ) : (
                                             <div className="empty-state-card-mini">
                                                 <div className="empty-icon"><FaTools /></div>
-                                                <p>{t('maintenanceHome.noActiveJobs')}</p>
+                                                <p>No active jobs at the moment</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-
                             </div>
 
-                            {/* Right Column (Notifications Panel) */}
                             <div className="grid-right">
-
                                 <div className="notif-premium">
                                     <header className="notif-header">
                                         <div className="notif-title-group">
@@ -194,106 +219,53 @@ const MaintenanceHome: React.FC = () => {
                                                 <FaBell />
                                                 <span className="active-dot"></span>
                                             </div>
-                                            <h3>{t('maintenanceHome.activityFeed')}</h3>
+                                            <h3>Activity feed</h3>
                                         </div>
                                     </header>
 
                                     <div className="notif-scroll-area">
-                                        {hasData ? (
-                                            <>
-                                                {/* Notification 1 */}
-                                                <div className="notif-card is-unread">
+                                        {notifs.length > 0 ? (
+                                            notifs.map((n) => (
+                                                <div key={n.id} className={`notif-card ${n.isRead ? '' : 'is-unread'}`}>
                                                     <div className="icon-orb system">
-                                                        <FaClipboardCheck />
+                                                        <FaBell />
                                                     </div>
                                                     <div className="notif-body">
                                                         <div className="notif-meta">
-                                                            <span className="notif-subject">{t('maintenanceHome.newJobPosted')}</span>
-                                                            <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 10 })}</span>
+                                                            <span className="notif-subject">{n.title}</span>
+                                                            <span className="notif-timestamp">{timeAgo(n.createdAt)}</span>
                                                         </div>
-                                                        <p className="notif-text">{t('maintenanceHome.newPlumbingJobMsg')}</p>
+                                                        <p className="notif-text">{n.body}</p>
                                                     </div>
                                                 </div>
-
-                                                {/* Notification 2 */}
-                                                <div className="notif-card">
-                                                    <div className="icon-orb maintenance">
-                                                        <FaWrench />
-                                                    </div>
-                                                    <div className="notif-body">
-                                                        <div className="notif-meta">
-                                                            <span className="notif-subject">{t('maintenanceHome.jobAssigned')}</span>
-                                                            <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 120 })}</span>
-                                                        </div>
-                                                        <p className="notif-text">{t('maintenanceHome.assignedToJobMsg', { job: t('maintenanceHome.kitchenRepair') })}</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Notification 3 */}
-                                                <div className="notif-card">
-                                                    <div className="icon-orb payment">
-                                                        <FaCreditCard />
-                                                    </div>
-                                                    <div className="notif-body">
-                                                        <div className="notif-meta">
-                                                            <span className="notif-subject">{t('maintenanceHome.paymentReceived')}</span>
-                                                            <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 1440 })}</span>
-                                                        </div>
-                                                        <p className="notif-text">{t('maintenanceHome.receivedPaymentMsg', { amount: '120 EGP', job: 'AC maintenance' })}</p>
-                                                    </div>
-                                                </div>
-                                            </>
+                                            ))
                                         ) : (
                                             <div className="empty-state-feed">
                                                 <div className="empty-feed-icon"><FaBell /></div>
-                                                <p>{t('maintenanceHome.stayTuned')}</p>
+                                                <p>You're all caught up</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Rating Card */}
                                 <div className="rating-premium-card">
                                     <div className="rating-header">
-                                        <h3>{t('maintenanceHome.yourRating')}</h3>
+                                        <h3>Your rating</h3>
                                     </div>
                                     <div className="rating-body">
                                         <div className="rating-big-score">
-                                            <span>{hasData ? "4.8" : "0.0"}</span>
+                                            <span>{ratingData.score.toFixed(1)}</span>
                                             <span className="rating-max">/ 5</span>
                                         </div>
-                                        <div className="rating-stars">
-                                            {hasData ? (
-                                                <>
-                                                    <FaStar className="star-filled" />
-                                                    <FaStar className="star-filled" />
-                                                    <FaStar className="star-filled" />
-                                                    <FaStar className="star-filled" />
-                                                    <FaStarHalfAlt className="star-filled" />
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                    <FaStar className="star-empty" />
-                                                </>
-                                            )}
-                                        </div>
+                                        <div className="rating-stars">{ratingData.stars}</div>
                                         <p className="rating-text">
-                                            {hasData ? t('maintenanceHome.basedOnReviews', { count: 45 }) : t('maintenanceHome.noReviewsYet')}
+                                            {ratingData.count > 0
+                                                ? `Based on ${ratingData.count} completed jobs`
+                                                : 'No reviews yet'}
                                         </p>
                                     </div>
-                                    {hasData && (
-                                        <button className="view-reviews-btn">
-                                            {t('maintenanceHome.viewAllReviews')} <FaChevronRight />
-                                        </button>
-                                    )}
                                 </div>
-
                             </div>
-
                         </div>
                     </div>
 

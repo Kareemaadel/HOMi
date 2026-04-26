@@ -1,124 +1,67 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Header from '../../../../../components/global/header';
 import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
-import JobRequestCard from '../components/JobRequestCard';
-import type { JobRequestCardProps } from '../components/JobRequestCard';
-import DetailedMaintenanceModal from '../components/DetailedMaintenanceModal';
 import './JobRequests.css';
+import {
+    FaTools, FaCheckCircle, FaTimesCircle, FaHourglassHalf,
+    FaMapMarkerAlt, FaUser, FaInfoCircle,
+} from 'react-icons/fa';
+import maintenanceService, {
+    type MaintenanceJobApplication,
+    type MaintenanceJobApplicationStatus,
+} from '../../../../../services/maintenance.service';
 
-// Mock Data
-const MOCK_JOB_REQUESTS: Omit<JobRequestCardProps, 'onViewDetails'>[] = [
-    {
-        id: 'req-001',
-        issueType: 'Plumbing Issue',
-        description: 'The kitchen sink is severely leaking from the pipes underneath. Water is pooling on the floor and requires immediate attention to prevent water damage to the cabinets.',
-        requesterName: 'Sarah Jenkins',
-        requesterRole: 'Tenant',
-        propertyLocation: 'Apt 4B, Sunset Boulevard, Cairo',
-        urgency: 'Critical',
-        price: 1500,
-        dateRequested: 'Oct 24, 2023',
-        paymentMethod: 'Cash'
-    },
-    {
-        id: 'req-002',
-        issueType: 'Electrical Repair',
-        description: 'Multiple power outlets in the living room have stopped working. I checked the breaker but everything seems fine there. Needs an electrician to inspect.',
-        requesterName: 'Ahmed Hassan',
-        requesterRole: 'Landlord',
-        propertyLocation: 'Villa 12, Palm Hills, Giza',
-        urgency: 'High',
-        price: 800,
-        dateRequested: 'Oct 23, 2023',
-        paymentMethod: 'Visa'
-    },
-    {
-        id: 'req-003',
-        issueType: 'HVAC Maintenance',
-        description: 'The air conditioning unit in the master bedroom is making a loud rattling noise and not cooling properly. It just blows warm air now.',
-        requesterName: 'Nour El-Din',
-        requesterRole: 'Tenant',
-        propertyLocation: 'Unit 502, Maadi Degla',
-        urgency: 'Medium',
-        price: 'Pending Estimate',
-        dateRequested: 'Oct 21, 2023',
-        paymentMethod: 'Instapay'
-    },
-    {
-        id: 'req-004',
-        issueType: 'Carpentry/Door Repair',
-        description: 'The front door lock is sticking and it is very difficult to turn the key. Sometimes it takes several minutes to lock or unlock the door.',
-        requesterName: 'Mona Zaki',
-        requesterRole: 'Landlord',
-        propertyLocation: 'Building 5, Zamalek',
-        urgency: 'Medium',
-        price: 450,
-        dateRequested: 'Oct 20, 2023',
-        paymentMethod: 'Vodafone cash'
-    },
-    {
-        id: 'req-005',
-        issueType: 'Appliance Repair',
-        description: 'The built-in oven is not heating up. The display turns on, but the heating element seems to be broken. Need it fixed before the weekend.',
-        requesterName: 'Omar Tarek',
-        requesterRole: 'Tenant',
-        propertyLocation: 'Apt 12C, New Cairo',
-        urgency: 'Low',
-        price: 1200,
-        dateRequested: 'Oct 19, 2023',
-        paymentMethod: 'Cash'
-    },
-    {
-        id: 'req-006',
-        issueType: 'Water Heater Replacement',
-        description: 'There is no hot water in the apartment. The electric water heater is completely unresponsive and seems to be leaking slightly from the bottom.',
-        requesterName: 'Laila Mahmoud',
-        requesterRole: 'Tenant',
-        propertyLocation: 'Apt 8A, Heliopolis',
-        urgency: 'High',
-        price: 3500,
-        dateRequested: 'Oct 18, 2023',
-        paymentMethod: 'Visa'
-    }
+const STATUS_FILTERS: { id: 'ALL' | MaintenanceJobApplicationStatus; label: string }[] = [
+    { id: 'ALL', label: 'All' },
+    { id: 'PENDING', label: 'Pending' },
+    { id: 'ACCEPTED', label: 'Accepted' },
+    { id: 'REJECTED', label: 'Rejected' },
+    { id: 'WITHDRAWN', label: 'Withdrawn' },
 ];
 
+function statusBadge(status: MaintenanceJobApplicationStatus) {
+    switch (status) {
+        case 'PENDING':
+            return { cls: 'pending', icon: <FaHourglassHalf />, label: 'Pending' };
+        case 'ACCEPTED':
+            return { cls: 'accepted', icon: <FaCheckCircle />, label: 'Accepted' };
+        case 'REJECTED':
+            return { cls: 'rejected', icon: <FaTimesCircle />, label: 'Rejected' };
+        case 'WITHDRAWN':
+            return { cls: 'withdrawn', icon: <FaTimesCircle />, label: 'Withdrawn' };
+    }
+}
+
 const JobRequests: React.FC = () => {
-    const [filter, setFilter] = useState('All');
-    const [selectedJob, setSelectedJob] = useState<any | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [filter, setFilter] = useState<'ALL' | MaintenanceJobApplicationStatus>('ALL');
+    const [apps, setApps] = useState<MaintenanceJobApplication[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // Toggle this to false to easily view the empty state
-    const hasData = true;
-
-    const handleViewDetails = (id: string) => {
-        const job = MOCK_JOB_REQUESTS.find(req => req.id === id);
-        if (job) {
-            // Mapping job props to match modal expected object
-            setSelectedJob({
-                ...job,
-                datePosted: job.dateRequested,
-                deadline: '48 hours' // Mock deadline
-            });
-            setIsModalOpen(true);
+    const load = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const list = await maintenanceService.listMyApplications();
+            setApps(list);
+        } catch (err: any) {
+            setError(err?.response?.data?.message ?? 'Failed to load your applications.');
+        } finally {
+            setLoading(false);
         }
+    }, []);
+
+    useEffect(() => { void load(); }, [load]);
+
+    const filtered = filter === 'ALL' ? apps : apps.filter((a) => a.status === filter);
+
+    const counts = {
+        all: apps.length,
+        pending: apps.filter((a) => a.status === 'PENDING').length,
+        accepted: apps.filter((a) => a.status === 'ACCEPTED').length,
+        rejected: apps.filter((a) => a.status === 'REJECTED').length,
     };
-
-    const handleAcceptJob = (id: string, scheduleTime: string) => {
-        console.log(`Job ${id} accepted and scheduled for ${scheduleTime}`);
-        // Logic to update job status would go here
-    };
-
-    const handleIgnoreJob = (id: string) => {
-        console.log(`Job ${id} ignored`);
-        setIsModalOpen(false);
-    };
-
-    const data = hasData ? MOCK_JOB_REQUESTS : [];
-
-    const filteredRequests = filter === 'All'
-        ? data
-        : data.filter(req => req.urgency === filter);
 
     return (
         <div className="maintenance-job-requests-page">
@@ -130,21 +73,21 @@ const JobRequests: React.FC = () => {
                 <main className="job-requests-content">
                     <div className="job-requests-header">
                         <div>
-                            <h1 className="page-title">Job Requests</h1>
-                            <p className="page-subtitle">Manage and respond to maintenance requests from landlords and tenants.</p>
+                            <h1 className="page-title">My applications</h1>
+                            <p className="page-subtitle">Track every job you've applied to. Accepted ones move to "My Jobs".</p>
                         </div>
 
                         <div className="job-requests-actions">
                             <div className="filter-group">
-                                <span className="filter-label">Filter by Urgency:</span>
+                                <span className="filter-label">Filter:</span>
                                 <div className="filter-buttons">
-                                    {['All', 'Critical', 'High', 'Medium', 'Low'].map(f => (
+                                    {STATUS_FILTERS.map((f) => (
                                         <button
-                                            key={f}
-                                            className={`filter-btn ${filter === f ? 'active' : ''}`}
-                                            onClick={() => setFilter(f)}
+                                            key={f.id}
+                                            className={`filter-btn ${filter === f.id ? 'active' : ''}`}
+                                            onClick={() => setFilter(f.id)}
                                         >
-                                            {f}
+                                            {f.label}
                                         </button>
                                     ))}
                                 </div>
@@ -154,39 +97,77 @@ const JobRequests: React.FC = () => {
 
                     <div className="job-requests-summary">
                         <div className="summary-card">
-                            <div className="summary-value">{data.length}</div>
-                            <div className="summary-label">Total Requests</div>
+                            <div className="summary-value">{counts.all}</div>
+                            <div className="summary-label">Total applications</div>
                         </div>
                         <div className="summary-card">
-                            <div className="summary-value critical">{data.filter(r => r.urgency === 'Critical').length}</div>
-                            <div className="summary-label">Critical</div>
+                            <div className="summary-value high">{counts.pending}</div>
+                            <div className="summary-label">Pending review</div>
                         </div>
                         <div className="summary-card">
-                            <div className="summary-value high">{data.filter(r => r.urgency === 'High').length}</div>
-                            <div className="summary-label">High Priority</div>
+                            <div className="summary-value active">{counts.accepted}</div>
+                            <div className="summary-label">Accepted</div>
                         </div>
                         <div className="summary-card">
-                            <div className="summary-value active">{hasData ? 4 : 0}</div>
-                            <div className="summary-label">Active Jobs</div>
+                            <div className="summary-value critical">{counts.rejected}</div>
+                            <div className="summary-label">Rejected</div>
                         </div>
                     </div>
 
+                    {error && (
+                        <div style={{ padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 12 }}>
+                            {error}
+                        </div>
+                    )}
+
                     <div className="job-requests-grid">
-                        {hasData && filteredRequests.length > 0 ? (
-                            filteredRequests.map(request => (
-                                <JobRequestCard
-                                    key={request.id}
-                                    {...request}
-                                    onViewDetails={handleViewDetails}
-                                />
-                            ))
+                        {loading ? (
+                            <div className="no-requests-found"><h3>Loading…</h3></div>
+                        ) : filtered.length > 0 ? (
+                            filtered.map((app) => {
+                                const badge = statusBadge(app.status);
+                                const req = app.request;
+                                return (
+                                    <div className="app-card" key={app.id}>
+                                        <div className="app-card-top">
+                                            <div className="app-icon"><FaTools /></div>
+                                            <div className={`app-badge app-badge-${badge.cls}`}>
+                                                {badge.icon} {badge.label}
+                                            </div>
+                                        </div>
+
+                                        <h4 className="app-title">{req?.title ?? 'Maintenance request'}</h4>
+                                        <p className="app-desc">{req?.description ?? ''}</p>
+
+                                        <div className="app-meta">
+                                            <div><FaUser /> {req?.tenant ? `${req.tenant.firstName} ${req.tenant.lastName}` : '—'}</div>
+                                            {req?.property && <div><FaMapMarkerAlt /> {req.property.address}</div>}
+                                        </div>
+
+                                        <div className="app-price-row">
+                                            <div>
+                                                <span className="app-price-label">Your bid</span>
+                                                <strong className="app-price-amount">EGP {Number(app.finalPrice).toLocaleString()}</strong>
+                                            </div>
+                                            {app.etaHours != null && (
+                                                <div>
+                                                    <span className="app-price-label">ETA</span>
+                                                    <strong>{app.etaHours}h</strong>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {app.coverNote && <p className="app-note"><FaInfoCircle /> "{app.coverNote}"</p>}
+                                    </div>
+                                );
+                            })
                         ) : (
                             <div className="no-requests-found">
                                 <div className="empty-state-icon">📋</div>
-                                <h3>No requests found</h3>
-                                <p>There are no job requests matching the selected filter.</p>
-                                <button className="btn-clear-filter" onClick={() => setFilter('All')}>
-                                    View Available Jobs
+                                <h3>No applications yet</h3>
+                                <p>Browse the marketplace to find your first job and submit your final price.</p>
+                                <button className="btn-clear-filter" onClick={() => window.location.href = '/available-jobs'}>
+                                    Browse marketplace
                                 </button>
                             </div>
                         )}
@@ -194,18 +175,9 @@ const JobRequests: React.FC = () => {
                 </main>
             </div>
 
-            <DetailedMaintenanceModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                request={selectedJob}
-                onAccept={handleAcceptJob}
-                onIgnore={handleIgnoreJob}
-            />
-
             <Footer />
         </div>
     );
 };
 
 export default JobRequests;
-

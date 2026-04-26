@@ -42,8 +42,13 @@ function parseApiError(err: unknown): string {
     return data.message || 'Failed to change password. Please try again.';
 }
 
-const Security: React.FC = () => {
+interface SecurityProps {
+    role?: string | null;
+}
+
+const Security: React.FC<SecurityProps> = ({ role }) => {
     const navigate = useNavigate();
+    const isMaintainer = role === 'MAINTENANCE_PROVIDER';
     const isGoogleUser = localStorage.getItem('authProvider') === 'google';
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
@@ -89,7 +94,9 @@ const Security: React.FC = () => {
     const allChecksPassed = checks.every(c => c.test(newPassword));
     const isPasswordProtected = true; // Password flow already implemented for both email and Google users.
 
-    const securityScore = (isPasswordProtected ? 45 : 0) + (isProfileComplete ? 40 : 0) + (isPasskeyEnabled ? 15 : 0);
+    const securityScore = isMaintainer
+        ? (isPasswordProtected ? 80 : 0) + (isPasskeyEnabled ? 20 : 0)
+        : (isPasswordProtected ? 45 : 0) + (isProfileComplete ? 40 : 0) + (isPasskeyEnabled ? 15 : 0);
     const scoreLabel = securityScore >= 100 ? 'Excellent' : securityScore >= 70 ? 'Good' : 'Needs attention';
     const isPerfectScore = securityScore === 100;
     const scoreStrokeColor = isPerfectScore ? '#22c55e' : '#2563eb';
@@ -253,21 +260,23 @@ const Security: React.FC = () => {
                         <p className={`security-inline-note ${passkeyMessage.type}`}>{passkeyMessage.text}</p>
                     )}
                 </div>
-                <div className={`tool-card ${isProfileComplete ? 'tool-card-complete' : ''}`}>
-                    <div className="tool-icon-box"><FaHistory /></div>
-                    <h4>{isProfileComplete ? 'Profile Complete' : 'Complete Profile'}</h4>
-                    <p>{isProfileComplete ? 'Your verification details are already completed.' : 'Finish setting up your account'}</p>
-                    <button
-                        className="tool-btn"
-                        disabled={isProfileComplete}
-                        onClick={() => {
-                            if (isProfileComplete) return;
-                            navigate('/complete-profile', { state: { fromSettings: true } });
-                        }}
-                    >
-                        {isProfileComplete ? 'Completed' : 'Continue'}
-                    </button>
-                </div>
+                {!isMaintainer && (
+                    <div className={`tool-card ${isProfileComplete ? 'tool-card-complete' : ''}`}>
+                        <div className="tool-icon-box"><FaHistory /></div>
+                        <h4>{isProfileComplete ? 'Profile Complete' : 'Complete Profile'}</h4>
+                        <p>{isProfileComplete ? 'Your verification details are already completed.' : 'Finish setting up your account'}</p>
+                        <button
+                            className="tool-btn"
+                            disabled={isProfileComplete}
+                            onClick={() => {
+                                if (isProfileComplete) return;
+                                navigate('/complete-profile', { state: { fromSettings: true } });
+                            }}
+                        >
+                            {isProfileComplete ? 'Completed' : 'Continue'}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ── Change Password Modal ─────────────────────────────────────── */}

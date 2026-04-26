@@ -1,4 +1,5 @@
 import apiClient from '../config/api';
+import { clearTestingClockCache, isTestDateEnabled, saveTestingClockSnapshot } from '../shared/utils/testingClock';
 
 export interface ContractPaymentTerms {
     rentAmount: number | null;
@@ -66,6 +67,103 @@ interface BalancePaymentApiResponse {
     };
 }
 
+interface MonthlyRentPaymentApiResponse {
+    success: boolean;
+    data: {
+        contract: LandlordContract;
+        remainingBalance: number;
+        debitedAmount: number;
+        paidForMonth: string;
+        lateFeeApplied?: number;
+        wasLate?: boolean;
+        installmentsPaid?: number;
+    };
+}
+
+export type TenantPaymentHistoryType =
+    | 'CONTRACT_INITIAL'
+    | 'RENT_MONTHLY'
+    | 'MAINTENANCE'
+    | 'MAINTENANCE_REFUND';
+
+export interface TenantPaymentHistoryItem {
+    id: string;
+    createdAt: string;
+    type: TenantPaymentHistoryType;
+    direction: 'DEBIT' | 'CREDIT';
+    amount: number;
+    currency: 'EGP';
+    status: 'SUCCESS';
+    reference: string;
+    description: string;
+    entityType: string | null;
+    entityId: string | null;
+    installmentsCount?: number;
+}
+
+interface TenantPaymentHistoryApiResponse {
+    success: boolean;
+    data: TenantPaymentHistoryItem[];
+}
+
+interface TestingClockState {
+    enabled: boolean;
+    offsetDays: number;
+    now: string;
+    autopay?: { contractsSettled: number };
+}
+
+interface TestingClockApiResponse {
+    success: boolean;
+    data: TestingClockState;
+}
+
+export type RentInstallmentStatus = 'PAID' | 'DUE' | 'OVERDUE' | 'UPCOMING';
+
+export interface RentInstallmentItem {
+    index: number;
+    label: string;
+    dueDate: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    totalAmount: number;
+    status: RentInstallmentStatus;
+    isPaid: boolean;
+    paidAt: string | null;
+}
+
+export interface ContractInstallments {
+    contractId: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    rentDueDate: string | null;
+    leaseDurationMonths: number;
+    autopayEnabled: boolean;
+    walletBalance: number;
+    pendingLandlordCredit: number;
+    paidInstallments: number;
+    dueInstallments: number;
+    overdueInstallments: number;
+    outstandingInstallments: number;
+    nextPayableIndex: number | null;
+    nextPayableTotal: number;
+    items: RentInstallmentItem[];
+    now: string;
+}
+
+interface ContractInstallmentsApiResponse {
+    success: boolean;
+    data: ContractInstallments;
+}
+
+interface AutopayApiResponse {
+    success: boolean;
+    data: {
+        contractId: string;
+        autopayEnabled: boolean;
+    };
+}
+
 export type LandlordContractStatus = 'PENDING_LANDLORD' | 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
 export type RentDueDate = '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH';
 
@@ -106,9 +204,12 @@ export interface LandlordContract {
     id: string;
     contractId: string;
     leaseId: string | null;
+    rentalRequestId?: string;
     status: LandlordContractStatus;
+    paymentStatus?: 'PENDING' | 'PAID' | 'FAILED';
     rentAmount: number | null;
     securityDeposit: number | null;
+    serviceFee?: number;
     rentDueDate: RentDueDate | null;
     lateFeeAmount: number | null;
     maxOccupants: number | null;
@@ -120,6 +221,7 @@ export interface LandlordContract {
     tenantEmergencyPhone?: string | null;
     propertyRegistrationNumber: string | null;
     landlordSignedAt: string | null;
+    paymentVerifiedAt?: string | null;
     createdAt: string;
     landlord?: ContractParty;
     tenant?: ContractParty;
@@ -164,7 +266,60 @@ interface ContractListResponse {
     };
 }
 
+/**
+ * Stub returned by testing-clock helpers when the client is built with
+ * `VITE_TEST_DATE=false`. Mimics the disabled state from the server so the
+ * rest of the app never sees `enabled: true` in that mode.
+ */
+const buildDisabledTestingClockState = (): TestingClockState => ({
+    enabled: false,
+    offsetDays: 0,
+    now: new Date().toISOString(),
+});
+
 class ContractService {
+    async getTestingClock(): Promise<TestingClockState> {
+        if (!isTestDateEnabled()) {
+            clearTestingClockCache();
+            return buildDisabledTestingClockState();
+        }
+        const response = await apiClient.get<TestingClockApiResponse>('/contracts/testing/clock');
+        saveTestingClockSnapshot({
+            now: response.data.data.now,
+            offsetDays: response.data.data.offsetDays,
+        });
+        return response.data.data;
+    }
+
+    async advanceTestingClock(days = 15): Promise<TestingClockState> {
+        if (!isTestDateEnabled()) {
+            return buildDisabledTestingClockState();
+        }
+        const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/advance', { days });
+        saveTestingClockSnapshot({
+            now: response.data.data.now,
+            offsetDays: response.data.data.offsetDays,
+        });
+        return response.data.data;
+    }
+
+    async resetTestingClock(): Promise<TestingClockState> {
+        if (!isTestDateEnabled()) {
+            clearTestingClockCache();
+            return buildDisabledTestingClockState();
+        }
+        const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/reset');
+        if (Number(response.data.data.offsetDays ?? 0) === 0) {
+            clearTestingClockCache();
+        } else {
+            saveTestingClockSnapshot({
+                now: response.data.data.now,
+                offsetDays: response.data.data.offsetDays,
+            });
+        }
+        return response.data.data;
+    }
+
     async getContractPaymentDetails(contractId: string): Promise<ContractDetails> {
         const response = await apiClient.get<ContractApiResponse>(`/contracts/${contractId}`);
         const c = response.data.data;
@@ -203,6 +358,28 @@ class ContractService {
         return response.data.data;
     }
 
+    async payMonthlyRentFromBalance(contractId: string): Promise<MonthlyRentPaymentApiResponse['data']> {
+        const response = await apiClient.post<MonthlyRentPaymentApiResponse>(`/contracts/${contractId}/payments/balance/pay-rent`);
+        return response.data.data;
+    }
+
+    async getContractInstallments(contractId: string): Promise<ContractInstallments> {
+        const response = await apiClient.get<ContractInstallmentsApiResponse>(`/contracts/${contractId}/installments`);
+        return response.data.data;
+    }
+
+    async setContractAutopay(contractId: string, enabled: boolean): Promise<AutopayApiResponse['data']> {
+        const response = await apiClient.patch<AutopayApiResponse>(`/contracts/${contractId}/autopay`, { enabled });
+        return response.data.data;
+    }
+
+    async getPaymentHistory(limit = 100): Promise<TenantPaymentHistoryItem[]> {
+        const response = await apiClient.get<TenantPaymentHistoryApiResponse>('/contracts/payments/history', {
+            params: { limit },
+        });
+        return response.data.data;
+    }
+
     async initiateWalletTopup(amount: number, paymentMethod: WalletTopupPaymentMethod, saveCard?: boolean): Promise<WalletTopupCheckoutResponse['data']> {
         const response = await apiClient.post<WalletTopupCheckoutResponse>('/contracts/payments/wallet/topup/initiate', {
             amount,
@@ -213,9 +390,14 @@ class ContractService {
     }
 
     async verifyWalletTopup(transactionId: number): Promise<WalletBalanceApiResponse['data']> {
-        const response = await apiClient.post<WalletBalanceApiResponse>('/contracts/payments/wallet/topup/verify', {
-            transaction_id: transactionId,
-        });
+        // Paymob transaction-lookup can occasionally take 15–30s end-to-end.
+        // Override the default 10s client timeout so we don't bail before the
+        // backend (which itself retries once on upstream timeout).
+        const response = await apiClient.post<WalletBalanceApiResponse>(
+            '/contracts/payments/wallet/topup/verify',
+            { transaction_id: transactionId },
+            { timeout: 60000 }
+        );
         return response.data.data;
     }
 

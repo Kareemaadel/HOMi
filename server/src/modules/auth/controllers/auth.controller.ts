@@ -16,6 +16,7 @@ import type {
     UpdateProfileRequest,
     ChangePasswordRequest,
     UpdateRoleRequest,
+    MaintenanceApplicationRequest,
 } from '../interfaces/auth.interfaces.js';
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/server';
 import { webauthnService } from '../services/webauthn.service.js';
@@ -40,6 +41,16 @@ export class AuthController {
         }
     }
 
+    async applyMaintenanceProvider(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const input = req.body as MaintenanceApplicationRequest;
+            const result = await authService.applyAsMaintenanceProvider(input);
+            res.status(201).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
     /**
      * POST /auth/login
      * Authenticate user and return tokens
@@ -57,6 +68,33 @@ export class AuthController {
                 clearRefreshCookie(res);
                 res.status(200).json(result);
             }
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async maintenanceLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { rememberMe, ...credentials } = req.body as LoginInput;
+            const result = await authService.maintenanceLogin(credentials as LoginRequest);
+
+            if (rememberMe === true) {
+                setRefreshCookie(res, result.refreshToken!);
+                res.status(200).json({ ...result, refreshToken: undefined });
+            } else {
+                clearRefreshCookie(res);
+                res.status(200).json(result);
+            }
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async checkMaintenanceAvailability(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const input = req.body as { email?: string; phone?: string };
+            const result = await authService.checkMaintenanceAvailability(input);
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }

@@ -21,14 +21,21 @@ export interface ConversationReadEvent {
 
 class SocketService {
     private socket: Socket | null = null;
+    private forcedDisabled = false;
 
     connect(): Socket | null {
+        if (this.forcedDisabled) return null;
         const token = localStorage.getItem('accessToken');
         if (!token) {
+            this.disconnect();
             return null;
         }
 
-        if (this.socket?.connected) {
+        if (this.socket) {
+            this.socket.auth = { token };
+            if (!this.socket.connected && !this.socket.active) {
+                this.socket.connect();
+            }
             return this.socket;
         }
 
@@ -39,6 +46,16 @@ class SocketService {
             auth: { token },
             transports: ['websocket', 'polling'],
             withCredentials: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1500,
+        });
+
+        this.socket.on('connect_error', (err: any) => {
+            const message = String(err?.message ?? '').toLowerCase();
+            if (message.includes('unauthorized') || message.includes('authentication')) {
+                this.forcedDisabled = true;
+                this.disconnect();
+            }
         });
 
         return this.socket;
@@ -49,6 +66,10 @@ class SocketService {
             this.socket.disconnect();
             this.socket = null;
         }
+    }
+
+    resetAuthState(): void {
+        this.forcedDisabled = false;
     }
 
     joinConversation(conversationId: string): void {
@@ -81,6 +102,60 @@ class SocketService {
 
     offConversationRead(handler: (payload: ConversationReadEvent) => void): void {
         this.socket?.off('conversation:read', handler);
+    }
+
+    // ─── Maintenance ────────────────────────────────────────────────────────
+    joinMaintenanceRequest(requestId: string): void {
+        this.socket?.emit('maintenance:join', { requestId });
+    }
+
+    leaveMaintenanceRequest(requestId: string): void {
+        this.socket?.emit('maintenance:leave', { requestId });
+    }
+
+    onMaintenanceLocation(
+        handler: (payload: { requestId: string; lat: number; lng: number; reportedAt: string }) => void
+    ): void {
+        this.socket?.on('maintenance:location', handler);
+    }
+
+    offMaintenanceLocation(
+        handler: (payload: { requestId: string; lat: number; lng: number; reportedAt: string }) => void
+    ): void {
+        this.socket?.off('maintenance:location', handler);
+    }
+
+    onMaintenanceStatus(
+        handler: (payload: { requestId: string; status: string }) => void
+    ): void {
+        this.socket?.on('maintenance:status', handler);
+    }
+
+    offMaintenanceStatus(
+        handler: (payload: { requestId: string; status: string }) => void
+    ): void {
+        this.socket?.off('maintenance:status', handler);
+    }
+
+    onMaintenanceAwaitingConfirmation(
+        handler: (payload: { requestId: string }) => void
+    ): void {
+        this.socket?.on('maintenance:awaiting_confirmation', handler);
+    }
+
+    offMaintenanceAwaitingConfirmation(
+        handler: (payload: { requestId: string }) => void
+    ): void {
+        this.socket?.off('maintenance:awaiting_confirmation', handler);
+    }
+
+    // ─── Notifications ──────────────────────────────────────────────────────
+    onNotificationNew(handler: (payload: unknown) => void): void {
+        this.socket?.on('notification:new', handler);
+    }
+
+    offNotificationNew(handler: (payload: unknown) => void): void {
+        this.socket?.off('notification:new', handler);
     }
 }
 

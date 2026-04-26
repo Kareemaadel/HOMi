@@ -1,324 +1,78 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import Header from '../../../../components/global/header';
 import Footer from '../../../../components/global/footer';
 import Sidebar from '../../../../components/global/Landlord/sidebar';
-import ProviderCard from '../components/ProviderCard';
-import DetailedIssueModal from '../components/DetailedIssueModal';
-import ProviderProfile from '../components/ProviderProfile';
+import LiveTrackingModal from '../components/LiveTrackingModal';
 import './LandlordMaintenance.css';
 import {
-    FaPlus, FaSearch, FaFilter, FaTools, FaCalendarCheck,
-    FaHistory, FaMapMarkerAlt, FaHammer, FaWrench, FaBolt,
-    FaPaintRoller, FaCheckCircle, FaClock, FaTimesCircle,
-    FaExclamationTriangle, FaChevronRight, FaStar
+    FaTools, FaCheckCircle, FaClock, FaExclamationTriangle,
+    FaChevronRight, FaMapMarkerAlt, FaUser, FaWallet,
 } from 'react-icons/fa';
+import maintenanceService, {
+    type MaintenanceRequest,
+} from '../../../../services/maintenance.service';
+import socketService from '../../../../services/socket.service';
 
-// Mock Data
-const MOCK_PROVIDERS = [
-    {
-        id: 'p1',
-        name: 'Ahmed Plumbing Solutions',
-        specialty: 'Plumbing & Drainage',
-        rating: 4.8,
-        reviewCount: 124,
-        location: 'Maadi, Cairo',
-        priceRange: 'EGP 200',
-        imageUrl: 'https://images.unsplash.com/photo-1581578731522-745d4b45a0e7?q=80&w=400&auto=format&fit=crop',
-        isVerified: true,
-        completedJobs: 450
-    },
-    {
-        id: 'p2',
-        name: 'SafeWire Electrical',
-        specialty: 'Electrical Systems',
-        rating: 4.9,
-        reviewCount: 89,
-        location: 'New Cairo',
-        priceRange: 'EGP 350',
-        imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=400&auto=format&fit=crop',
-        isVerified: true,
-        completedJobs: 230
-    },
-    {
-        id: 'p3',
-        name: 'Modern Interiors Painting',
-        specialty: 'Painting & Decor',
-        rating: 4.7,
-        reviewCount: 156,
-        location: 'Zamalek, Cairo',
-        priceRange: 'EGP 150',
-        imageUrl: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=400&auto=format&fit=crop',
-        isVerified: false,
-        completedJobs: 820
-    },
-    {
-        id: 'p4',
-        name: 'CoolBreeze AC Service',
-        specialty: 'HVAC Maintenance',
-        rating: 4.6,
-        reviewCount: 67,
-        location: 'Sheikh Zayed',
-        priceRange: 'EGP 400',
-        imageUrl: 'https://images.unsplash.com/photo-1599708144666-47b2c9c8172b?q=80&w=400&auto=format&fit=crop',
-        isVerified: true,
-        completedJobs: 180
+function statusBadge(status: MaintenanceRequest['status']) {
+    switch (status) {
+        case 'OPEN': return { label: 'Open', cls: 'open' };
+        case 'ASSIGNED': return { label: 'Scheduled', cls: 'scheduled' };
+        case 'EN_ROUTE': return { label: 'On the way', cls: 'en-route' };
+        case 'IN_PROGRESS': return { label: 'In progress', cls: 'in-progress' };
+        case 'AWAITING_CONFIRMATION': return { label: 'Awaiting confirmation', cls: 'awaiting' };
+        case 'COMPLETED': return { label: 'Completed', cls: 'completed' };
+        case 'DISPUTED': return { label: 'Disputed', cls: 'disputed' };
+        case 'RESOLVED_BY_ADMIN': return { label: 'Resolved by admin', cls: 'completed' };
+        case 'CANCELLED': return { label: 'Cancelled', cls: 'cancelled' };
+        default: return { label: status, cls: 'open' };
     }
-];
-
-const MOCK_MY_REQUESTS = [
-    {
-        id: 'req-1',
-        issueType: 'Water Leak',
-        description: 'Kitchen sink is leaking significantly from the main valve.',
-        status: 'Scheduled',
-        providerName: 'Ahmed Plumbing Solutions',
-        date: 'Oct 25, 2023',
-        price: 300,
-        urgency: 'High'
-    },
-    {
-        id: 'req-2',
-        issueType: 'AC Maintenance',
-        description: 'Annual cleaning for 2 units in the living room.',
-        status: 'In Progress',
-        providerName: 'CoolBreeze AC Service',
-        date: 'Oct 23, 2023',
-        price: 800,
-        urgency: 'Medium'
-    },
-    {
-        id: 'req-3',
-        issueType: 'Light Fixture',
-        description: 'Bedroom chandelier needs installation.',
-        status: 'Completed',
-        providerName: 'SafeWire Electrical',
-        date: 'Oct 15, 2023',
-        price: 450,
-        urgency: 'Low'
-    }
-];
-
-const MOCK_MARKETPLACE_POSTS = [
-    {
-        id: 'post-1',
-        issueType: 'Gardening',
-        description: 'Need lawn mowing and tree trimming for my backyard.',
-        applications: 5,
-        postedDate: '2 days ago',
-        status: 'Live',
-        budget: 'EGP 800'
-    }
-];
+}
 
 const LandlordMaintenance: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'post' | 'browse' | 'active'>('post');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterCategory, setFilterCategory] = useState('All');
-    const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
-    const [selectedIssue, setSelectedIssue] = useState<any>(null);
-    const [isViewOnlyModal, setIsViewOnlyModal] = useState(false);
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-    const [selectedProviderProfile, setSelectedProviderProfile] = useState<any>(null);
+    const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [selected, setSelected] = useState<MaintenanceRequest | null>(null);
+    const [trackRequest, setTrackRequest] = useState<MaintenanceRequest | null>(null);
 
-    const handleViewProfile = (id: string) => {
-        const provider = MOCK_PROVIDERS.find(p => p.id === id);
-        if (provider) {
-            setSelectedProviderProfile(provider);
-            setIsProfileModalOpen(true);
+    const load = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const list = await maintenanceService.listLandlordRequests();
+            setRequests(list);
+        } catch (err: any) {
+            setError(err?.response?.data?.message ?? 'Failed to load maintenance.');
+        } finally {
+            setLoading(false);
         }
-    };
+    }, []);
 
-    const handlePostSuccess = () => {
-        console.log('Issue posted successfully');
-    };
+    useEffect(() => { void load(); }, [load]);
 
-    const openPostModal = () => {
-        setSelectedIssue(null);
-        setIsViewOnlyModal(false);
-        setIsIssueModalOpen(true);
-    };
+    useEffect(() => {
+        socketService.connect();
+        const handler = () => { void load(); };
+        socketService.onMaintenanceStatus(handler);
+        socketService.onNotificationNew(handler);
+        return () => {
+            socketService.offMaintenanceStatus(handler);
+            socketService.offNotificationNew(handler);
+        };
+    }, [load]);
 
-    const openViewIssueModal = (post: any) => {
-        setSelectedIssue({
-            issueType: post.issueType,
-            description: post.description,
-            budget: post.budget.replace('EGP ', ''),
-            urgency: 'Medium', // Default for mock data
-            paymentMethod: 'Cash',
-            responseTime: '24 Hours',
-            images: [
-                'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400'
-            ]
-        });
-        setIsViewOnlyModal(true);
-        setIsIssueModalOpen(true);
-    };
-
-    const renderTabContent = () => {
-        switch (activeTab) {
-            case 'post':
-                return (
-                    <div className="tab-pane animate-in">
-                        <div className="section-header">
-                            <div>
-                                <h2>Community Marketplace</h2>
-                                <p>Post your issue to the HOMi community and get bids from certified pros.</p>
-                            </div>
-                            <button className="post-issue-btn" onClick={openPostModal}>
-                                <FaPlus /> Post New Issue
-                            </button>
-                        </div>
-
-                        <div className="marketplace-grid">
-                            {MOCK_MARKETPLACE_POSTS.map(post => (
-                                <div key={post.id} className="post-card-premium">
-                                    <div className="post-card-badge">{post.status}</div>
-                                    <div className="post-card-content">
-                                        <div className="post-card-type">
-                                            <FaHammer className="type-icon" />
-                                            {post.issueType}
-                                        </div>
-                                        <p className="post-description">{post.description}</p>
-                                        <div className="post-meta">
-                                            <div className="meta-item">
-                                                <FaClock /> {post.postedDate}
-                                            </div>
-                                            <div className="meta-item">
-                                                <FaBolt /> {post.applications} Applications
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="post-card-footer">
-                                        <div className="budget-info">
-                                            <span>Budget:</span>
-                                            <strong>{post.budget}</strong>
-                                        </div>
-                                        <button className="view-bids-btn" onClick={() => openViewIssueModal(post)}>View Issue</button>
-                                    </div>
-                                </div>
-                            ))}
-
-                            <div className="add-post-placeholder" onClick={openPostModal}>
-                                <div className="placeholder-content">
-                                    <div className="plus-icon-box">
-                                        <FaPlus />
-                                    </div>
-                                    <p>Post a new maintenance request to get help fast.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 'browse':
-                return (
-                    <div className="tab-pane animate-in">
-                        <div className="browse-controls">
-                            <div className="search-box-premium">
-                                <FaSearch className="search-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="Search by name, skill, or location..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                            <div className="filter-dropdown-premium">
-                                <FaFilter className="filter-icon" />
-                                <select
-                                    value={filterCategory}
-                                    onChange={(e) => setFilterCategory(e.target.value)}
-                                >
-                                    <option value="All">All Categories</option>
-                                    <option value="Plumbing">Plumbing</option>
-                                    <option value="Electrical">Electrical</option>
-                                    <option value="Painting">Painting</option>
-                                    <option value="HVAC">HVAC</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="providers-grid">
-                            {MOCK_PROVIDERS
-                                .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    p.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
-                                .map(provider => (
-                                    <ProviderCard
-                                        key={provider.id}
-                                        {...provider}
-                                        onViewProfile={handleViewProfile}
-                                    />
-                                ))
-                            }
-                        </div>
-                    </div>
-                );
-            case 'active':
-                const hasActiveRequests = MOCK_MY_REQUESTS.length > 0;
-                return (
-                    <div className="tab-pane animate-in">
-                        <div className="section-header">
-                            <div>
-                                <h2>Track Maintenance</h2>
-                                <p>Monitor the progress of your scheduled and active maintenance jobs.</p>
-                            </div>
-                        </div>
-
-                        {hasActiveRequests ? (
-                            <div className="active-requests-list">
-                                {MOCK_MY_REQUESTS.map(req => (
-                                    <div key={req.id} className="active-request-row">
-                                        <div className={`status-indicator ${req.status.toLowerCase().replace(' ', '-')}`}>
-                                            {req.status === 'Scheduled' && <FaCalendarCheck />}
-                                            {req.status === 'In Progress' && <FaClock />}
-                                            {req.status === 'Completed' && <FaCheckCircle />}
-                                        </div>
-
-                                        <div className="req-main-info">
-                                            <h4>{req.issueType}</h4>
-                                            <p>{req.description}</p>
-                                        </div>
-
-                                        <div className="req-provider">
-                                            <span className="label">Provider</span>
-                                            <span className="value">{req.providerName}</span>
-                                        </div>
-
-                                        <div className="req-date">
-                                            <span className="label">Date</span>
-                                            <span className="value">{req.date}</span>
-                                        </div>
-
-                                        <div className="req-status-badge">
-                                            <span className={`badge ${req.status.toLowerCase().replace(' ', '-')}`}>
-                                                {req.status}
-                                            </span>
-                                        </div>
-
-                                        <button className="req-details-btn">
-                                            <FaChevronRight />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="empty-state-container">
-                                <div className="empty-state-icon-box">
-                                    <FaTools />
-                                </div>
-                                <h3>No active requests</h3>
-                                <p>You haven't scheduled any maintenance yet. Post an issue or browse providers to get started.</p>
-                                <div className="empty-state-actions">
-                                    <button className="primary-empty-btn" onClick={() => setActiveTab('post')}>Post an Issue</button>
-                                    <button className="secondary-empty-btn" onClick={() => setActiveTab('browse')}>Browse Providers</button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
+    const totals = useMemo(() => {
+        const active = requests.filter((r) => !['COMPLETED', 'CANCELLED', 'RESOLVED_BY_ADMIN'].includes(r.status));
+        const onLandlord = requests.filter((r) => r.chargeParty === 'LANDLORD');
+        const totalLandlordCharges = onLandlord.reduce((s, r) => s + (r.agreedPrice ?? 0), 0);
+        const open = requests.filter((r) => r.status === 'OPEN').length;
+        return {
+            active: active.length,
+            open,
+            disputes: requests.filter((r) => r.status === 'DISPUTED').length,
+            landlordCharges: totalLandlordCharges,
+        };
+    }, [requests]);
 
     return (
         <div className="landlord-maintenance-layout">
@@ -329,66 +83,157 @@ const LandlordMaintenance: React.FC = () => {
                 <main className="maintenance-main-container">
                     <header className="maintenance-hero">
                         <div className="hero-text">
-                            <span className="pre-title">Home Care & Support</span>
-                            <h1>Maintenance Hub</h1>
-                            <p>Everything you need to keep your home in perfect condition.</p>
+                            <span className="pre-title">Property care overview</span>
+                            <h1>Maintenance for your properties</h1>
+                            <p>Watch over every maintenance event happening at your properties — fully transparent.</p>
                         </div>
 
                         <div className="maintenance-quick-stats">
                             <div className="mini-stat">
-                                <span className="stat-num">{MOCK_MY_REQUESTS.filter(r => r.status !== 'Completed').length}</span>
-                                <span className="stat-desc">Pending Issues</span>
+                                <span className="stat-num">{totals.active}</span>
+                                <span className="stat-desc">Active issues</span>
                             </div>
                             <div className="mini-stat accent">
-                                <span className="stat-num">{MOCK_PROVIDERS.length}</span>
-                                <span className="stat-desc">Nearby Pros</span>
+                                <span className="stat-num">{totals.open}</span>
+                                <span className="stat-desc">Awaiting maintainer</span>
+                            </div>
+                            <div className="mini-stat">
+                                <span className="stat-num">{totals.disputes}</span>
+                                <span className="stat-desc">Open disputes</span>
+                            </div>
+                            <div className="mini-stat accent">
+                                <span className="stat-num">EGP {totals.landlordCharges.toFixed(0)}</span>
+                                <span className="stat-desc">Charged to you (deducted from rent)</span>
                             </div>
                         </div>
                     </header>
 
-                    <nav className="maintenance-tabs">
-                        <button
-                            className={`tab-btn ${activeTab === 'post' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('post')}
-                        >
-                            <FaPlus className="tab-icon" />
-                            <span>Post an Issue</span>
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === 'browse' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('browse')}
-                        >
-                            <FaSearch className="tab-icon" />
-                            <span>Browse Providers</span>
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('active')}
-                        >
-                            <FaTools className="tab-icon" />
-                            <span>Active Requests</span>
-                        </button>
-                    </nav>
+                    {error && <div style={{ padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 12, marginBottom: '1rem' }}>{error}</div>}
 
-                    <div className="tab-content-wrapper">
-                        {renderTabContent()}
-                    </div>
+                    <section className="tab-content-wrapper">
+                        <div className="tab-pane animate-in">
+                            <div className="section-header">
+                                <div>
+                                    <h2>All maintenance requests</h2>
+                                    <p>Notifications about each event are also delivered to your inbox.</p>
+                                </div>
+                            </div>
+
+                            {loading ? (
+                                <div className="empty-state-container"><h3>Loading…</h3></div>
+                            ) : requests.length === 0 ? (
+                                <div className="empty-state-container">
+                                    <div className="empty-state-icon-box"><FaTools /></div>
+                                    <h3>No maintenance yet</h3>
+                                    <p>You'll see issues here as soon as your tenants report any.</p>
+                                </div>
+                            ) : (
+                                <div className="active-requests-list">
+                                    {requests.map((req) => {
+                                        const sb = statusBadge(req.status);
+                                        return (
+                                            <div key={req.id} className="active-request-row">
+                                                <div className={`status-indicator ${sb.cls}`}>
+                                                    {req.status === 'COMPLETED' || req.status === 'RESOLVED_BY_ADMIN' ? <FaCheckCircle /> :
+                                                        req.status === 'DISPUTED' ? <FaExclamationTriangle /> :
+                                                            <FaClock />}
+                                                </div>
+                                                <div className="req-main-info">
+                                                    <h4>{req.title}</h4>
+                                                    <p>{req.description}</p>
+                                                    {req.property && (
+                                                        <small style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#64748b', marginTop: 4 }}>
+                                                            <FaMapMarkerAlt /> {req.property.title} — {req.property.address}
+                                                        </small>
+                                                    )}
+                                                </div>
+                                                <div className="req-provider">
+                                                    <span className="label"><FaUser style={{ marginRight: 4 }} /> Tenant</span>
+                                                    <span className="value">
+                                                        {req.tenant ? `${req.tenant.firstName} ${req.tenant.lastName}`.trim() : '—'}
+                                                    </span>
+                                                </div>
+                                                <div className="req-provider">
+                                                    <span className="label">Maintainer</span>
+                                                    <span className="value">
+                                                        {req.provider
+                                                            ? req.provider.businessName ??
+                                                                `${req.provider.firstName} ${req.provider.lastName}`.trim()
+                                                            : '—'}
+                                                    </span>
+                                                </div>
+                                                <div className="req-date">
+                                                    <span className="label">
+                                                        <FaWallet style={{ marginRight: 4 }} />
+                                                        {req.chargeParty === 'LANDLORD' ? 'You pay' : 'Tenant pays'}
+                                                    </span>
+                                                    <span className="value">
+                                                        {req.agreedPrice != null ? `EGP ${Number(req.agreedPrice).toFixed(2)}` : '—'}
+                                                    </span>
+                                                </div>
+                                                <div className="req-status-badge">
+                                                    <span className={`badge ${sb.cls}`}>{sb.label}</span>
+                                                </div>
+                                                <button
+                                                    className="req-details-btn"
+                                                    onClick={() => {
+                                                        if (req.status === 'EN_ROUTE' || req.status === 'IN_PROGRESS') setTrackRequest(req);
+                                                        else setSelected(req);
+                                                    }}
+                                                >
+                                                    <FaChevronRight />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </section>
                 </main>
 
-                <DetailedIssueModal
-                    isOpen={isIssueModalOpen}
-                    onClose={() => setIsIssueModalOpen(false)}
-                    onPostSuccess={handlePostSuccess}
-                    isViewOnly={isViewOnlyModal}
-                    initialData={selectedIssue}
-                />
+                {selected && (
+                    <div className="lt-modal-overlay" onClick={() => setSelected(null)}>
+                        <div className="lt-modal" onClick={(e) => e.stopPropagation()}>
+                            <header className="lt-modal-header">
+                                <div>
+                                    <h2>{selected.title}</h2>
+                                    <p>{selected.description}</p>
+                                </div>
+                                <button className="lt-close-btn" onClick={() => setSelected(null)}>×</button>
+                            </header>
+                            <div className="lt-modal-body">
+                                <div><strong>Status:</strong> {selected.status}</div>
+                                <div><strong>Charge:</strong> {selected.chargeParty}</div>
+                                <div><strong>Agreed price:</strong> {selected.agreedPrice ? `EGP ${Number(selected.agreedPrice).toFixed(2)}` : '—'}</div>
+                                {selected.images.length > 0 && (
+                                    <div>
+                                        <strong>Issue photos:</strong>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                                            {selected.images.map((u, i) => <img key={i} src={u} alt={`issue ${i + 1}`} style={{ width: 90, height: 90, borderRadius: 8, objectFit: 'cover' }} />)}
+                                        </div>
+                                    </div>
+                                )}
+                                {selected.completionImages.length > 0 && (
+                                    <div>
+                                        <strong>Completion photos:</strong>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                                            {selected.completionImages.map((u, i) => <img key={i} src={u} alt={`completion ${i + 1}`} style={{ width: 90, height: 90, borderRadius: 8, objectFit: 'cover' }} />)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
-                <ProviderProfile
-                    isOpen={isProfileModalOpen}
-                    onClose={() => setIsProfileModalOpen(false)}
-                    provider={selectedProviderProfile}
-                    myIssues={MOCK_MARKETPLACE_POSTS}
-                />
+                {trackRequest && (
+                    <LiveTrackingModal
+                        isOpen
+                        onClose={() => setTrackRequest(null)}
+                        request={trackRequest}
+                    />
+                )}
 
                 <Footer />
             </div>

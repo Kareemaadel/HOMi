@@ -114,6 +114,9 @@ export class Contract extends Model<
     declare paymob_order_id: CreationOptional<number | null>;
     declare paymob_transaction_id: CreationOptional<number | null>;
 
+    // Autopay
+    declare autopay_enabled: CreationOptional<boolean>;
+
     // Timestamps
     declare created_at: CreationOptional<Date>;
     declare updated_at: CreationOptional<Date>;
@@ -282,6 +285,11 @@ Contract.init(
         paymob_transaction_id: {
             type: DataTypes.BIGINT,
             allowNull: true,
+        },
+        autopay_enabled: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
         },
         created_at: {
             type: DataTypes.DATE,

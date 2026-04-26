@@ -41,6 +41,46 @@
 
 .right-spacer {
   justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Notification Button --- */
+.header-notif-btn {
+  position: relative;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #475569;
+  transition: background 0.18s, color 0.18s, transform 0.12s;
+}
+
+.header-notif-btn:hover {
+  background: #e0f2fe;
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.header-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 2px solid white;
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
 }
 
 /* --- Desktop Navigation --- */

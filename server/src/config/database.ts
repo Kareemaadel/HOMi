@@ -116,6 +116,22 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 ALTER TABLE IF EXISTS "profiles"
                     ADD COLUMN IF NOT EXISTS "current_location" VARCHAR(255);
             `);
+            // ── Rental requests: replace the legacy (tenant_id, property_id)
+            //    unique constraint with a PARTIAL unique index so tenants can
+            //    re-apply after a previous request was declined or after a
+            //    contract has ended. The constraint must only fire for the
+            //    in-flight PENDING row.
+            await sequelize.query(`
+                ALTER TABLE IF EXISTS "rental_requests"
+                    DROP CONSTRAINT IF EXISTS "unique_tenant_property_request";
+            `);
+            await sequelize.query(`DROP INDEX IF EXISTS "unique_tenant_property_request";`);
+            await sequelize.query(`
+                CREATE UNIQUE INDEX IF NOT EXISTS "uniq_pending_rental_request_per_tenant_property"
+                ON "rental_requests" ("tenant_id", "property_id")
+                WHERE "status" = 'PENDING';
+            `);
+
             // ── Safely drop any stale FK constraints that Sequelize alter-mode
             //    may try to recreate, causing SequelizeUnknownConstraintError.
             //    Each block is fully idempotent — safe to run on every startup.
@@ -134,7 +150,10 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                               'property_detailed_locations', 'property_ownership_docs',
                               'rental_requests', 'saved_properties',
                               'property_amenities', 'property_house_rules',
-                              'messages', 'payment_methods', 'notifications'
+                              'messages', 'payment_methods', 'notifications',
+                              'maintenance_requests', 'maintenance_job_applications',
+                              'maintenance_locations', 'maintenance_conflicts',
+                              'maintenance_ratings', 'landlord_maintenance_charges'
                           )
                     LOOP
                         EXECUTE format(
@@ -177,6 +196,85 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
         await sequelize.query(`
             ALTER TABLE IF EXISTS "conversations"
                 ADD COLUMN IF NOT EXISTS "is_support" BOOLEAN NOT NULL DEFAULT false;
+        `);
+        await sequelize.query(`
+            DO $$ BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM pg_type t
+                    WHERE t.typname = 'enum_users_role'
+                ) AND NOT EXISTS (
+                    SELECT 1 FROM pg_enum e
+                    JOIN pg_type t ON e.enumtypid = t.oid
+                    WHERE t.typname = 'enum_users_role'
+                      AND e.enumlabel = 'MAINTENANCE_PROVIDER'
+                ) THEN
+                    ALTER TYPE enum_users_role ADD VALUE 'MAINTENANCE_PROVIDER';
+                END IF;
+            END $$;
+        `);
+        await sequelize.query(`
+            CREATE TABLE IF NOT EXISTS "maintenance_provider_applications" (
+                "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                "user_id" UUID NOT NULL UNIQUE REFERENCES "users"("id") ON DELETE CASCADE,
+                "provider_type" VARCHAR(32) NOT NULL,
+                "business_name" VARCHAR(255),
+                "category" VARCHAR(120) NOT NULL,
+                "categories" JSONB,
+                "criminal_record_document" TEXT,
+                "selfie_image" TEXT,
+                "national_id_front" TEXT,
+                "national_id_back" TEXT,
+                "number_of_employees" INTEGER,
+                "company_location" VARCHAR(255),
+                "documentation_files" JSONB,
+                "notes" TEXT,
+                "status" VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+                "rejection_reason" TEXT,
+                "reviewed_by_admin_id" UUID,
+                "reviewed_at" TIMESTAMP WITH TIME ZONE,
+                "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+            );
+        `);
+        await sequelize.query(`
+            ALTER TABLE IF EXISTS "maintenance_provider_applications"
+                ADD COLUMN IF NOT EXISTS "selfie_image" TEXT,
+                ADD COLUMN IF NOT EXISTS "national_id_front" TEXT,
+                ADD COLUMN IF NOT EXISTS "national_id_back" TEXT;
+        `);
+        // Existing databases may have this column as VARCHAR with a text default.
+        // PostgreSQL can fail when Sequelize later alters it to ENUM if default is still text.
+        await sequelize.query(`
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'maintenance_provider_applications'
+                      AND column_name = 'status'
+                      AND udt_name <> 'enum_maintenance_provider_applications_status'
+                ) THEN
+                    ALTER TABLE "maintenance_provider_applications"
+                        ALTER COLUMN "status" DROP DEFAULT;
+
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM pg_type t
+                        WHERE t.typname = 'enum_maintenance_provider_applications_status'
+                    ) THEN
+                        CREATE TYPE "public"."enum_maintenance_provider_applications_status" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+                    END IF;
+
+                    ALTER TABLE "maintenance_provider_applications"
+                        ALTER COLUMN "status"
+                        TYPE "public"."enum_maintenance_provider_applications_status"
+                        USING ("status"::"public"."enum_maintenance_provider_applications_status");
+
+                    ALTER TABLE "maintenance_provider_applications"
+                        ALTER COLUMN "status" SET DEFAULT 'PENDING';
+                END IF;
+            END
+            $$;
         `);
         await sequelize.query(`
             CREATE INDEX IF NOT EXISTS "conversations_is_support_last_message"

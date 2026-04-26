@@ -1,87 +1,109 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Header from '../../../../../components/global/header';
 import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
-import JobCard from '../components/JobCard';
-import type { JobStatus } from '../components/JobCard';
-import DetailedJobModal from '../components/DetailedJobModal';
+import ProviderJobModal from '../components/ProviderJobModal';
 import './MyJobs.css';
+import {
+    FaMapMarkerAlt, FaUser, FaTools, FaSpinner, FaCheckCircle,
+    FaCar, FaHourglassHalf, FaTimesCircle, FaExclamationTriangle,
+} from 'react-icons/fa';
+import maintenanceService, {
+    type MaintenanceRequest,
+    type MaintenanceRequestStatus,
+} from '../../../../../services/maintenance.service';
+import socketService from '../../../../../services/socket.service';
 
-const MOCK_MY_JOBS = [
-    {
-        id: 'job-101',
-        issueType: 'Plumbing Repair',
-        description: 'Main kitchen pipe burst. Requires replacement of 2-meter section and pressure testing. Ensure all seals are waterproof and check for secondary leaks in the drainage system.',
-        requesterName: 'Sarah Jenkins',
-        requesterRole: 'Tenant' as const,
-        propertyLocation: 'Apt 4B, Sunset Boulevard, Cairo',
-        urgency: 'Critical' as const,
-        price: 2400,
-        dateRequested: 'Oct 22, 2023',
-        status: 'In Progress' as JobStatus,
-        finishDate: 'Oct 25, 2023 at 2:00 PM'
-    },
-    {
-        id: 'job-102',
-        issueType: 'Electrical Maintenance',
-        description: 'Periodic inspection of circuit breakers and replacement of faulty switches in common areas. Test all safety groundings.',
-        requesterName: 'Ahmed Hassan',
-        requesterRole: 'Landlord' as const,
-        propertyLocation: 'Building 12, Maadi Degla',
-        urgency: 'Medium' as const,
-        price: 1200,
-        dateRequested: 'Oct 20, 2023',
-        status: 'Scheduled' as JobStatus,
-        finishDate: 'Oct 28, 2023 at 10:00 AM'
-    },
-    {
-        id: 'job-103',
-        issueType: 'AC Service',
-        description: 'Full cleaning and gas refill for 3 split units. Units are making noise and cooling is inefficient. Replace filters if necessary.',
-        requesterName: 'Mona Zaki',
-        requesterRole: 'Landlord' as const,
-        propertyLocation: 'Villa 5, Beverly Hills, Giza',
-        urgency: 'High' as const,
-        price: 3500,
-        dateRequested: 'Oct 15, 2023',
-        status: 'Completed' as JobStatus,
-        finishDate: 'Oct 18, 2023'
-    },
-    {
-        id: 'job-104',
-        issueType: 'Door Lock Repair',
-        description: 'Front door smart lock is not responding to codes. Needs manual bypass and electronic repair. Check battery and connectivity.',
-        requesterName: 'Omar Tarek',
-        requesterRole: 'Tenant' as const,
-        propertyLocation: 'Unit 802, Nile Towers',
-        urgency: 'High' as const,
-        price: 850,
-        dateRequested: 'Oct 10, 2023',
-        status: 'Canceled' as JobStatus
-    }
+type TabId = 'all' | 'active' | 'awaiting' | 'completed' | 'disputed' | 'cancelled';
+
+const TABS: { id: TabId; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'active', label: 'Active' },
+    { id: 'awaiting', label: 'Awaiting confirmation' },
+    { id: 'completed', label: 'Completed' },
+    { id: 'disputed', label: 'Disputed' },
+    { id: 'cancelled', label: 'Cancelled' },
 ];
 
+function statusInTab(status: MaintenanceRequestStatus, tab: TabId): boolean {
+    switch (tab) {
+        case 'all': return true;
+        case 'active': return ['ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS'].includes(status);
+        case 'awaiting': return status === 'AWAITING_CONFIRMATION';
+        case 'completed': return ['COMPLETED', 'RESOLVED_BY_ADMIN'].includes(status);
+        case 'disputed': return status === 'DISPUTED';
+        case 'cancelled': return status === 'CANCELLED';
+        default: return true;
+    }
+}
+
+function statusInfo(status: MaintenanceRequestStatus): { label: string; cls: string; icon: React.ReactNode } {
+    switch (status) {
+        case 'ASSIGNED':
+            return { label: 'Scheduled', cls: 'status-assigned', icon: <FaHourglassHalf /> };
+        case 'EN_ROUTE':
+            return { label: 'En route', cls: 'status-en-route', icon: <FaCar /> };
+        case 'IN_PROGRESS':
+            return { label: 'In progress', cls: 'status-in-progress', icon: <FaSpinner className="spin-icon" /> };
+        case 'AWAITING_CONFIRMATION':
+            return { label: 'Awaiting tenant', cls: 'status-awaiting', icon: <FaHourglassHalf /> };
+        case 'COMPLETED':
+        case 'RESOLVED_BY_ADMIN':
+            return { label: status === 'RESOLVED_BY_ADMIN' ? 'Resolved by admin' : 'Completed', cls: 'status-completed', icon: <FaCheckCircle /> };
+        case 'DISPUTED':
+            return { label: 'Disputed', cls: 'status-disputed', icon: <FaExclamationTriangle /> };
+        case 'CANCELLED':
+            return { label: 'Cancelled', cls: 'status-cancelled', icon: <FaTimesCircle /> };
+        case 'OPEN':
+            return { label: 'Open', cls: 'status-open', icon: <FaSpinner /> };
+        default:
+            return { label: status, cls: '', icon: null };
+    }
+}
+
 const MyJobs: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<JobStatus | 'All'>('All');
-    const [selectedJob, setSelectedJob] = useState<any | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabId>('all');
+    const [jobs, setJobs] = useState<MaintenanceRequest[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedJob, setSelectedJob] = useState<MaintenanceRequest | null>(null);
 
-    // Global data flag for testing empty states
-    const [hasData, setHasData] = useState(true);
-
-    const data = hasData ? MOCK_MY_JOBS : [];
-
-    const filteredJobs = activeTab === 'All'
-        ? data
-        : data.filter(job => job.status === activeTab);
-
-    const handleViewJobDetails = (id: string) => {
-        const job = data.find(j => j.id === id);
-        if (job) {
-            setSelectedJob(job);
-            setIsModalOpen(true);
+    const load = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const list = await maintenanceService.listProviderRequests();
+            setJobs(list);
+            setSelectedJob((cur) => (cur ? list.find((j) => j.id === cur.id) ?? cur : cur));
+        } catch (err: any) {
+            setError(err?.response?.data?.message ?? 'Failed to load your jobs.');
+        } finally {
+            setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => { void load(); }, [load]);
+
+    useEffect(() => {
+        socketService.connect();
+        const onStatus = () => { void load(); };
+        socketService.onMaintenanceStatus(onStatus);
+        return () => { socketService.offMaintenanceStatus(onStatus); };
+    }, [load]);
+
+    const filteredJobs = useMemo(
+        () => jobs.filter((j) => statusInTab(j.status, activeTab)),
+        [jobs, activeTab]
+    );
+
+    const summary = useMemo(() => {
+        return {
+            scheduled: jobs.filter((j) => j.status === 'ASSIGNED').length,
+            active: jobs.filter((j) => ['EN_ROUTE', 'IN_PROGRESS'].includes(j.status)).length,
+            awaiting: jobs.filter((j) => j.status === 'AWAITING_CONFIRMATION').length,
+            disputed: jobs.filter((j) => j.status === 'DISPUTED').length,
+        };
+    }, [jobs]);
 
     return (
         <div className="my-jobs-page-wrapper">
@@ -93,35 +115,49 @@ const MyJobs: React.FC = () => {
                 <main className="my-jobs-main">
                     <div className="my-jobs-header">
                         <div className="header-text">
-                            <h1>My Assigned Jobs</h1>
-                            <p>Manage your current workload and review history</p>
+                            <h1>My assigned jobs</h1>
+                            <p>Manage your current workload and review history.</p>
                         </div>
 
                         <div className="jobs-summary-pills">
                             <div className="summary-pill blue">
-                                <span className="pill-count">{data.filter(j => j.status === 'Scheduled').length}</span>
+                                <span className="pill-count">{summary.scheduled}</span>
                                 <span className="pill-label">Scheduled</span>
                             </div>
                             <div className="summary-pill yellow">
-                                <span className="pill-count">{data.filter(j => j.status === 'In Progress').length}</span>
+                                <span className="pill-count">{summary.active}</span>
                                 <span className="pill-label">Active</span>
                             </div>
+                            <div className="summary-pill blue">
+                                <span className="pill-count">{summary.awaiting}</span>
+                                <span className="pill-label">Awaiting</span>
+                            </div>
+                            {summary.disputed > 0 && (
+                                <div className="summary-pill" style={{ background: '#fef2f2', color: '#b91c1c' }}>
+                                    <span className="pill-count">{summary.disputed}</span>
+                                    <span className="pill-label">Disputed</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
+                    {error && (
+                        <div style={{ padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 12, margin: '0 0 1rem' }}>
+                            {error}
+                        </div>
+                    )}
+
                     <div className="tabs-container">
                         <div className="tabs-list">
-                            {['All', 'Scheduled', 'In Progress', 'Completed', 'Canceled'].map((status) => (
+                            {TABS.map((tab) => (
                                 <button
-                                    key={status}
-                                    className={`tab-trigger ${activeTab === status ? 'active' : ''}`}
-                                    onClick={() => setActiveTab(status as any)}
+                                    key={tab.id}
+                                    className={`tab-trigger ${activeTab === tab.id ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(tab.id)}
                                 >
-                                    {status}
+                                    {tab.label}
                                     <span className="tab-count">
-                                        {status === 'All'
-                                            ? data.length
-                                            : data.filter(j => j.status === status).length}
+                                        {tab.id === 'all' ? jobs.length : jobs.filter((j) => statusInTab(j.status, tab.id)).length}
                                     </span>
                                 </button>
                             ))}
@@ -129,24 +165,46 @@ const MyJobs: React.FC = () => {
                     </div>
 
                     <div className="my-jobs-grid">
-                        {filteredJobs.length > 0 ? (
-                            filteredJobs.map(job => (
-                                <JobCard
-                                    key={job.id}
-                                    {...job}
-                                    onViewDetails={handleViewJobDetails}
-                                />
-                            ))
+                        {loading ? (
+                            <div className="empty-jobs-state"><h3>Loading…</h3></div>
+                        ) : filteredJobs.length > 0 ? (
+                            filteredJobs.map((j) => {
+                                const info = statusInfo(j.status);
+                                return (
+                                    <div
+                                        key={j.id}
+                                        className={`mj-card ${info.cls}`}
+                                        onClick={() => setSelectedJob(j)}
+                                    >
+                                        <div className="mj-card-header">
+                                            <span className="mj-cat"><FaTools /> {j.category}</span>
+                                            <span className={`mj-status ${info.cls}`}>{info.icon} {info.label}</span>
+                                        </div>
+                                        <h4 className="mj-title">{j.title}</h4>
+                                        <p className="mj-desc">{j.description}</p>
+                                        <div className="mj-meta">
+                                            <div><FaUser /> {j.tenant ? `${j.tenant.firstName} ${j.tenant.lastName}` : '—'}</div>
+                                            <div><FaMapMarkerAlt /> {j.property?.address ?? '—'}</div>
+                                        </div>
+                                        <div className="mj-footer">
+                                            <div className="mj-price">EGP {Number(j.agreedPrice ?? 0).toFixed(2)}</div>
+                                            <button className="mj-details-btn" onClick={(e) => { e.stopPropagation(); setSelectedJob(j); }}>
+                                                Open
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
                         ) : (
                             <div className="empty-jobs-state">
-                                <div className="empty-jobs-icon">{hasData ? '🔍' : '📁'}</div>
-                                <h3>{hasData ? 'No jobs found' : 'Your job list is empty'}</h3>
+                                <div className="empty-jobs-icon">📁</div>
+                                <h3>No jobs in this view</h3>
                                 <p>
-                                    {hasData
-                                        ? `You don't have any jobs in the "${activeTab}" category.`
-                                        : "You haven't been assigned to any jobs yet. Check the Marketplace for available opportunities."}
+                                    {jobs.length === 0
+                                        ? "You haven't been assigned to any jobs yet. Browse the marketplace to apply."
+                                        : `You don't have any "${TABS.find((t) => t.id === activeTab)?.label}" jobs.`}
                                 </p>
-                                {!hasData && (
+                                {jobs.length === 0 && (
                                     <button className="empty-state-action-btn" onClick={() => window.location.href = '/available-jobs'}>
                                         Browse Marketplace
                                     </button>
@@ -156,10 +214,14 @@ const MyJobs: React.FC = () => {
                     </div>
                 </main>
 
-                <DetailedJobModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+                <ProviderJobModal
+                    isOpen={!!selectedJob}
+                    onClose={() => setSelectedJob(null)}
                     job={selectedJob}
+                    onUpdated={(updated) => {
+                        setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+                        setSelectedJob(updated);
+                    }}
                 />
 
                 <Footer />
@@ -169,4 +231,3 @@ const MyJobs: React.FC = () => {
 };
 
 export default MyJobs;
-

@@ -48,6 +48,7 @@ const Footer = () => {
             <Link to="/homi-plus">{t('footer.homiPro')}</Link>
             <Link to="/pricing">{t('footer.pricingFees')}</Link>
             <Link to="/roommate-matching">{t('footer.roommateMatching')}</Link>
+            <Link to="/maintenance-providers">Maintenance Providers</Link>
           </div>
 
           {/* Resources Links */}

@@ -3,6 +3,8 @@ import { Server, type Socket } from 'socket.io';
 import { env } from '../../config/env.js';
 import { extractBearerToken, verifyAccessToken, type JWTPayload } from '../utils/jwt.util.js';
 import { messageService } from '../../modules/messages/services/message.service.js';
+import { MaintenanceRequest } from '../../modules/maintenance/models/MaintenanceRequest.js';
+import { UserRole } from '../../modules/auth/models/User.js';
 
 interface AuthedSocket extends Socket {
     data: {
@@ -79,6 +81,31 @@ export function initSocketServer(server: HttpServer): Server {
             }
 
             socket.leave(`conversation:${conversationId}`);
+        });
+
+        // ─── Maintenance request live tracking ──────────────────────────
+        socket.on('maintenance:join', async (payload: { requestId?: string }) => {
+            const requestId = payload?.requestId;
+            if (!requestId) return;
+            try {
+                const req = await MaintenanceRequest.findByPk(requestId);
+                if (!req) return;
+                const isParty =
+                    req.tenant_id === user.userId ||
+                    req.landlord_id === user.userId ||
+                    req.assigned_provider_id === user.userId ||
+                    user.role === UserRole.ADMIN;
+                if (!isParty) return;
+                socket.join(`maintenance_request:${requestId}`);
+            } catch {
+                /* ignore */
+            }
+        });
+
+        socket.on('maintenance:leave', (payload: { requestId?: string }) => {
+            const requestId = payload?.requestId;
+            if (!requestId) return;
+            socket.leave(`maintenance_request:${requestId}`);
         });
     });
 

@@ -15,6 +15,8 @@ import type {
     AdminPropertyDetails,
     AdminManagedUser,
     AdminSupportInboxItem,
+    PendingMaintenanceApplication,
+    AdminManagedMaintainer,
 } from '../interfaces/admin.interfaces.js';
 import { Conversation, Message } from '../../messages/models/index.js';
 import { resolveSupportInboxAdminId } from '../../messages/services/support.service.js';
@@ -24,6 +26,10 @@ import type { PropertyResponse } from '../../properties/interfaces/property.inte
 import { propertyService } from '../../properties/services/property.service.js';
 import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
 import { activityLogService } from '../../../shared/services/activity-log.service.js';
+import {
+    MaintenanceProviderApplication,
+    MaintenanceApplicationStatus,
+} from '../../maintenance/models/MaintenanceProviderApplication.js';
 
 export class AdminError extends Error {
     constructor(
@@ -562,6 +568,94 @@ class AdminService {
         };
     }
 
+    async getMaintainersForManagement(): Promise<{ centers: AdminManagedMaintainer[]; individuals: AdminManagedMaintainer[] }> {
+        const users = await User.findAll({
+            where: {
+                role: UserRole.MAINTENANCE_PROVIDER,
+            },
+            paranoid: false,
+            include: [
+                {
+                    model: Profile,
+                    as: 'profile',
+                },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+
+        const applications = await MaintenanceProviderApplication.findAll({
+            where: {
+                user_id: users.map((user) => user.id),
+            },
+            order: [['created_at', 'DESC']],
+        });
+        const applicationMap = new Map(applications.map((application) => [application.user_id, application]));
+
+        const mappedUsers: AdminManagedMaintainer[] = users.map((user) => {
+            const application = applicationMap.get(user.id);
+            return {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                isVerified: user.is_verified,
+                emailVerified: user.email_verified,
+                resetTokenHash: user.reset_token_hash ?? null,
+                resetTokenExpires: user.reset_token_expires ?? null,
+                emailVerificationTokenHash: user.email_verification_token_hash ?? null,
+                emailVerificationTokenExpires: user.email_verification_token_expires ?? null,
+                isBanned: user.is_banned,
+                banReason: user.ban_reason ?? null,
+                banMessage: user.ban_message ?? null,
+                banUntil: user.ban_until ?? null,
+                bannedByAdminId: user.banned_by_admin_id ?? null,
+                banCreatedAt: user.ban_created_at ?? null,
+                createdAt: user.created_at,
+                updatedAt: user.updated_at,
+                deletedAt: user.deleted_at ?? null,
+                profile: user.profile
+                    ? {
+                        id: user.profile.id,
+                        userId: user.profile.user_id,
+                        firstName: user.profile.first_name,
+                        lastName: user.profile.last_name,
+                        phoneNumber: user.profile.phone_number,
+                        bio: user.profile.bio ?? null,
+                        avatarUrl: user.profile.avatar_url ?? null,
+                        currentLocation: user.profile.current_location ?? null,
+                        nationalIdEncrypted: user.profile.national_id ?? null,
+                        nationalIdDecrypted: user.profile.getDecryptedNationalId(),
+                        gender: user.profile.gender ?? null,
+                        birthdate: user.profile.birthdate ? String(user.profile.birthdate) : null,
+                        gamificationPoints: user.profile.gamification_points,
+                        preferredBudgetMin: user.profile.preferred_budget_min !== null ? Number(user.profile.preferred_budget_min) : null,
+                        preferredBudgetMax: user.profile.preferred_budget_max !== null ? Number(user.profile.preferred_budget_max) : null,
+                        walletBalance: Number(user.profile.wallet_balance),
+                        walletPendingOrderId: user.profile.wallet_pending_order_id ?? null,
+                        walletPendingAmountCents: user.profile.wallet_pending_amount_cents ?? null,
+                        walletPendingSaveCard: user.profile.wallet_pending_save_card,
+                        createdAt: user.profile.created_at,
+                        updatedAt: user.profile.updated_at,
+                    }
+                    : null,
+                providerType: application?.provider_type || null,
+                applicationStatus: application?.status || null,
+                applicationSubmittedAt: application?.created_at || null,
+                reviewedAt: application?.reviewed_at || null,
+                businessName: application?.business_name || null,
+                category: application?.category || null,
+                categories: application?.categories || null,
+                numberOfEmployees: application?.number_of_employees || null,
+                companyLocation: application?.company_location || null,
+                notes: application?.notes || null,
+            };
+        });
+
+        return {
+            centers: mappedUsers.filter((user) => user.providerType === 'CENTER'),
+            individuals: mappedUsers.filter((user) => user.providerType === 'INDIVIDUAL'),
+        };
+    }
+
     async banUserForAdmin(
         targetUserId: string,
         adminId: string,
@@ -683,6 +777,81 @@ class AdminService {
         });
 
         return filtered;
+    }
+
+    async getPendingMaintenanceApplications(): Promise<PendingMaintenanceApplication[]> {
+        const applications = await MaintenanceProviderApplication.findAll({
+            where: { status: MaintenanceApplicationStatus.PENDING },
+            order: [['created_at', 'ASC']],
+        });
+
+        const userIds = applications.map((item) => item.user_id);
+        const users = userIds.length > 0
+            ? await User.findAll({
+                where: { id: userIds },
+                include: [{ model: Profile, as: 'profile', attributes: ['first_name', 'last_name', 'phone_number'] }],
+            })
+            : [];
+
+        const userMap = new Map(users.map((u) => [u.id, u]));
+
+        return applications.map((application) => {
+            const user = userMap.get(application.user_id);
+            return {
+                id: application.id,
+                userId: application.user_id,
+                email: user?.email || '',
+                firstName: user?.profile?.first_name || '',
+                lastName: user?.profile?.last_name || '',
+                phone: user?.profile?.phone_number || '',
+                providerType: application.provider_type,
+                businessName: application.business_name,
+                category: application.category,
+                categories: application.categories || null,
+                criminalRecordDocument: application.criminal_record_document,
+                selfieImage: application.selfie_image,
+                nationalIdFront: application.national_id_front,
+                nationalIdBack: application.national_id_back,
+                numberOfEmployees: application.number_of_employees,
+                companyLocation: application.company_location,
+                documentationFiles: application.documentation_files || null,
+                notes: application.notes,
+                createdAt: application.created_at,
+            };
+        });
+    }
+
+    async reviewMaintenanceApplication(
+        applicationId: string,
+        action: 'APPROVE' | 'REJECT',
+        rejectionReason: string | undefined,
+        adminId: string
+    ): Promise<void> {
+        const application = await MaintenanceProviderApplication.findByPk(applicationId);
+        if (!application) {
+            throw new AdminError('Maintenance request not found', 404, 'MAINTENANCE_REQUEST_NOT_FOUND');
+        }
+        if (application.status !== MaintenanceApplicationStatus.PENDING) {
+            throw new AdminError('Maintenance request has already been reviewed', 400, 'MAINTENANCE_ALREADY_REVIEWED');
+        }
+
+        if (action === 'APPROVE') {
+            await application.update({
+                status: MaintenanceApplicationStatus.APPROVED,
+                rejection_reason: null,
+                reviewed_by_admin_id: adminId,
+                reviewed_at: new Date(),
+            });
+            await User.update({ is_verified: true }, { where: { id: application.user_id } });
+            return;
+        }
+
+        await application.update({
+            status: MaintenanceApplicationStatus.REJECTED,
+            rejection_reason: rejectionReason || 'Rejected by admin',
+            reviewed_by_admin_id: adminId,
+            reviewed_at: new Date(),
+        });
     }
 }
 

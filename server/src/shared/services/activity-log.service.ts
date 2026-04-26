@@ -1,4 +1,5 @@
 import { ActivityLog } from '../../modules/admin/models/ActivityLog.js';
+import { testingClockService } from './testing-clock.service.js';
 
 type ActivityActor = {
     userId?: string | null;
@@ -18,6 +19,10 @@ type LogActivityInput = {
 class ActivityLogService {
     async log(input: LogActivityInput): Promise<void> {
         try {
+            // Stamp activity rows with the testing-clock "now" so when the
+            // tester advances the simulated date, payment-history rows show
+            // the simulated date — not the real wall-clock.
+            const now = testingClockService.getNow();
             await ActivityLog.create({
                 actor_user_id: input.actor?.userId ?? null,
                 actor_role: input.actor?.role ?? null,
@@ -27,6 +32,8 @@ class ActivityLogService {
                 entity_id: input.entityId ?? null,
                 description: input.description,
                 metadata: input.metadata ?? null,
+                created_at: now,
+                updated_at: now,
             });
         } catch (error) {
             console.error('Activity log failed:', error);

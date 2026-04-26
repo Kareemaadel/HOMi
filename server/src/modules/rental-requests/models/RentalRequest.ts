@@ -149,15 +149,17 @@ RentalRequest.init(
         underscored: true,
         createdAt: 'created_at',
         updatedAt: 'updated_at',
+        // NOTE: The (tenant_id, property_id) pair is uniquely enforced ONLY for
+        // PENDING requests via a Postgres partial unique index created in the
+        // pre-sync migration (`uniq_pending_rental_request_per_tenant_property`).
+        // We deliberately do NOT declare a Sequelize-level unique here because
+        // historical APPROVED/DECLINED rows must coexist with brand-new PENDING
+        // ones — otherwise tenants couldn't re-apply after a contract ends.
         indexes: [
             { fields: ['tenant_id'] },
             { fields: ['property_id'] },
             { fields: ['status'] },
-            {
-                unique: true,
-                fields: ['tenant_id', 'property_id'],
-                name: 'unique_tenant_property_request',
-            },
+            { fields: ['tenant_id', 'property_id'] },
         ],
     }
 );

@@ -1,0 +1,325 @@
+.installments-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(6px);
+    display: grid;
+    place-items: center;
+    z-index: 1500;
+    padding: 24px;
+}
+
+.installments-modal {
+    background: #ffffff;
+    border-radius: 22px;
+    width: min(960px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.32);
+}
+
+.installments-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px 26px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.installments-eyebrow {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #2563eb;
+    margin-bottom: 4px;
+}
+
+.installments-modal-header h2 {
+    margin: 0 0 4px;
+    font-size: 1.35rem;
+    color: #0f172a;
+}
+
+.installments-subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.installments-close {
+    background: #f1f5f9;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    color: #475569;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.installments-close:hover { background: #e2e8f0; color: #0f172a; }
+
+.installments-state {
+    padding: 32px;
+    text-align: center;
+    color: #64748b;
+}
+
+.installments-summary {
+    padding: 16px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.installments-summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.summary-pill {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-pill span {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.summary-pill strong {
+    font-size: 1.05rem;
+    color: #0f172a;
+}
+
+.summary-pill strong.danger {
+    color: #dc2626;
+}
+
+.autopay-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #ecfeff;
+    border: 1px solid #67e8f9;
+    cursor: pointer;
+}
+
+.autopay-row input {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    accent-color: #0891b2;
+}
+
+.autopay-row strong {
+    color: #0f172a;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.autopay-row small {
+    color: #475569;
+    font-size: 0.78rem;
+}
+
+.installments-table-wrapper {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 26px 12px;
+}
+
+.installments-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.88rem;
+}
+
+.installments-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    color: #475569;
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid #e2e8f0;
+    z-index: 1;
+}
+
+.installments-table tbody tr {
+    transition: background 0.12s ease;
+}
+
+.installments-table tbody tr:hover { background: #f1f5f9; }
+
+.installments-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.row-paid td { color: #065f46; }
+
+.row-overdue td { background: rgba(248, 113, 113, 0.08); color: #b91c1c; }
+
+.row-due td { background: rgba(250, 204, 21, 0.08); color: #92400e; }
+
+.row-upcoming td { color: #475569; }
+
+.row-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+
+.row-status-pill.paid {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.row-status-pill.overdue {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.row-status-pill.due {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fcd34d;
+}
+
+.row-status-pill.upcoming {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+}
+
+.installments-totals {
+    border-top: 1px solid #e2e8f0;
+    padding: 16px 26px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.installments-totals-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #475569;
+}
+
+.installments-totals-row.warn {
+    color: #b91c1c;
+}
+
+.installments-totals-row.credit {
+    color: #065f46;
+}
+
+.installments-totals-row.total {
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px dashed #cbd5e1;
+    font-size: 1.05rem;
+    color: #0f172a;
+}
+
+.installments-totals-row.total strong {
+    color: #1d4ed8;
+}
+
+.installments-error {
+    margin: 12px 26px 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #fee2e2;
+    color: #b91c1c;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.installments-footer {
+    padding: 16px 26px 22px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid #e2e8f0;
+}
+
+.installments-btn {
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.installments-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.installments-btn.ghost {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.installments-btn.ghost:hover:not(:disabled) {
+    background: #e2e8f0;
+}
+
+.installments-btn.primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.25);
+}
+
+.installments-btn.primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 36px rgba(37, 99, 235, 0.32);
+}
+
+@media (max-width: 760px) {
+    .installments-summary-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .installments-modal-header h2 { font-size: 1.15rem; }
+    .installments-table { font-size: 0.78rem; }
+
+    .installments-table thead th,
+    .installments-table tbody td { padding: 8px 8px; }
+}

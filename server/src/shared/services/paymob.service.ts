@@ -46,11 +46,31 @@ class PaymobService {
     constructor() {
         this.client = axios.create({
             baseURL: env.PAYMOB_BASE_URL,
-            timeout: 15000,
+            timeout: 25000,
             headers: {
                 'Content-Type': 'application/json',
             },
         });
+    }
+
+    /**
+     * Run a Paymob HTTP call with a single automatic retry when the upstream
+     * times out (ECONNABORTED) or the network drops momentarily (ECONNRESET).
+     * Paymob's sandbox is occasionally slow — retrying once dramatically
+     * improves success rate without doubling the user's wait time on success.
+     */
+    private async withRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
+        try {
+            return await fn();
+        } catch (error: any) {
+            const code = error?.code;
+            const isTransient = code === 'ECONNABORTED' || code === 'ETIMEDOUT' || code === 'ECONNRESET';
+            if (!isTransient) {
+                throw error;
+            }
+            console.warn(`[PaymobService] ${label} timed out (${code}) — retrying once.`);
+            return await fn();
+        }
     }
 
     private ensureConfigured(): void {
@@ -60,9 +80,11 @@ class PaymobService {
     }
 
     private async authenticate(): Promise<string> {
-        const response = await this.client.post<{ token: string }>('/api/auth/tokens', {
-            api_key: env.PAYMOB_API_KEY,
-        });
+        const response = await this.withRetry('authenticate', () =>
+            this.client.post<{ token: string }>('/api/auth/tokens', {
+                api_key: env.PAYMOB_API_KEY,
+            })
+        );
 
         return response.data.token;
     }
@@ -72,14 +94,16 @@ class PaymobService {
         amountCents: number,
         merchantOrderId: string
     ): Promise<number> {
-        const response = await this.client.post<{ id: number }>('/api/ecommerce/orders', {
-            auth_token: authToken,
-            delivery_needed: false,
-            amount_cents: amountCents,
-            currency: 'EGP',
-            merchant_order_id: merchantOrderId,
-            items: [],
-        });
+        const response = await this.withRetry('createOrder', () =>
+            this.client.post<{ id: number }>('/api/ecommerce/orders', {
+                auth_token: authToken,
+                delivery_needed: false,
+                amount_cents: amountCents,
+                currency: 'EGP',
+                merchant_order_id: merchantOrderId,
+                items: [],
+            })
+        );
 
         return response.data.id;
     }
@@ -92,31 +116,33 @@ class PaymobService {
         callbackUrl: string,
         integrationId: number
     ): Promise<string> {
-        const response = await this.client.post<{ token: string }>('/api/acceptance/payment_keys', {
-            auth_token: authToken,
-            amount_cents: amountCents,
-            expiration: 3600,
-            order_id: orderId,
-            billing_data: {
-                apartment: 'NA',
-                email: billingData.email,
-                floor: 'NA',
-                first_name: billingData.first_name,
-                street: 'NA',
-                building: 'NA',
-                phone_number: billingData.phone_number,
-                shipping_method: 'NA',
-                postal_code: 'NA',
-                city: 'Cairo',
-                country: 'EG',
-                last_name: billingData.last_name,
-                state: 'Cairo',
-            },
-            currency: 'EGP',
-            integration_id: integrationId,
-            lock_order_when_paid: true,
-            redirection_url: callbackUrl,
-        });
+        const response = await this.withRetry('createPaymentKey', () =>
+            this.client.post<{ token: string }>('/api/acceptance/payment_keys', {
+                auth_token: authToken,
+                amount_cents: amountCents,
+                expiration: 3600,
+                order_id: orderId,
+                billing_data: {
+                    apartment: 'NA',
+                    email: billingData.email,
+                    floor: 'NA',
+                    first_name: billingData.first_name,
+                    street: 'NA',
+                    building: 'NA',
+                    phone_number: billingData.phone_number,
+                    shipping_method: 'NA',
+                    postal_code: 'NA',
+                    city: 'Cairo',
+                    country: 'EG',
+                    last_name: billingData.last_name,
+                    state: 'Cairo',
+                },
+                currency: 'EGP',
+                integration_id: integrationId,
+                lock_order_when_paid: true,
+                redirection_url: callbackUrl,
+            })
+        );
 
         return response.data.token;
     }
@@ -157,7 +183,7 @@ class PaymobService {
         this.ensureConfigured();
 
         const authToken = await this.authenticate();
-        const response = await this.client.get<{
+        const response = await this.withRetry('verifyTransaction', () => this.client.get<{
             id: number;
             success: boolean;
             pending: boolean;
@@ -188,7 +214,17 @@ class PaymobService {
                 };
             };
         }>(`/api/acceptance/transactions/${transactionId}`, {
-            params: { auth_token: authToken },
+            // Paymob's GET transaction endpoint uses 'token', not 'auth_token'
+            params: { token: authToken },
+        }));
+
+        console.log('[PaymobService] verifyTransaction raw response:', {
+            transactionId,
+            id: response.data.id,
+            success: response.data.success,
+            pending: response.data.pending,
+            amountCents: response.data.amount_cents,
+            orderId: response.data.order?.id,
         });
 
         const data = response.data;
@@ -211,7 +247,7 @@ class PaymobService {
             pending: data.pending,
             amountCents: data.amount_cents,
             currency: data.currency,
-            orderId: data.order?.id ?? 0,
+            orderId: Number(data.order?.id ?? 0),
             isVoided: data.is_voided,
             isRefunded: data.is_refunded,
             ...(cardToken ? { cardToken } : {}),

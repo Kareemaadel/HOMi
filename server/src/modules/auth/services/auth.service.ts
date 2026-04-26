@@ -5,6 +5,11 @@ import { Property } from '../../properties/models/Property.js';
 import { RentalRequest } from '../../rental-requests/models/RentalRequest.js';
 import { Contract } from '../../contracts/models/Contract.js';
 import {
+    MaintenanceProviderApplication,
+    MaintenanceProviderType,
+    MaintenanceApplicationStatus,
+} from '../../maintenance/models/MaintenanceProviderApplication.js';
+import {
     generateTokenPair,
     generateAccessToken,
     verifyRefreshToken,
@@ -29,6 +34,9 @@ import type {
     EmailVerificationResponse,
     ChangePasswordRequest,
     UpdateRoleRequest,
+    MaintenanceApplicationRequest,
+    MaintenanceAvailabilityRequest,
+    MaintenanceAvailabilityResponse,
 } from '../interfaces/auth.interfaces.js';
 import { activityLogService } from '../../../shared/services/activity-log.service.js';
 
@@ -59,6 +67,33 @@ export class AuthError extends Error {
  * Handles all authentication business logic
  */
 export class AuthService {
+    async checkMaintenanceAvailability(
+        input: MaintenanceAvailabilityRequest
+    ): Promise<MaintenanceAvailabilityResponse> {
+        const email = input.email?.trim().toLowerCase();
+        const phone = input.phone?.trim();
+
+        const [emailUser, phoneProfile] = await Promise.all([
+            email
+                ? User.findOne({
+                    attributes: ['id'],
+                    where: { email },
+                })
+                : Promise.resolve(null),
+            phone
+                ? Profile.findOne({
+                    attributes: ['id'],
+                    where: { phone_number: phone },
+                })
+                : Promise.resolve(null),
+        ]);
+
+        return {
+            emailExists: Boolean(emailUser),
+            phoneExists: Boolean(phoneProfile),
+        };
+    }
+
     private async enforceBanPolicy(user: User): Promise<void> {
         if (!user.is_banned) return;
 
@@ -291,6 +326,80 @@ export class AuthService {
         }
     }
 
+    async applyAsMaintenanceProvider(input: MaintenanceApplicationRequest): Promise<AuthSuccessResponse> {
+        const transaction = await sequelize.transaction();
+        try {
+            const existingUser = await User.findOne({
+                where: { email: input.email.toLowerCase() },
+                transaction,
+            });
+            if (existingUser) {
+                throw new AuthError('Email already registered', 409, 'EMAIL_EXISTS');
+            }
+
+            const existingProfile = await Profile.findOne({
+                where: { phone_number: input.phone },
+                transaction,
+            });
+            if (existingProfile) {
+                throw new AuthError('Phone number already registered', 409, 'PHONE_EXISTS');
+            }
+
+            const user = await User.create(
+                {
+                    email: input.email.toLowerCase(),
+                    password_hash: input.password,
+                    role: UserRole.MAINTENANCE_PROVIDER,
+                    is_verified: false,
+                },
+                { transaction }
+            );
+
+            await Profile.create(
+                {
+                    user_id: user.id,
+                    first_name: input.firstName,
+                    last_name: input.lastName,
+                    phone_number: input.phone,
+                    national_id: null,
+                    gender: null,
+                    birthdate: null,
+                },
+                { transaction }
+            );
+
+            await MaintenanceProviderApplication.create(
+                {
+                    user_id: user.id,
+                    provider_type: input.providerType as (typeof MaintenanceProviderType)[keyof typeof MaintenanceProviderType],
+                    business_name: input.providerType === 'CENTER' ? input.businessName ?? null : null,
+                    category: input.category,
+                    categories: input.providerType === 'CENTER' ? (input.categories ?? [input.category]) : null,
+                    criminal_record_document: input.providerType === 'INDIVIDUAL' ? input.criminalRecordDocument ?? null : null,
+                    selfie_image: input.providerType === 'INDIVIDUAL' ? input.selfieImage ?? null : null,
+                    national_id_front: input.providerType === 'INDIVIDUAL' ? input.nationalIdFront ?? null : null,
+                    national_id_back: input.providerType === 'INDIVIDUAL' ? input.nationalIdBack ?? null : null,
+                    number_of_employees: input.providerType === 'CENTER' ? input.numberOfEmployees ?? null : null,
+                    company_location: input.providerType === 'CENTER' ? input.companyLocation ?? null : null,
+                    documentation_files: input.providerType === 'CENTER' ? (input.documentationFiles ?? null) : null,
+                    notes: input.notes ?? null,
+                    status: MaintenanceApplicationStatus.PENDING,
+                },
+                { transaction }
+            );
+
+            await transaction.commit();
+            return {
+                success: true,
+                message: 'Your maintenance provider request was submitted. An admin will review it soon.',
+            };
+        } catch (error) {
+            await transaction.rollback();
+            if (error instanceof AuthError) throw error;
+            throw new AuthError('Failed to submit maintenance provider request', 500, 'MAINTENANCE_APPLY_FAILED');
+        }
+    }
+
     /**
      * Complete user verification by filling required profile fields
      * Requires email to be verified first
@@ -402,6 +511,41 @@ export class AuthService {
             description: 'User logged in.',
         });
 
+        return this.buildLoginResponse(user, tokens);
+    }
+
+    async maintenanceLogin(input: LoginRequest): Promise<LoginResponse> {
+        const user = await this.findUserByLoginIdentifier(input.identifier);
+        if (!user) {
+            throw new AuthError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
+        }
+        if (user.role !== UserRole.MAINTENANCE_PROVIDER) {
+            throw new AuthError('Use the regular login for tenant or landlord accounts', 403, 'INVALID_MAINTENANCE_ROLE');
+        }
+
+        await this.enforceBanPolicy(user);
+
+        const isPasswordValid = await user.comparePassword(input.password);
+        if (!isPasswordValid) {
+            throw new AuthError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
+        }
+
+        const application = await MaintenanceProviderApplication.findOne({
+            where: { user_id: user.id },
+        });
+
+        if (!application || application.status === MaintenanceApplicationStatus.PENDING) {
+            throw new AuthError('Your request is still under review by admin.', 403, 'MAINTENANCE_REQUEST_PENDING');
+        }
+        if (application.status === MaintenanceApplicationStatus.REJECTED) {
+            throw new AuthError(
+                application.rejection_reason || 'Your maintenance provider request was rejected.',
+                403,
+                'MAINTENANCE_REQUEST_REJECTED'
+            );
+        }
+
+        const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
         return this.buildLoginResponse(user, tokens);
     }
 

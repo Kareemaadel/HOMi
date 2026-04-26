@@ -1,98 +1,97 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../../../../../components/global/header';
 import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
 import './Earnings.css';
 import {
-    FaWallet, FaHistory, FaClock, FaCreditCard,
-    FaArrowUp, FaCheckCircle, FaSpinner,
-    FaRegCalendarAlt, FaDollarSign, FaInfoCircle
+    FaWallet, FaHistory, FaClock, FaArrowUp, FaCheckCircle, FaInfoCircle,
 } from 'react-icons/fa';
+import maintenanceService, {
+    type MaintenanceRequest,
+    type ProviderEarnings,
+} from '../../../../../services/maintenance.service';
 
-type TabType = 'overview' | 'upcoming' | 'methods';
+type TabType = 'overview' | 'upcoming';
+
+const formatMoney = (amount: number) => `EGP ${amount.toLocaleString()}`;
 
 const Earnings: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
+    const [earnings, setEarnings] = useState<ProviderEarnings | null>(null);
+    const [upcoming, setUpcoming] = useState<MaintenanceRequest[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // Individual data flags for each section
-    const [hasStatsOverview, setHasStatsOverview] = useState(true);
-    const [hasHistoryData, setHasHistoryData] = useState(true);
-    const [hasUpcomingData, setHasUpcomingData] = useState(true);
-    const [hasMethodsData, setHasMethodsData] = useState(true);
-
-    const MOCK_EARNINGS_HISTORY = [
-        { id: 'TXN-001', date: 'Oct 20, 2023', ref: 'Broken AC Repair - Villa 12', amount: 450, status: 'Success' },
-        { id: 'TXN-002', date: 'Oct 18, 2023', ref: 'Kitchen Plumbing - Apt 402', amount: 200, status: 'Success' },
-        { id: 'TXN-003', date: 'Oct 15, 2023', ref: 'Wall Painting - Zamalek 5', amount: 1200, status: 'Success' },
-        { id: 'TXN-004', date: 'Oct 12, 2023', ref: 'Door Lock Change - Giza', amount: 150, status: 'Success' },
-    ];
-
-    const MOCK_UPCOMING_PAYOUTS = [
-        { id: 'JOB-701', date: 'Oct 25, 2023', ref: 'Water Heater Replacement', amount: 800, status: 'Scheduled' },
-        { id: 'JOB-702', date: 'Oct 27, 2023', ref: 'Electrical Rewiring', amount: 1500, status: 'In Progress' },
-    ];
-
-    const formatMoney = (amount: number) => `EGP ${amount.toLocaleString()}`;
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const [e, mine] = await Promise.all([
+                    maintenanceService.getProviderEarnings(),
+                    maintenanceService.listProviderRequests(['ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS', 'AWAITING_CONFIRMATION']),
+                ]);
+                if (cancelled) return;
+                setEarnings(e);
+                setUpcoming(mine);
+            } catch (err: any) {
+                if (!cancelled) setError(err?.response?.data?.message ?? 'Failed to load earnings.');
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
 
     const renderOverview = () => (
         <div className="earnings-tab-content animate-fade-in">
-            {hasStatsOverview ? (
-                <div className="earnings-stats-mosaic">
-                    <div className="earnings-stat-card featured">
-                        <div className="stat-icon-box"><FaWallet /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Available Balance</span>
-                            <div className="stat-value">{formatMoney(650)}</div>
-                        </div>
-                        <button className="earnings-withdraw-btn" onClick={() => alert('Withdrawal request submitted!')}>
-                            Withdraw Funds
-                        </button>
-                    </div>
-                    <div className="earnings-stat-card">
-                        <div className="stat-icon-box"><FaArrowUp /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Total Lifetime Earnings</span>
-                            <div className="stat-value">{formatMoney(12450)}</div>
-                        </div>
-                    </div>
-                    <div className="earnings-stat-card">
-                        <div className="stat-icon-box"><FaCheckCircle /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Completed Jobs</span>
-                            <div className="stat-value">42</div>
-                        </div>
+            <div className="earnings-stats-mosaic">
+                <div className="earnings-stat-card featured">
+                    <div className="stat-icon-box"><FaWallet /></div>
+                    <div className="stat-info">
+                        <span className="stat-label">Wallet balance</span>
+                        <div className="stat-value">{formatMoney(earnings?.walletBalance ?? 0)}</div>
                     </div>
                 </div>
-            ) : (
-                <div className="earnings-empty-card stats-empty">
-                    <div className="empty-icon-wrap"><FaWallet /></div>
-                    <h4>No Financial Activity</h4>
-                    <p>Start accepting jobs to see your balance and earnings statistics here.</p>
+                <div className="earnings-stat-card">
+                    <div className="stat-icon-box"><FaArrowUp /></div>
+                    <div className="stat-info">
+                        <span className="stat-label">Total lifetime earnings</span>
+                        <div className="stat-value">{formatMoney(earnings?.totalEarned ?? 0)}</div>
+                    </div>
                 </div>
-            )}
+                <div className="earnings-stat-card">
+                    <div className="stat-icon-box"><FaCheckCircle /></div>
+                    <div className="stat-info">
+                        <span className="stat-label">Completed jobs</span>
+                        <div className="stat-value">{earnings?.completedJobs ?? 0}</div>
+                    </div>
+                </div>
+            </div>
 
             <div className="earnings-table-section">
-                <h3 className="section-title">Earnings History</h3>
-                {hasHistoryData ? (
+                <h3 className="section-title">Recent completed jobs</h3>
+                {(earnings?.recentCompleted?.length ?? 0) > 0 ? (
                     <div className="earnings-table-wrapper">
                         <table className="earnings-modern-table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
-                                    <th>Service Reference</th>
-                                    <th>Transaction ID</th>
-                                    <th>Amount Earned</th>
+                                    <th>Service</th>
+                                    <th>Job ID</th>
+                                    <th>Amount earned</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {MOCK_EARNINGS_HISTORY.map((row) => (
-                                    <tr key={row.id}>
-                                        <td>{row.date}</td>
-                                        <td className="font-semibold">{row.ref}</td>
-                                        <td><code className="txn-code">{row.id}</code></td>
-                                        <td className="text-success font-bold">+{formatMoney(row.amount)}</td>
-                                        <td><span className="earnings-pill success">{row.status}</span></td>
+                                {earnings!.recentCompleted.map((j) => (
+                                    <tr key={j.id}>
+                                        <td>{new Date(j.tenantConfirmedAt ?? j.providerCompletedAt ?? j.updatedAt).toLocaleDateString()}</td>
+                                        <td className="font-semibold">{j.title}</td>
+                                        <td><code className="txn-code">{j.id.slice(0, 8)}</code></td>
+                                        <td className="text-success font-bold">+{formatMoney(Number(j.agreedPrice ?? 0))}</td>
+                                        <td><span className="earnings-pill success">Paid</span></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -101,8 +100,8 @@ const Earnings: React.FC = () => {
                 ) : (
                     <div className="earnings-empty-card table-empty">
                         <div className="empty-icon-wrap"><FaHistory /></div>
-                        <h4>No History Yet</h4>
-                        <p>Your completed maintenance requests and payments will be listed here.</p>
+                        <h4>No history yet</h4>
+                        <p>Your completed maintenance jobs and payments will be listed here.</p>
                     </div>
                 )}
             </div>
@@ -111,27 +110,27 @@ const Earnings: React.FC = () => {
 
     const renderUpcoming = () => (
         <div className="earnings-tab-content animate-fade-in">
-            {hasUpcomingData ? (
+            {upcoming.length > 0 ? (
                 <>
                     <div className="earnings-table-wrapper">
                         <table className="earnings-modern-table">
                             <thead>
                                 <tr>
-                                    <th>Expected Payout Date</th>
-                                    <th>Job Reference</th>
+                                    <th>Started</th>
+                                    <th>Job</th>
                                     <th>Job ID</th>
-                                    <th>Payout Amount</th>
-                                    <th>Job Status</th>
+                                    <th>Payout amount</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {MOCK_UPCOMING_PAYOUTS.map((row) => (
-                                    <tr key={row.id}>
-                                        <td>{row.date}</td>
-                                        <td className="font-semibold">{row.ref}</td>
-                                        <td><code className="txn-code">{row.id}</code></td>
-                                        <td className="font-bold">{formatMoney(row.amount)}</td>
-                                        <td><span className="earnings-pill pending">{row.status}</span></td>
+                                {upcoming.map((j) => (
+                                    <tr key={j.id}>
+                                        <td>{new Date(j.createdAt).toLocaleDateString()}</td>
+                                        <td className="font-semibold">{j.title}</td>
+                                        <td><code className="txn-code">{j.id.slice(0, 8)}</code></td>
+                                        <td className="font-bold">{formatMoney(Number(j.agreedPrice ?? 0))}</td>
+                                        <td><span className="earnings-pill pending">{j.status.replace('_', ' ')}</span></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -139,56 +138,14 @@ const Earnings: React.FC = () => {
                     </div>
                     <div className="upcoming-info-box">
                         <FaInfoCircle />
-                        <p>Funds from "In Progress" and "Scheduled" jobs are reserved and will be available for withdrawal once the job is marked as completed and verified by the requester.</p>
+                        <p>The amount for each active job is held in escrow by HOMi. It is released to your wallet automatically once the tenant confirms the issue is resolved.</p>
                     </div>
                 </>
             ) : (
                 <div className="earnings-empty-card full-tab-empty">
                     <div className="empty-icon-wrap"><FaClock /></div>
-                    <h4>No Upcoming Payouts</h4>
-                    <p>You don't have any pending payments for upcoming or in-progress jobs at the moment.</p>
-                </div>
-            )}
-        </div>
-    );
-
-    const renderMethods = () => (
-        <div className="earnings-tab-content animate-fade-in">
-            {hasMethodsData ? (
-                <div className="earnings-methods-grid">
-                    <div className="earnings-card-visual">
-                        <div className="card-top-info">
-                            <span className="bank-name">HOMI PAY</span>
-                            <div className="card-chip"></div>
-                        </div>
-                        <div className="card-number">•••• •••• •••• 4421</div>
-                        <div className="card-bottom-info">
-                            <span className="holder-label">Payout Account</span>
-                            <span className="holder-name">MOHY MOHAMED</span>
-                        </div>
-                    </div>
-                    <div className="method-details-pane">
-                        <h4>Primary Payout Method</h4>
-                        <p>Configure how you receive your earnings. Payments are processed every Friday for the previous week's completed jobs.</p>
-                        <div className="method-item active">
-                            <FaCreditCard className="stat-icon-box" style={{ width: '40px', height: '40px', background: '#f8fafc' }} />
-                            <div className="method-text">
-                                <span>Visa ending in 4421</span>
-                                <small>Primary Payout Account</small>
-                            </div>
-                            <FaCheckCircle className="check-icon" />
-                        </div>
-                        <button className="add-method-btn">Change Account Details</button>
-                    </div>
-                </div>
-            ) : (
-                <div className="earnings-empty-card methods-empty">
-                    <div className="empty-icon-wrap"><FaCreditCard /></div>
-                    <h4>No Payout Method Linked</h4>
-                    <p>Please link a bank account or credit card to receive your earnings automatically.</p>
-                    <button className="add-method-btn" style={{ maxWidth: '300px', marginTop: '1.5rem' }}>
-                        Add Payout Method
-                    </button>
+                    <h4>No upcoming payouts</h4>
+                    <p>You don't have any pending payments at the moment.</p>
                 </div>
             )}
         </div>
@@ -201,35 +158,37 @@ const Earnings: React.FC = () => {
                 <Header />
                 <main className="earnings-hub">
                     <header className="earnings-hub-header">
-                        <h1>Financial Hub</h1>
-                        <p>Manage your revenue, track pending payouts, and view your complete service history.</p>
+                        <h1>Financial hub</h1>
+                        <p>Track your wallet balance, escrow payouts, and complete service history.</p>
                     </header>
+
+                    {error && (
+                        <div style={{ padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 12, margin: '0 0 1rem' }}>
+                            {error}
+                        </div>
+                    )}
 
                     <div className="earnings-tabs-container">
                         <button
                             className={`earnings-tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
                             onClick={() => setActiveTab('overview')}
                         >
-                            <FaHistory /> Earnings History
+                            <FaHistory /> Earnings history
                         </button>
                         <button
                             className={`earnings-tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
                             onClick={() => setActiveTab('upcoming')}
                         >
-                            <FaClock /> Upcoming Payouts
-                        </button>
-                        <button
-                            className={`earnings-tab-btn ${activeTab === 'methods' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('methods')}
-                        >
-                            <FaCreditCard /> Payout Methods
+                            <FaClock /> Upcoming payouts
                         </button>
                     </div>
 
                     <div className="earnings-viewport">
-                        {activeTab === 'overview' && renderOverview()}
-                        {activeTab === 'upcoming' && renderUpcoming()}
-                        {activeTab === 'methods' && renderMethods()}
+                        {loading ? (
+                            <div className="earnings-empty-card full-tab-empty"><h4>Loading…</h4></div>
+                        ) : (
+                            activeTab === 'overview' ? renderOverview() : renderUpcoming()
+                        )}
                     </div>
                 </main>
                 <Footer />

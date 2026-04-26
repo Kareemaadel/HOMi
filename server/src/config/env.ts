@@ -14,6 +14,15 @@ interface EnvConfig {
     NODE_ENV: 'development' | 'production' | 'test';
     PORT: number;
 
+    /**
+     * When true, the simulated "test date" system is active app-wide:
+     * - Navbar shows the Test Date badge (advance 15 days / reset).
+     * - All "today" references (rent dues, payment history, lease lifecycle)
+     *   use the simulated date instead of the real one.
+     * When false, every date reference uses the real wall-clock time.
+     */
+    TEST_DATE: boolean;
+
     // Database
     DB_HOST: string;
     DB_PORT: number;
@@ -72,6 +81,15 @@ function getEnvString(key: string, defaultValue?: string): string {
     return value;
 }
 
+function getEnvBoolean(key: string, defaultValue: boolean): boolean {
+    const value = process.env[key];
+    if (value === undefined || value === '') return defaultValue;
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+    return defaultValue;
+}
+
 function getEnvNumber(key: string, defaultValue?: number): number {
     const value = process.env[key];
     if (value === undefined) {
@@ -98,6 +116,9 @@ export const env: EnvConfig = {
     // Server
     NODE_ENV: validateNodeEnv(getEnvString('NODE_ENV', 'development')),
     PORT: getEnvNumber('PORT', 3000),
+
+    // App-wide test date toggle (default: enabled outside production)
+    TEST_DATE: getEnvBoolean('TEST_DATE', process.env['NODE_ENV'] !== 'production'),
 
     // Database
     DB_HOST: getEnvString('DB_HOST', 'localhost'),

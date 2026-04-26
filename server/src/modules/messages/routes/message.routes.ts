@@ -25,14 +25,14 @@ router.get('/unread-badge', protect, messageController.getUnreadBadge.bind(messa
 router.get(
     '/support',
     protect,
-    restrictTo(UserRole.LANDLORD, UserRole.TENANT),
+    restrictTo(UserRole.LANDLORD, UserRole.TENANT, UserRole.MAINTENANCE_PROVIDER),
     supportController.getSupportThread.bind(supportController)
 );
 
 router.post(
     '/support/messages',
     protect,
-    restrictTo(UserRole.LANDLORD, UserRole.TENANT),
+    restrictTo(UserRole.LANDLORD, UserRole.TENANT, UserRole.MAINTENANCE_PROVIDER),
     validate(SendMessageSchema),
     supportController.sendSupportMessage.bind(supportController)
 );

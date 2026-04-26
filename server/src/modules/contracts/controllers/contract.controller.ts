@@ -10,6 +10,7 @@ import type {
     VerifyPaymobPaymentInput,
     WalletTopupInitiateInput,
     WalletTopupVerifyInput,
+    TenantPaymentHistoryItem,
 } from '../interfaces/contract.interfaces.js';
 
 /**
@@ -17,6 +18,57 @@ import type {
  * Handles HTTP request/response for contract endpoints
  */
 class ContractController {
+    async getTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const state = contractService.getTestingClockState();
+            res.status(200).json({ success: true, data: state });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async advanceTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const days = Number((req.body as any)?.days ?? 15);
+            const state = contractService.advanceTestingClock(days);
+
+            // After clock advances, autopay-eligible contracts for the calling
+            // tenant settle automatically so the simulated time-jump reflects
+            // reality (no skipped months while testing).
+            let autopay = { contractsSettled: 0 };
+            try {
+                const userId = (req as any).user?.userId as string | undefined;
+                const role = (req as any).user?.role as string | undefined;
+                if (userId && role === 'TENANT') {
+                    autopay = await contractService.runAutopaySweepForTenant(userId);
+                }
+            } catch {
+                // Sweep failures are non-fatal: clock state still moves forward.
+            }
+
+            res.status(200).json({
+                success: true,
+                message: `Testing clock advanced by ${Math.max(0, Math.floor(days))} day(s).`,
+                data: { ...state, autopay },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async resetTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const state = contractService.resetTestingClock();
+            res.status(200).json({
+                success: true,
+                message: 'Testing clock reset.',
+                data: state,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     /**
      * GET /api/contracts/landlord
      */
@@ -286,6 +338,25 @@ class ContractController {
     }
 
     /**
+     * POST /api/contracts/:id/payments/balance/pay-rent
+     */
+    async payMonthlyRentFromBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const result = await contractService.payMonthlyRentFromBalance(id as string, tenantId);
+
+            res.status(200).json({
+                success: true,
+                message: `Monthly rent for ${result.paidForMonth} paid from wallet balance.`,
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * POST /api/contracts/payments/wallet/topup/initiate
      */
     async initiateWalletTopup(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -316,6 +387,60 @@ class ContractController {
                 success: true,
                 message: 'Wallet top-up verified successfully.',
                 data: balance,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/:id/installments
+     */
+    async getContractInstallments(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const data = await contractService.getContractInstallments(id as string, tenantId);
+            res.status(200).json({
+                success: true,
+                data,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * PATCH /api/contracts/:id/autopay
+     */
+    async updateAutopay(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const tenantId = (req as any).user.userId;
+            const enabled = Boolean((req.body as any)?.enabled);
+            const data = await contractService.setContractAutopay(id as string, tenantId, enabled);
+            res.status(200).json({
+                success: true,
+                message: `Autopay ${enabled ? 'enabled' : 'disabled'} for contract.`,
+                data,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/contracts/payments/history
+     */
+    async getTenantPaymentHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const tenantId = (req as any).user.userId;
+            const limit = req.query.limit ? Number(req.query.limit) : 100;
+            const rows: TenantPaymentHistoryItem[] = await contractService.getTenantPaymentHistory(tenantId, { limit });
+
+            res.status(200).json({
+                success: true,
+                data: rows,
             });
         } catch (error) {
             next(error);

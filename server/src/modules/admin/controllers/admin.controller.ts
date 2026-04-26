@@ -1,6 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import { adminService, AdminError } from '../services/admin.service.js';
-import { VerifyPropertySchema, type SupportInboxQuery } from '../schemas/admin.schemas.js';
+import {
+    VerifyPropertySchema,
+    ReviewMaintenanceApplicationSchema,
+    type SupportInboxQuery,
+} from '../schemas/admin.schemas.js';
 import { AuthError } from '../../auth/services/auth.service.js';
 import { UserRole, User } from '../../auth/models/User.js';
 import { generateTokenPair } from '../../../shared/utils/jwt.util.js';
@@ -133,6 +137,38 @@ class AdminController {
         }
     }
 
+    async getPendingMaintenanceApplications(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const applications = await adminService.getPendingMaintenanceApplications();
+            res.status(200).json({
+                success: true,
+                data: applications,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async reviewMaintenanceApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const validated = ReviewMaintenanceApplicationSchema.parse(req.body);
+            const adminId = (req as any).user?.userId;
+            await adminService.reviewMaintenanceApplication(
+                String(id),
+                validated.action,
+                validated.rejectionReason,
+                String(adminId)
+            );
+            res.status(200).json({
+                success: true,
+                message: `Maintenance request ${validated.action === 'APPROVE' ? 'approved' : 'rejected'}.`,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getListingReports(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const reports = await adminService.getListingReports();
@@ -208,6 +244,18 @@ class AdminController {
             res.status(200).json({
                 success: true,
                 data: users,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getMaintainersForManagement(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const maintainers = await adminService.getMaintainersForManagement();
+            res.status(200).json({
+                success: true,
+                data: maintainers,
             });
         } catch (error) {
             next(error);

@@ -17,6 +17,24 @@ import {
 
 const router = Router();
 
+router.get(
+    '/testing/clock',
+    protect,
+    contractController.getTestingClock.bind(contractController)
+);
+
+router.post(
+    '/testing/clock/advance',
+    protect,
+    contractController.advanceTestingClock.bind(contractController)
+);
+
+router.post(
+    '/testing/clock/reset',
+    protect,
+    contractController.resetTestingClock.bind(contractController)
+);
+
 /**
  * @swagger
  * /contracts/landlord:
@@ -557,10 +575,34 @@ router.get(
     contractController.getWalletBalance.bind(contractController)
 );
 
+router.get(
+    '/payments/history',
+    protect,
+    contractController.getTenantPaymentHistory.bind(contractController)
+);
+
 router.post(
     '/:id/payments/balance/pay',
     protect,
     contractController.payContractFromBalance.bind(contractController)
+);
+
+router.post(
+    '/:id/payments/balance/pay-rent',
+    protect,
+    contractController.payMonthlyRentFromBalance.bind(contractController)
+);
+
+router.get(
+    '/:id/installments',
+    protect,
+    contractController.getContractInstallments.bind(contractController)
+);
+
+router.patch(
+    '/:id/autopay',
+    protect,
+    contractController.updateAutopay.bind(contractController)
 );
 
 router.post(

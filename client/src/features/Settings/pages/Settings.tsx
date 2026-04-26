@@ -3,6 +3,7 @@ import './Settings.css';
 import Header from '../../../components/global/header';
 import LandlordSidebar from '../../../components/global/Landlord/sidebar';
 import TenantSidebar from '../../../components/global/Tenant/sidebar';
+import MaintenanceSideBar from '../../Maintenance/MaintenanceProvider/SideBar/MaintenanceSideBar';
 import Footer from '../../../components/global/footer';
 import SettingsSidebar from '../components/SettingsSidebar';
 import { useNavigate } from 'react-router-dom';
@@ -116,14 +117,17 @@ const Settings: React.FC = () => {
     // Pick the correct sidebar based on the stored user role
     const storedUser = localStorage.getItem('user');
     const userRole = storedUser ? JSON.parse(storedUser).role : null;
-    const SidebarComponent = userRole === 'LANDLORD' ? LandlordSidebar : TenantSidebar;
-
+    const SidebarComponent = userRole === 'LANDLORD'
+        ? LandlordSidebar
+        : userRole === 'MAINTENANCE_PROVIDER'
+            ? MaintenanceSideBar
+            : TenantSidebar;
     // Senior Approach: Component Mapping Object
     const tabComponents: Record<string, React.ReactNode> = {
-        profile: <MyProfile />,
+        profile: <MyProfile role={userRole} />,
         billing: <Billing />,
-        notifications: <Notifications />,
-        security: <Security />,
+        notifications: <Notifications role={userRole} />,
+        security: <Security role={userRole} />,
         privacy: <Privacy />,
         preferences: <Preferences />,
         delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />
@@ -142,6 +146,7 @@ const Settings: React.FC = () => {
                         <SettingsSidebar 
                             activeTab={activeTab} 
                             setActiveTab={setActiveTab} 
+                            role={userRole}
                         />
                         
                         <section className="settings-view-panel">

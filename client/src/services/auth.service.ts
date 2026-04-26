@@ -7,6 +7,7 @@ import type {
     AuthenticationResponseJSON,
 } from '@simplewebauthn/browser';
 import apiClient from '../config/api';
+import socketService from './socket.service';
 import type {
     RegisterRequest,
     LoginRequest,
@@ -19,6 +20,8 @@ import type {
     ChangePasswordRequest,
     UserProfileResponse,
     EmailVerificationResponse,
+    MaintenanceApplyRequest,
+    MaintenanceAvailabilityResponse,
 } from '../types/auth.types';
 
 const REFRESH_VIA_COOKIE = 'refreshViaCookie';
@@ -67,6 +70,7 @@ function persistLoginSession(data: LoginResponse, rememberMe: boolean): void {
     if (typeof data.passkeyEnabled === 'boolean') {
         localStorage.setItem('passkeyEnabled', data.passkeyEnabled ? '1' : '0');
     }
+    socketService.resetAuthState();
 }
 
 /**
@@ -86,13 +90,14 @@ class AuthService {
     }): string {
         const cached = source ?? this.getCurrentUser() ?? undefined;
         const role = cached?.user?.role;
-        const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN';
+        const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN' || role === 'MAINTENANCE_PROVIDER';
 
         // Onboarding gate should enforce selecting a role, not forcing every optional profile field.
         if (!hasAppRole) return '/complete-profile';
         if (role === 'ADMIN') return '/admin/dashboard';
         if (role === 'LANDLORD') return '/landlord-home';
         if (role === 'TENANT') return '/tenant-home';
+        if (role === 'MAINTENANCE_PROVIDER') return '/maintenance-home';
 
         return '/complete-profile';
     }
@@ -119,6 +124,25 @@ class AuthService {
         return response.data;
     }
 
+    async maintenanceApply(data: MaintenanceApplyRequest): Promise<AuthSuccessResponse> {
+        const response = await apiClient.post<AuthSuccessResponse>('/auth/maintenance/apply', data);
+        return response.data;
+    }
+
+    async maintenanceLogin(data: LoginRequest): Promise<LoginResponse> {
+        const response = await apiClient.post<LoginResponse>('/auth/maintenance/login', data);
+        if (response.data.accessToken) {
+            persistLoginSession(response.data, data.rememberMe === true);
+            localStorage.setItem('authProvider', 'email');
+        }
+        return response.data;
+    }
+
+    async checkMaintenanceAvailability(data: { email?: string; phone?: string }): Promise<MaintenanceAvailabilityResponse> {
+        const response = await apiClient.post<MaintenanceAvailabilityResponse>('/auth/maintenance/check-availability', data);
+        return response.data;
+    }
+
     /**
      * Logout — clears httpOnly refresh cookie on the server and local session data
      */
@@ -136,6 +160,8 @@ class AuthService {
         localStorage.removeItem('profile');
         localStorage.removeItem('authProvider');
         localStorage.removeItem('passkeyEnabled');
+        socketService.disconnect();
+        socketService.resetAuthState();
     }
 
     /**
@@ -390,6 +416,8 @@ class AuthService {
         localStorage.removeItem('profile');
         localStorage.removeItem('authProvider');
         localStorage.removeItem('passkeyEnabled');
+        socketService.disconnect();
+        socketService.resetAuthState();
 
         return response.data;
     }

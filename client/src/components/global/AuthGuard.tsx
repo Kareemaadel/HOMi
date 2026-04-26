@@ -5,7 +5,7 @@ import { authService } from '../../services/auth.service';
 
 interface AuthGuardProps {
     children: React.ReactNode;
-    allowedRoles?: Array<'TENANT' | 'LANDLORD' | 'ADMIN'>;
+    allowedRoles?: Array<'TENANT' | 'LANDLORD' | 'ADMIN' | 'MAINTENANCE_PROVIDER'>;
 }
 
 /**
@@ -30,7 +30,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
     const isAuthenticated = sessionReady && !!localStorage.getItem('accessToken');
     const cached = authService.getCurrentUser();
     const role = cached?.user?.role;
-    const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN';
+    const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN' || role === 'MAINTENANCE_PROVIDER';
 
     if (!sessionReady) {
         return (
@@ -50,7 +50,9 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
     }
 
     if (isAuthenticated && allowedRoles && role && !allowedRoles.includes(role)) {
-        const redirectPath = role === 'ADMIN' ? '/admin/dashboard' : (role === 'LANDLORD' ? '/landlord-home' : '/tenant-home');
+        const redirectPath = role === 'ADMIN'
+            ? '/admin/dashboard'
+            : (role === 'LANDLORD' ? '/landlord-home' : (role === 'MAINTENANCE_PROVIDER' ? '/maintenance-home' : '/tenant-home'));
         return <Navigate to={redirectPath} replace />;
     }
 

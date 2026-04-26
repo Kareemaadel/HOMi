@@ -102,6 +102,79 @@ export interface ContractBalancePaymentResponse {
     debitedAmount: number;
 }
 
+export interface MonthlyRentPaymentResponse {
+    contract: ContractResponse;
+    remainingBalance: number;
+    debitedAmount: number;
+    paidForMonth: string;
+    lateFeeApplied?: number;
+    wasLate?: boolean;
+    installmentsPaid?: number;
+}
+
+export type RentInstallmentStatus = 'PAID' | 'DUE' | 'OVERDUE' | 'UPCOMING';
+
+export interface RentInstallmentItem {
+    index: number;
+    label: string;
+    dueDate: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    totalAmount: number;
+    status: RentInstallmentStatus;
+    isPaid: boolean;
+    paidAt: string | null;
+}
+
+export interface ContractInstallmentsResponse {
+    contractId: string;
+    rentAmount: number;
+    lateFeeAmount: number;
+    rentDueDate: string | null;
+    leaseDurationMonths: number;
+    autopayEnabled: boolean;
+    walletBalance: number;
+    pendingLandlordCredit: number;
+    paidInstallments: number;
+    dueInstallments: number;
+    overdueInstallments: number;
+    outstandingInstallments: number;
+    nextPayableIndex: number | null;
+    nextPayableTotal: number;
+    items: RentInstallmentItem[];
+    now: string;
+}
+
+export interface AutopayUpdateInput {
+    enabled: boolean;
+}
+
+export interface AutopayUpdateResponse {
+    contractId: string;
+    autopayEnabled: boolean;
+}
+
+export type TenantPaymentHistoryType =
+    | 'CONTRACT_INITIAL'
+    | 'RENT_MONTHLY'
+    | 'MAINTENANCE'
+    | 'MAINTENANCE_REFUND';
+
+export interface TenantPaymentHistoryItem {
+    id: string;
+    createdAt: Date;
+    type: TenantPaymentHistoryType;
+    direction: 'DEBIT' | 'CREDIT';
+    amount: number;
+    currency: 'EGP';
+    status: 'SUCCESS';
+    reference: string;
+    description: string;
+    entityType: string | null;
+    entityId: string | null;
+    installmentsCount?: number;
+}
+
 // ─── Contract Response ────────────────────────────────────────────────────────
 
 export interface ContractResponse {

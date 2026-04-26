@@ -22,6 +22,7 @@ const PaymobVerify: React.FC = () => {
             const contractId = searchParams.get('contractId') || '';
             const transactionIdRaw = searchParams.get('id') || searchParams.get('transaction_id') || '';
             const successFlag = searchParams.get('success');
+            const pendingFlag = searchParams.get('pending');
             const transactionId = Number(transactionIdRaw);
 
             if (!contractId || !transactionIdRaw || !Number.isFinite(transactionId) || transactionId <= 0) {
@@ -31,11 +32,22 @@ const PaymobVerify: React.FC = () => {
                 return;
             }
 
-            if (successFlag === 'false') {
-                if (!mounted) return;
-                setState('failed');
-                setMessage('Payment was not completed. Please try again.');
-                return;
+            // Do not trust redirect flags for final result; backend verification is authoritative.
+            // Keep flags for diagnostics only.
+            console.log('[PaymobVerify] Redirect flags:', { successFlag, pendingFlag });
+
+            // Wait for auth session to be ready (AuthGuard restores tokens asynchronously)
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                // Retry after a short delay to allow AuthGuard to restore the session
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                const retryToken = localStorage.getItem('accessToken');
+                if (!retryToken) {
+                    if (!mounted) return;
+                    setState('failed');
+                    setMessage('Session expired. Please log in and retry payment.');
+                    return;
+                }
             }
 
             try {
@@ -47,10 +59,17 @@ const PaymobVerify: React.FC = () => {
                 timerRef.current = setTimeout(() => {
                     navigate('/tenant-payment', { replace: true, state: { tab: 'history' } });
                 }, 1800);
-            } catch {
+            } catch (err: unknown) {
                 if (!mounted) return;
+                console.error('[PaymobVerify] Contract payment verification failed:', err);
+                const ex = err as { response?: { data?: { message?: string } } };
+                const serverMsg = ex.response?.data?.message;
                 setState('failed');
-                setMessage('Payment verification failed. Please try payment again from Pre-Payment page.');
+                setMessage(
+                    typeof serverMsg === 'string' && serverMsg.trim()
+                        ? serverMsg
+                        : 'Payment verification failed. Please try payment again from Pre-Payment page.'
+                );
             }
         };
 
