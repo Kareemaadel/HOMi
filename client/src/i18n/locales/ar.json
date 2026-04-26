@@ -60,6 +60,11 @@
     "under10k": "أقل من 10,000 ج.م",
     "under25k": "أقل من 25,000 ج.م",
     "under50k": "أقل من 50,000 ج.م",
+    "of": "من",
+    "apartments": "شقق",
+    "villas": "فيلات",
+    "sharedRooms": "غرف مشتركة",
+    "furnishing": "التجهيز",
     "search": "بحث",
     "verified": "موثق 100%",
     "landlordsTenants": "ملاك ومستأجرون",
@@ -150,6 +155,10 @@
     "login": "تسجيل الدخول",
     "signup": "إنشاء حساب"
   },
+  "guestSearch": {
+    "next": "التالي",
+    "filter": "تصفية"
+  },
   "footer": {
     "brandDescription": "المنصة الرائدة والشاملة التي تعمل على تحديث سوق تأجير العقارات للملاك والمستأجرين على حد سواء.",
     "platform": "المنصة",
@@ -188,6 +197,51 @@
     "sentRequests": "الطلبات المرسلة",
     "landlord": "مالك",
     "tenant": "مستأجر",
+    "landlordHomeComponents": {
+      "listNewProperty": "إدراج عقار جديد",
+      "loadExample": "تحميل عقار تجريبي",
+      "verificationRequired": "يجب توثيق حسابك قبل إضافة عقار.",
+      "titleRequired": "يرجى إدخال عنوان العقار قبل المتابعة.",
+      "priceInvalid": "يرجى إدخال سعر شهري صالح أكبر من 0.",
+      "depositInvalid": "يرجى إدخال مبلغ تأمين صالح.",
+      "dateRequired": "يرجى اختيار تاريخ التوفر قبل المتابعة.",
+      "bedsRequired": "يرجى إدخال عدد صالح لغرف النوم.",
+      "bathsRequired": "يرجى إدخال عدد صالح للحمامات.",
+      "areaRequired": "يرجى إدخال مساحة صالحة للعقار بالقدم المربع.",
+      "photosRequired": "يرجى رفع صورة واحدة على الأقل للعقار قبل المتابعة.",
+      "docsRequired": "يرجى رفع مستند ملكية قانوني واحد على الأقل قبل المتابعة.",
+      "locationRequired": "يرجى اختيار موقع على الخريطة قبل المتابعة.",
+      "cityRequired": "يرجى إدخال المدينة قبل المتابعة.",
+      "areaReq": "يرجى إدخال المنطقة/الحي قبل المتابعة.",
+      "streetRequired": "يرجى إدخال اسم الشارع قبل المتابعة.",
+      "bldgRequired": "يرجى إدخال رقم المبنى قبل المتابعة.",
+      "unitRequired": "يرجى إدخال رقم الوحدة/الشقة قبل المتابعة.",
+      "ownershipDocs": "مستندات الملكية القانونية",
+      "docsInstruction": "قم برفع الملفات (PDF/صور) التي تثبت ملكيتك. هذه المستندات مطلوبة لمراجعة الإدارة.",
+      "locationSet": "تم تحديد الموقع",
+      "pinpoint": "حدد الموقع بدقة في مصر",
+      "changeLocation": "تغيير الموقع",
+      "openMap": "فتح الخريطة التفاعلية",
+      "useCurrentLoc": "استخدام الموقع الحالي",
+      "city": "المدينة",
+      "street": "اسم الشارع",
+      "bldgNumber": "رقم المبنى",
+      "aboutProperty": "عن العقار",
+      "aboutPlaceholder": "صف ما الذي يجعل عقارك مميزاً...",
+      "publishListing": "نشر العقار",
+      "pendingApproval": "في انتظار الموافقة",
+      "successDesc": "تم تقديم عقارك للمراجعة. يمكنك تتبع حالته في محفظتك.",
+      "viewPortfolio": "عرض المحفظة",
+      "financialOverview": "نظرة عامة مالية",
+      "netMonthlyIncome": "صافي الدخل الشهري",
+      "applyingFor": "تقديم طلب لـ",
+      "egyptOnly": "يرجى اختيار موقع داخل جمهورية مصر العربية.",
+      "geoNotSupported": "تحديد الموقع الجغرافي غير مدعوم من قبل متصفحك.",
+      "outsideEgypt": "يبدو أن الموقع الحالي خارج مصر. يرجى التحديد يدوياً.",
+      "geoDenied": "تم رفض إذن الوصول للموقع. يرجى السماح به والمحاولة مرة أخرى.",
+      "geoFailed": "تعذر الحصول على موقعك الحالي. يرجى المحاولة مرة أخرى.",
+      "numericError": "يرجى إدخال قيم رقمية صالحة للسعر والتأمين وغرف النوم والحمامات والمساحة."
+    },
     "loading": "جاري التحميل...",
     "signOut": "تسجيل الخروج"
   },
@@ -415,6 +469,152 @@
     "synced": "متزامن",
     "now": "الآن",
     "recently": "مؤخراً"
+  },
+  "myProperties": {
+    "portfolio": "عقاراتي",
+    "managingUnits": "إدارة {{count}} وحدات إجمالية",
+    "addNewProperty": "إضافة عقار جديد",
+    "noPropertiesFound": "لم يتم العثور على عقارات",
+    "noPropertiesText": "ليس لديك أي عقارات بعد. ابدأ في بناء محفظتك بإضافة وحدتك الأولى.",
+    "addFirstProperty": "أضف عقارك الأول",
+    "loadingProperties": "جاري تحميل العقارات...",
+    "status": {
+      "vacant": "شاغر",
+      "rented": "مؤجر",
+      "maintenance": "صيانة",
+      "draft": "مسودة",
+      "available": "متاح",
+      "pending_approval": "في انتظار الموافقة",
+      "rejected": "مرفوض"
+    },
+    "beds": "غرف",
+    "baths": "حمامات",
+    "sqft": "قدم²",
+    "yield": "العائد",
+    "occupancy": "الإشغال",
+    "manageProperty": "إدارة العقار",
+    "viewDetails": "عرض التفاصيل",
+    "lockedPendingApproval": "مغلق في انتظار موافقة المسؤول",
+    "lockedRejected": "مغلق لأن الإعلان مرفوض",
+    "saveSuccess": "تم حفظ التغييرات بنجاح!",
+    "unitManager": "مدير الوحدات",
+    "propertyId": "معرف العقار",
+    "unfurnished": "غير مفروش",
+    "tabs": {
+      "general": "معلومات عامة",
+      "financials": "الأسعار والتأمين",
+      "rules": "القواعد والمميزات",
+      "media": "الوسائط",
+      "maintenance": "تفاصيل الصيانة"
+    },
+    "labels": {
+      "marketingTitle": "اسم العقار التسويقي",
+      "locationDetails": "تفاصيل الموقع",
+      "realTimeUpdates": "تنعكس التعديلات في الوقت الفعلي على جميع القنوات العامة.",
+      "monthlyRent": "الإيجار الشهري",
+      "securityDeposit": "تأمين المستأجر",
+      "coreAmenities": "المرافق الأساسية",
+      "houseRules": "قواعد المنزل",
+      "propertyGallery": "معرض الصور",
+      "uploadNew": "رفع جديد",
+      "maintenanceInstruction": "حدد المسؤول مالياً وفعلياً عن العناصر التالية. سيكون هذا مرئياً للمتقدمين.",
+      "discardChanges": "تجاهل التغييرات",
+      "saveChanges": "حفظ التغييرات"
+    },
+    "errors": {
+      "nameRequired": "اسم العقار مطلوب",
+      "addressRequired": "العنوان لا يمكن أن يكون فارغاً",
+      "priceMinimum": "يجب أن يكون الإيجار 100 دولار على الأقل",
+      "saveFailed": "تعذر حفظ التغييرات. يرجى المحاولة مرة أخرى."
+    },
+    "deleteListing": "حذف العقار"
+  },
+  "rentalRequests": {
+    "requests": "الطلبات",
+    "managingRequests": "إدارة {{count}} طلبات نشطة",
+    "noRequestsFound": "لا يوجد طلبات تأجير بعد",
+    "noRequestsText": "سنخطرك فور تقديم أي شخص لطلب.",
+    "pending": "قيد الانتظار",
+    "review": "قيد المراجعة",
+    "approved": "تمت الموافقة",
+    "declined": "تم الرفض",
+    "flexible": "مرن",
+    "searchPlaceholder": "البحث عن المتقدمين...",
+    "card": {
+      "match": "طابق",
+      "verified": "موثق",
+      "income": "الدخل",
+      "credit": "الائتمان",
+      "viewApplication": "مراجعة الطلب",
+      "decline": "رفض",
+      "approve": "قبول الطلب",
+      "approvedBanner": "تم قبول الطلب!",
+      "declinedBanner": "تم رفض الطلب",
+      "selectedProperty": "العقار المحدد",
+      "appliedOn": "قدم في {{date}}"
+    },
+    "stats": {
+      "totalRequests": "إجمالي المتقدمين",
+      "avgMatchScore": "متوسط درجة التطابق",
+      "avgResponse": "متوسط وقت الرد"
+    },
+    "habits": {
+      "earlyRiser": "يستيقظ مبكراً",
+      "nonSmoker": "غير مدخن",
+      "plantParent": "محب للنباتات",
+      "quietLifestyle": "نمط حياة هادئ"
+    },
+    "labels": {
+      "firstTimeRenter": "مستأجر لأول مرة",
+      "personalMessage": "رسالة شخصية",
+      "noMessage": "لم يقدم المتقدم أي رسالة.",
+      "lifestyles": "نمط الحياة والعادات",
+      "noHabits": "لم يتم تقديم عادات نمط الحياة.",
+      "proposedLease": "عقد الإيجار المقترح",
+      "moveIn": "تاريخ الانتقال المطلوب",
+      "occupants": "إجمالي الساكنين"
+    },
+    "modals": {
+      "approveTitle": "تأكيد المراجعة",
+      "approveText": "هل قمت بمراجعة خلفية {{name}} وبياناته المالية ومدى ملاءمته لنمط الحياة بدقة؟",
+      "declineTitle": "رفض الطلب",
+      "declineText": "هل أنت متأكد أنك تريد رفض هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء بسهولة.",
+      "approvedSuccessText": "أخبار رائعة! الخطوة التالية هي صياغة وإرسال عقد الإيجار الرسمي إلى المستأجر.",
+      "goToContracts": "انتقل إلى مركز العقود",
+      "declinedSuccessText": "سيتم إخطار المتقدم. استخدم زر الإغلاق عندما تكون مستعداً للعودة إلى طلباتك."
+    }
+  },
+  "common": {
+    "close": "إغلاق"
+  },
+  "notificationCenter": {
+    "title": "مركز التنبيهات",
+    "newAlerts": "لديك {{count}} تنبيهات جديدة",
+    "allCaughtUp": "أنت مطلع على كل شيء!",
+    "markAllRead": "تحديد الكل كمقروء",
+    "clearHistory": "مسح سجل التنبيهات",
+    "confirmClear": "هل أنت متأكد أنك تريد مسح جميع التنبيهات؟",
+    "empty": "لا توجد تنبيهات لعرضها",
+    "today": "اليوم، 10:30 صباحاً",
+    "yesterday": "أمس",
+    "examples": {
+      "maintenance": {
+        "title": "تم الانتهاء من طلب الصيانة",
+        "desc": "تم إصلاح التسرب في الحمام."
+      },
+      "invoice": {
+        "title": "تم إنشاء فاتورة",
+        "desc": "فاتورة الإيجار الشهري لشهر مارس جاهزة."
+      },
+      "policy": {
+        "title": "تحديث السياسة",
+        "desc": "تم تحديث شروط استخدام مواقف السيارات."
+      },
+      "confirmed": {
+        "title": "تم تأكيد الدفع",
+        "desc": "تمت معالجة إيجار شهر فبراير."
+      }
+    }
   },
   "confirmModal": {
     "signOutTitle": "تسجيل الخروج",

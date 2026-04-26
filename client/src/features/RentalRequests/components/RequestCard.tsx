@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FaCheckCircle, FaTimesCircle, FaBuilding, FaCalendarAlt, FaUserFriends, FaEnvelope } from 'react-icons/fa';
 import DetailedRequestModal from './DetailedRequestModal';
 import rentalRequestService from '../../../services/rental-request.service';
@@ -35,6 +36,7 @@ interface RequestCardProps {
 }
 
 const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isChatLoading, setIsChatLoading] = useState(false);
@@ -89,7 +91,7 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
                 <div className="rc-header">
                     <div className="rc-avatar-box">
                         <img src={applicant.image} alt={applicant.name} />
-                        <span className="rc-match-badge">{applicant.matchScore}% Match</span>
+                        <span className="rc-match-badge">{applicant.matchScore}% {t('rentalRequests.card.match', { defaultValue: 'Match' })}</span>
                     </div>
                     <div className="rc-user-info">
                         <h3>{applicant.name} <FaCheckCircle className="icon-blue" /></h3>
@@ -99,16 +101,16 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
 
                 <div className="rc-property">
                     <FaBuilding className="icon-gray" />
-                    <span><strong>{property.name}</strong> - Unit {property.unit}</span>
+                    <span><strong>{property.name}</strong> - {t('landlordHome.step')} {property.unit}</span>
                 </div>
 
                 <div className="rc-stats-grid">
                     <div className="rc-stat">
-                        <label>Income</label>
+                        <label>{t('rentalRequests.card.income')}</label>
                         <span>{applicant.income}</span>
                     </div>
                     <div className="rc-stat">
-                        <label>Credit</label>
+                        <label>{t('rentalRequests.card.credit')}</label>
                         <span className={applicant.creditScore >= 700 ? 'text-green' : 'text-orange'}>
                             {applicant.creditScore}
                         </span>
@@ -116,10 +118,10 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
                 </div>
 
                 <div className="rc-specs">
-                    <span><FaCalendarAlt className="icon-gray"/> {moveInDate}</span>
+                    <span><FaCalendarAlt className="icon-gray" /> {moveInDate}</span>
                     {/* Replaced Pets with Living Situation */}
                     <span style={{ textTransform: 'capitalize' }}>
-                        <FaUserFriends className="icon-gray"/> {livingSituation || "Single"}
+                        <FaUserFriends className="icon-gray" /> {livingSituation || "Single"}
                     </span>
                 </div>
 
@@ -130,17 +132,17 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
                 {isApproved ? (
                     <div className="rc-approved-banner">
                         <FaCheckCircle />
-                        <span>Application Approved</span>
+                        <span>{t('rentalRequests.card.approvedBanner', { defaultValue: 'Application Approved' })}</span>
                     </div>
                 ) : isDeclined ? (
                     <div className="rc-declined-banner">
                         <FaTimesCircle aria-hidden />
-                        <span>Application Declined</span>
+                        <span>{t('rentalRequests.card.declinedBanner', { defaultValue: 'Application Declined' })}</span>
                     </div>
                 ) : (
                     <div className="rc-actions">
                         <button className="rc-btn-primary" onClick={() => setIsModalOpen(true)}>
-                            Review Application
+                            {t('rentalRequests.card.viewApplication')}
                         </button>
                         <div className="rc-action-row">
                             <button
@@ -149,20 +151,20 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
                                 disabled={isChatLoading}
                                 onClick={() => void openChatWithTenant()}
                             >
-                                <FaEnvelope /> {isChatLoading ? 'Opening…' : 'Chat'}
+                                <FaEnvelope /> {isChatLoading ? t('auth.loading') : t('header.messages')}
                             </button>
-                            <button className="rc-btn-decline" onClick={handleDecline}>Decline</button>
+                            <button className="rc-btn-decline" onClick={handleDecline}>{t('rentalRequests.card.decline')}</button>
                         </div>
                     </div>
                 )}
             </article>
 
             {isModalOpen && (
-                <DetailedRequestModal 
-                    data={data} 
+                <DetailedRequestModal
+                    data={data}
                     requestId={String(data.id)}
                     onStatusChange={onStatusChange}
-                    onClose={() => setIsModalOpen(false)} 
+                    onClose={() => setIsModalOpen(false)}
                 />
             )}
         </>

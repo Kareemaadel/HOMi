@@ -60,6 +60,11 @@
     "under10k": "Under 10,000 EGP",
     "under25k": "Under 25,000 EGP",
     "under50k": "Under 50,000 EGP",
+    "of": "of",
+    "apartments": "Apartments",
+    "villas": "Villas",
+    "sharedRooms": "Shared Rooms",
+    "furnishing": "Furnishing",
     "search": "Search",
     "verified": "100% Verified",
     "landlordsTenants": "Landlords & Tenants",
@@ -150,6 +155,10 @@
     "login": "Log in",
     "signup": "Sign up"
   },
+  "guestSearch": {
+    "next": "Next",
+    "filter": "Filter"
+  },
   "footer": {
     "brandDescription": "The premium, end-to-end platform modernizing the real estate rental market for landlords and tenants alike.",
     "platform": "Platform",
@@ -183,6 +192,51 @@
     "payments": "Payments",
     "contracts": "Contracts",
     "messages": "Messages",
+    "landlordHomeComponents": {
+    "listNewProperty": "List New Property",
+    "loadExample": "Load Example Property",
+    "verificationRequired": "Your account must be verified before adding a property.",
+    "titleRequired": "Please enter a property title before continuing.",
+    "priceInvalid": "Please enter a valid monthly price greater than 0.",
+    "depositInvalid": "Please enter a valid security deposit.",
+    "dateRequired": "Please select an availability date before continuing.",
+    "bedsRequired": "Please enter a valid number of bedrooms.",
+    "bathsRequired": "Please enter a valid number of bathrooms.",
+    "areaRequired": "Please enter a valid property area in sqft.",
+    "photosRequired": "Please upload at least one property photo before continuing.",
+    "docsRequired": "Please upload at least one legal ownership document before continuing.",
+    "locationRequired": "Please choose a map location before continuing.",
+    "cityRequired": "Please enter the city before continuing.",
+    "areaReq": "Please enter the area/neighborhood before continuing.",
+    "streetRequired": "Please enter the street name before continuing.",
+    "bldgRequired": "Please enter the building number before continuing.",
+    "unitRequired": "Please enter the unit/apartment before continuing.",
+    "ownershipDocs": "Legal Ownership Documents",
+    "docsInstruction": "Upload files (PDFs/Images) proving your ownership. These are required for Admin verification.",
+    "locationSet": "Location Set",
+    "pinpoint": "Pinpoint the location in Egypt",
+    "changeLocation": "Change Location",
+    "openMap": "Open Interactive Map",
+    "useCurrentLoc": "Use Current Location",
+    "city": "City",
+    "street": "Street Name",
+    "bldgNumber": "Bldg #",
+    "aboutProperty": "About Property",
+    "aboutPlaceholder": "Describe what makes your property special...",
+    "publishListing": "Publish Listing",
+    "pendingApproval": "Pending Approval",
+    "successDesc": "Your property has been submitted for review. You can track its status in your portfolio.",
+    "viewPortfolio": "View Portfolio",
+    "financialOverview": "Financial Overview",
+    "netMonthlyIncome": "Net Monthly Income",
+    "applyingFor": "Applying For",
+    "egyptOnly": "Please select a location within Egypt.",
+    "geoNotSupported": "Geolocation is not supported by your browser.",
+    "outsideEgypt": "Current location appears to be outside Egypt. Please pin manually.",
+    "geoDenied": "Location permission was denied. Please allow it and try again.",
+    "geoFailed": "Could not get your current location. Please try again.",
+    "numericError": "Please enter valid numeric values for price, deposit, bedrooms, bathrooms, and area."
+  },
     "rewards": "Rewards",
     "savedProperties": "Saved Properties",
     "sentRequests": "Sent Requests",
@@ -415,6 +469,152 @@
     "synced": "Synced",
     "now": "Now",
     "recently": "Recently"
+  },
+  "myProperties": {
+    "portfolio": "Portfolio",
+    "managingUnits": "Managing {{count}} total units",
+    "addNewProperty": "Add New Property",
+    "noPropertiesFound": "No Properties Found",
+    "noPropertiesText": "You have no properties yet. Start building your portfolio by adding your first unit.",
+    "addFirstProperty": "Add Your First Property",
+    "loadingProperties": "Loading properties...",
+    "status": {
+      "vacant": "Vacant",
+      "rented": "Rented",
+      "maintenance": "Maintenance",
+      "draft": "Draft",
+      "available": "Available",
+      "pending_approval": "Pending Approval",
+      "rejected": "Rejected"
+    },
+    "beds": "Beds",
+    "baths": "Baths",
+    "sqft": "sqft",
+    "yield": "Yield",
+    "occupancy": "Occupancy",
+    "manageProperty": "Manage Property",
+    "viewDetails": "View Details",
+    "lockedPendingApproval": "Locked while pending admin approval",
+    "lockedRejected": "Locked because listing is rejected",
+    "saveSuccess": "Changes saved successfully!",
+    "unitManager": "Unit Manager",
+    "propertyId": "Property ID",
+    "unfurnished": "Unfurnished",
+    "tabs": {
+      "general": "General Info",
+      "financials": "Pricing & Deposit",
+      "rules": "Rules & Perks",
+      "media": "Media Assets",
+      "maintenance": "Maintenance Details"
+    },
+    "labels": {
+      "marketingTitle": "Property Marketing Title",
+      "locationDetails": "Location Details",
+      "realTimeUpdates": "Adjustments reflect in real-time on all public channels.",
+      "monthlyRent": "Monthly Rent",
+      "securityDeposit": "Security Deposit",
+      "coreAmenities": "Core Amenities",
+      "houseRules": "House Rules",
+      "propertyGallery": "Property Gallery",
+      "uploadNew": "Upload New",
+      "maintenanceInstruction": "Assign who is financially and physically responsible for the following items. This will be publicly visible to applicants.",
+      "discardChanges": "Discard Changes",
+      "saveChanges": "Save Changes"
+    },
+    "errors": {
+      "nameRequired": "Property name is required",
+      "addressRequired": "Address cannot be empty",
+      "priceMinimum": "Rent must be at least $100",
+      "saveFailed": "Could not save changes. Please try again."
+    },
+    "deleteListing": "Delete Listing"
+  },
+  "rentalRequests": {
+    "requests": "Requests",
+    "managingRequests": "Managing {{count}} active applications",
+    "noRequestsFound": "No rental applications yet",
+    "noRequestsText": "We'll notify you as soon as someone applies.",
+    "pending": "Pending",
+    "review": "Under Review",
+    "approved": "Approved",
+    "declined": "Declined",
+    "flexible": "Flexible",
+    "searchPlaceholder": "Search applicants...",
+    "card": {
+      "match": "Match",
+      "verified": "Verified",
+      "income": "Income",
+      "credit": "Credit",
+      "viewApplication": "Review Application",
+      "decline": "Decline",
+      "approve": "Accept Application",
+      "approvedBanner": "Application Approved!",
+      "declinedBanner": "Application Declined",
+      "selectedProperty": "Selected Property",
+      "appliedOn": "Applied on {{date}}"
+    },
+    "stats": {
+      "totalRequests": "Total Applicants",
+      "avgMatchScore": "Avg. Match Score",
+      "avgResponse": "Avg. Response"
+    },
+    "habits": {
+      "earlyRiser": "Early Riser",
+      "nonSmoker": "Non-smoker",
+      "plantParent": "Plant Parent",
+      "quietLifestyle": "Quiet Lifestyle"
+    },
+    "labels": {
+      "firstTimeRenter": "First Time Renter",
+      "personalMessage": "Personal Message",
+      "noMessage": "No message provided by applicant.",
+      "lifestyles": "Lifestyles & Habits",
+      "noHabits": "No lifestyle habits provided.",
+      "proposedLease": "Proposed Lease",
+      "moveIn": "Desired Move-in",
+      "occupants": "Total Occupants"
+    },
+    "modals": {
+      "approveTitle": "Review Confirmation",
+      "approveText": "Have you thoroughly reviewed {{name}}'s background, financials, and lifestyle fit?",
+      "declineTitle": "Decline Application",
+      "declineText": "Are you sure you want to decline this application? This action cannot be easily undone.",
+      "approvedSuccessText": "Great news! The next step is to draft and send the official lease agreement to the tenant.",
+      "goToContracts": "Go to Contracts Hub",
+      "declinedSuccessText": "The applicant will be notified. Use the close control when you are ready to return to your requests."
+    }
+  },
+  "common": {
+    "close": "Close"
+  },
+  "notificationCenter": {
+    "title": "Notification Center",
+    "newAlerts": "You have {{count}} new alerts",
+    "allCaughtUp": "You are all caught up!",
+    "markAllRead": "Mark all read",
+    "clearHistory": "Clear Notification History",
+    "confirmClear": "Are you sure you want to clear all notifications?",
+    "empty": "No notifications to show",
+    "today": "Today, 10:30 AM",
+    "yesterday": "Yesterday",
+    "examples": {
+      "maintenance": {
+        "title": "Work Order Completed",
+        "desc": "The leak in the bathroom has been fixed."
+      },
+      "invoice": {
+        "title": "Invoice Generated",
+        "desc": "Monthly rent invoice for March is ready."
+      },
+      "policy": {
+        "title": "Policy Update",
+        "desc": "Updated terms for parking space usage."
+      },
+      "confirmed": {
+        "title": "Payment Confirmed",
+        "desc": "Rent for February was processed."
+      }
+    }
   },
   "confirmModal": {
     "signOutTitle": "Sign out",

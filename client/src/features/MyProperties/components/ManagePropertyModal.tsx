@@ -1,6 +1,7 @@
 // client\src\features\MyProperties\components\ManagePropertyModal.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any -- landlord editor accepts loosely-shaped property rows */
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   FaTimes, FaSave, FaTrashAlt, FaHome, FaDollarSign, 
   FaClipboardList, FaImages, FaExclamationTriangle,
@@ -26,6 +27,7 @@ const normalizeUiStatus = (rawStatus: string | undefined): 'draft' | 'pending_ap
 };
 
 const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onClose, initialTab }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(initialTab || 'general');
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -140,9 +142,9 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
   // 4. Validation Logic
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!formData.name.trim()) newErrors.name = "Property name is required";
-    if (!formData.address.trim()) newErrors.address = "Address cannot be empty";
-    if (Number(formData.price) < 100) newErrors.price = "Rent must be at least $100";
+    if (!formData.name.trim()) newErrors.name = t('myProperties.errors.nameRequired');
+    if (!formData.address.trim()) newErrors.address = t('myProperties.errors.addressRequired');
+    if (Number(formData.price) < 100) newErrors.price = t('myProperties.errors.priceMinimum');
     
     setErrors(newErrors);
     return newErrors;
@@ -152,8 +154,8 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
     if (isLocked) {
       setSaveError(
         isPendingApproval
-          ? 'This listing is pending admin review and is locked until approval or rejection.'
-          : 'Rejected properties are locked and cannot be edited.'
+          ? t('myProperties.lockedPendingApproval')
+          : t('myProperties.lockedRejected')
       );
       return;
     }
@@ -208,7 +210,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
         }, 2000);
       }
     } catch (e) {
-      const fallbackMessage = 'Could not save changes. Please try again.';
+      const fallbackMessage = t('myProperties.errors.saveFailed');
       const messageFromApi =
         typeof e === 'object' &&
         e !== null &&
@@ -226,63 +228,68 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
 
   // Helper dictionary for clean display names
   const maintenanceDisplayNames: Record<string, string> = {
-      structural: 'Structural Repairs', appliances: 'Interior Appliances', 
-      utilities: 'Utility Bills', plumbing: 'Plumbing', 
-      electrical: 'Electrical', hvac: 'HVAC / Air', 
-      pest: 'Pest Control', exterior: 'Exterior Maintenance', 
-      common: 'Common Areas', security: 'Security Systems'
+      structural: t('tenantHomeComponents.leaseResponsibilities'), // Using existing keys where possible or descriptive labels
+      appliances: t('landlordHomeComponents.amenities'), 
+      utilities: t('footer.pricingFees'), 
+      plumbing: t('maintenanceHome.plumbing'), 
+      electrical: t('maintenanceHome.electrical'), 
+      hvac: t('maintenanceHome.hvac'), 
+      pest: t('guestHome.trust'), 
+      exterior: t('landlordHomeComponents.photos'), 
+      common: t('guestHome.matchesMade'), 
+      security: t('guestHome.trust')
   };
 
   return (
-    <div className="manage-modal-overlay" onClick={onClose}>
+    <div className="manage-modal-overlay" onClick={onClose} dir="ltr">
       <div className="manage-modal-container" onClick={(e) => e.stopPropagation()}>
         
         <div className={`success-toast ${showToast ? 'show' : ''}`}>
-           <FaCheckCircle /> <span>Changes saved successfully!</span>
+           <FaCheckCircle /> <span>{t('myProperties.saveSuccess')}</span>
         </div>
 
         <aside className="manage-modal-sidebar">
           <div className="sidebar-header">
             <div className="property-mini-avatar"><FaHome /></div>
             <div>
-              <h3>Unit Manager</h3>
+              <h3>{t('myProperties.unitManager')}</h3>
               <p>v2.4.0</p>
             </div>
           </div>
           
           <nav className="manage-nav">
             <button className={activeTab === 'general' ? 'active' : ''} onClick={() => setActiveTab('general')}>
-              <FaHome /> General Info { (errors.name || errors.address) && <span className="err-dot" /> }
+              <FaHome /> {t('myProperties.tabs.general')} { (errors.name || errors.address) && <span className="err-dot" /> }
             </button>
             <button className={activeTab === 'financials' ? 'active' : ''} onClick={() => setActiveTab('financials')}>
-              <FaDollarSign /> Pricing & Deposit { errors.price && <span className="err-dot" /> }
+              <FaDollarSign /> {t('myProperties.tabs.financials')} { errors.price && <span className="err-dot" /> }
             </button>
             <button className={activeTab === 'rules' ? 'active' : ''} onClick={() => setActiveTab('rules')}>
-              <FaClipboardList /> Rules & Perks
+              <FaClipboardList /> {t('myProperties.tabs.rules')}
             </button>
             <button className={activeTab === 'media' ? 'active' : ''} onClick={() => setActiveTab('media')}>
-              <FaImages /> Media Assets
+              <FaImages /> {t('myProperties.tabs.media')}
             </button>
             <button className={activeTab === 'maintenance' ? 'active' : ''} onClick={() => setActiveTab('maintenance')}>
-              <FaWrench /> Maintenance Details
+              <FaWrench /> {t('myProperties.tabs.maintenance')}
             </button>
           </nav>
 
           <div className="sidebar-footer">
-            <button className="delete-property-btn"><FaTrashAlt /> Delete Listing</button>
+            <button className="delete-property-btn"><FaTrashAlt /> {t('myProperties.deleteListing')}</button>
           </div>
         </aside>
 
         <main className="manage-modal-main">
           <header className="main-header">
             <div className="header-text">
-              <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')}</h2>
-              <p>Property ID: <span className="id-badge">#PRP-{property.id || '9921'}</span></p>
+              <h2>{t(`myProperties.tabs.${activeTab}`)}</h2>
+              <p>{t('myProperties.propertyId')}: <span className="id-badge">#PRP-{property.id || '9921'}</span></p>
               {isLocked && (
                 <p style={{ marginTop: 8, color: '#b91c1c', fontWeight: 700 }}>
                   {isPendingApproval
-                    ? 'This listing is pending admin approval and cannot be edited right now.'
-                    : 'This listing is rejected and locked by admin.'}
+                    ? t('myProperties.lockedPendingApproval')
+                    : t('myProperties.lockedRejected')}
                 </p>
               )}
             </div>
@@ -296,7 +303,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
               <div className="manage-view animate-fade-in">
                 <div className="manage-card-group">
                   <div className={`manage-field ${errors.name ? 'has-error' : ''}`}>
-                    <label>Property Marketing Title</label>
+                    <label>{t('myProperties.labels.marketingTitle')}</label>
                     <div className="m-input-with-icon">
                       <FaHome className="input-icon" />
                       <input 
@@ -312,7 +319,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
 
                   <div className="manage-grid-2">
                     <div className="manage-field">
-                      <label>Status</label>
+                      <label>{t('landlordHomeComponents.status')}</label>
                       <select 
                         className="m-select" 
                         value={formData.status}
@@ -324,23 +331,23 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         }
                         disabled={isLocked}
                       >
-                        <option value="draft">Draft</option>
-                        <option value="available">Available</option>
+                        <option value="draft">{t('myProperties.status.draft')}</option>
+                        <option value="available">{t('myProperties.status.available')}</option>
                       </select>
                     </div>
                     <div className="manage-field">
-                      <label>Furnishing</label>
-                      <select className="m-select">
-                        <option>Fully Furnished</option>
-                        <option>Semi-Furnished</option>
-                        <option>Unfurnished</option>
+                      <label>{t('guestHome.propertyType')}</label>
+                      <select className="m-select" disabled={isLocked}>
+                        <option>{t('tenantHomeComponents.fullyFurnished')}</option>
+                        <option>{t('tenantHomeComponents.semiFurnished')}</option>
+                        <option>{t('myProperties.unfurnished')}</option>
                       </select>
                     </div>
                   </div>
                 </div>
 
                 <div className={`manage-card-group ${errors.address ? 'has-error' : ''}`}>
-                  <label className="group-label"><FaMapMarkerAlt /> Location Details</label>
+                  <label className="group-label"><FaMapMarkerAlt /> {t('myProperties.labels.locationDetails')}</label>
                   <textarea 
                     className="m-textarea" 
                     value={formData.address} 
@@ -373,12 +380,12 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
               <div className="manage-view animate-fade-in">
                 <div className="financial-card-status">
                    <FaExclamationTriangle />
-                   <p>Adjustments reflect in real-time on all public channels.</p>
+                   <p>{t('myProperties.labels.realTimeUpdates')}</p>
                 </div>
                 
                 <div className="financial-display-grid">
                   <div className={`price-input-wrapper ${errors.price ? 'has-error' : ''}`}>
-                    <label>Monthly Rent</label>
+                    <label>{t('myProperties.labels.monthlyRent')}</label>
                     <div className="input-row">
                       <span className="currency-symbol">$</span>
                       <input 
@@ -387,15 +394,15 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         onChange={(e) => setFormData({...formData, price: e.target.value})}
                         disabled={isLocked}
                       />
-                      <span className="period">/mo</span>
+                      <span className="period">/{t('guestHome.perMonth')}</span>
                     </div>
                     {errors.price && <span className="error-msg">{errors.price}</span>}
                   </div>
                   <div className="price-input-wrapper">
-                    <label>Security Deposit</label>
+                    <label>{t('myProperties.labels.securityDeposit')}</label>
                     <div className="input-row">
                       <span className="currency-symbol">$</span>
-                      <input type="number" defaultValue={1200} />
+                      <input type="number" defaultValue={1200} disabled={isLocked} />
                     </div>
                   </div>
                 </div>
@@ -406,7 +413,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
             {activeTab === 'rules' && (
               <div className="manage-view animate-fade-in">
                  <div className="manage-card-group">
-                    <h4 className="section-subtitle">Core Amenities</h4>
+                    <h4 className="section-subtitle">{t('myProperties.labels.coreAmenities')}</h4>
                     <div className="selection-grid">
                         {amenitiesOptions.map(perk => (
                           <label key={perk} className="selection-card">
@@ -424,7 +431,7 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                  </div>
 
                  <div className="manage-card-group">
-                    <h4 className="section-subtitle">House Rules</h4>
+                    <h4 className="section-subtitle">{t('myProperties.labels.houseRules')}</h4>
                     <div className="selection-grid">
                         {rulesOptions.map(rule => (
                           <label key={rule} className="selection-card">
@@ -448,8 +455,8 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
               <div className="manage-view animate-fade-in">
                 <div className="manage-card-group">
                    <div className="media-manager-header">
-                      <label>Property Gallery</label>
-                      <span>{property.images?.length || 1} / 10 Photos</span>
+                      <label>{t('myProperties.labels.propertyGallery')}</label>
+                      <span>{property.images?.length || 1} / 10 {t('landlordHomeComponents.photos')}</span>
                    </div>
                    <div className="media-manager-grid">
                       {property.images && property.images.length > 0 ? (
@@ -461,13 +468,13 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                         ))
                       ) : (
                         <div className="media-card">
-                          <img src="/rentblue.jpg" alt="Property" />
-                          <div className="remove-overlay"><FaTrashAlt /></div>
+                           <img src="/rentblue.jpg" alt="Property" />
+                           <div className="remove-overlay"><FaTrashAlt /></div>
                         </div>
                       )}
                       <div className="add-media-btn">
                         <FaImages size={24} />
-                        <span>Upload New</span>
+                        <span>{t('myProperties.labels.uploadNew')}</span>
                       </div>
                    </div>
                 </div>
@@ -479,12 +486,12 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                 <div className="manage-view animate-fade-in">
                     <div className="manage-card-group">
                         <p className="section-instruction" style={{marginBottom: '12px', fontSize: '0.9rem', color: '#64748b'}}>
-                            Assign who is financially and physically responsible for the following items. This will be publicly visible to applicants.
+                            {t('myProperties.labels.maintenanceInstruction')}
                         </p>
                         <div className="responsibility-box scrollable">
                             {Object.entries(formData.maintenance).map(([key, value]) => (
                                 <div className="resp-row" key={key}>
-                                    <span>{maintenanceDisplayNames[key]}</span>
+                                    <span>{maintenanceDisplayNames[key] || key}</span>
                                     <select 
                                         className="m-select compact"
                                         style={{ width: '120px', padding: '6px', fontSize: '0.85rem' }}
@@ -495,8 +502,8 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                                         })}
                                         disabled={isLocked}
                                     >
-                                        <option value="Landlord">Landlord</option>
-                                        <option value="Tenant">Tenant</option>
+                                        <option value="Landlord">{t('tenantHomeComponents.landlord')}</option>
+                                        <option value="Tenant">{t('tenantHomeComponents.tenant')}</option>
                                     </select>
                                 </div>
                             ))}
@@ -514,14 +521,14 @@ const ManagePropertyModal: React.FC<ManagePropertyModalProps> = ({ property, onC
                 onClick={() => setFormData(initialState)} 
                 disabled={isLocked || !isDirty || loading}
              >
-                Discard Changes
+                {t('myProperties.labels.discardChanges')}
              </button>
              <button 
                 className="m-btn-save" 
                 onClick={handleUpdate} 
                 disabled={isLocked || !isDirty || loading}
              >
-                {loading ? <div className="spinner-mini"></div> : <><FaSave /> Save Changes</>}
+                {loading ? <div className="spinner-mini"></div> : <><FaSave /> {t('myProperties.labels.saveChanges')}</>}
              </button>
           </footer>
         </main>

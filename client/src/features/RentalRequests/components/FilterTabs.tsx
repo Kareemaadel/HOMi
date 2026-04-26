@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import './FilterTabs.css';
 
 interface Props {
@@ -13,11 +14,12 @@ interface Props {
 }
 
 const FilterTabs: React.FC<Props> = ({ activeTab, setActiveTab, counts }) => {
+    const { t } = useTranslation();
     const tabs = [
-        { id: 'pending', label: 'Pending', count: counts.pending },
-        { id: 'review', label: 'Under Review', count: counts.review },
-        { id: 'approved', label: 'Approved', count: counts.approved },
-        { id: 'declined', label: 'Declined', count: counts.declined }
+        { id: 'pending', label: t('rentalRequests.pending'), count: counts.pending },
+        { id: 'review', label: t('rentalRequests.review', { defaultValue: 'Under Review' }), count: counts.review },
+        { id: 'approved', label: t('rentalRequests.approved'), count: counts.approved },
+        { id: 'declined', label: t('rentalRequests.declined'), count: counts.declined }
     ];
 
     return (
@@ -35,7 +37,7 @@ const FilterTabs: React.FC<Props> = ({ activeTab, setActiveTab, counts }) => {
                 ))}
             </div>
             <div className="search-filter">
-                <input type="text" placeholder="Search applicants..." />
+                <input type="text" placeholder={t('rentalRequests.searchPlaceholder', { defaultValue: 'Search applicants...' })} />
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
 // client\src\features\home\components\TenantHomeComponents\NotificationsBar.tsx
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTimes, FaFilter, FaBell, FaCheckDouble, FaTrashAlt } from 'react-icons/fa';
 import './NotificationsBar.css';
 
@@ -9,13 +10,14 @@ interface Props {
 }
 
 const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
     // State to track unread status and the notification list
     const [unreadCount, setUnreadCount] = useState(2);
     const [notifications, setNotifications] = useState([
-        { id: 1, type: 'maintenance', title: 'Work Order Completed', desc: 'The leak in the bathroom has been fixed.', date: 'Today, 10:30 AM', status: 'completed' },
-        { id: 2, type: 'payment', title: 'Invoice Generated', desc: 'Monthly rent invoice for March is ready.', date: 'Yesterday', status: 'pending' },
-        { id: 3, type: 'system', title: 'Policy Update', desc: 'Updated terms for parking space usage.', date: 'Oct 15, 2026', status: 'info' },
-        { id: 4, type: 'payment', title: 'Payment Confirmed', desc: 'Rent for February was processed.', date: 'Feb 01, 2026', status: 'success' },
+        { id: 1, type: 'maintenance', title: t('notificationCenter.examples.maintenance.title'), desc: t('notificationCenter.examples.maintenance.desc'), date: t('notificationCenter.today'), status: 'completed' },
+        { id: 2, type: 'payment', title: t('notificationCenter.examples.invoice.title'), desc: t('notificationCenter.examples.invoice.desc'), date: t('notificationCenter.yesterday'), status: 'pending' },
+        { id: 3, type: 'system', title: t('notificationCenter.examples.policy.title'), desc: t('notificationCenter.examples.policy.desc'), date: 'Oct 15, 2026', status: 'info' },
+        { id: 4, type: 'payment', title: t('notificationCenter.examples.confirmed.title'), desc: t('notificationCenter.examples.confirmed.desc'), date: 'Feb 01, 2026', status: 'success' },
     ]);
 
     // Handle clearing the "Live" pulse
@@ -25,7 +27,7 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
 
     // Handle clearing the entire history
     const handleClearHistory = () => {
-        if (window.confirm("Are you sure you want to clear all notifications?")) {
+        if (window.confirm(t('notificationCenter.confirmClear'))) {
             setNotifications([]);
             setUnreadCount(0);
         }
@@ -55,8 +57,8 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
 
     return (
         <div className={`notif-bar-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
-            <div 
-                className={`notif-sidebar-container ${isOpen ? 'slide-in' : ''}`} 
+            <div
+                className={`notif-sidebar-container ${isOpen ? 'slide-in' : ''}`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* HEADER SECTION */}
@@ -68,15 +70,15 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
                             {unreadCount > 0 && <span className="status-pulse"></span>}
                         </div>
                         <div>
-                            <h2>Notification Center</h2>
+                            <h2>{t('notificationCenter.title')}</h2>
                             <p className={unreadCount === 0 ? 'all-caught-up' : ''}>
-                                {unreadCount > 0 
-                                    ? `You have ${unreadCount} new alerts` 
-                                    : 'You are all caught up!'}
+                                {unreadCount > 0
+                                    ? t('notificationCenter.newAlerts', { count: unreadCount })
+                                    : t('notificationCenter.allCaughtUp')}
                             </p>
                         </div>
                     </div>
-                    <button className="close-bar-btn" onClick={onClose} aria-label="Close Sidebar">
+                    <button className="close-bar-btn" onClick={onClose} aria-label={t('common.close')}>
                         <FaTimes />
                     </button>
                 </div>
@@ -84,10 +86,10 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
                 {/* QUICK ACTIONS */}
                 <div className="notif-bar-actions">
                     <button className="bar-action-btn" onClick={handleMarkAllRead} disabled={unreadCount === 0}>
-                        <FaCheckDouble /> Mark all read
+                        <FaCheckDouble /> {t('notificationCenter.markAllRead')}
                     </button>
                     <button className="bar-action-btn">
-                        <FaFilter /> Filter
+                        <FaFilter /> {t('guestSearch.filter')}
                     </button>
                 </div>
 
@@ -96,9 +98,9 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
                     {notifications.length > 0 ? (
                         <div className="history-timeline">
                             {notifications.map((item, index) => (
-                                <div 
-                                    className="history-item" 
-                                    key={item.id} 
+                                <div
+                                    className="history-item"
+                                    key={item.id}
                                     style={{ animationDelay: `${index * 0.1}s` }}
                                 >
                                     <div className="history-dot-line">
@@ -119,19 +121,19 @@ const NotificationsBar: React.FC<Props> = ({ isOpen, onClose }) => {
                     ) : (
                         <div className="empty-notif-state">
                             <div className="empty-icon">📂</div>
-                            <p>No notifications to show</p>
+                            <p>{t('notificationCenter.empty')}</p>
                         </div>
                     )}
                 </div>
 
                 {/* FOOTER */}
                 <div className="notif-bar-footer">
-                    <button 
-                        className="clear-history-btn" 
+                    <button
+                        className="clear-history-btn"
                         onClick={handleClearHistory}
                         disabled={notifications.length === 0}
                     >
-                        <FaTrashAlt /> Clear Notification History
+                        <FaTrashAlt /> {t('notificationCenter.clearHistory')}
                     </button>
                 </div>
             </div>

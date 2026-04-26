@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Landlord/sidebar';
 import Footer from '../../../components/global/footer';
@@ -11,6 +12,7 @@ import './MyProperties.css';
 import type { LandlordPropertyRow } from '../components/DetailedPropertyCard';
 
 const MyProperties = () => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [properties, setProperties] = useState<LandlordPropertyRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ const MyProperties = () => {
          <div className="main-content">
            <Header />
            <main className="my-properties-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-             <p>Loading properties...</p>
+             <p>{t('myProperties.loadingProperties')}</p>
            </main>
            <Footer />
          </div>
@@ -80,7 +82,7 @@ const MyProperties = () => {
   }
 
   return (
-    <div className="landlord-layout">
+    <div className="landlord-layout" dir="ltr">
       <Sidebar />
       <div className="main-content">
         <Header />
@@ -88,8 +90,8 @@ const MyProperties = () => {
           
           <div className="my-props-header">
             <div className="header-left">
-              <h1>Portfolio</h1>
-              <p>Managing {properties.length} total units</p>
+              <h1>{t('myProperties.portfolio')}</h1>
+              <p>{t('myProperties.managingUnits', { count: properties.length })}</p>
             </div>
             
             {/* Only show the top-right button if there IS data */}
@@ -98,7 +100,7 @@ const MyProperties = () => {
                 <div className="btn-icon-circle">
                   <FiPlus />
                 </div>
-                <span className="new-prop-btn-text">Add New Property</span>
+                <span className="new-prop-btn-text">{t('myProperties.addNewProperty')}</span>
               </button>
             )}
           </div>
@@ -115,11 +117,11 @@ const MyProperties = () => {
               <div className="my-properties-empty-state-icon-bg">
                 <FiHome size={48} className="my-properties-empty-state-icon" />
               </div>
-              <h2>No Properties Found</h2>
-              <p className="my-properties-empty-state-text">You have no properties yet. Start building your portfolio by adding your first unit.</p>
+              <h2>{t('myProperties.noPropertiesFound')}</h2>
+              <p className="my-properties-empty-state-text">{t('myProperties.noPropertiesText')}</p>
               <button className="my-properties-empty-state-btn" onClick={() => setIsModalOpen(true)}>
                 <FiPlus size={20} />
-                Add Your First Property
+                {t('myProperties.addFirstProperty')}
               </button>
             </div>
           )}
