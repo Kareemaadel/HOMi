@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaCrown, FaInfoCircle, FaHome, FaCreditCard } from 'react-icons/fa';
 import type { LandlordContract } from '../../../../services/contract.service';
 import './RewardsSummary.css';
@@ -8,6 +9,7 @@ interface RewardsSummaryProps {
 }
 
 const RewardsSummary: React.FC<RewardsSummaryProps> = ({ contracts }) => {
+  const { t } = useTranslation();
   const activeContracts = useMemo(
     () => contracts.filter((contract) => contract.status === 'ACTIVE').length,
     [contracts]
@@ -25,7 +27,7 @@ const RewardsSummary: React.FC<RewardsSummaryProps> = ({ contracts }) => {
       <header className="rewards-card-header">
         <div className="tier-badge">
           <FaCrown className="crown-icon" />
-          <span>Resident Summary</span>
+          <span>{t('tenantHomeComponents.residentSummary')}</span>
         </div>
         <FaInfoCircle className="info-trigger" />
       </header>
@@ -37,14 +39,14 @@ const RewardsSummary: React.FC<RewardsSummaryProps> = ({ contracts }) => {
           </div>
           <div className="points-group">
             <h2 className="points-value">{activeContracts}</h2>
-            <p className="points-label">Active Lease{activeContracts === 1 ? '' : 's'}</p>
+            <p className="points-label">{t('tenantHomeComponents.activeLease', { count: activeContracts })}</p>
           </div>
         </div>
 
         <div className="tier-progress-section">
           <div className="progress-labels">
-            <span>Loyalty Rewards</span>
-            <span>Launching soon</span>
+            <span>{t('tenantHomeComponents.loyaltyRewards')}</span>
+            <span>{t('tenantHomeComponents.launchingSoon')}</span>
           </div>
           <div className="tier-progress-bar">
             <div className="tier-progress-fill" style={{ width: `${pendingPayments > 0 ? 35 : 20}%` }}></div>
@@ -53,8 +55,8 @@ const RewardsSummary: React.FC<RewardsSummaryProps> = ({ contracts }) => {
       </main>
 
       <footer className="perks-footer">
-        <div className="perk-tag"><FaCreditCard /> Payment Tracking</div>
-        <div className="perk-tag">Lease Insights</div>
+        <div className="perk-tag"><FaCreditCard /> {t('tenantHomeComponents.paymentTracking')}</div>
+        <div className="perk-tag">{t('tenantHomeComponents.leaseInsights')}</div>
       </footer>
     </div>
   );

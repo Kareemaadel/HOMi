@@ -562,3 +562,26 @@
     color: #9ca3af;
     font-size: 0.875rem;
 }
+
+/* RTL Support */
+[dir="rtl"] .maintenance-main-content {
+    margin-left: 260px;
+    margin-right: 0;
+    width: calc(100% - 260px);
+}
+
+[dir="rtl"] .stat-card {
+    flex-direction: row;
+}
+
+[dir="rtl"] .job-item {
+    flex-direction: row;
+}
+
+[dir="rtl"] .notif-card {
+    flex-direction: row;
+}
+
+[dir="rtl"] .rating-premium-card .rating-stars {
+    flex-direction: row;
+}

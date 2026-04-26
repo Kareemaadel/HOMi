@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Home, ShieldCheck, UserCircle, Handshake, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './TenantHome.css';
 
 // Global Layout Components
 import Header from '../../../components/global/header';
 import Sidebar from '../../../components/global/Tenant/sidebar';
-import Footer from '../../../components/global/footer';  
+import Footer from '../../../components/global/footer';
 
 // Dashboard Widgets
 import ActiveRentalsCard from '../components/TenantHomeComponents/ActiveRentalsCard';
@@ -20,19 +21,20 @@ import type { LandlordContract } from '../../../services/contract.service';
 import { propertyService, type PropertyResponse } from '../../../services/property.service';
 
 const TenantHome: React.FC = () => {
+  const { t } = useTranslation();
   const [hasActiveRentals, setHasActiveRentals] = useState<boolean>(false);
   const [isCheckingContracts, setIsCheckingContracts] = useState<boolean>(true);
   const [tenantContracts, setTenantContracts] = useState<LandlordContract[]>([]);
   const [activePropertyDetails, setActivePropertyDetails] = useState<PropertyResponse | null>(null);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const firstName = authService.getCurrentUser()?.profile?.firstName?.trim() || 'there';
 
   const currentHour = new Date().getHours();
-  let greeting = 'Good Evening';
+  let greetingKey = 'tenantHome.goodEvening';
   if (currentHour < 12) {
-    greeting = 'Good Morning';
+    greetingKey = 'tenantHome.goodMorning';
   } else if (currentHour < 18) {
-    greeting = 'Good Afternoon';
+    greetingKey = 'tenantHome.goodAfternoon';
   }
 
   useEffect(() => {
@@ -96,12 +98,9 @@ const TenantHome: React.FC = () => {
 
   const maintenanceAreasCount = activeContract?.maintenanceResponsibilities?.length ?? 0;
 
-  let activeSummaryText = `Your lease dashboard is up to date with ${maintenanceAreasCount} maintenance area${maintenanceAreasCount === 1 ? '' : 's'} configured.`;
-  if (openPaymentContractsCount > 0) {
-    const paymentLabel = `payment${openPaymentContractsCount > 1 ? 's' : ''}`;
-    const areaLabel = `area${maintenanceAreasCount === 1 ? '' : 's'}`;
-    activeSummaryText = `You have ${openPaymentContractsCount} pending ${paymentLabel} and ${maintenanceAreasCount} maintenance ${areaLabel} in your lease.`;
-  }
+  const activeSummaryText = openPaymentContractsCount > 0
+    ? t('tenantHome.pendingPaymentsMaintenance', { paymentCount: openPaymentContractsCount, maintenanceCount: maintenanceAreasCount })
+    : t('tenantHome.leaseDashboardUpToDate', { count: maintenanceAreasCount });
 
   if (isCheckingContracts) {
     return (
@@ -110,7 +109,7 @@ const TenantHome: React.FC = () => {
         <div className="main-wrapper">
           <Header />
           <main className="content-area" style={{ display: 'grid', placeItems: 'center' }}>
-            <p style={{ color: '#64748b', fontWeight: 600 }}>Loading your dashboard...</p>
+            <p style={{ color: '#64748b', fontWeight: 600 }}>{t('tenantHome.loadingDashboard')}</p>
           </main>
         </div>
       </div>
@@ -120,18 +119,18 @@ const TenantHome: React.FC = () => {
   return (
     <div className="tenant-dashboard-root">
       <Sidebar />
-      
+
       <div className="main-wrapper">
         <Header />
-        
+
         <main className="content-area">
           <header className="welcome-section">
             <div className="welcome-text">
-              <h1>{greeting}, <span className="highlight">{firstName}!</span></h1>
+              <h1>{t(greetingKey)}, <span className="highlight">{firstName}!</span></h1>
               {hasActiveRentals ? (
                 <p>{activeSummaryText}</p>
               ) : (
-                <p>Welcome to your new dashboard. Let's get you into your dream home!</p>
+                <p>{t('tenantHome.welcomeDreamHome')}</p>
               )}
             </div>
           </header>
@@ -156,7 +155,7 @@ const TenantHome: React.FC = () => {
             </div>
           ) : (
             <div className="empty-state-wrapper animate-fade-in">
-              
+
               {/* HERO CTA BANNER */}
               <div className="hero-cta-card">
                 {/* Abstract Background Shapes */}
@@ -164,10 +163,10 @@ const TenantHome: React.FC = () => {
                 <div className="hero-bg-shape shape-2"></div>
 
                 <div className="hero-cta-content">
-                  <h2>Ready to find your perfect place?</h2>
-                  <p>Browse thousands of verified listings, schedule tours, and sign your lease—all entirely online.</p>
+                  <h2>{t('tenantHome.readyToFindPerfectPlace')}</h2>
+                  <p>{t('tenantHome.browseVerifiedListings')}</p>
                   <button className="btn-search-primary" onClick={() => navigate('/browse-properties')}>
-                    <Search size={18} /> Explore Properties
+                    <Search size={18} /> {t('tenantHome.exploreProperties')}
                   </button>
                 </div>
 
@@ -192,40 +191,40 @@ const TenantHome: React.FC = () => {
 
               {/* Bottom Layout */}
               <div className="dashboard-grid" style={{ marginTop: '1rem' }}>
-                
+
                 <div className="grid-col-2">
-                  <h3 className="section-subtitle" style={{ marginBottom: '1.25rem' }}>Getting Started</h3>
+                  <h3 className="section-subtitle" style={{ marginBottom: '1.25rem' }}>{t('tenantHome.gettingStarted')}</h3>
                   <div className="onboarding-grid">
-                    
+
                     {/* Card 1 */}
                     <div className="onboarding-card">
                       <div className="card-bg-icon"><UserCircle size={120} /></div>
-                      <div className="step-badge">Step 1</div>
+                      <div className="step-badge">{t('landlordHome.step')} 1</div>
                       <div className="icon-wrapper blue"><UserCircle size={24} /></div>
-                      <h4>Profile Setup</h4>
-                      <p>Get pre-approved faster by filling out your tenant profile and verifying your ID.</p>
-                      <button className="text-link" onClick={() => navigate('/settings')}>Go to Profile <ArrowRight size={16} className="arrow-icon"/></button>
+                      <h4>{t('tenantHome.profileSetup')}</h4>
+                      <p>{t('tenantHome.preApprovedFaster')}</p>
+                      <button className="text-link" onClick={() => navigate('/settings')}>{t('tenantHome.goToProfile')} <ArrowRight size={16} className="arrow-icon" /></button>
                     </div>
 
                     {/* Card 2 */}
                     <div className="onboarding-card">
                       <div className="card-bg-icon"><Home size={120} /></div>
-                      <div className="step-badge">Step 2</div>
+                      <div className="step-badge">{t('landlordHome.step')} 2</div>
                       <div className="icon-wrapper green"><Home size={24} /></div>
-                      <h4>Find a Roommate</h4>
-                      <p>Use our smart filters to find apartments that fit your budget and lifestyle.</p>
-                      <button className="text-link" onClick={() => navigate('/matching')}>View Matching Profiles <ArrowRight size={16} className="arrow-icon"/></button>
+                      <h4>{t('tenantHome.findRoommate')}</h4>
+                      <p>{t('tenantHome.smartFilters')}</p>
+                      <button className="text-link" onClick={() => navigate('/matching')}>{t('tenantHome.viewMatchingProfiles')} <ArrowRight size={16} className="arrow-icon" /></button>
                     </div>
 
                     {/* Card 3 */}
                     <div className="onboarding-card">
                       <div className="card-bg-icon"><Handshake size={120} /></div>
-                      <div className="step-badge">Step 3</div>
+                      <div className="step-badge">{t('landlordHome.step')} 3</div>
                       <div className="icon-wrapper purple"><Handshake size={24} /></div>
-                      <h4>Sent Requests</h4>
-                      <p>View and manage the rental requests you've sent to property owners.</p>
+                      <h4>{t('tenantHome.sentRequests')}</h4>
+                      <p>{t('tenantHome.viewManageRequests')}</p>
                       <button className="text-link" onClick={() => navigate('/sent-requests')}>
-                        View Requests <ArrowRight size={16} className="arrow-icon"/>
+                        {t('tenantHome.viewRequests')} <ArrowRight size={16} className="arrow-icon" />
                       </button>
                     </div>
 
@@ -233,7 +232,7 @@ const TenantHome: React.FC = () => {
                 </div>
 
                 <section className="grid-col-1">
-                  <h3 className="section-subtitle" style={{ marginBottom: '1.25rem' }}>Your Updates</h3>
+                  <h3 className="section-subtitle" style={{ marginBottom: '1.25rem' }}>{t('tenantHome.yourUpdates')}</h3>
                   <Notifications contracts={tenantContracts} />
                 </section>
 
@@ -241,7 +240,7 @@ const TenantHome: React.FC = () => {
             </div>
           )}
         </main>
-        
+
         <Footer />
       </div>
     </div>
@@ -249,3 +248,4 @@ const TenantHome: React.FC = () => {
 };
 
 export default TenantHome;
+

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Header from '../../../../../components/global/header';
 import Footer from '../../../../../components/global/footer';
 import MaintenanceSideBar from '../../SideBar/MaintenanceSideBar';
@@ -11,6 +12,7 @@ import {
 import './MaintenanceHome.css';
 
 const MaintenanceHome: React.FC = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const hasData = true; // Toggle this to test empty states
 
@@ -27,8 +29,8 @@ const MaintenanceHome: React.FC = () => {
                         {/* Welcome Section */}
                         <header className="welcome-section">
                             <div className="welcome-text">
-                                <h1>Good Morning, <span className="highlight">Ahmed!</span></h1>
-                                <p>{hasData ? "You have 3 new job requests today" : "No new job requests today"}</p>
+                                <h1>{t('maintenanceHome.goodMorning')}, <span className="highlight">Ahmed!</span></h1>
+                                <p>{hasData ? t('maintenanceHome.jobRequestsCount', { count: 3 }) : t('maintenanceHome.noJobRequests')}</p>
                             </div>
                         </header>
 
@@ -38,28 +40,28 @@ const MaintenanceHome: React.FC = () => {
                                 <div className="stat-icon blue"><FaSearch /></div>
                                 <div className="stat-info">
                                     <h3 className="stat-value">{hasData ? "5" : "0"}</h3>
-                                    <p className="stat-label">Available Jobs</p>
+                                    <p className="stat-label">{t('maintenanceHome.availableJobs')}</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon yellow"><FaWrench /></div>
                                 <div className="stat-info">
                                     <h3 className="stat-value">{hasData ? "2" : "0"}</h3>
-                                    <p className="stat-label">In Progress</p>
+                                    <p className="stat-label">{t('maintenanceHome.inProgress')}</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon green"><FaCheckCircle /></div>
                                 <div className="stat-info">
                                     <h3 className="stat-value">{hasData ? "18" : "0"}</h3>
-                                    <p className="stat-label">Completed</p>
+                                    <p className="stat-label">{t('maintenanceHome.completed')}</p>
                                 </div>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-icon purple"><FaDollarSign /></div>
                                 <div className="stat-info">
                                     <h3 className="stat-value">{hasData ? "$1200" : "$0"}</h3>
-                                    <p className="stat-label">Earnings This Month</p>
+                                    <p className="stat-label">{t('maintenanceHome.earningsThisMonth')}</p>
                                 </div>
                             </div>
                         </section>
@@ -73,9 +75,9 @@ const MaintenanceHome: React.FC = () => {
                                 {/* New Requests Preview */}
                                 <div className="section-card">
                                     <div className="section-header">
-                                        <h2>New Requests Preview</h2>
+                                        <h2>{t('maintenanceHome.newRequestsPreview')}</h2>
                                         <button className="view-all-btn" onClick={() => navigate('/available-jobs')}>
-                                            View All Jobs <FaChevronRight />
+                                            {t('maintenanceHome.viewAllJobs')} <FaChevronRight />
                                         </button>
                                     </div>
 
@@ -108,7 +110,7 @@ const MaintenanceHome: React.FC = () => {
                                                                 <span><FaMapMarkerAlt /> Giza (5km away)</span>
                                                                 <span>Electrical</span>
                                                                 <span>Oct 23, 2023</span>
-                                                                <span style={{ color: '#ef4444', fontWeight: 600 }}>Urgent</span>
+                                                                <span style={{ color: '#ef4444', fontWeight: 600 }}>{t('maintenanceHome.urgent')}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -120,7 +122,7 @@ const MaintenanceHome: React.FC = () => {
                                         ) : (
                                             <div className="empty-state-card-mini">
                                                 <div className="empty-icon"><FaSearch /></div>
-                                                <p>No new requests available</p>
+                                                <p>{t('maintenanceHome.noNewRequests')}</p>
                                             </div>
                                         )}
                                     </div>
@@ -129,7 +131,7 @@ const MaintenanceHome: React.FC = () => {
                                 {/* Active Jobs Preview */}
                                 <div className="Active-jobs-section-card">
                                     <div className="section-header">
-                                        <h2>Active Jobs</h2>
+                                        <h2>{t('maintenanceHome.activeJobs')}</h2>
                                     </div>
 
                                     <div className="job-list">
@@ -148,7 +150,7 @@ const MaintenanceHome: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="status-badge in-progress">In Progress</span>
+                                                        <span className="status-badge in-progress">{t('maintenanceHome.inProgress')}</span>
                                                         <span className="price" style={{ marginLeft: '10px' }}>$80</span>
                                                     </div>
                                                 </div>
@@ -166,7 +168,7 @@ const MaintenanceHome: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="status-badge scheduled">Tomorrow</span>
+                                                        <span className="status-badge scheduled">{t('maintenanceHome.tomorrow')}</span>
                                                         <span className="price" style={{ marginLeft: '10px' }}>$120</span>
                                                     </div>
                                                 </div>
@@ -174,7 +176,7 @@ const MaintenanceHome: React.FC = () => {
                                         ) : (
                                             <div className="empty-state-card-mini">
                                                 <div className="empty-icon"><FaTools /></div>
-                                                <p>No active jobs at the moment</p>
+                                                <p>{t('maintenanceHome.noActiveJobs')}</p>
                                             </div>
                                         )}
                                     </div>
@@ -192,7 +194,7 @@ const MaintenanceHome: React.FC = () => {
                                                 <FaBell />
                                                 <span className="active-dot"></span>
                                             </div>
-                                            <h3>Activity Feed</h3>
+                                            <h3>{t('maintenanceHome.activityFeed')}</h3>
                                         </div>
                                     </header>
 
@@ -206,8 +208,8 @@ const MaintenanceHome: React.FC = () => {
                                                     </div>
                                                     <div className="notif-body">
                                                         <div className="notif-meta">
-                                                            <span className="notif-subject">New Job Posted</span>
-                                                            <span className="notif-timestamp">10m ago</span>
+                                                            <span className="notif-subject">{t('maintenanceHome.newJobPosted')}</span>
+                                                            <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 10 })}</span>
                                                         </div>
                                                         <p className="notif-text">A new plumbing job is available near you.</p>
                                                     </div>
@@ -220,8 +222,8 @@ const MaintenanceHome: React.FC = () => {
                                                     </div>
                                                     <div className="notif-body">
                                                         <div className="notif-meta">
-                                                            <span className="notif-subject">Job Assigned</span>
-                                                            <span className="notif-timestamp">2h ago</span>
+                                                            <span className="notif-subject">{t('maintenanceHome.jobAssigned')}</span>
+                                                            <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 120 })}</span>
                                                         </div>
                                                         <p className="notif-text">You have been assigned to "Kitchen repair".</p>
                                                     </div>
@@ -234,8 +236,8 @@ const MaintenanceHome: React.FC = () => {
                                                     </div>
                                                     <div className="notif-body">
                                                         <div className="notif-meta">
-                                                            <span className="notif-subject">Payment Received</span>
-                                                            <span className="notif-timestamp">1d ago</span>
+                                                            <span className="notif-subject">{t('maintenanceHome.paymentReceived')}</span>
+                                                            <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 1440 })}</span>
                                                         </div>
                                                         <p className="notif-text">Received $120 for "AC maintenance".</p>
                                                     </div>
@@ -244,7 +246,7 @@ const MaintenanceHome: React.FC = () => {
                                         ) : (
                                             <div className="empty-state-feed">
                                                 <div className="empty-feed-icon"><FaBell /></div>
-                                                <p>Stay tuned for updates</p>
+                                                <p>{t('maintenanceHome.stayTuned')}</p>
                                             </div>
                                         )}
                                     </div>
@@ -253,7 +255,7 @@ const MaintenanceHome: React.FC = () => {
                                 {/* Rating Card */}
                                 <div className="rating-premium-card">
                                     <div className="rating-header">
-                                        <h3>Your Rating</h3>
+                                        <h3>{t('maintenanceHome.yourRating')}</h3>
                                     </div>
                                     <div className="rating-body">
                                         <div className="rating-big-score">
@@ -280,12 +282,12 @@ const MaintenanceHome: React.FC = () => {
                                             )}
                                         </div>
                                         <p className="rating-text">
-                                            {hasData ? "Based on 45 customer reviews." : "No reviews yet."}
+                                            {hasData ? t('maintenanceHome.basedOnReviews', { count: 45 }) : t('maintenanceHome.noReviewsYet')}
                                         </p>
                                     </div>
                                     {hasData && (
                                         <button className="view-reviews-btn">
-                                            View All Reviews <FaChevronRight />
+                                            {t('maintenanceHome.viewAllReviews')} <FaChevronRight />
                                         </button>
                                     )}
                                 </div>

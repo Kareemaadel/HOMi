@@ -1,11 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaMapMarkerAlt, FaCalendarAlt, FaBed, FaBath, FaArrowRight, FaHome, FaRulerCombined, FaCouch, FaPaw } from 'react-icons/fa';
 import './ActiveRentalsCard.css';
 import { useNavigate } from 'react-router-dom';
 import type { LandlordContract, RentDueDate } from '../../../../services/contract.service';
 import type { PropertyResponse } from '../../../../services/property.service';
-
-
 
 interface RentalSpecs {
   label: string;
@@ -37,58 +36,55 @@ const getLeaseMetrics = (contract: LandlordContract | null): { leaseProgress: nu
   return { leaseProgress, monthsLeft };
 };
 
-const buildSpecs = (contract: LandlordContract | null, propertyDetails: PropertyResponse | null): RentalSpecs[] => {
-  const bedrooms = propertyDetails?.specifications?.bedrooms ?? contract?.propertySpecifications?.bedrooms;
-  const bathrooms = propertyDetails?.specifications?.bathrooms ?? contract?.propertySpecifications?.bathrooms;
-  const areaSqft = propertyDetails?.specifications?.areaSqft ?? contract?.propertySpecifications?.areaSqft;
-  const furnishing = formatFurnishing(propertyDetails?.furnishing ?? contract?.property?.furnishing);
-  const petFriendly = Boolean(propertyDetails?.houseRules?.some((rule) => rule.name.toLowerCase() === 'pets allowed'));
-
-  const detailSpecs: RentalSpecs[] = [];
-  if (typeof bedrooms === 'number' && bedrooms > 0) {
-    detailSpecs.push({ label: `${bedrooms} Bed`, icon: <FaBed /> });
-  }
-  if (typeof bathrooms === 'number' && bathrooms > 0) {
-    detailSpecs.push({ label: `${bathrooms} Bath`, icon: <FaBath /> });
-  }
-  if (typeof areaSqft === 'number' && areaSqft > 0) {
-    detailSpecs.push({ label: `${areaSqft} sqft`, icon: <FaRulerCombined /> });
-  }
-  detailSpecs.push({ label: furnishing, icon: <FaCouch /> });
-  detailSpecs.push({ label: petFriendly ? 'Pets Friendly' : 'No Pets', icon: <FaPaw /> });
-
-  const fallbackSpecs: RentalSpecs[] = [
-    { label: formatPropertyType(propertyDetails?.type ?? contract?.property?.type), icon: <FaHome /> },
-    { label: furnishing, icon: <FaCouch /> },
-  ];
-
-  return [
-    ...(detailSpecs.length > 0 ? detailSpecs : fallbackSpecs),
-    { label: getDueDateLabel(contract?.rentDueDate ?? null), icon: <FaCalendarAlt /> },
-  ];
-};
-
-const getDueDateLabel = (rentDueDate: RentDueDate | null): string => {
-  if (!rentDueDate) return 'Rent due monthly';
-  if (rentDueDate === '1ST_OF_MONTH') return 'Due on the 1st';
-  if (rentDueDate === '5TH_OF_MONTH') return 'Due on the 5th';
-  return 'Due at month-end';
-};
-
-const formatPropertyType = (type: string | null | undefined): string => {
-  if (!type) return 'Type not set';
-  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-};
-
-const formatFurnishing = (furnishing: string | null | undefined): string => {
-  if (!furnishing) return 'Furnishing not set';
-  if (furnishing === 'Fully') return 'Fully Furnished';
-  if (furnishing === 'Semi') return 'Semi-Furnished';
-  return furnishing;
-};
-
 const ActiveRentalsCard: React.FC<ActiveRentalsCardProps> = ({ contract, propertyDetails }) => {
+  const { t } = useTranslation();
   const { leaseProgress, monthsLeft } = getLeaseMetrics(contract);
+  const navigate = useNavigate();
+
+  const getDueDateLabel = (rentDueDate: RentDueDate | null): string => {
+    if (!rentDueDate) return t('tenantHomeComponents.rentDueMonthly');
+    if (rentDueDate === '1ST_OF_MONTH') return t('tenantHomeComponents.dueOn1st');
+    if (rentDueDate === '5TH_OF_MONTH') return t('tenantHomeComponents.dueOn5th');
+    return t('tenantHomeComponents.dueAtMonthEnd');
+  };
+
+  const formatFurnishing = (furnishing: string | null | undefined): string => {
+    if (!furnishing) return 'Furnishing not set';
+    if (furnishing === 'Fully') return t('tenantHomeComponents.fullyFurnished');
+    if (furnishing === 'Semi') return t('tenantHomeComponents.semiFurnished');
+    return furnishing;
+  };
+
+  const buildSpecs = (contract: LandlordContract | null, propertyDetails: PropertyResponse | null): RentalSpecs[] => {
+    const bedrooms = propertyDetails?.specifications?.bedrooms ?? contract?.propertySpecifications?.bedrooms;
+    const bathrooms = propertyDetails?.specifications?.bathrooms ?? contract?.propertySpecifications?.bathrooms;
+    const areaSqft = propertyDetails?.specifications?.areaSqft ?? contract?.propertySpecifications?.areaSqft;
+    const furnishing = formatFurnishing(propertyDetails?.furnishing ?? contract?.property?.furnishing);
+    const petFriendly = Boolean(propertyDetails?.houseRules?.some((rule) => rule.name.toLowerCase() === 'pets allowed'));
+
+    const detailSpecs: RentalSpecs[] = [];
+    if (typeof bedrooms === 'number' && bedrooms > 0) {
+      detailSpecs.push({ label: `${bedrooms} ${t('tenantHomeComponents.bed')}`, icon: <FaBed /> });
+    }
+    if (typeof bathrooms === 'number' && bathrooms > 0) {
+      detailSpecs.push({ label: `${bathrooms} ${t('tenantHomeComponents.bath')}`, icon: <FaBath /> });
+    }
+    if (typeof areaSqft === 'number' && areaSqft > 0) {
+      detailSpecs.push({ label: `${areaSqft} ${t('landlordHomeComponents.sqft')}`, icon: <FaRulerCombined /> });
+    }
+    detailSpecs.push({ label: furnishing, icon: <FaCouch /> });
+    detailSpecs.push({ label: petFriendly ? t('tenantHomeComponents.petsFriendly') : t('tenantHomeComponents.noPets'), icon: <FaPaw /> });
+
+    const fallbackSpecs: RentalSpecs[] = [
+      { label: propertyDetails?.type ?? contract?.property?.type ?? 'Property', icon: <FaHome /> },
+      { label: furnishing, icon: <FaCouch /> },
+    ];
+
+    return [
+      ...(detailSpecs.length > 0 ? detailSpecs : fallbackSpecs),
+      { label: getDueDateLabel(contract?.rentDueDate ?? null), icon: <FaCalendarAlt /> },
+    ];
+  };
 
   const monthlyPrice = Number(contract?.rentAmount ?? propertyDetails?.monthlyPrice ?? contract?.property?.monthlyPrice ?? 0);
   const propertyTitle = propertyDetails?.title || contract?.property?.title || 'Active rental';
@@ -99,17 +95,14 @@ const ActiveRentalsCard: React.FC<ActiveRentalsCardProps> = ({ contract, propert
     'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600';
   const specs = buildSpecs(contract, propertyDetails);
 
-    const navigate = useNavigate();
-  
-    const handleDetailsClick = () => {
-      // Navigate exactly to /active-properties as requested
-      navigate('/active-rental');
-    };
+  const handleDetailsClick = () => {
+    navigate('/active-rental');
+  };
 
   return (
     <div className="card-base rental-card-premium">
       <div className="ribbon-wrapper">
-        <span className="ribbon-text">Primary Residence</span>
+        <span className="ribbon-text">{t('tenantHomeComponents.primaryResidence')}</span>
       </div>
 
       <div className="rental-grid">
@@ -139,9 +132,9 @@ const ActiveRentalsCard: React.FC<ActiveRentalsCardProps> = ({ contract, propert
             <div className="lease-section">
               <div className="lease-header">
                 <div className="lease-label">
-                  <FaCalendarAlt /> Lease Progress
+                  <FaCalendarAlt /> {t('tenantHomeComponents.leaseProgress')}
                 </div>
-                <span className="lease-remaining">{monthsLeft} month{monthsLeft === 1 ? '' : 's'} left</span>
+                <span className="lease-remaining">{t('tenantHomeComponents.monthLeft', { count: monthsLeft })}</span>
               </div>
               <div className="progress-container">
                 <div className="progress-track">
@@ -168,7 +161,7 @@ const ActiveRentalsCard: React.FC<ActiveRentalsCardProps> = ({ contract, propert
               ))}
             </div>
             
-            <button className="btn-manage-circle" title="Manage Rental" onClick={handleDetailsClick}>
+            <button className="btn-manage-circle" title={t('tenantHomeComponents.manageRental')} onClick={handleDetailsClick}>
               <FaArrowRight />
             </button>
           </footer>

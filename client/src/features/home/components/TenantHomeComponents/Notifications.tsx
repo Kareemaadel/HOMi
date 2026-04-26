@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { FaBell, FaCheckDouble, FaCreditCard, FaTools, FaGift, FaChevronRight } from 'react-icons/fa';
 import type { LandlordContract } from '../../../../services/contract.service';
@@ -17,22 +18,23 @@ interface NotificationsProps {
   contracts: LandlordContract[];
 }
 
-const getRelativeTime = (iso: string): string => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return 'Recently';
-
-  const diffMs = Date.now() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
-};
-
 const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const getRelativeTime = (iso: string): string => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return t('tenantHomeComponents.recently');
+
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return t('tenantHomeComponents.now');
+    if (diffMins < 60) return t('landlordHomeComponents.minutesAgo', { count: diffMins });
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return t('landlordHomeComponents.hoursAgo', { count: diffHours });
+    const diffDays = Math.floor(diffHours / 24);
+    return t('landlordHomeComponents.daysAgo', { count: diffDays });
+  };
 
   const alerts = useMemo<Alert[]>(() => {
     const activeContract = contracts.find((c) => c.status === 'ACTIVE');
@@ -44,8 +46,8 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
       generated.push({
         id: `payment-${pendingPayment.id}`,
         type: 'payment',
-        title: 'Payment Pending',
-        desc: `Complete your payment for ${pendingPayment.property?.title ?? 'your lease'} to activate your contract.`,
+        title: t('tenantHomeComponents.paymentPendingTitle'),
+        desc: t('tenantHomeComponents.completePaymentFor', { title: pendingPayment.property?.title ?? t('sidebar.contracts') }),
         time: getRelativeTime(pendingPayment.createdAt),
         unread: true,
       });
@@ -55,8 +57,8 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
       generated.push({
         id: `active-${activeContract.id}`,
         type: 'system',
-        title: 'Lease Active',
-        desc: `Your lease for ${activeContract.property?.title ?? 'your property'} is active.`,
+        title: t('tenantHomeComponents.leaseActiveTitle'),
+        desc: t('tenantHomeComponents.leaseForActive', { title: activeContract.property?.title ?? t('sidebar.home') }),
         time: getRelativeTime(activeContract.createdAt),
         unread: false,
       });
@@ -65,8 +67,8 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
         generated.push({
           id: `maintenance-${activeContract.id}`,
           type: 'maintenance',
-          title: 'Maintenance Responsibilities Updated',
-          desc: `${activeContract.maintenanceResponsibilities?.length ?? 0} maintenance areas are configured in your lease.`,
+          title: t('tenantHomeComponents.maintenanceResponsibilitiesUpdated'),
+          desc: t('tenantHomeComponents.maintenanceAreasConfigured', { count: activeContract.maintenanceResponsibilities?.length ?? 0 }),
           time: getRelativeTime(activeContract.createdAt),
           unread: false,
         });
@@ -77,15 +79,15 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
       generated.push({
         id: 'empty-state',
         type: 'system',
-        title: 'No Recent Activity',
-        desc: 'Your latest contract and payment updates will appear here.',
-        time: 'Now',
+        title: t('tenantHomeComponents.noRecentActivityTitle'),
+        desc: t('tenantHomeComponents.latestContractUpdates'),
+        time: t('tenantHomeComponents.now'),
         unread: false,
       });
     }
 
     return generated;
-  }, [contracts]);
+  }, [contracts, t]);
 
   const getIcon = (type: Alert['type']) => {
     if (type === 'payment') return <FaCreditCard />;
@@ -107,10 +109,10 @@ const Notifications: React.FC<NotificationsProps> = ({ contracts }) => {
             <FaBell />
             {alerts.some((alert) => alert.unread) && <span className="active-dot"></span>}
           </div>
-          <h3>Activity Feed</h3>
+          <h3>{t('tenantHomeComponents.activityFeed')}</h3>
         </div>
         <button className="btn-mark-all" aria-label="Activity synced" disabled>
-          <FaCheckDouble /> <span>Synced</span>
+          <FaCheckDouble /> <span>{t('tenantHomeComponents.synced')}</span>
         </button>
       </header>
 
