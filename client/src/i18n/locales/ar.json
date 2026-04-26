@@ -1,0 +1,35 @@
+{
+  "header": {
+    "home": "الرئيسية",
+    "howItWorks": "كيف يعمل",
+    "getHelp": "المساعدة",
+    "aboutUs": "من نحن",
+    "settings": "الإعدادات",
+    "signOut": "تسجيل الخروج",
+    "dashboard": "لوحة التحكم",
+    "activeProperties": "العقارات النشطة",
+    "browseProperties": "تصفح العقارات",
+    "matching": "المطابقة",
+    "maintenance": "الصيانة",
+    "payments": "المدفوعات",
+    "messages": "الرسائل",
+    "rewards": "المكافآت",
+    "myProperties": "عقاراتي",
+    "rentalRequests": "طلبات التأجير",
+    "balance": "الرصيد",
+    "dashboardMenu": "قائمة لوحة التحكم"
+  },
+  "guestNavbar": {
+    "browseHomes": "تصفح المنازل",
+    "howItWorks": "كيف يعمل",
+    "helpCenter": "مركز المساعدة",
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب"
+  },
+  "confirmModal": {
+    "signOutTitle": "تسجيل الخروج",
+    "signOutMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "confirm": "تسجيل الخروج",
+    "cancel": "إلغاء"
+  }
+}

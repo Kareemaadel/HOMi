@@ -1,0 +1,35 @@
+{
+  "header": {
+    "home": "Home",
+    "howItWorks": "How It Works",
+    "getHelp": "Get Help",
+    "aboutUs": "About Us",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "dashboard": "Dashboard",
+    "activeProperties": "Active Properties",
+    "browseProperties": "Browse Properties",
+    "matching": "Matching",
+    "maintenance": "Maintenance",
+    "payments": "Payments",
+    "messages": "Messages",
+    "rewards": "Rewards",
+    "myProperties": "My Properties",
+    "rentalRequests": "Rental Requests",
+    "balance": "Balance",
+    "dashboardMenu": "Dashboard Menu"
+  },
+  "guestNavbar": {
+    "browseHomes": "Browse Homes",
+    "howItWorks": "How it Works",
+    "helpCenter": "Help Center",
+    "login": "Log in",
+    "signup": "Sign up"
+  },
+  "confirmModal": {
+    "signOutTitle": "Sign out",
+    "signOutMessage": "Are you sure you want to sign out?",
+    "confirm": "Sign out",
+    "cancel": "Cancel"
+  }
+}

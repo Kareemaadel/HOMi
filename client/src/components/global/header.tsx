@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import { authService } from '../../services/auth.service';
 import ConfirmModal from './ConfirmModal';
 import './header.css';
 
+
 const Header = () => {
+  const { t, i18n } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -13,6 +16,12 @@ const Header = () => {
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'ar' : 'en';
+    i18n.changeLanguage(newLang);
+  };
+
 
   const getSignedInRole = (): string | null => {
     try {
@@ -36,25 +45,27 @@ const Header = () => {
   const dashboardPath = signedInRole === 'LANDLORD' ? '/landlord-home' : '/tenant-home';
 
   const tenantMobileLinks = [
-    { to: '/tenant-home', label: 'Dashboard' },
-    { to: '/actives', label: 'Active Properties' },
-    { to: '/browse-properties', label: 'Browse Properties' },
-    { to: '/roommate-matching', label: 'Matching' },
-    { to: '/maintenance-requests', label: 'Maintenance' },
-    { to: '/tenant-payment', label: 'Payments' },
-    { to: '/messages', label: 'Messages' },
-    { to: '/rewards', label: 'Rewards' },
+    { to: '/tenant-home', label: t('header.dashboard') },
+    { to: '/actives', label: t('header.activeProperties') },
+    { to: '/browse-properties', label: t('header.browseProperties') },
+    { to: '/roommate-matching', label: t('header.matching') },
+    { to: '/maintenance-requests', label: t('header.maintenance') },
+    { to: '/tenant-payment', label: t('header.payments') },
+    { to: '/messages', label: t('header.messages') },
+    { to: '/rewards', label: t('header.rewards') },
   ];
 
+
   const landlordMobileLinks = [
-    { to: '/landlord-home', label: 'Dashboard' },
-    { to: '/my-properties', label: 'My Properties' },
-    { to: '/rental-requests', label: 'Rental Requests' },
-    { to: '/maintenance-requests', label: 'Maintenance' },
-    { to: '/landlord-payment', label: 'Payments' },
-    { to: '/messages', label: 'Messages' },
-    { to: '/balance', label: 'Balance' },
+    { to: '/landlord-home', label: t('header.dashboard') },
+    { to: '/my-properties', label: t('header.myProperties') },
+    { to: '/rental-requests', label: t('header.rentalRequests') },
+    { to: '/maintenance-requests', label: t('header.maintenance') },
+    { to: '/landlord-payment', label: t('header.payments') },
+    { to: '/messages', label: t('header.messages') },
+    { to: '/balance', label: t('header.balance') },
   ];
+
 
   const mobileRoleLinks = signedInRole === 'LANDLORD' ? landlordMobileLinks : tenantMobileLinks;
 
@@ -116,13 +127,17 @@ const Header = () => {
     <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
         
-        {/* Empty left spacer to keep things perfectly centered using Flexbox */}
-        <div className="header-spacer left-spacer"></div>
+        {/* Left spacer with Language Toggle */}
+        <div className="header-spacer left-spacer">
+          <button type="button" className="lang-toggle" onClick={toggleLanguage} aria-label="Toggle language">
+            <span className="lang-text">{i18n.language === 'en' ? 'En' : 'ع'}</span>
+          </button>
+        </div>
 
         {/* Desktop Navigation */}
         <nav className="header-nav desktop-nav" aria-label="Main navigation">
           <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
-            Home
+            {t('header.home')}
           </Link>
           <Link
             to={howItWorksBrowsePath}
@@ -133,23 +148,24 @@ const Header = () => {
               navigate(howItWorksPath, { state: { fromAppNavbar: true } });
             }}
           >
-            How It Works
+            {t('header.howItWorks')}
           </Link>
           <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
             HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
           </Link>
           <Link to="/get-help" className={`nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
-            Get Help
+            {t('header.getHelp')}
           </Link>
           <Link to="/about-us" className={`nav-link ${location.pathname === '/about-us' ? 'active' : ''}`}>
-            About Us
+            {t('header.aboutUs')}
           </Link>
           {isSignedIn && (
             <Link to="/settings" className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
-              Settings
+              {t('header.settings')}
             </Link>
           )}
         </nav>
+
 
         {/* Mobile Menu Toggle & Right Spacer */}
         <div className="header-spacer right-spacer">
@@ -171,7 +187,7 @@ const Header = () => {
       {isMobileMenuOpen && (
         <nav ref={mobileMenuRef} className="mobile-nav" aria-label="Mobile navigation" onPointerDown={(e) => e.stopPropagation()}>
           <Link to={isSignedIn ? dashboardPath : '/'} className={`mobile-nav-link ${location.pathname === dashboardPath || (!isSignedIn && location.pathname === '/') ? 'active' : ''}`}>
-            Home
+            {t('header.home')}
           </Link>
           <Link
             to={howItWorksBrowsePath}
@@ -182,26 +198,28 @@ const Header = () => {
               navigate(howItWorksPath, { state: { fromAppNavbar: true } });
             }}
           >
-            How It Works
+            {t('header.howItWorks')}
           </Link>
           <Link to="/homi-plus" className={`mobile-nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
-            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
+            HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800, padding: '0 4px' }}>PRO</span>
           </Link>
+
           <Link to="/get-help" className={`mobile-nav-link ${location.pathname === '/get-help' ? 'active' : ''}`}>
-            Get Help
+            {t('header.getHelp')}
           </Link>
           <Link to="/about-us" className={`mobile-nav-link ${location.pathname === '/about-us' ? 'active' : ''}`}>
-            About Us
+            {t('header.aboutUs')}
           </Link>
           {isSignedIn && (
             <Link to="/settings" className={`mobile-nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
-              Settings
+              {t('header.settings')}
             </Link>
           )}
 
           {isSignedIn && (
             <>
-              <div className="mobile-nav-divider">Dashboard Menu</div>
+              <div className="mobile-nav-divider">{t('header.dashboardMenu')}</div>
+
               {mobileRoleLinks.map((item) => (
                 <Link
                   key={item.to}
@@ -214,8 +232,9 @@ const Header = () => {
 
               <button type="button" className="mobile-logout-btn" onClick={handleMobileLogout}>
                 <FaSignOutAlt />
-                Sign Out
+                {t('header.signOut')}
               </button>
+
             </>
           )}
         </nav>
@@ -223,13 +242,14 @@ const Header = () => {
 
       <ConfirmModal
         isOpen={showLogoutConfirm}
-        title="Sign out"
-        message="Are you sure you want to sign out?"
-        confirmText="Sign out"
-        cancelText="Cancel"
+        title={t('confirmModal.signOutTitle')}
+        message={t('confirmModal.signOutMessage')}
+        confirmText={t('confirmModal.confirm')}
+        cancelText={t('confirmModal.cancel')}
         onConfirm={confirmMobileLogout}
         onCancel={() => setShowLogoutConfirm(false)}
       />
+
     </header>
   );
 };

@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
 
 // Reuse the existing GuestHome navbar styles/behavior.
 import '../../features/Guest/pages/GuestHome.css';
 
 const GuestNavbar: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'ar' : 'en';
+    i18n.changeLanguage(newLang);
+  };
+
 
   const howItWorksLink = '/how-it-works-choose';
 
@@ -37,19 +46,23 @@ const GuestNavbar: React.FC = () => {
         </Link>
 
         <div className="nav-links desktop-only">
-          <Link to="/guest-search">Browse Homes</Link>
-          <Link to={howItWorksLink}>How it Works</Link>
-          <Link to={getHelpFromGuest}>Help Center</Link>
+          <Link to="/guest-search">{t('guestNavbar.browseHomes')}</Link>
+          <Link to={howItWorksLink}>{t('guestNavbar.howItWorks')}</Link>
+          <Link to={getHelpFromGuest}>{t('guestNavbar.helpCenter')}</Link>
         </div>
 
         <div className="nav-actions desktop-only">
+          <button type="button" className="lang-toggle" onClick={toggleLanguage} style={{ marginRight: i18n.language === 'en' ? '12px' : '0', marginLeft: i18n.language === 'ar' ? '12px' : '0' }}>
+            {i18n.language === 'en' ? 'En' : 'ع'}
+          </button>
           <button className="btn-text" onClick={() => navigate('/auth')}>
-            Log in
+            {t('guestNavbar.login')}
           </button>
           <button className="btn-primary-pill shadow-hover" onClick={() => navigate('/auth')}>
-            Sign up
+            {t('guestNavbar.signup')}
           </button>
         </div>
+
 
         <button
           className="mobile-menu-btn"
@@ -64,14 +77,19 @@ const GuestNavbar: React.FC = () => {
       {mobileMenuOpen ? (
         <div className="mobile-nav-panel">
           <Link to="/guest-search" onClick={() => setMobileMenuOpen(false)}>
-            Browse Homes
+            {t('guestNavbar.browseHomes')}
           </Link>
           <Link to={howItWorksLink} onClick={() => setMobileMenuOpen(false)}>
-            How it Works
+            {t('guestNavbar.howItWorks')}
           </Link>
           <Link to={getHelpFromGuest} onClick={() => setMobileMenuOpen(false)}>
-            Help Center
+            {t('guestNavbar.helpCenter')}
           </Link>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid #eee', marginTop: '8px' }}>
+            <button type="button" className="lang-toggle" onClick={toggleLanguage} style={{ width: '100%' }}>
+              {i18n.language === 'en' ? 'Switch to Arabic (ع)' : 'التبديل إلى الإنجليزية (En)'}
+            </button>
+          </div>
           <button
             type="button"
             className="btn-text mobile-nav-login"
@@ -80,7 +98,7 @@ const GuestNavbar: React.FC = () => {
               navigate('/auth');
             }}
           >
-            Log in
+            {t('guestNavbar.login')}
           </button>
           <button
             type="button"
@@ -90,9 +108,10 @@ const GuestNavbar: React.FC = () => {
               navigate('/auth');
             }}
           >
-            Sign up
+            {t('guestNavbar.signup')}
           </button>
         </div>
+
       ) : null}
     </nav>
   );

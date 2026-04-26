@@ -213,3 +213,37 @@
     display: flex;
   }
 }
+
+/* --- Language Toggle --- */
+.lang-toggle {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  min-width: 60px;
+}
+
+.lang-toggle:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.lang-toggle .lang-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+[dir="rtl"] .lang-toggle {
+  font-family: inherit; /* Ensure Arabic font is used if set globally */
+}
