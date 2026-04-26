@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Star, Bed, Bath, Maximize } from 'lucide-react';
 import './PropCard.css';
 
@@ -28,6 +29,7 @@ interface PropCardProps {
 
 const PropCard: React.FC<PropCardProps> = ({ property, onOpenDetails }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   // Normalize data between the two mock arrays
   const location = property.address || property.location || 'Location unavailable';
@@ -73,14 +75,14 @@ const PropCard: React.FC<PropCardProps> = ({ property, onOpenDetails }) => {
         </div>
         <h3 className="prop-title">{property.title}</h3>
         <div className="prop-specs">
-          <span><Bed size={16}/> {property.beds} Beds</span>
-          <span><Bath size={16}/> {property.baths} Baths</span>
-          <span><Maximize size={16}/> {property.sqft} m²</span>
+          <span><Bed size={16}/> {property.beds} {t('guestHome.beds')}</span>
+          <span><Bath size={16}/> {property.baths} {t('guestHome.baths')}</span>
+          <span><Maximize size={16}/> {property.sqft} {t('guestHome.sqm')}</span>
         </div>
         <div className="prop-footer-split">
           <div className="prop-price-block">
             <span className="price-val">{property.price.toLocaleString()} {currency}</span>
-            <span className="price-period">/ month</span>
+            <span className="price-period">/ {t('guestHome.perMonth')}</span>
           </div>
           <img src={hostImage} alt="Host" className="host-mini-avatar" title="Verified Landlord" />
         </div>

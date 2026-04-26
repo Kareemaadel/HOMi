@@ -29,7 +29,7 @@ const MaintenanceHome: React.FC = () => {
                         {/* Welcome Section */}
                         <header className="welcome-section">
                             <div className="welcome-text">
-                                <h1>{t('maintenanceHome.goodMorning')}, <span className="highlight">Ahmed!</span></h1>
+                                <h1>{t('maintenanceHome.goodMorning')}, <span className="highlight">{t('maintenanceHome.providerName')}!</span></h1>
                                 <p>{hasData ? t('maintenanceHome.jobRequestsCount', { count: 3 }) : t('maintenanceHome.noJobRequests')}</p>
                             </div>
                         </header>
@@ -60,7 +60,7 @@ const MaintenanceHome: React.FC = () => {
                             <div className="stat-card">
                                 <div className="stat-icon purple"><FaDollarSign /></div>
                                 <div className="stat-info">
-                                    <h3 className="stat-value">{hasData ? "$1200" : "$0"}</h3>
+                                    <h3 className="stat-value">{hasData ? "1200" : "0"} EGP</h3>
                                     <p className="stat-label">{t('maintenanceHome.earningsThisMonth')}</p>
                                 </div>
                             </div>
@@ -88,16 +88,16 @@ const MaintenanceHome: React.FC = () => {
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaTools /></div>
                                                         <div className="job-info">
-                                                            <h4>Leaking sink</h4>
+                                                            <h4>{t('maintenanceHome.leakingSink')}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Cairo (2km away)</span>
-                                                                <span>Plumbing</span>
+                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Cairo', dist: 2 })}</span>
+                                                                <span>{t('maintenanceHome.plumbing')}</span>
                                                                 <span>Oct 24, 2023</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="price">$40</span>
+                                                        <span className="price">40 EGP</span>
                                                     </div>
                                                 </div>
 
@@ -105,17 +105,17 @@ const MaintenanceHome: React.FC = () => {
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaBolt /></div>
                                                         <div className="job-info">
-                                                            <h4>Electrical issue</h4>
+                                                            <h4>{t('maintenanceHome.electricalIssue')}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Giza (5km away)</span>
-                                                                <span>Electrical</span>
+                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Giza', dist: 5 })}</span>
+                                                                <span>{t('maintenanceHome.electrical')}</span>
                                                                 <span>Oct 23, 2023</span>
                                                                 <span style={{ color: '#ef4444', fontWeight: 600 }}>{t('maintenanceHome.urgent')}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
-                                                        <span className="price">$60</span>
+                                                        <span className="price">60 EGP</span>
                                                     </div>
                                                 </div>
                                             </>
@@ -141,17 +141,17 @@ const MaintenanceHome: React.FC = () => {
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaWrench /></div>
                                                         <div className="job-info">
-                                                            <h4>Kitchen repair</h4>
+                                                            <h4>{t('maintenanceHome.kitchenRepair')}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Maadi (3km away)</span>
-                                                                <span>Appliance</span>
+                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Maadi', dist: 3 })}</span>
+                                                                <span>{t('maintenanceHome.appliance')}</span>
                                                                 <span>Oct 22, 2023</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
                                                         <span className="status-badge in-progress">{t('maintenanceHome.inProgress')}</span>
-                                                        <span className="price" style={{ marginLeft: '10px' }}>$80</span>
+                                                        <span className="price" style={{ marginLeft: '10px' }}>80 EGP</span>
                                                     </div>
                                                 </div>
 
@@ -159,17 +159,17 @@ const MaintenanceHome: React.FC = () => {
                                                     <div className="job-details">
                                                         <div className="job-icon"><FaTools /></div>
                                                         <div className="job-info">
-                                                            <h4>Bathroom fix</h4>
+                                                            <h4>{t('maintenanceHome.bathroomFix')}</h4>
                                                             <div className="job-meta">
-                                                                <span><FaMapMarkerAlt /> Nasr City (8km away)</span>
-                                                                <span>Plumbing</span>
+                                                                <span><FaMapMarkerAlt /> {t('maintenanceHome.distance', { city: 'Nasr City', dist: 8 })}</span>
+                                                                <span>{t('maintenanceHome.plumbing')}</span>
                                                                 <span>Oct 21, 2023</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="job-action">
                                                         <span className="status-badge scheduled">{t('maintenanceHome.tomorrow')}</span>
-                                                        <span className="price" style={{ marginLeft: '10px' }}>$120</span>
+                                                        <span className="price" style={{ marginLeft: '10px' }}>120 EGP</span>
                                                     </div>
                                                 </div>
                                             </>
@@ -211,7 +211,7 @@ const MaintenanceHome: React.FC = () => {
                                                             <span className="notif-subject">{t('maintenanceHome.newJobPosted')}</span>
                                                             <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 10 })}</span>
                                                         </div>
-                                                        <p className="notif-text">A new plumbing job is available near you.</p>
+                                                        <p className="notif-text">{t('maintenanceHome.newPlumbingJobMsg')}</p>
                                                     </div>
                                                 </div>
 
@@ -225,7 +225,7 @@ const MaintenanceHome: React.FC = () => {
                                                             <span className="notif-subject">{t('maintenanceHome.jobAssigned')}</span>
                                                             <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 120 })}</span>
                                                         </div>
-                                                        <p className="notif-text">You have been assigned to "Kitchen repair".</p>
+                                                        <p className="notif-text">{t('maintenanceHome.assignedToJobMsg', { job: t('maintenanceHome.kitchenRepair') })}</p>
                                                     </div>
                                                 </div>
 
@@ -239,7 +239,7 @@ const MaintenanceHome: React.FC = () => {
                                                             <span className="notif-subject">{t('maintenanceHome.paymentReceived')}</span>
                                                             <span className="notif-timestamp">{t('maintenanceHome.ago', { count: 1440 })}</span>
                                                         </div>
-                                                        <p className="notif-text">Received $120 for "AC maintenance".</p>
+                                                        <p className="notif-text">{t('maintenanceHome.receivedPaymentMsg', { amount: '120 EGP', job: 'AC maintenance' })}</p>
                                                     </div>
                                                 </div>
                                             </>
