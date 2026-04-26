@@ -527,7 +527,19 @@
       "priceMinimum": "Rent must be at least $100",
       "saveFailed": "Could not save changes. Please try again."
     },
-    "deleteListing": "Delete Listing"
+    "deleteListing": "Delete Listing",
+    "maintenanceTypes": {
+      "structural": "Structural Repairs",
+      "appliances": "Interior Appliances",
+      "utilities": "Utility Bills",
+      "plumbing": "Plumbing",
+      "electrical": "Electrical",
+      "hvac": "HVAC/Air",
+      "pest": "Pest Control",
+      "exterior": "Exterior Maintenance",
+      "common": "Common Areas",
+      "security": "Security Systems"
+    }
   },
   "rentalRequests": {
     "requests": "Requests",
@@ -621,5 +633,12 @@
     "signOutMessage": "Are you sure you want to sign out?",
     "confirm": "Sign out",
     "cancel": "Cancel"
+  },
+  "common": {
+    "back": "Back",
+    "next": "Next",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close"
   }
 }

@@ -141,16 +141,16 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
 
   // Maintenance State
   const [maintenance, setMaintenance] = useState<Record<string, 'landlord' | 'tenant'>>({
-    "Structural Repairs": 'landlord',
-    "Interior Appliances": 'tenant',
-    "Utility Bills": 'tenant',
-    "Plumbing": 'landlord',
-    "Electrical": 'landlord',
-    "HVAC/Air": 'landlord',
-    "Pest Control": 'tenant',
-    "Exterior Maintenance": 'landlord',
-    "Common Areas": 'landlord',
-    "Security Systems": 'landlord',
+    "structural": 'landlord',
+    "appliances": 'tenant',
+    "utilities": 'tenant',
+    "plumbing": 'landlord',
+    "electrical": 'landlord',
+    "hvac": 'landlord',
+    "pest": 'tenant',
+    "exterior": 'landlord',
+    "common": 'landlord',
+    "security": 'landlord',
   });
 
   const amenitiesList = [
@@ -788,7 +788,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                     <div className="maintenance-grid">
                       {Object.entries(maintenance).map(([type, assigned]) => (
                         <div key={type} className="maintenance-card">
-                          <span className="m-title">{type}</span>
+                          <span className="m-title">{t(`myProperties.maintenanceTypes.${type}`)}</span>
                           <div className="m-toggle-group">
                             <button 
                               className={`m-btn ${assigned === 'landlord' ? 'active landlord' : ''}`}
@@ -856,12 +856,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
             <div className="property-modal-footer">
               {step > 1 && (
                 <button className="footer-nav-btn prev" onClick={prevStep}>
-                  <FaChevronLeft /> {t('confirmModal.cancel')}
+                  <FaChevronLeft /> {t('common.back')}
                 </button>
               )}
               {step < 4 ? (
                 <button className="footer-nav-btn next" onClick={nextStep}>
-                  {t('guestSearch.next')} <FaChevronRight />
+                  {t('common.next')} <FaChevronRight />
                 </button>
               ) : (
                 <button className="publish-final-btn" onClick={handlePublish} disabled={loading}>

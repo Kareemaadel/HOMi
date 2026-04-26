@@ -527,7 +527,19 @@
       "priceMinimum": "يجب أن يكون الإيجار 100 دولار على الأقل",
       "saveFailed": "تعذر حفظ التغييرات. يرجى المحاولة مرة أخرى."
     },
-    "deleteListing": "حذف العقار"
+    "deleteListing": "حذف العقار",
+    "maintenanceTypes": {
+      "structural": "الإصلاحات الهيكلية",
+      "appliances": "الأجهزة الداخلية",
+      "utilities": "فواتير المرافق",
+      "plumbing": "السباكة",
+      "electrical": "الكهرباء",
+      "hvac": "التكييف والتهوية",
+      "pest": "مكافحة الحشرات",
+      "exterior": "صيانة الساحة الخارجية",
+      "common": "المناطق المشتركة",
+      "security": "أنظمة الأمن"
+    }
   },
   "rentalRequests": {
     "requests": "الطلبات",
@@ -585,6 +597,10 @@
     }
   },
   "common": {
+    "back": "رجوع",
+    "next": "التالي",
+    "save": "حفظ",
+    "cancel": "إلغاء",
     "close": "إغلاق"
   },
   "notificationCenter": {
