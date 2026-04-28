@@ -17,7 +17,10 @@ interface Props {
     onClose: () => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onUpdated, onClose }) => {
+    const { t } = useTranslation();
     const [step, setStep] = useState(1);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(null);
@@ -46,7 +49,9 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
         landlordInsurance: '',
         governingLaw: '',
         disputeResolution: '',
-        amendments: ''
+        amendments: '',
+        emergencyName: '',
+        emergencyPhone: ''
     });
 
     const toDueDateEnum = (value: string): '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH' => {
@@ -134,14 +139,14 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
 
     if (isFinalized) {
         return (
-            <div className="contract-overlay">
+            <div className="contract-overlay" dir="ltr">
                 <div className="detail-panel success-panel animate-slide-in">
                     <div className="success-content">
                         <div className="success-icon-badge"><CheckCircle2 size={60} /></div>
-                        <h2>Signature Recorded</h2>
-                        <p>The contract for <strong>{contract.property}</strong> has been signed by you. We are now notifying the tenant for their final counter-signature.</p>
+                        <h2>{t('landlordContract.signatureRecorded')}</h2>
+                        <p>{t('landlordContract.signatureDesc', { property: contract.property })}</p>
                         <div className="success-actions">
-                            <button className="btn-close-dashboard" onClick={onClose}>Return to Portfolio</button>
+                            <button className="btn-close-dashboard" onClick={onClose}>{t('landlordContract.returnPortfolio')}</button>
                         </div>
                     </div>
                 </div>
@@ -150,11 +155,11 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
     }
 
     return (
-        <div className="contract-overlay">
+        <div className="contract-overlay" dir="ltr">
             <div className="detail-panel animate-slide-in">
                 <header className="panel-header">
                     <div className="header-title">
-                        <span>LANDLORD ACTION • {contract.property}</span>
+                        <span>{t('landlordContract.panelTitle')} • {contract.property}</span>
                     </div>
                     <div className="header-actions">
                         <button className="close-btn" onClick={onClose}><X size={20} /></button>
@@ -171,16 +176,15 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                         ))}
                     </div>
 
-                    {/* STEP 1: PARTIES, PROPERTY, LEASE TERM */}
                     {step === 1 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Contract Details</h3>
+                            <h3 className="step-heading">{t('landlordContract.contractDetails')}</h3>
 
                             <section className="info-section">
-                                <div className="section-title"><Fingerprint size={16} /> <h4>1. Identity & Date</h4></div>
+                                <div className="section-title"><Fingerprint size={16} /> <h4>1. {t('landlordContract.identityDate')}</h4></div>
                                 <div className="input-grid">
                                     <div className="input-group">
-                                        <label>National ID Full Name (Arabic Only)</label>
+                                        <label>{t('landlordContract.nationalIdFullName')}</label>
                                         <input
                                             className={isReadOnly ? 'readonly-field' : ''}
                                             disabled={isReadOnly}
@@ -197,7 +201,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>National ID Number (14 Digits)</label>
+                                        <label>{t('landlordContract.nationalIdNumber')}</label>
                                         <input
                                             className={isReadOnly ? 'readonly-field' : ''}
                                             disabled={isReadOnly}
@@ -214,49 +218,49 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                         />
                                     </div>
                                     <div className="input-group full">
-                                        <label>Current Address</label>
-                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder="Your residential address" value={landlordData.currentAddress} onChange={e => setLandlordData({ ...landlordData, currentAddress: e.target.value })} />
+                                        <label>{t('landlordContract.currentAddress')}</label>
+                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder={t('landlordContract.currentAddressPlaceholder')} value={landlordData.currentAddress} onChange={e => setLandlordData({ ...landlordData, currentAddress: e.target.value })} />
                                     </div>
                                     <div className="input-group">
-                                        <label>Main Phone number</label>
+                                        <label>{t('landlordContract.mainPhone')}</label>
                                         <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" />
                                     </div>
                                     <div className="input-group">
-                                        <label>Contract Date</label>
+                                        <label>{t('landlordContract.contractDate')}</label>
                                         <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="date" value={landlordData.contractDate} onChange={e => setLandlordData({ ...landlordData, contractDate: e.target.value })} />
                                     </div>
                                     <div className="input-group">
-                                        <label>Emergency Contact Name</label>
+                                        <label>{t('landlordContract.emergencyContactName')}</label>
                                         <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" value={landlordData.emergencyName} onChange={(e) => setLandlordData({ ...landlordData, emergencyName: e.target.value })} />
                                     </div>
                                     <div className="input-group">
-                                        <label>Emergency Phone</label>
+                                        <label>{t('landlordContract.emergencyPhone')}</label>
                                         <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="tel" value={landlordData.emergencyPhone} onChange={(e) => setLandlordData({ ...landlordData, emergencyPhone: e.target.value })} />
                                     </div>
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><User size={16} /> <h4>2. Parties Involved</h4></div>
+                                <div className="section-title"><User size={16} /> <h4>2. {t('landlordContract.partiesInvolved')}</h4></div>
                                 <div className="autofill-grid">
-                                    <div className="field full"><label>Landlord/Owner</label><span>{contract.landlord} • {contract.landlordEmail}</span></div>
-                                    <div className="field full"><label>Tenant/Renter</label><span>{contract.tenant} • {contract.tenantEmail}</span></div>
+                                    <div className="field full"><label>{t('landlordContract.landlordOwner')}</label><span>{contract.landlord} • {contract.landlordEmail}</span></div>
+                                    <div className="field full"><label>{t('landlordContract.tenantRenter')}</label><span>{contract.tenant} • {contract.tenantEmail}</span></div>
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><Landmark size={16} /> <h4>3. Property Details</h4></div>
+                                <div className="section-title"><Landmark size={16} /> <h4>3. {t('landlordContract.propertyDetails')}</h4></div>
                                 <div className="autofill-grid">
-                                    <div className="field full"><label>Address</label><span>{contract.propertyAddress}</span></div>
-                                    <div className="field full"><label>Description</label><span>{contract.propertyType} • {contract.propertyFurnishing}</span></div>
+                                    <div className="field full"><label>{t('landlordContract.address')}</label><span>{contract.propertyAddress}</span></div>
+                                    <div className="field full"><label>{t('landlordContract.description')}</label><span>{contract.propertyType} • {contract.propertyFurnishing}</span></div>
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><Clock size={16} /> <h4>4. Lease Term</h4></div>
+                                <div className="section-title"><Clock size={16} /> <h4>4. {t('landlordContract.leaseTerm')}</h4></div>
                                 <div className="autofill-grid">
-                                    <div className="field"><label>Start Date</label><span>{contract.startDate}</span></div>
-                                    <div className="field"><label>End Date</label><span>{contract.duration}</span></div>
+                                    <div className="field"><label>{t('landlordContract.startDate')}</label><span>{contract.startDate}</span></div>
+                                    <div className="field"><label>{t('landlordContract.endDate')}</label><span>{contract.duration}</span></div>
                                 </div>
 
                             </section>
@@ -266,65 +270,65 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                     {/* STEP 2: USE OF PROPERTY & ENTRY */}
                     {step === 2 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Rules & Allowances</h3>
+                            <h3 className="step-heading">{t('landlordContract.rulesAllowances')}</h3>
                             <section className="info-section">
-                                <div className="section-title"><ShieldCheck size={16} /> <h4>6. Use of Property</h4></div>
+                                <div className="section-title"><ShieldCheck size={16} /> <h4>6. {t('landlordContract.useOfPropertyTitle')}</h4></div>
                                 <div className="input-group">
-                                    <label>Permitted Use</label>
+                                    <label>{t('landlordContract.permittedUse')}</label>
                                     <select
                                         className={isReadOnly ? 'readonly-field' : ''}
                                         disabled={isReadOnly}
                                         value={landlordData.permittedUse}
                                         onChange={e => setLandlordData({ ...landlordData, permittedUse: e.target.value })}
                                     >
-                                        <option value="">Select Permitted Use</option>
-                                        <option value="Residential purposes only">Residential purposes only</option>
-                                        <option value="Residential and home office use">Residential and home office use</option>
-                                        <option value="Single-family occupancy only">Single-family occupancy only</option>
-                                        <option value="Temporary holiday lodging">Temporary holiday lodging</option>
-                                        <option value="Professional consulting services">Professional consulting services</option>
-                                        <option value="Artist studio and private residence">Artist studio and private residence</option>
-                                        <option value="Educational and tutoring activities">Educational and tutoring activities</option>
-                                        <option value="Shared co-living arrangement">Shared co-living arrangement</option>
-                                        <option value="Short-term corporate housing">Short-term corporate housing</option>
-                                        <option value="Quiet home-based business (no clients)">Quiet home-based business (no clients)</option>
+                                        <option value="">{t('landlordContract.selectPermittedUse')}</option>
+                                        <option value="Residential purposes only">{t('landlordContract.residentialOnly')}</option>
+                                        <option value="Residential and home office use">{t('landlordContract.residentialHomeOffice')}</option>
+                                        <option value="Single-family occupancy only">{t('landlordContract.singleFamily')}</option>
+                                        <option value="Temporary holiday lodging">{t('landlordContract.holidayLodging')}</option>
+                                        <option value="Professional consulting services">{t('landlordContract.consulting')}</option>
+                                        <option value="Artist studio and private residence">{t('landlordContract.artistStudio')}</option>
+                                        <option value="Educational and tutoring activities">{t('landlordContract.educational')}</option>
+                                        <option value="Shared co-living arrangement">{t('landlordContract.coLiving')}</option>
+                                        <option value="Short-term corporate housing">{t('landlordContract.corporate')}</option>
+                                        <option value="Quiet home-based business (no clients)">{t('landlordContract.homeBusiness')}</option>
                                     </select>
                                 </div>
                             </section>
                             <section className="info-section">
-                                <div className="section-title"><Globe size={16} /> <h4>7. Entry and Inspection</h4></div>
+                                <div className="section-title"><Globe size={16} /> <h4>7. {t('landlordContract.entryInspection')}</h4></div>
                                 <div className="input-group">
-                                    <label>Landlord's Right to Enter</label>
+                                    <label>{t('landlordContract.rightToEnter')}</label>
                                     <select
                                         className={isReadOnly ? 'readonly-field' : ''}
                                         disabled={isReadOnly}
                                         value={landlordData.rightToEnter}
                                         onChange={e => setLandlordData({ ...landlordData, rightToEnter: e.target.value })}
                                     >
-                                        <option value="">Select Conditions</option>
-                                        <option value="Maintenance, emergencies, and inspections">Maintenance, emergencies, and inspections</option>
-                                        <option value="Emergencies and repairs only">Emergencies and repairs only</option>
-                                        <option value="With prior tenant consent only">With prior tenant consent only</option>
-                                        <option value="Routine inspections every 6 months">Routine inspections every 6 months</option>
+                                        <option value="">{t('landlordContract.selectConditions')}</option>
+                                        <option value="Maintenance, emergencies, and inspections">{t('landlordContract.maintenanceEmergencies')}</option>
+                                        <option value="Emergencies and repairs only">{t('landlordContract.emergenciesOnly')}</option>
+                                        <option value="With prior tenant consent only">{t('landlordContract.tenantConsentOnly')}</option>
+                                        <option value="Routine inspections every 6 months">{t('landlordContract.routineInspections')}</option>
                                     </select>
                                 </div>
                                 <div className="input-group">
-                                    <label>Notice Period</label>
+                                    <label>{t('landlordContract.noticePeriod')}</label>
                                     <select
                                         className={isReadOnly ? 'readonly-field' : ''}
                                         disabled={isReadOnly}
                                         value={landlordData.noticePeriod}
                                         onChange={e => setLandlordData({ ...landlordData, noticePeriod: e.target.value })}
                                     >
-                                        <option value="">Select Notice Period</option>
-                                        <option value="24 hours written notice">24 hours written notice</option>
-                                        <option value="48 hours written notice">48 hours written notice</option>
-                                        <option value="72 hours written notice">72 hours written notice</option>
-                                        <option value="Emergency access only (no notice)">Emergency access only (no notice)</option>
+                                        <option value="">{t('landlordContract.selectNoticePeriod')}</option>
+                                        <option value="24 hours written notice">{t('landlordContract.notice24h')}</option>
+                                        <option value="48 hours written notice">{t('landlordContract.notice48h')}</option>
+                                        <option value="72 hours written notice">{t('landlordContract.notice72h')}</option>
+                                        <option value="Emergency access only (no notice)">{t('landlordContract.emergencyAccessOnly')}</option>
                                     </select>
                                 </div>
                                 <div className="input-group" style={{ marginTop: '20px' }}>
-                                    <label>Late Fee Amount ($)</label>
+                                    <label>{t('landlordContract.lateFeeAmount')}</label>
                                     <input
                                         className={isReadOnly ? 'readonly-field' : ''}
                                         disabled={isReadOnly}
@@ -341,21 +345,21 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                     {/* STEP 3: MAINTENANCE RESPONSIBILITIES */}
                     {step === 3 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Maintenance Responsibilities</h3>
+                            <h3 className="step-heading">{t('landlordContract.maintenanceResponsibilities')}</h3>
                             <section className="info-section">
-                                <div className="section-title"><Zap size={16} /> <h4>Maintenance Allocation</h4></div>
+                                <div className="section-title"><Zap size={16} /> <h4>{t('landlordContract.maintenanceAllocation')}</h4></div>
                                 <div className="responsibility-box scrollable">
                                     {maintenanceResponsibilities.length > 0 ? (
                                         maintenanceResponsibilities.map((item, idx) => (
                                             <div key={`${item.area}-${idx}`} className="resp-row">
                                                 <span>{item.area}</span>
                                                 <span className={`owner-badge ${item.responsible_party === 'LANDLORD' ? 'landlord' : 'tenant'}`}>
-                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                    {item.responsible_party === 'LANDLORD' ? t('landlordContract.landlordBadge') : t('landlordContract.tenantBadge')}
                                                 </span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="resp-row"><span>No specific maintenance requirements detailed.</span><span className="owner-badge tenant">N/A</span></div>
+                                        <div className="resp-row"><span>{t('landlordContract.noMaintenanceRequirements')}</span><span className="owner-badge tenant">N/A</span></div>
                                     )}
                                 </div>
                             </section>
@@ -365,100 +369,100 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                     {/* STEP 4: RENTAL AGREEMENT TERMS */}
                     {step === 4 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Apartment Rental Agreement Terms</h3>
+                            <h3 className="step-heading">{t('landlordContract.rentalAgreementTerms')}</h3>
 
                             <section className="info-section">
-                                <div className="section-title"><User size={16} /> <h4>Introduction</h4></div>
+                                <div className="section-title"><User size={16} /> <h4>{t('landlordContract.introduction')}</h4></div>
                                 <div className="legal-term-box">
-                                    <p>This agreement is made between:</p>
+                                    <p>{t('landlordContract.agreementMadeBetween')}</p>
                                     <div className="party-details">
                                         <div className="party">
-                                            <strong>Lessor (First Party):</strong>
+                                            <strong>{t('landlordContract.lessor')}</strong>
                                             <span>{landlordData.idFullName || contract.landlord}</span>
-                                            <span>ID: {landlordData.idNumber || '—'}</span>
-                                            <span>Address: {landlordData.currentAddress || '—'}</span>
+                                            <span>{t('landlordContract.idLabel')} {landlordData.idNumber || '—'}</span>
+                                            <span>{t('landlordContract.addressLabel')} {landlordData.currentAddress || '—'}</span>
                                         </div>
                                         <div className="party">
-                                            <strong>Lessee (Second Party):</strong>
+                                            <strong>{t('landlordContract.lessee')}</strong>
                                             <span>{contract.tenant}</span>
-                                            <span>ID: {'—'}</span>{/* to be filled by tenant */}
-                                            <span>Address: {'—'}</span>{/* to be filled by tenant */}
+                                            <span>{t('landlordContract.idLabel')} {'—'}</span>{/* to be filled by tenant */}
+                                            <span>{t('landlordContract.addressLabel')} {'—'}</span>{/* to be filled by tenant */}
                                         </div>
                                     </div>
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><Scale size={16} /> <h4>Main Clauses</h4></div>
+                                <div className="section-title"><Scale size={16} /> <h4>{t('landlordContract.mainClauses')}</h4></div>
                                 <div className="legal-clauses-list">
                                     <div className="legal-clause">
-                                        <label>1. Description of the Rented Property</label>
-                                        <p>The rented property is located at <strong>{contract.propertyAddress}</strong>. It consists of the unit specified in the property records ({contract.propertyType}).</p>
+                                        <label>{t('landlordContract.clause1Title')}</label>
+                                        <p>{t('landlordContract.clause1Text', { address: contract.propertyAddress, type: contract.propertyType })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>2. Contract Duration</label>
-                                        <p>The contract starts on <strong>{contract.startDate}</strong> and has a duration of <strong>{contract.duration}</strong>. It does not automatically renew unless a new agreement is signed by both parties.</p>
+                                        <label>{t('landlordContract.clause2Title')}</label>
+                                        <p>{t('landlordContract.clause2Text', { startDate: contract.startDate, duration: contract.duration })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>3. Rental Value</label>
-                                        <p>The monthly rent amount is <strong>${contract.amount}</strong>. The lessee must pay the rent in advance at the beginning of each month and receive a receipt from the lessor or through the platform.</p>
+                                        <label>{t('landlordContract.clause3Title')}</label>
+                                        <p>{t('landlordContract.clause3Text', { amount: `$${contract.amount}` })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>4. Security Deposit</label>
-                                        <p>A security deposit of <strong>${contract.deposit}</strong> is paid by the lessee to the lessor. It will be refunded at the end of the contract if there are no valid claims against it for damages or unpaid bills.</p>
+                                        <label>{t('landlordContract.clause4Title')}</label>
+                                        <p>{t('landlordContract.clause4Text', { deposit: `$${contract.deposit}` })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>5. Late Payment of Rent</label>
-                                        <p>If the lessee delays rent payment for more than 5 days, a late fee of <strong>${landlordData.lateFee || 0}</strong> shall apply. If the delay continues for a specified period, the contract is automatically terminated. The lessor has the right to evict the lessee and claim any outstanding amounts.</p>
+                                        <label>{t('landlordContract.clause5Title')}</label>
+                                        <p>{t('landlordContract.clause5Text', { lateFee: `$${landlordData.lateFee || 0}` })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>6. No Subleasing</label>
-                                        <p>The lessee cannot sublease the property or make structural changes without the written consent of the lessor. Violating this clause results in automatic contract termination.</p>
+                                        <label>{t('landlordContract.clause6Title')}</label>
+                                        <p>{t('landlordContract.clause6Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>7. No Change of Use</label>
-                                        <p>The property must be used for residential purposes only. Any other use terminates the contract automatically.</p>
+                                        <label>{t('landlordContract.clause7Title')}</label>
+                                        <p>{t('landlordContract.clause7Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>8. Lessee’s Expenses on the Property</label>
-                                        <p>Any expenses incurred by the lessee (e.g., painting, decorating, or improvements) are not reimbursable by the lessor and become part of the property unless otherwise agreed.</p>
+                                        <label>{t('landlordContract.clause8Title')}</label>
+                                        <p>{t('landlordContract.clause8Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>9. Returning the Property in Its Original Condition</label>
-                                        <p>The lessee must return the property in the same condition as it was at the start of the contract. The lessee is liable for any damages caused by their negligence or misuse.</p>
+                                        <label>{t('landlordContract.clause9Title')}</label>
+                                        <p>{t('landlordContract.clause9Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>10. Eviction After Contract Ends and Compensation for Delay</label>
-                                        <p>The lessee must vacate the property at the end of the contract term. Any delay is considered illegal occupation, and the lessor can evict the lessee and claim compensation for the period of delay.</p>
+                                        <label>{t('landlordContract.clause10Title')}</label>
+                                        <p>{t('landlordContract.clause10Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>11. Payment of Utility Bills</label>
-                                        <p>The lessee is responsible for paying all utility bills (water, electricity, gas, internet) during the lease term. Failure to pay allows the lessor to take legal action to cover these costs.</p>
+                                        <label>{t('landlordContract.clause11Title')}</label>
+                                        <p>{t('landlordContract.clause11Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>12. Early Termination by the Lessee</label>
-                                        <p>If the lessee wishes to terminate the contract early, they must notify the lessor at least one month in advance. Otherwise, they must pay an additional month’s rent as a penalty.</p>
+                                        <label>{t('landlordContract.clause12Title')}</label>
+                                        <p>{t('landlordContract.clause12Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>13. Addresses and Correspondence</label>
-                                        <p>The addresses provided in the contract are considered valid for all legal notices, correspondence, and service of process.</p>
+                                        <label>{t('landlordContract.clause13Title')}</label>
+                                        <p>{t('landlordContract.clause13Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>14. Number of Contract Copies and Jurisdiction</label>
-                                        <p>The contract is made in two digital copies, one for each party, and is subject to the jurisdiction of the local courts where the property is located.</p>
+                                        <label>{t('landlordContract.clause14Title')}</label>
+                                        <p>{t('landlordContract.clause14Text')}</p>
                                     </div>
                                 </div>
                             </section>
@@ -468,40 +472,40 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                     {/* STEP 5: SUMMARY */}
                     {step === 5 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Platform Verification Summary</h3>
+                            <h3 className="step-heading">{t('landlordContract.platformVerificationSummary')}</h3>
                             <div className="homi-auto-box">
                                 <section className="auto-section">
-                                    <div className="section-title"><Cpu size={16} /> <h4>Platform Metadata</h4></div>
+                                    <div className="section-title"><Cpu size={16} /> <h4>{t('landlordContract.platformMetadata')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Contract ID</label><span>{summary?.platformMetadata.contractId || contract.id}</span></div>
-                                        <div className="item"><label>Created</label><span>{summary?.platformMetadata.created ? new Date(summary.platformMetadata.created).toLocaleDateString() : new Date(contract.createdAt).toLocaleDateString()}</span></div>
-                                        <div className="item"><label>Lease ID</label><span>{summary?.platformMetadata.leaseId || '—'}</span></div>
+                                        <div className="item"><label>{t('landlordContract.contractId')}</label><span>{summary?.platformMetadata.contractId || contract.id}</span></div>
+                                        <div className="item"><label>{t('landlordContract.created')}</label><span>{summary?.platformMetadata.created ? new Date(summary.platformMetadata.created).toLocaleDateString() : new Date(contract.createdAt).toLocaleDateString()}</span></div>
+                                        <div className="item"><label>{t('landlordContract.leaseId')}</label><span>{summary?.platformMetadata.leaseId || '—'}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
-                                    <div className="section-title"><Landmark size={16} /> <h4>Verified Property Information</h4></div>
+                                    <div className="section-title"><Landmark size={16} /> <h4>{t('landlordContract.verifiedPropertyInfo')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Title</label><span>{summary?.verifiedPropertyInfo.title || contract.property}</span></div>
-                                        <div className="item"><label>Type</label><span>{summary?.verifiedPropertyInfo.type || contract.propertyType}</span></div>
-                                        <div className="item"><label>Rooms</label><span>{summary?.verifiedPropertyInfo.rooms || 'N/A'}</span></div>
-                                        <div className="item"><label>Furnishing</label><span>{summary?.verifiedPropertyInfo.furnishing || contract.propertyFurnishing}</span></div>
-                                        <div className="item full"><label>Address</label><span>{summary?.verifiedPropertyInfo.address || contract.propertyAddress}</span></div>
+                                        <div className="item"><label>{t('landlordContract.title')}</label><span>{summary?.verifiedPropertyInfo.title || contract.property}</span></div>
+                                        <div className="item"><label>{t('landlordContract.type')}</label><span>{summary?.verifiedPropertyInfo.type || contract.propertyType}</span></div>
+                                        <div className="item"><label>{t('landlordContract.rooms')}</label><span>{summary?.verifiedPropertyInfo.rooms || 'N/A'}</span></div>
+                                        <div className="item"><label>{t('landlordContract.furnishing')}</label><span>{summary?.verifiedPropertyInfo.furnishing || contract.propertyFurnishing}</span></div>
+                                        <div className="item full"><label>{t('landlordContract.address')}</label><span>{summary?.verifiedPropertyInfo.address || contract.propertyAddress}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
-                                    <div className="section-title"><DollarSign size={16} /> <h4>Payment Terms</h4></div>
+                                    <div className="section-title"><DollarSign size={16} /> <h4>{t('landlordContract.paymentTerms')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Rent</label><span>${summary?.paymentTerms.rent ?? contract.amount}</span></div>
-                                        <div className="item"><label>Security Deposit</label><span>${summary?.paymentTerms.securityDeposit ?? contract.deposit}</span></div>
-                                        <div className="item"><label>Service Fee</label><span>${summary?.paymentTerms.serviceFee ?? 10}</span></div>
-                                        <div className="item"><label>Schedule</label><span>{summary?.paymentTerms.schedule || 'MONTHLY'}</span></div>
+                                        <div className="item"><label>{t('landlordContract.rent')}</label><span>${summary?.paymentTerms.rent ?? contract.amount}</span></div>
+                                        <div className="item"><label>{t('landlordContract.securityDeposit')}</label><span>${summary?.paymentTerms.securityDeposit ?? contract.deposit}</span></div>
+                                        <div className="item"><label>{t('landlordContract.serviceFee')}</label><span>${summary?.paymentTerms.serviceFee ?? 10}</span></div>
+                                        <div className="item"><label>{t('landlordContract.schedule')}</label><span>{summary?.paymentTerms.schedule || 'MONTHLY'}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
-                                    <div className="section-title"><Clock size={16} /> <h4>Lease Duration</h4></div>
+                                    <div className="section-title"><Clock size={16} /> <h4>{t('landlordContract.leaseDuration')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Move-In</label><span>{summary?.leaseDuration.moveIn ? new Date(summary.leaseDuration.moveIn).toLocaleDateString() : contract.startDate}</span></div>
-                                        <div className="item"><label>Duration</label><span>{summary?.leaseDuration.durationMonths ? `${summary.leaseDuration.durationMonths} Months` : contract.duration}</span></div>
+                                        <div className="item"><label>{t('landlordContract.moveIn')}</label><span>{summary?.leaseDuration.moveIn ? new Date(summary.leaseDuration.moveIn).toLocaleDateString() : contract.startDate}</span></div>
+                                        <div className="item"><label>{t('landlordContract.durationLabel')}</label><span>{summary?.leaseDuration.durationMonths ? `${summary.leaseDuration.durationMonths} Months` : contract.duration}</span></div>
                                     </div>
                                 </section>
                             </div>
@@ -511,34 +515,34 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                     {/* STEP 6: SIGNATURE */}
                     {step === 6 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Finalize & Sign</h3>
+                            <h3 className="step-heading">{t('landlordContract.finalizeSign')}</h3>
                             {isReadOnly ? (
                                 <div className="ownership-notice">
                                     <ShieldCheck size={20} />
-                                    <p>This contract is not in pending landlord status and is view-only.</p>
+                                    <p>{t('landlordContract.viewOnlyNotice')}</p>
                                 </div>
                             ) : !savedSignature ? (
                                 <div className="signature-trigger" onClick={() => setIsSignModalOpen(true)}>
                                     <Pencil size={24} />
-                                    <p>Draw or upload Landlord signature</p>
+                                    <p>{t('landlordContract.drawUploadSignature')}</p>
                                 </div>
                             ) : (
                                 <div className="signature-display-card">
-                                    <div className="sig-header"><span>Verified Landlord Signature</span><button onClick={() => setIsSignModalOpen(true)}>Change</button></div>
+                                    <div className="sig-header"><span>{t('landlordContract.verifiedSignature')}</span><button onClick={() => setIsSignModalOpen(true)}>{t('landlordContract.change')}</button></div>
                                     <div className="sig-preview"><img src={savedSignature} alt="Landlord Signature" /></div>
                                     <div className="sig-footer"><p><Globe size={12} /> Secure IP: 192.168.1.45 • {new Date().toLocaleString()}</p></div>
                                 </div>
                             )}
                             <div className="confirmation-check">
                                 <input className={isReadOnly ? 'readonly-checkbox' : ''} disabled={isReadOnly} type="checkbox" id="landlord-final" checked={landlordData.confirmed} onChange={(e) => setLandlordData({ ...landlordData, confirmed: e.target.checked })} />
-                                <label className={isReadOnly ? 'readonly-label' : ''} htmlFor="landlord-final">I certify that I am the legal owner of this property and agree to these terms.</label>
+                                <label className={isReadOnly ? 'readonly-label' : ''} htmlFor="landlord-final">{t('landlordContract.certifyText')}</label>
                             </div>
                         </div>
                     )}
                 </div>
 
                 <footer className="panel-footer-nav">
-                    {step > 1 && <button className="btn-nav-secondary" onClick={handleBack}><ChevronLeft size={18} /> Back</button>}
+                    {step > 1 && <button className="btn-nav-secondary" onClick={handleBack}><ChevronLeft size={18} /> {t('landlordContract.back')}</button>}
                     <button
                         className="btn-nav-primary"
                         disabled={
@@ -547,7 +551,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                         }
                         onClick={step === 6 ? (isReadOnly ? onClose : handleSign) : handleNext}
                     >
-                        {submitting ? 'Saving...' : step === 6 ? (isReadOnly ? 'Close' : 'Sign Agreement') : 'Continue'} <ChevronRight size={18} />
+                        {submitting ? t('landlordContract.saving') : step === 6 ? (isReadOnly ? t('landlordContract.close') : t('landlordContract.signAgreement')) : t('landlordContract.continue')} <ChevronRight size={18} />
                     </button>
                 </footer>
             </div>

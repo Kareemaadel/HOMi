@@ -15,7 +15,10 @@ interface Props {
     onClose: () => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) => {
+    const { t } = useTranslation();
     const [step, setStep] = useState(1);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(null);
@@ -42,8 +45,6 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     national_id: tenantData.idNumber,
                     emergency_contact_name: tenantData.emergencyName,
                     emergency_phone: tenantData.emergencyPhone,
-                    // Note: Depending on backend implementation, idFullName, currentAddress, and mainPhone 
-                    // should ideally also be updated here. We assume backend endpoint accepts these if provided.
                 });
                 const summaryResponse = await contractService.getVerificationSummary(contract.internalId);
                 setSummary(summaryResponse.data);
@@ -87,21 +88,21 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
 
     if (isFinalized) {
         return (
-            <div className="contract-overlay">
+            <div className="contract-overlay" dir="ltr">
                 <div className="detail-panel success-panel animate-slide-in">
                     <div className="success-content">
                         <div className="success-icon-badge">
                             <CheckCircle2 size={60} />
                         </div>
-                        <h2>Agreement Executed</h2>
-                        <p>The contract for <strong>{contract.property}</strong> has been legally signed and activated.</p>
+                        <h2>{t('tenantContract.agreementExecuted')}</h2>
+                        <p>{t('tenantContract.agreementDesc', { property: contract.property })}</p>
 
                         <div className="success-actions">
                             <button className="btn-pay-action" onClick={() => globalThis.location.href = '/tenant-payment?tab=pending'}>
-                                <CreditCard size={18} /> Go to Payments Page
+                                <CreditCard size={18} /> {t('tenantContract.goToPayments')}
                             </button>
                             <button className="btn-close-dashboard" onClick={onClose}>
-                                Back to Dashboard
+                                {t('tenantContract.backToDashboard')}
                             </button>
                         </div>
                     </div>
@@ -111,7 +112,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
     }
 
     return (
-        <div className="contract-overlay">
+        <div className="contract-overlay" dir="ltr">
             <div className="detail-panel animate-slide-in">
                 <header className="panel-header">
                     <div className="header-title">
@@ -135,13 +136,13 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {/* STEP 1: PARTIES, PROPERTY, LEASE TERM */}
                     {step === 1 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Contract Details</h3>
+                            <h3 className="step-heading">{t('tenantContract.contractDetails')}</h3>
 
                             <section className="info-section">
-                                <div className="section-title"><Fingerprint size={16} /> <h4>1. Identity & Date</h4></div>
+                                <div className="section-title"><Fingerprint size={16} /> <h4>1. {t('tenantContract.identityDate')}</h4></div>
                                 <div className="input-grid">
                                     <div className="input-group">
-                                        <label>National ID Full Name (Arabic Only)</label>
+                                        <label>{t('tenantContract.nationalIdFullName')}</label>
                                         <input
                                             type="text"
                                             placeholder="الاسم الكامل باللغة العربية"
@@ -156,7 +157,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>National ID Number (14 Digits)</label>
+                                        <label>{t('tenantContract.nationalIdNumber')}</label>
                                         <input
                                             type="text"
                                             placeholder="2990101XXXXXXXX"
@@ -171,61 +172,59 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                         />
                                     </div>
                                     <div className="input-group full">
-                                        <label>Current Address</label>
+                                        <label>{t('tenantContract.currentAddress')}</label>
                                         <input
                                             type="text"
-                                            placeholder="Your residential address"
+                                            placeholder={t('tenantContract.currentAddressPlaceholder')}
                                             value={tenantData.currentAddress}
                                             onChange={e => setTenantData({ ...tenantData, currentAddress: e.target.value })}
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Main Phone number</label>
+                                        <label>{t('tenantContract.mainPhone')}</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g. 010XXXXXXXX"
+                                            placeholder={t('tenantContract.mainPhonePlaceholder')}
                                             value={tenantData.mainPhone}
                                             onChange={e => setTenantData({ ...tenantData, mainPhone: e.target.value })}
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Contract Date</label>
+                                        <label>{t('tenantContract.contractDate')}</label>
                                         <input className="readonly-field" disabled type="date" value={new Date().toISOString().split('T')[0]} />
                                     </div>
                                     <div className="input-group">
-                                        <label>Emergency Contact Name</label>
+                                        <label>{t('tenantContract.emergencyContactName')}</label>
                                         <input type="text" value={tenantData.emergencyName} onChange={(e) => setTenantData({ ...tenantData, emergencyName: e.target.value })} />
                                     </div>
                                     <div className="input-group">
-                                        <label>Emergency Phone</label>
+                                        <label>{t('tenantContract.emergencyPhone')}</label>
                                         <input type="tel" value={tenantData.emergencyPhone} onChange={(e) => setTenantData({ ...tenantData, emergencyPhone: e.target.value })} />
                                     </div>
-
-
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><User size={16} /> <h4>2. Parties Involved</h4></div>
+                                <div className="section-title"><User size={16} /> <h4>2. {t('tenantContract.partiesInvolved')}</h4></div>
                                 <div className="autofill-grid">
-                                    <div className="field full"><label>Landlord/Owner</label><span>{contract.landlord} • {contract.landlordEmail}</span></div>
-                                    <div className="field full"><label>Tenant/Renter</label><span>{contract.tenant} • {contract.tenantEmail}</span></div>
+                                    <div className="field full"><label>{t('tenantContract.landlordOwner')}</label><span>{contract.landlord} • {contract.landlordEmail}</span></div>
+                                    <div className="field full"><label>{t('tenantContract.tenantRenter')}</label><span>{contract.tenant} • {contract.tenantEmail}</span></div>
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><Landmark size={16} /> <h4>3. Property Details</h4></div>
+                                <div className="section-title"><Landmark size={16} /> <h4>3. {t('tenantContract.propertyDetails')}</h4></div>
                                 <div className="autofill-grid">
-                                    <div className="field full"><label>Address</label><span>{contract.propertyAddress}</span></div>
-                                    <div className="field full"><label>Description</label><span>{contract.propertyType} • {contract.propertyFurnishing}</span></div>
+                                    <div className="field full"><label>{t('tenantContract.address')}</label><span>{contract.propertyAddress}</span></div>
+                                    <div className="field full"><label>{t('tenantContract.description')}</label><span>{contract.propertyType} • {contract.propertyFurnishing}</span></div>
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><Clock size={16} /> <h4>4. Lease Term</h4></div>
+                                <div className="section-title"><Clock size={16} /> <h4>4. {t('tenantContract.leaseTerm')}</h4></div>
                                 <div className="autofill-grid">
-                                    <div className="field"><label>Start Date</label><span>{contract.startDate}</span></div>
-                                    <div className="field"><label>End Date</label><span>{contract.duration}</span></div>
+                                    <div className="field"><label>{t('tenantContract.startDate')}</label><span>{contract.startDate}</span></div>
+                                    <div className="field"><label>{t('tenantContract.endDate')}</label><span>{contract.duration}</span></div>
                                 </div>
                             </section>
                         </div>
@@ -234,32 +233,32 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {/* STEP 2: USE OF PROPERTY & ENTRY */}
                     {step === 2 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Rules & Allowances</h3>
+                            <h3 className="step-heading">{t('tenantContract.rulesAllowances')}</h3>
                             <section className="info-section">
-                                <div className="section-title"><ShieldCheck size={16} /> <h4>6. Use of Property</h4></div>
+                                <div className="section-title"><ShieldCheck size={16} /> <h4>6. {t('tenantContract.useOfPropertyTitle')}</h4></div>
                                 <div className="input-group">
-                                    <label>Permitted Use</label>
+                                    <label>{t('tenantContract.permittedUse')}</label>
                                     <select className="readonly-field" disabled value={'Residential purposes only'}>
-                                        <option value="Residential purposes only">Residential purposes only</option>
+                                        <option value="Residential purposes only">{t('tenantContract.residentialOnly')}</option>
                                     </select>
                                 </div>
                             </section>
                             <section className="info-section">
-                                <div className="section-title"><Globe size={16} /> <h4>7. Entry and Inspection</h4></div>
+                                <div className="section-title"><Globe size={16} /> <h4>7. {t('tenantContract.entryInspection')}</h4></div>
                                 <div className="input-group">
-                                    <label>Landlord's Right to Enter</label>
+                                    <label>{t('tenantContract.rightToEnter')}</label>
                                     <select className="readonly-field" disabled value={'Maintenance, emergencies, and inspections'}>
-                                        <option value="Maintenance, emergencies, and inspections">Maintenance, emergencies, and inspections</option>
+                                        <option value="Maintenance, emergencies, and inspections">{t('tenantContract.maintenanceEmergencies')}</option>
                                     </select>
                                 </div>
                                 <div className="input-group">
-                                    <label>Notice Period</label>
+                                    <label>{t('tenantContract.noticePeriod')}</label>
                                     <select className="readonly-field" disabled value={'24 hours written notice'}>
-                                        <option value="24 hours written notice">24 hours written notice</option>
+                                        <option value="24 hours written notice">{t('tenantContract.notice24h')}</option>
                                     </select>
                                 </div>
                                 <div className="input-group" style={{ marginTop: '20px' }}>
-                                    <label>Late Fee Amount ($)</label>
+                                    <label>{t('tenantContract.lateFeeAmount')}</label>
                                     <input className="readonly-field" disabled type="number" value={contract.lateFeeAmount || 0} />
                                 </div>
                             </section>
@@ -269,26 +268,25 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {/* STEP 3: MAINTENANCE & EMERGENCY DETAILS */}
                     {step === 3 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Emergency & Maintenance</h3>
+                            <h3 className="step-heading">{t('tenantContract.emergencyMaintenance')}</h3>
                             <section className="info-section">
-                                <div className="section-title"><User size={16} /> <h4>Emergency Contact</h4></div>
-
+                                <div className="section-title"><User size={16} /> <h4>{t('tenantContract.emergencyContact')}</h4></div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><Zap size={16} /> <h4>Maintenance Responsibilities</h4></div>
+                                <div className="section-title"><Zap size={16} /> <h4>{t('tenantContract.maintenanceResponsibilities')}</h4></div>
                                 <div className="responsibility-box scrollable">
                                     {maintenanceResponsibilities.length > 0 ? (
                                         maintenanceResponsibilities.map((item, idx) => (
                                             <div key={`${item.area}-${idx}`} className="resp-row">
                                                 <span>{item.area}</span>
                                                 <span className={`owner-badge ${item.responsible_party === 'LANDLORD' ? 'landlord' : 'tenant'}`}>
-                                                    {item.responsible_party === 'LANDLORD' ? 'Landlord' : 'Tenant'}
+                                                    {item.responsible_party === 'LANDLORD' ? t('tenantContract.landlordBadge') : t('tenantContract.tenantBadge')}
                                                 </span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="resp-row"><span>No specific maintenance requirements detailed.</span><span className="owner-badge tenant">N/A</span></div>
+                                        <div className="resp-row"><span>{t('tenantContract.noMaintenanceRequirements')}</span><span className="owner-badge tenant">N/A</span></div>
                                     )}
                                 </div>
                             </section>
@@ -298,100 +296,100 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {/* STEP 4: RENTAL AGREEMENT TERMS */}
                     {step === 4 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Apartment Rental Agreement Terms</h3>
+                            <h3 className="step-heading">{t('tenantContract.rentalAgreementTerms')}</h3>
 
                             <section className="info-section">
-                                <div className="section-title"><User size={16} /> <h4>Introduction</h4></div>
+                                <div className="section-title"><User size={16} /> <h4>{t('tenantContract.introduction')}</h4></div>
                                 <div className="legal-term-box">
-                                    <p>This agreement is made between:</p>
+                                    <p>{t('tenantContract.agreementMadeBetween')}</p>
                                     <div className="party-details">
                                         <div className="party">
-                                            <strong>Lessor (First Party):</strong>
+                                            <strong>{t('tenantContract.lessor')}</strong>
                                             <span>{contract.landlord}</span>
-                                            <span>ID: {'—'}</span>
-                                            <span>Address: {'—'}</span>
+                                            <span>{t('tenantContract.idLabel')} {'—'}</span>
+                                            <span>{t('tenantContract.addressLabel')} {'—'}</span>
                                         </div>
                                         <div className="party">
-                                            <strong>Lessee (Second Party):</strong>
+                                            <strong>{t('tenantContract.lessee')}</strong>
                                             <span>{tenantData.idFullName || contract.tenant}</span>
-                                            <span>ID: {tenantData.idNumber || '—'}</span>
-                                            <span>Address: {tenantData.currentAddress || '—'}</span>
+                                            <span>{t('tenantContract.idLabel')} {tenantData.idNumber || '—'}</span>
+                                            <span>{t('tenantContract.addressLabel')} {tenantData.currentAddress || '—'}</span>
                                         </div>
                                     </div>
                                 </div>
                             </section>
 
                             <section className="info-section">
-                                <div className="section-title"><h4>Main Clauses</h4></div>
+                                <div className="section-title"><h4>{t('tenantContract.mainClauses')}</h4></div>
                                 <div className="legal-clauses-list">
                                     <div className="legal-clause">
-                                        <label>1. Description of the Rented Property</label>
-                                        <p>The rented property is located at <strong>{contract.propertyAddress}</strong>. It consists of the unit specified in the property records ({contract.propertyType}).</p>
+                                        <label>{t('tenantContract.clause1Title')}</label>
+                                        <p>{t('tenantContract.clause1Text', { address: contract.propertyAddress, type: contract.propertyType })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>2. Contract Duration</label>
-                                        <p>The contract starts on <strong>{contract.startDate}</strong> and has a duration of <strong>{contract.duration}</strong>. It does not automatically renew unless a new agreement is signed by both parties.</p>
+                                        <label>{t('tenantContract.clause2Title')}</label>
+                                        <p>{t('tenantContract.clause2Text', { startDate: contract.startDate, duration: contract.duration })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>3. Rental Value</label>
-                                        <p>The monthly rent amount is <strong>${contract.amount}</strong>. The lessee must pay the rent in advance at the beginning of each month and receive a receipt from the lessor or through the platform.</p>
+                                        <label>{t('tenantContract.clause3Title')}</label>
+                                        <p>{t('tenantContract.clause3Text', { amount: `$${contract.amount}` })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>4. Security Deposit</label>
-                                        <p>A security deposit of <strong>${contract.deposit}</strong> is paid by the lessee to the lessor. It will be refunded at the end of the contract if there are no valid claims against it for damages or unpaid bills.</p>
+                                        <label>{t('tenantContract.clause4Title')}</label>
+                                        <p>{t('tenantContract.clause4Text', { deposit: `$${contract.deposit}` })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>5. Late Payment of Rent</label>
-                                        <p>If the lessee delays rent payment for more than 5 days, a late fee of <strong>${contract.lateFeeAmount || 0}</strong> shall apply. If the delay continues for a specified period, the contract is automatically terminated. The lessor has the right to evict the lessee and claim any outstanding amounts.</p>
+                                        <label>{t('tenantContract.clause5Title')}</label>
+                                        <p>{t('tenantContract.clause5Text', { lateFee: `$${contract.lateFeeAmount || 0}` })}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>6. No Subleasing</label>
-                                        <p>The lessee cannot sublease the property or make structural changes without the written consent of the lessor. Violating this clause results in automatic contract termination.</p>
+                                        <label>{t('tenantContract.clause6Title')}</label>
+                                        <p>{t('tenantContract.clause6Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>7. No Change of Use</label>
-                                        <p>The property must be used for residential purposes only. Any other use terminates the contract automatically.</p>
+                                        <label>{t('tenantContract.clause7Title')}</label>
+                                        <p>{t('tenantContract.clause7Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>8. Lessee’s Expenses on the Property</label>
-                                        <p>Any expenses incurred by the lessee (e.g., painting, decorating, or improvements) are not reimbursable by the lessor and become part of the property unless otherwise agreed.</p>
+                                        <label>{t('tenantContract.clause8Title')}</label>
+                                        <p>{t('tenantContract.clause8Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>9. Returning the Property in Its Original Condition</label>
-                                        <p>The lessee must return the property in the same condition as it was at the start of the contract. The lessee is liable for any damages caused by their negligence or misuse.</p>
+                                        <label>{t('tenantContract.clause9Title')}</label>
+                                        <p>{t('tenantContract.clause9Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>10. Eviction After Contract Ends and Compensation for Delay</label>
-                                        <p>The lessee must vacate the property at the end of the contract term. Any delay is considered illegal occupation, and the lessor can evict the lessee and claim compensation for the period of delay.</p>
+                                        <label>{t('tenantContract.clause10Title')}</label>
+                                        <p>{t('tenantContract.clause10Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>11. Payment of Utility Bills</label>
-                                        <p>The lessee is responsible for paying all utility bills (water, electricity, gas, internet) during the lease term. Failure to pay allows the lessor to take legal action to cover these costs.</p>
+                                        <label>{t('tenantContract.clause11Title')}</label>
+                                        <p>{t('tenantContract.clause11Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>12. Early Termination by the Lessee</label>
-                                        <p>If the lessee wishes to terminate the contract early, they must notify the lessor at least one month in advance. Otherwise, they must pay an additional month’s rent as a penalty.</p>
+                                        <label>{t('tenantContract.clause12Title')}</label>
+                                        <p>{t('tenantContract.clause12Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>13. Addresses and Correspondence</label>
-                                        <p>The addresses provided in the contract are considered valid for all legal notices, correspondence, and service of process.</p>
+                                        <label>{t('tenantContract.clause13Title')}</label>
+                                        <p>{t('tenantContract.clause13Text')}</p>
                                     </div>
 
                                     <div className="legal-clause">
-                                        <label>14. Number of Contract Copies and Jurisdiction</label>
-                                        <p>The contract is made in two digital copies, one for each party, and is subject to the jurisdiction of the local courts where the property is located.</p>
+                                        <label>{t('tenantContract.clause14Title')}</label>
+                                        <p>{t('tenantContract.clause14Text')}</p>
                                     </div>
                                 </div>
                             </section>
@@ -401,40 +399,40 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {/* STEP 5: SUMMARY */}
                     {step === 5 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Platform Verification Summary</h3>
+                            <h3 className="step-heading">{t('tenantContract.platformVerificationSummary')}</h3>
                             <div className="homi-auto-box">
                                 <section className="auto-section">
-                                    <div className="section-title"><Cpu size={16} /> <h4>Platform Metadata</h4></div>
+                                    <div className="section-title"><Cpu size={16} /> <h4>{t('tenantContract.platformMetadata')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Contract ID</label><span>{summary?.platformMetadata.contractId || contract.id}</span></div>
-                                        <div className="item"><label>Created</label><span>{summary?.platformMetadata.created ? new Date(summary.platformMetadata.created).toLocaleDateString() : new Date(contract.createdAt).toLocaleDateString()}</span></div>
-                                        <div className="item"><label>Lease ID</label><span>{summary?.platformMetadata.leaseId || contract.leaseId}</span></div>
+                                        <div className="item"><label>{t('tenantContract.contractId')}</label><span>{summary?.platformMetadata.contractId || contract.id}</span></div>
+                                        <div className="item"><label>{t('tenantContract.created')}</label><span>{summary?.platformMetadata.created ? new Date(summary.platformMetadata.created).toLocaleDateString() : new Date(contract.createdAt).toLocaleDateString()}</span></div>
+                                        <div className="item"><label>{t('tenantContract.leaseId')}</label><span>{summary?.platformMetadata.leaseId || contract.leaseId}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
-                                    <div className="section-title"><Landmark size={16} /> <h4>Verified Property Information</h4></div>
+                                    <div className="section-title"><Landmark size={16} /> <h4>{t('tenantContract.verifiedPropertyInfo')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Title</label><span>{summary?.verifiedPropertyInfo.title || contract.property}</span></div>
-                                        <div className="item"><label>Type</label><span>{summary?.verifiedPropertyInfo.type || contract.propertyType}</span></div>
-                                        <div className="item"><label>Rooms</label><span>{summary?.verifiedPropertyInfo.rooms || 'N/A'}</span></div>
-                                        <div className="item"><label>Furnishing</label><span>{summary?.verifiedPropertyInfo.furnishing || contract.propertyFurnishing}</span></div>
-                                        <div className="item full"><label>Address</label><span>{summary?.verifiedPropertyInfo.address || contract.propertyAddress}</span></div>
+                                        <div className="item"><label>{t('tenantContract.titleLabel')}</label><span>{summary?.verifiedPropertyInfo.title || contract.property}</span></div>
+                                        <div className="item"><label>{t('tenantContract.type')}</label><span>{summary?.verifiedPropertyInfo.type || contract.propertyType}</span></div>
+                                        <div className="item"><label>{t('tenantContract.rooms')}</label><span>{summary?.verifiedPropertyInfo.rooms || 'N/A'}</span></div>
+                                        <div className="item"><label>{t('tenantContract.furnishing')}</label><span>{summary?.verifiedPropertyInfo.furnishing || contract.propertyFurnishing}</span></div>
+                                        <div className="item full"><label>{t('tenantContract.address')}</label><span>{summary?.verifiedPropertyInfo.address || contract.propertyAddress}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
-                                    <div className="section-title"><DollarSign size={16} /> <h4>Payment Terms</h4></div>
+                                    <div className="section-title"><DollarSign size={16} /> <h4>{t('tenantContract.paymentTerms')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Rent</label><span>${summary?.paymentTerms.rent ?? contract.amount}</span></div>
-                                        <div className="item"><label>Security Deposit</label><span>${summary?.paymentTerms.securityDeposit ?? contract.deposit}</span></div>
-                                        <div className="item"><label>Service Fee</label><span>${summary?.paymentTerms.serviceFee ?? 10}</span></div>
-                                        <div className="item"><label>Schedule</label><span>{summary?.paymentTerms.schedule || 'MONTHLY'}</span></div>
+                                        <div className="item"><label>{t('tenantContract.rent')}</label><span>${summary?.paymentTerms.rent ?? contract.amount}</span></div>
+                                        <div className="item"><label>{t('tenantContract.securityDeposit')}</label><span>${summary?.paymentTerms.securityDeposit ?? contract.deposit}</span></div>
+                                        <div className="item"><label>{t('tenantContract.serviceFee')}</label><span>${summary?.paymentTerms.serviceFee ?? 10}</span></div>
+                                        <div className="item"><label>{t('tenantContract.schedule')}</label><span>{summary?.paymentTerms.schedule || 'MONTHLY'}</span></div>
                                     </div>
                                 </section>
                                 <section className="auto-section">
-                                    <div className="section-title"><Clock size={16} /> <h4>Lease Duration</h4></div>
+                                    <div className="section-title"><Clock size={16} /> <h4>{t('tenantContract.leaseDuration')}</h4></div>
                                     <div className="mini-grid">
-                                        <div className="item"><label>Move-In</label><span>{summary?.leaseDuration.moveIn ? new Date(summary.leaseDuration.moveIn).toLocaleDateString() : contract.startDate}</span></div>
-                                        <div className="item"><label>Duration</label><span>{summary?.leaseDuration.durationMonths ? `${summary.leaseDuration.durationMonths} Months` : contract.duration}</span></div>
+                                        <div className="item"><label>{t('tenantContract.moveIn')}</label><span>{summary?.leaseDuration.moveIn ? new Date(summary.leaseDuration.moveIn).toLocaleDateString() : contract.startDate}</span></div>
+                                        <div className="item"><label>{t('tenantContract.durationLabel')}</label><span>{summary?.leaseDuration.durationMonths ? `${summary.leaseDuration.durationMonths} Months` : contract.duration}</span></div>
                                     </div>
                                 </section>
                             </div>
@@ -444,17 +442,17 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                     {/* STEP 6: SIGNATURE */}
                     {step === 6 && (
                         <div className="step-view animate-fade-in">
-                            <h3 className="step-heading">Finalize & Sign</h3>
+                            <h3 className="step-heading">{t('tenantContract.finalizeSign')}</h3>
                             {!savedSignature ? (
                                 <div className="signature-trigger" onClick={() => setIsSignModalOpen(true)}>
                                     <Pencil size={24} />
-                                    <p>Draw or upload your digital signature</p>
+                                    <p>{t('tenantContract.drawUploadSignature')}</p>
                                 </div>
                             ) : (
                                 <div className="signature-display-card">
                                     <div className="sig-header">
-                                        <span>Verified Signature</span>
-                                        <button onClick={() => setIsSignModalOpen(true)}>Change</button>
+                                        <span>{t('tenantContract.verifiedSignature')}</span>
+                                        <button onClick={() => setIsSignModalOpen(true)}>{t('tenantContract.change')}</button>
                                     </div>
                                     <div className="sig-preview">
                                         <img src={savedSignature} alt="Tenant Signature" />
@@ -471,7 +469,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                     checked={tenantData.confirmed}
                                     onChange={(e) => setTenantData({ ...tenantData, confirmed: e.target.checked })}
                                 />
-                                <label htmlFor="final">I agree to the HOMI terms and understand this signature is legally binding.</label>
+                                <label htmlFor="final">{t('tenantContract.agreeTerms')}</label>
                             </div>
                         </div>
                     )}
@@ -480,7 +478,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                 <footer className="panel-footer-nav">
                     {step > 1 && (
                         <button className="btn-nav-secondary" onClick={handleBack}>
-                            <ChevronLeft size={18} /> Back
+                            <ChevronLeft size={18} /> {t('tenantContract.back')}
                         </button>
                     )}
                     <button
@@ -492,7 +490,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                         }
                         onClick={step === 6 ? handleFinalExecute : handleNext}
                     >
-                        {submitting ? 'Saving...' : step === 6 ? 'Confirm & Execute Agreement' : 'Continue'} <ChevronRight size={18} />
+                        {submitting ? t('tenantContract.saving') : step === 6 ? t('tenantContract.confirmExecute') : t('tenantContract.continue')} <ChevronRight size={18} />
                     </button>
                 </footer>
             </div>

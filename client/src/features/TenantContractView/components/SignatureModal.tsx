@@ -9,7 +9,10 @@ interface Props {
     onSave: (signatureData: string) => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
+    const { t } = useTranslation();
     const [mode, setMode] = useState<'draw' | 'upload'>('draw');
     const sigCanvas = useRef<SignatureCanvas>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -55,25 +58,25 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
         }
     };
 
-        const handleSave = () => {
-                if (mode === 'draw') {
-                    const canvas = sigCanvas.current;
+    const handleSave = () => {
+        if (mode === 'draw') {
+            const canvas = sigCanvas.current;
 
-                    // 1. Use isEmpty() instead of toData().length
-                    if (canvas && !canvas.isEmpty()) {
-                        
-                        // 2. Bypass getTrimmedCanvas() to avoid the blank image bug
-                        const dataURL = canvas.getCanvas().toDataURL('image/png');
-                        
-                        onSave(dataURL);
-                    } else {
-                        alert("Please draw your signature first.");
-                    }
-                } 
-                else if (mode === 'upload' && uploadedImage) {
-                    onSave(uploadedImage);
-                }
-            };
+            // 1. Use isEmpty() instead of toData().length
+            if (canvas && !canvas.isEmpty()) {
+                
+                // 2. Bypass getTrimmedCanvas() to avoid the blank image bug
+                const dataURL = canvas.getCanvas().toDataURL('image/png');
+                
+                onSave(dataURL);
+            } else {
+                alert(t('signature.pleaseDrawSignature'));
+            }
+        } 
+        else if (mode === 'upload' && uploadedImage) {
+            onSave(uploadedImage);
+        }
+    };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -85,22 +88,22 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     };
 
     return (
-        <div className="modal-overlay">
+        <div className="modal-overlay" dir="ltr">
             <div className="signature-modal animate-in">
                 <header className="modal-header">
                     <div>
-                        <h3>Digital Signature</h3>
-                        <p>Sign clearly within the box</p>
+                        <h3>{t('signature.digitalSignature')}</h3>
+                        <p>{t('signature.signWithinBox')}</p>
                     </div>
                     <button className="close-btn" onClick={onClose}><X size={20}/></button>
                 </header>
 
                 <div className="modal-tabs">
                     <button className={mode === 'draw' ? 'active' : ''} onClick={() => setMode('draw')}>
-                        <Pencil size={16}/> Draw
+                        <Pencil size={16}/> {t('signature.draw')}
                     </button>
                     <button className={mode === 'upload' ? 'active' : ''} onClick={() => setMode('upload')}>
-                        <Upload size={16}/> Upload
+                        <Upload size={16}/> {t('signature.upload')}
                     </button>
                 </div>
 
@@ -113,7 +116,7 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                                 canvasProps={{ className: 'sig-canvas' }}
                             />
                             <button className="clear-link" onClick={handleClear}>
-                                <Trash2 size={14}/> Clear
+                                <Trash2 size={14}/> {t('signature.clear')}
                             </button>
                         </div>
                     ) : (
@@ -121,12 +124,12 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                             {uploadedImage ? (
                                 <div className="preview-wrap">
                                     <img src={uploadedImage} alt="Uploaded" />
-                                    <button className="clear-link" onClick={handleClear}>Remove</button>
+                                    <button className="clear-link" onClick={handleClear}>{t('signature.remove')}</button>
                                 </div>
                             ) : (
                                 <label className="upload-dropzone">
                                     <Upload size={32} />
-                                    <span>Upload Image (PNG)</span>
+                                    <span>{t('signature.uploadImagePNG')}</span>
                                     <input type="file" hidden onChange={handleFileUpload} accept="image/*" />
                                 </label>
                             )}
@@ -136,11 +139,11 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
                 <footer className="modal-footer">
                     <div className="security-tag">
-                        <ShieldCheck size={14} /> HOMI Secure e-Sign
+                        <ShieldCheck size={14} /> {t('signature.secureESign')}
                     </div>
                     <div className="footer-actions">
-                        <button className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button className="btn-primary" onClick={handleSave}>Confirm Signature</button>
+                        <button className="btn-secondary" onClick={onClose}>{t('signature.cancel')}</button>
+                        <button className="btn-primary" onClick={handleSave}>{t('signature.confirmSignature')}</button>
                     </div>
                 </footer>
             </div>

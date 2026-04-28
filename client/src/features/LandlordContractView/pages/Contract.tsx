@@ -38,9 +38,21 @@ export interface LeaseContract {
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
     }>;
+    landlordSignature?: string;
+    tenantSignature?: string;
+    tenantNationalId?: string;
+    landlordAddress?: string;
+    tenantAddress?: string;
+    permittedUse?: string;
+    rightToEnter?: string;
+    noticePeriod?: string;
+    leaseId?: string;
 }
 
+import { useTranslation } from 'react-i18next';
+
 const LandlordContract: React.FC = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const [selectedContract, setSelectedContract] = useState<LeaseContract | null>(null);
@@ -82,6 +94,9 @@ const LandlordContract: React.FC = () => {
         propertyRegistrationNumber: contract.propertyRegistrationNumber || '',
         createdAt: contract.createdAt,
         maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
+        landlordSignature: contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined, // Assuming a convention if not explicitly in API yet
+        tenantSignature: contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined,
+        tenantNationalId: contract.tenantNationalId || '',
     });
     };
 
@@ -105,10 +120,10 @@ const LandlordContract: React.FC = () => {
 
     const getStatusInfo = (status: LeaseContract['status']) => {
         const map = {
-            PENDING_LANDLORD: { label: 'Pending Signature', color: 'blue' },
-            PENDING_TENANT: { label: 'Pending Tenant', color: 'yellow' },
-            ACTIVE: { label: 'Active Lease', color: 'green' },
-            EXPIRED: { label: 'Expired', color: 'gray' },
+            PENDING_LANDLORD: { label: t('landlordContract.pendingSignature'), color: 'blue' },
+            PENDING_TENANT: { label: t('landlordContract.pendingTenant'), color: 'yellow' },
+            ACTIVE: { label: t('landlordContract.activeLease'), color: 'green' },
+            EXPIRED: { label: t('landlordContract.expired'), color: 'gray' },
         };
         return map[status] || { label: 'Unknown', color: 'gray' };
     };
@@ -121,11 +136,11 @@ const LandlordContract: React.FC = () => {
                 <main className="landlord-contract-hub">
                     <div className="landlord-hub-header">
                         <div>
-                            <h1>Property Management</h1>
-                            <p>Manage legal agreements for your rental portfolio.</p>
+                            <h1>{t('landlordContract.pageTitle')}</h1>
+                            <p>{t('landlordContract.pageSubtitle')}</p>
                         </div>
                         {hasContracts && (
-                            <button className="btn-primary"><Plus size={18}/> New Agreement</button>
+                            <button className="btn-primary"><Plus size={18}/> {t('landlordContract.newAgreement')}</button>
                         )}
                     </div>
 
@@ -144,16 +159,16 @@ const LandlordContract: React.FC = () => {
                                         <h3>{contract.property}</h3>
                                         <div className="card-meta">
                                             <div className="meta-item"><Building2 size={14}/> {contract.duration}</div>
-                                            <div className="meta-item"><Clock size={14}/> Starts {contract.startDate}</div>
+                                            <div className="meta-item"><Clock size={14}/> {t('landlordContract.starts')} {contract.startDate}</div>
                                         </div>
                                     </div>
                                     <div className="card-footer">
                                         <div className="price-info">
-                                            <span className="label">Monthly Revenue</span>
+                                            <span className="label">{t('landlordContract.monthlyRevenue')}</span>
                                             <span className="value">${contract.amount}</span>
                                         </div>
                                         <button className="btn-view-contract" onClick={() => setSelectedContract(contract)}>
-                                            {contract.status === 'PENDING_LANDLORD' ? 'Manage' : 'View'} <ChevronRight size={16}/>
+                                            {contract.status === 'PENDING_LANDLORD' ? t('landlordContract.manage') : t('landlordContract.view')} <ChevronRight size={16}/>
                                         </button>
                                     </div>
                                 </div>
@@ -166,14 +181,14 @@ const LandlordContract: React.FC = () => {
                             borderRadius: '14px', border: '1px dashed var(--saas-border-hover)' 
                         }}>
                             <FileText size={48} color="var(--saas-text-muted)" style={{ margin: '0 auto 16px' }} />
-                            <h2 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--saas-text-main)' }}>No Active Agreements</h2>
-                            <p style={{ color: 'var(--saas-text-muted)', marginBottom: '24px' }}>You don't have any lease contracts in your portfolio yet.</p>
+                            <h2 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--saas-text-main)' }}>{t('landlordContract.noActiveAgreements')}</h2>
+                            <p style={{ color: 'var(--saas-text-muted)', marginBottom: '24px' }}>{t('landlordContract.noContractsText')}</p>
                             <button 
                                 className="btn-primary" 
                                 style={{ margin: '0 auto' }} 
                                 onClick={() => navigate('/rental-requests')}
                             >
-                                View Rental Requests
+                                {t('landlordContract.viewRentalRequests')}
                             </button>
                         </div>
                     )}

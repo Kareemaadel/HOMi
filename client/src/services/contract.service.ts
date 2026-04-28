@@ -228,6 +228,8 @@ export interface LandlordContract {
     property?: ContractProperty;
     propertySpecifications?: ContractPropertySpecifications | null;
     maintenanceResponsibilities?: ContractMaintenanceResponsibility[];
+    landlordSignature?: string;
+    tenantSignature?: string;
 }
 
 export interface VerificationSummary {

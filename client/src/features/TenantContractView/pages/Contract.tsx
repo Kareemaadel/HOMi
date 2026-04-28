@@ -40,9 +40,20 @@ export interface LeaseContract {
         area: string;
         responsible_party: 'LANDLORD' | 'TENANT';
     }>;
+    landlordSignature?: string;
+    tenantSignature?: string;
+    landlordNationalId?: string;
+    landlordAddress?: string;
+    tenantAddress?: string;
+    permittedUse?: string;
+    rightToEnter?: string;
+    noticePeriod?: string;
 }
 
+import { useTranslation } from 'react-i18next';
+
 const Contract: React.FC = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [selectedContract, setSelectedContract] = useState<LeaseContract | null>(null);
     const [contracts, setContracts] = useState<LeaseContract[]>([]);
@@ -84,6 +95,9 @@ const Contract: React.FC = () => {
         tenantEmergencyContactName: contract.tenantEmergencyContactName || '',
         tenantEmergencyPhone: contract.tenantEmergencyPhone || '',
         maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
+        landlordSignature: contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined,
+        tenantSignature: contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined,
+        landlordNationalId: contract.landlordNationalId || '',
     });
 
     const fetchContracts = useCallback(async () => {
@@ -114,10 +128,10 @@ const Contract: React.FC = () => {
 
     const getStatusInfo = (status: ContractStatus) => {
         const map = {
-            PENDING_TENANT: { label: 'Pending Signature', color: 'blue' },
-            PENDING_PAYMENT: { label: 'Pending Payment', color: 'yellow' },
-            ACTIVE: { label: 'Active Lease', color: 'green' },
-            EXPIRED: { label: 'Lease Ended', color: 'gray' },
+            PENDING_TENANT: { label: t('tenantContract.pendingSignature'), color: 'blue' },
+            PENDING_PAYMENT: { label: t('tenantContract.pendingPayment'), color: 'yellow' },
+            ACTIVE: { label: t('tenantContract.activeLease'), color: 'green' },
+            EXPIRED: { label: t('tenantContract.leaseEnded'), color: 'gray' },
         };
         return map[status];
     };
@@ -130,11 +144,11 @@ const Contract: React.FC = () => {
                 <main className="tenant-contract-hub">
                     <div className="tenant-contract-header">
                         <div>
-                            <h1>Lease Agreements</h1>
-                            <p>Track, sign, and manage your property contracts.</p>
+                            <h1>{t('tenantContract.pageTitle')}</h1>
+                            <p>{t('tenantContract.pageSubtitle')}</p>
                         </div>
                         {hasContracts && (
-                            <button className="btn-primary"><Plus size={18}/> Browse Properties</button>
+                            <button className="btn-primary"><Plus size={18}/> {t('tenantContract.browseProperties')}</button>
                         )}
                     </div>
 
@@ -153,11 +167,11 @@ const Contract: React.FC = () => {
                                         <h3>{contract.property}</h3>
                                         <div className="tenant-card-meta">
                                             <div className="meta-item"><Building2 size={14}/> {contract.duration}</div>
-                                            <div className="meta-item"><Clock size={14}/> Starts {contract.startDate}</div>
+                                            <div className="meta-item"><Clock size={14}/> {t('tenantContract.starts')} {contract.startDate}</div>
                                         </div>
                                         <div className="tenant-card-footer">
                                             <div className="price-info">
-                                                <span className="label">Monthly Rent</span>
+                                                <span className="label">{t('tenantContract.monthlyRent')}</span>
                                                 <span className="value">${contract.amount}</span>
                                             </div>
                                             <button 
@@ -173,10 +187,10 @@ const Contract: React.FC = () => {
                                                 }}
                                             >
                                                 {contract.status === 'PENDING_PAYMENT'
-                                                    ? 'Pay Now'
+                                                    ? t('tenantContract.payNow')
                                                     : contract.status === 'EXPIRED'
-                                                        ? 'Settle Dues'
-                                                        : 'View Details'}
+                                                        ? t('tenantContract.settleDues')
+                                                        : t('tenantContract.viewDetails')}
                                                 <ChevronRight size={16}/>
                                             </button>
                                         </div>
@@ -191,14 +205,14 @@ const Contract: React.FC = () => {
                             borderRadius: '14px', border: '1px dashed var(--saas-border-hover)' 
                         }}>
                             <FileText size={48} color="var(--saas-text-muted)" style={{ margin: '0 auto 16px' }} />
-                            <h2 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--saas-text-main)' }}>No Lease Agreements Yet</h2>
-                            <p style={{ color: 'var(--saas-text-muted)', marginBottom: '24px' }}>It looks like you don't have any active contracts. Let's check your sent requests!</p>
+                            <h2 style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--saas-text-main)' }}>{t('tenantContract.noLeaseAgreements')}</h2>
+                            <p style={{ color: 'var(--saas-text-muted)', marginBottom: '24px' }}>{t('tenantContract.noContractsText')}</p>
                             <button 
                                 className="btn-primary" 
                                 style={{ margin: '0 auto' }} 
                                 onClick={() => navigate('/sent-requests')}
                             >
-                                View Sent Requests
+                                {t('tenantContract.viewSentRequests')}
                             </button>
                         </div>
                     )}

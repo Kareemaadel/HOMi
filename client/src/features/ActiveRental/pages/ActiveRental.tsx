@@ -246,6 +246,7 @@ const ActiveRental: React.FC = () => {
             image: resolvedImage,
             propertyType: propertyDetails?.type || selectedContract.property?.type || 'Apartment',
             houseRules: propertyDetails?.houseRules?.map((rule) => rule.name) ?? [],
+            //monthlyRent: Number(selectedContract.rentAmount ?? propertyDetails?.monthlyPrice ?? selectedContract.property?.monthlyPrice ?? 0),
         };
     }, [propertyDetails, selectedContract]);
 
@@ -285,50 +286,50 @@ const ActiveRental: React.FC = () => {
                     <QuickActions />
 
                     {!isLoading && rentalData && (
-                    <>
-                    <div className="active-rental-content">
-                        <section className="main-rental-info">
-                            <DetailedRentCard rental={rentalData} />
-                            <MaintenanceStatus contract={selectedContract} />
-                        </section>
+                        <>
+                            <div className="active-rental-content">
+                                <section className="main-rental-info">
+                                    <DetailedRentCard rental={rentalData} contract={selectedContract} />
+                                    <MaintenanceStatus contract={selectedContract} />
+                                </section>
 
-                        <aside className="payment-sidebar">
-                            <UpcomingPayment
-                                amount={rentalData.monthlyRent}
-                                dueDate={dueDateLabel}
-                                dueInLabel={dueInLabel}
-                                dueTone={dueTone}
-                                outstandingInstallments={outstandingInstallments}
-                                estimatedLateFee={estimatedLateFee}
-                                totalDue={totalDueNow}
-                                onPayNow={handlePayNow}
-                                onTopUp={() => navigate('/tenant-payment?tab=topup')}
-                                isPaying={isPayingRent}
-                                isCurrentCyclePaid={outstandingInstallments <= 0}
-                                isInArrears={isInArrears}
-                            />
-                            
-                            <div className="support-card">
-                                <h4>Need Help?</h4>
-                                <p>Contact our 24/7 support line for urgent property issues.</p>
-                                <button className="secondary-btn">Contact Support</button>
-                            </div>
+                                <aside className="payment-sidebar">
+                                    <UpcomingPayment
+                                        amount={rentalData.monthlyRent}
+                                        dueDate={dueDateLabel}
+                                        dueInLabel={dueInLabel}
+                                        dueTone={dueTone}
+                                        outstandingInstallments={outstandingInstallments}
+                                        estimatedLateFee={estimatedLateFee}
+                                        totalDue={totalDueNow}
+                                        onPayNow={handlePayNow}
+                                        onTopUp={() => navigate('/tenant-payment?tab=topup')}
+                                        isPaying={isPayingRent}
+                                        isCurrentCyclePaid={outstandingInstallments <= 0}
+                                        isInArrears={isInArrears}
+                                    />
 
-                            <div className="cancel-rental-card">
-                                <h4>Terminate Lease</h4>
-                                <p>Review terms or initiate the move-out process early.</p>
-                                <button className="cancel-btn">Cancel Rental</button>
+                                    <div className="support-card">
+                                        <h4>Need Help?</h4>
+                                        <p>Contact our 24/7 support line for urgent property issues.</p>
+                                        <button className="secondary-btn">Contact Support</button>
+                                    </div>
+
+                                    <div className="cancel-rental-card">
+                                        <h4>Terminate Lease</h4>
+                                        <p>Review terms or initiate the move-out process early.</p>
+                                        <button className="cancel-btn">Cancel Rental</button>
+                                    </div>
+                                </aside>
                             </div>
-                        </aside>
-                    </div>
-                    {isInArrears && installmentsData && (
-                        <OverdueRentTable
-                            installments={installmentsData}
-                            onPayNow={handlePayNow}
-                            isPaying={isPayingRent}
-                        />
-                    )}
-                    </>
+                            {isInArrears && installmentsData && (
+                                <OverdueRentTable
+                                    installments={installmentsData}
+                                    onPayNow={handlePayNow}
+                                    isPaying={isPayingRent}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
                 <Footer />
