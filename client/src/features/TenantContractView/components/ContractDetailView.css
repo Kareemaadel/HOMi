@@ -851,3 +851,72 @@
   border: 1px solid #f1f5f9;
   border-radius: 6px;
 }
+
+/* Legal Terms Step 4 */
+.legal-term-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 10px;
+}
+
+.party-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.party {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.party strong {
+    font-size: 13px;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.party span {
+    font-size: 14px;
+    color: #475569;
+}
+
+.legal-clauses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: 8px;
+}
+
+.legal-clause {
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 16px;
+}
+
+.legal-clause:last-child {
+    border-bottom: none;
+}
+
+.legal-clause label {
+    display: block;
+    font-weight: 700;
+    font-size: 14px;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.legal-clause p {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.legal-clause strong {
+    color: #000;
+    font-weight: 600;
+}
