@@ -16,6 +16,7 @@ import Notifications from '../components/Notifications';
 import Billing from '../components/Billing';
 import Privacy from '../components/Privacy';
 import DeleteAccountSection from '../components/DeleteAccountSection';
+import LifestyleHabits from '../components/LifestyleHabits';
 
 import { FaLock, FaUserCircle } from 'react-icons/fa';
 
@@ -130,6 +131,7 @@ const Settings: React.FC = () => {
         security: <Security role={userRole} />,
         privacy: <Privacy />,
         preferences: <Preferences />,
+        lifestyle: <LifestyleHabits role={userRole} />,
         delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />
     };
 
