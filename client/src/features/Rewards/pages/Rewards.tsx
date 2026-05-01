@@ -58,7 +58,7 @@ const Rewards = () => {
                 <main className="content-area rewards-content">
                     <header className="welcome-section rewards-header">
                         <div className="welcome-text">
-                            <h1>Rewards</h1>
+                            <h1>Rewards ⭐</h1>
                             <p>Track rewards earned from rent payments and redeem them as cash value.</p>
                         </div>
                     </header>
@@ -85,7 +85,7 @@ const Rewards = () => {
                             </section>
 
                             <section className="rewards-card">
-                                <h2>Rewards logic</h2>
+                                <h2>Rewards logic ✨</h2>
                                 <div className="logic-flow">
                                     <div className="logic-step">
                                         <h4>On-time rent payment</h4>
@@ -165,7 +165,7 @@ const Rewards = () => {
                             </section>
 
                             <section className="rewards-card redeem-card">
-                                <h2>Redeem rewards</h2>
+                                <h2>Redeem rewards ⭐</h2>
                                 <div className="redeem-grid">
                                     <div>
                                         <p className="redeem-label">Earned rewards</p>
@@ -186,7 +186,7 @@ const Rewards = () => {
                                     disabled={!hasRewardsToRedeem}
                                     onClick={() => setShowRedeemConfirm(true)}
                                 >
-                                    Redeem as money
+                                    Redeem as money ✨
                                 </button>
                             </section>
                         </>
