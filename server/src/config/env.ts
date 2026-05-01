@@ -68,6 +68,10 @@ interface EnvConfig {
     PAYMOB_IFRAME_ID: number;
     PAYMOB_WALLET_IFRAME_ID: number;
     PAYMOB_HMAC_SECRET: string;
+    
+    // Gemini AI
+    GEMINI_API_KEY: string;
+    GEMINI_MODEL_NAME: string;
 }
 
 function getEnvString(key: string, defaultValue?: string): string {
@@ -163,6 +167,10 @@ export const env: EnvConfig = {
     PAYMOB_IFRAME_ID: getEnvNumber('PAYMOB_IFRAME_ID', 0),
     PAYMOB_WALLET_IFRAME_ID: getEnvNumber('PAYMOB_WALLET_IFRAME_ID', 0),
     PAYMOB_HMAC_SECRET: getEnvString('PAYMOB_HMAC_SECRET', ''),
+
+    // Gemini AI
+    GEMINI_API_KEY: getEnvString('GEMINI_API_KEY', ''),
+    GEMINI_MODEL_NAME: getEnvString('GEMINI_MODEL_NAME', 'gemini-2.0-flash'),
 };
 
 export default env;
