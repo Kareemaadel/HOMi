@@ -1,7 +1,7 @@
 export default {
     app: {
         nodeEnv: 'development',
-        testDateEnabled: true,
+        testDateEnabled: false,
     },
     security: {
         corsOrigins: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
