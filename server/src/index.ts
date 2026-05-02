@@ -7,8 +7,27 @@ import { seedHabits } from './seeds/habits.seed.js';
 import { seedAdminAccount } from './seeds/admin.seed.js';
 import app from './app.js';
 import { initSocketServer } from './shared/realtime/socket.js';
+import { connectRedis, disconnectRedis } from './shared/infrastructure/redis.client.js';
+
+const registerGracefulShutdown = (httpServer: ReturnType<typeof createServer>): void => {
+    const shutdown = async (signal: string) => {
+        console.log(`\n${signal} received. Closing server...`);
+        httpServer.close(async () => {
+            await disconnectRedis();
+            process.exit(0);
+        });
+    };
+
+    process.on('SIGINT', () => {
+        void shutdown('SIGINT');
+    });
+    process.on('SIGTERM', () => {
+        void shutdown('SIGTERM');
+    });
+};
 
 try {
+    await connectRedis();
     await testConnection();
     await syncDatabase(false);
     await seedAmenities();
@@ -18,6 +37,7 @@ try {
 
     const httpServer = createServer(app);
     initSocketServer(httpServer);
+    registerGracefulShutdown(httpServer);
 
     httpServer.listen(env.PORT, () => {
         console.log(`

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { propertyService, PropertyError } from '../services/property.service.js';
+import { cacheService } from '../../../shared/services/cache.service.js';
 import type {
     CreatePropertyRequest,
     UpdatePropertyRequest,
@@ -11,6 +12,10 @@ import type {
  * Handles HTTP request/response for property endpoints
  */
 class PropertyController {
+    private async invalidatePropertyListCache(): Promise<void> {
+        await cacheService.deleteByPattern('properties:list:*');
+    }
+
     /**
      * POST /api/properties
      * Create a new property
@@ -22,6 +27,7 @@ class PropertyController {
             const input: CreatePropertyRequest = req.body;
 
             const property = await propertyService.createProperty(landlordId, input);
+            await this.invalidatePropertyListCache();
 
             res.status(201).json({
                 success: true,
@@ -104,6 +110,7 @@ class PropertyController {
             const input: UpdatePropertyRequest = req.body;
 
             const property = await propertyService.updateProperty(id as string, landlordId, input);
+            await this.invalidatePropertyListCache();
 
             res.status(200).json({
                 success: true,
@@ -126,6 +133,7 @@ class PropertyController {
             const landlordId = (req as any).user.userId;
 
             const result = await propertyService.deleteProperty(id as string, landlordId);
+            await this.invalidatePropertyListCache();
 
             res.status(200).json(result);
         } catch (error) {
@@ -144,6 +152,7 @@ class PropertyController {
             const { reason, details } = req.body ?? {};
 
             const report = await propertyService.reportProperty(id as string, reporterId, { reason, details });
+            await this.invalidatePropertyListCache();
 
             res.status(201).json({
                 success: true,

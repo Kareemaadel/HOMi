@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import swaggerSpec from './config/swagger.js';
+import { globalRateLimiter } from './shared/middleware/rate-limit.middleware.js';
+import { isRedisReady } from './shared/infrastructure/redis.client.js';
 import { AuthError } from './modules/auth/services/auth.service.js';
 import { PropertyError } from './modules/properties/services/property.service.js';
 import { RentalRequestError } from './modules/rental-requests/services/rental-request.service.js';
@@ -60,13 +62,12 @@ if (env.NODE_ENV === 'production') {
     app.use(helmet({ ...helmetOptions, contentSecurityPolicy: false }));
 }
 app.use(cors({
-    origin: env.NODE_ENV === 'production'
-        ? ['https://homi.app']
-        : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+    origin: env.CORS_ORIGINS,
     credentials: true,
 }));
 
 app.use(cookieParser());
+app.use(globalRateLimiter);
 
 // ======================
 // Body Parsing
@@ -99,6 +100,10 @@ app.get('/health', (_req: Request, res: Response) => {
         message: 'HOMi API is running',
         timestamp: new Date().toISOString(),
         environment: env.NODE_ENV,
+        redis: {
+            enabled: env.REDIS_ENABLED,
+            ready: isRedisReady(),
+        },
     });
 });
 
