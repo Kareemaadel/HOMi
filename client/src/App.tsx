@@ -13,6 +13,7 @@ import BrowseProperties from "./features/BrowseProperties/pages/BrowseProperties
 import ActiveRental from "./features/ActiveRental/pages/ActiveRental";
 import Settings from "./features/Settings/pages/Settings";
 import Messages from "./features/Messages/pages/Messages";
+import RoommateMatching from "./features/RoommateMatching/pages/RoommateMatching";
 import Balance from "./features/Balance/pages/Balance";
 import PrePayment from "./features/PrePayment/pages/PrePayment";
 import PaymobVerify from "./features/PrePayment/pages/PaymobVerify";
@@ -36,6 +37,7 @@ import AdminUserManagement from "./features/admin/pages/AdminUserManagement";
 import AdminSupportInbox from "./features/admin/pages/AdminSupportInbox";
 import AdminMaintenanceApprovals from "./features/admin/pages/AdminMaintenanceApprovals";
 import AdminMaintainers from "./features/admin/pages/AdminMaintainers";
+import AdminRoommateMatching from "./features/admin/pages/AdminRoommateMatching";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -84,12 +86,12 @@ function App() {
           element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Rewards" description="Rewards is coming soon." /></AuthGuard>}
         />
         <Route
-          path="/roommate-matching"
-          element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Roommate Matching" description="Roommate matching is coming soon." /></AuthGuard>}
+          path="/matching"
+          element={<AuthGuard allowedRoles={['TENANT']}><RoommateMatching /></AuthGuard>}
         />
         <Route
-          path="/matching"
-          element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Roommate Matching" description="Roommate matching is coming soon." /></AuthGuard>}
+          path="/roommate-matching"
+          element={<AuthGuard allowedRoles={['TENANT']}><RoommateMatching /></AuthGuard>}
         />
         <Route path="/tenant-maintenance" element={<AuthGuard allowedRoles={['TENANT']}><TenantMaintenance /></AuthGuard>} />
 
@@ -144,6 +146,7 @@ function App() {
         <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
         <Route path="/admin/maintenance-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceApprovals /></AuthGuard>} />
         <Route path="/admin/maintainers" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintainers /></AuthGuard>} />
+        <Route path="/admin/roommate-matching" element={<AuthGuard allowedRoles={['ADMIN']}><AdminRoommateMatching /></AuthGuard>} />
         <Route path="/admin/maintenance-conflicts" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceConflicts /></AuthGuard>} />
 
         {/* Auth Routes — public */}

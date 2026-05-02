@@ -26,6 +26,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ role }) => {
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+
     const originalFirstName = profile?.firstName ?? '';
     const originalLastName = profile?.lastName ?? '';
     const originalPhone = profile?.phoneNumber ?? '';
@@ -381,6 +382,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ role }) => {
                         </div>
                     )}
                 </div>
+
 
                 <button
                     className="prime-save-button"

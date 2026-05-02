@@ -14,6 +14,7 @@ import { SavedPropertiesError } from './modules/saved-properties/services/saved-
 import { MessageError } from './modules/messages/services/message.service.js';
 import { AdminError } from './modules/admin/services/admin.service.js';
 import { MaintenanceError } from './modules/maintenance/services/maintenance.service.js';
+import { RoommateMatchingError } from './modules/roommate-matching/services/roommate-matching.service.js';
 
 // Import routes
 import authRoutes from './modules/auth/routes/auth.routes.js';
@@ -26,6 +27,7 @@ import messageRoutes from './modules/messages/routes/message.routes.js';
 import adminRoutes from './modules/admin/routes/admin.routes.js';
 import maintenanceRoutes from './modules/maintenance/routes/maintenance.routes.js';
 import notificationRoutes from './modules/notifications/routes/notification.routes.js';
+import roommateMatchingRoutes from './modules/roommate-matching/routes/roommate-matching.routes.js';
 
 // Import models to register them
 import './modules/auth/models/index.js';
@@ -38,6 +40,7 @@ import './modules/messages/models/index.js';
 import './modules/admin/models/ActivityLog.js';
 import './modules/maintenance/models/index.js';
 import './modules/notifications/models/Notification.js';
+import './modules/roommate-matching/models/index.js';
 
 // Create Express app
 const app = express();
@@ -112,6 +115,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/roommate-matching', roommateMatchingRoutes);
 
 // ======================
 // 404 Handler
@@ -216,6 +220,15 @@ app.use((
     }
 
     if (err instanceof MaintenanceError) {
+        res.status(err.statusCode).json({
+            success: false,
+            message: err.message,
+            code: err.code,
+        });
+        return;
+    }
+
+    if (err instanceof RoommateMatchingError) {
         res.status(err.statusCode).json({
             success: false,
             message: err.message,

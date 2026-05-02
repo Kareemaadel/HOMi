@@ -3,7 +3,7 @@ import React from 'react';
 import './SettingsSidebar.css';
 import { 
   FaUser, FaShieldAlt, FaCog, FaTrashAlt, 
-  FaBell, FaCreditCard, FaUserShield 
+  FaBell, FaCreditCard, FaUserShield, FaMagic
 } from 'react-icons/fa';
 
 interface SettingsSidebarProps {
@@ -20,11 +20,14 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeTab, setActiveT
         { id: 'notifications', label: 'Notifications', icon: <FaBell /> }, // NEW
         { id: 'security', label: 'Security', icon: <FaShieldAlt /> },
         { id: 'privacy', label: 'Privacy & Data', icon: <FaUserShield /> }, // NEW
+        { id: 'lifestyle', label: 'Lifestyle Habits', icon: <FaMagic />, tenantOnly: true },
         { id: 'preferences', label: 'Preferences', icon: <FaCog /> },
     ];
-    const visibleItems = isMaintainer
-        ? menuItems.filter((item) => item.id !== 'billing' && item.id !== 'privacy')
-        : menuItems;
+    const visibleItems = menuItems.filter((item) => {
+        if (isMaintainer && (item.id === 'billing' || item.id === 'privacy')) return false;
+        if (item.tenantOnly && role !== 'TENANT') return false;
+        return true;
+    });
 
     return (
         <aside className="internal-settings-sidebar">
