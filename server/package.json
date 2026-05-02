@@ -4,6 +4,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "predev": "kill-port 3000",
     "dev": "tsx watch src/index.ts",
     "dev:start": "tsx src/index.ts",
     "seed:amenities": "tsx src/seeds/run-amenities.ts",
@@ -26,6 +27,7 @@
     "@types/sequelize": "^4.28.20",
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "^4.0.18",
+    "kill-port": "^2.0.1",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",

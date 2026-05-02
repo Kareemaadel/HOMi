@@ -15,15 +15,14 @@ export default {
         },
     },
     scalability: {
-        // ✅ Upstash Redis is active in production.
-        // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in the prod environment.
+        
         redis: {
             enabled: true,
         },
         rateLimit: {
             enabled: true,
             windowSeconds: 600,
-            maxRequests: 100,
+            maxRequests: 50, 
         },
         cache: {
             enabled: true,

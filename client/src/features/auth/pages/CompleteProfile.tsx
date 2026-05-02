@@ -894,25 +894,7 @@ const CompleteProfile: React.FC = () => {
                             </button>
                         </div>
 
-                        <div style={{ textAlign: 'center', marginTop: 16 }}>
-                            <button
-                                type="button"
-                                onClick={handleStep3Skip}
-                                disabled={loading}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: '#94a3b8',
-                                    fontSize: 13,
-                                    fontWeight: 500,
-                                    textDecoration: 'underline',
-                                    textUnderlineOffset: 3,
-                                }}
-                            >
-                                Skip for now
-                            </button>
-                        </div>
+
                     </div>
                 )}
 
@@ -1014,25 +996,7 @@ const CompleteProfile: React.FC = () => {
                             </button>
                         </div>
 
-                        <div style={{ textAlign: 'center', marginTop: 16 }}>
-                            <button
-                                type="button"
-                                onClick={handleStep3Skip}
-                                disabled={loading}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: '#94a3b8',
-                                    fontSize: 13,
-                                    fontWeight: 500,
-                                    textDecoration: 'underline',
-                                    textUnderlineOffset: 3,
-                                }}
-                            >
-                                Skip for now
-                            </button>
-                        </div>
+
                     </div>
                 )}
             </div>

@@ -182,6 +182,16 @@ const EmailVerificationPage: React.FC = () => {
         });
     };
 
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+        } catch {
+            /* ignore */
+        } finally {
+            navigate('/auth', { replace: true });
+        }
+    };
+
     if (verifyPhase === 'loading') {
         return (
             <div className="email-verify-wrapper">
@@ -279,6 +289,15 @@ const EmailVerificationPage: React.FC = () => {
                             {resendError}
                         </p>
                     )}
+                    <div style={{ marginTop: 16, borderTop: '1px solid #e2e8f0', paddingTop: 16, textAlign: 'center' }}>
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 13, fontWeight: 500, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
+                        >
+                            Sign out
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -352,6 +371,15 @@ const EmailVerificationPage: React.FC = () => {
                 <p style={{ marginTop: 24, fontSize: 12, color: '#475569' }}>
                     Didn&apos;t get the email? Check your spam folder or make sure you used the right address.
                 </p>
+                <div style={{ marginTop: 16, borderTop: '1px solid #e2e8f0', paddingTop: 16, textAlign: 'center' }}>
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 13, fontWeight: 500, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
+                    >
+                        Sign out
+                    </button>
+                </div>
             </div>
         </div>
     );

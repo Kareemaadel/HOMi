@@ -158,7 +158,8 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                               'messages', 'payment_methods', 'notifications',
                               'maintenance_requests', 'maintenance_job_applications',
                               'maintenance_locations', 'maintenance_conflicts',
-                              'maintenance_ratings', 'landlord_maintenance_charges'
+                              'maintenance_ratings', 'landlord_maintenance_charges',
+                              'user_passkeys', 'webauthn_challenges'
                           )
                     LOOP
                         EXECUTE format(

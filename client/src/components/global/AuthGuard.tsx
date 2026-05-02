@@ -60,6 +60,14 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
         return <Navigate to="/complete-profile" replace />;
     }
 
+    if (isAuthenticated && cached?.user && !cached.user.emailVerified) {
+        return <Navigate to="/verify-email" replace />;
+    }
+
+    if (isAuthenticated && cached?.profile && !cached.profile.isVerificationComplete && (role === 'LANDLORD' || role === 'TENANT')) {
+        return <Navigate to="/complete-profile" replace />;
+    }
+
     return (
         <>
             {/* Always render children so the page layout is visible behind the modal */}
