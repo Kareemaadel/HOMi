@@ -8,10 +8,10 @@ const getDatabaseConfig = (): Options => {
             dialect: 'postgres',
             logging: false,
             pool: {
-                max: 10,
-                min: 2,
-                acquire: 30000,
-                idle: 30000,
+                max: env.DB_POOL_MAX,
+                min: env.DB_POOL_MIN,
+                acquire: env.DB_POOL_ACQUIRE_MS,
+                idle: env.DB_POOL_IDLE_MS,
             },
             define: {
                 timestamps: true,
@@ -38,10 +38,10 @@ const getDatabaseConfig = (): Options => {
         username: env.DB_USER,
         password: env.DB_PASSWORD,
         pool: {
-            max: 10,
-            min: 2,
-            acquire: 30000,
-            idle: 30000,
+            max: env.DB_POOL_MAX,
+            min: env.DB_POOL_MIN,
+            acquire: env.DB_POOL_ACQUIRE_MS,
+            idle: env.DB_POOL_IDLE_MS,
         },
         define: {
             timestamps: true,

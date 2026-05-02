@@ -20,6 +20,7 @@ import type {
 } from '../interfaces/auth.interfaces.js';
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/server';
 import { webauthnService } from '../services/webauthn.service.js';
+import { env } from '../../../config/env.js';
 
 /**
  * Authentication Controller
@@ -387,7 +388,7 @@ export class AuthController {
         </div>
         <h1>Email Verified! 🎉</h1>
         <p>${result.message}</p>
-        <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" class="button">Continue to HOMi</a>
+        <a href="${env.CLIENT_URL}" class="button">Continue to HOMi</a>
     </div>
 </body>
 </html>
