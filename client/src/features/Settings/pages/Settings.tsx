@@ -7,6 +7,7 @@ import MaintenanceSideBar from '../../Maintenance/MaintenanceProvider/SideBar/Ma
 import Footer from '../../../components/global/footer';
 import SettingsSidebar from '../components/SettingsSidebar';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/auth.service';
 
 // Component Imports
 import MyProfile from '../components/MyProfile';
@@ -115,6 +116,9 @@ const Settings: React.FC = () => {
         return <SignInRequired />;
     }
 
+    const cached = authService.getCurrentUser();
+    const isVerificationComplete = cached?.profile?.isVerificationComplete ?? true;
+
     // Pick the correct sidebar based on the stored user role
     const storedUser = localStorage.getItem('user');
     const userRole = storedUser ? JSON.parse(storedUser).role : null;
@@ -143,6 +147,36 @@ const Settings: React.FC = () => {
                 <Header />
                 
                 <main className="settings-main-area">
+                    {!isVerificationComplete && (
+                        <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', color: '#b45309', padding: '12px 24px', borderRadius: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontWeight: 500, fontSize: '0.95rem' }}>
+                                Please complete your profile to access all HOMi features.
+                            </div>
+                            <button
+                                onClick={() => {
+                                    navigate('/complete-profile', { state: { step: 3, fromSettings: true, role: userRole } });
+                                }}
+                                style={{ background: '#d97706', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                            >
+                                Complete Profile
+                            </button>
+                        </div>
+                    )}
+
+                    {isVerificationComplete && (userRole === 'TENANT' || userRole === 'LANDLORD') && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', paddingRight: '4px' }}>
+                            <button
+                                onClick={() => {
+                                    navigate('/complete-profile', { state: { step: 3, fromSettings: true, role: userRole } });
+                                }}
+                                style={{ background: 'transparent', color: '#6366f1', border: '1px solid #c7d2fe', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s' }}
+                                onMouseOver={(e) => { e.currentTarget.style.background = '#e0e7ff'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                Update {userRole === 'LANDLORD' ? 'Business Profile' : 'Rental Preferences'}
+                            </button>
+                        </div>
+                    )}
 
                     <div className="settings-glass-card">
                         <SettingsSidebar 

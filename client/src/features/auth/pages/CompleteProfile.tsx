@@ -886,12 +886,17 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-back" onClick={goBack} disabled={loading}>
-                                <ArrowLeft size={18} /> Back
+                            <button className="btn-skip" onClick={handleStep3Skip} disabled={loading}>
+                                Skip for now
                             </button>
-                            <button className="btn-finish" onClick={() => void submitTenantProfile()} disabled={loading}>
-                                {loading ? 'Saving…' : 'Complete Profile'}
-                            </button>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button className="btn-back" onClick={goBack} disabled={loading}>
+                                    <ArrowLeft size={18} /> Back
+                                </button>
+                                <button className="btn-finish" onClick={() => void submitTenantProfile()} disabled={loading}>
+                                    {loading ? 'Saving…' : 'Complete Profile'}
+                                </button>
+                            </div>
                         </div>
 
 
@@ -988,12 +993,17 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-back" onClick={goBack} disabled={loading}>
-                                <ArrowLeft size={18} /> Back
+                            <button className="btn-skip" onClick={handleStep3Skip} disabled={loading}>
+                                Skip for now
                             </button>
-                            <button className="btn-finish" onClick={() => void submitLandlordProfile()} disabled={loading}>
-                                {loading ? 'Saving…' : 'Finish Setup'}
-                            </button>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button className="btn-back" onClick={goBack} disabled={loading}>
+                                    <ArrowLeft size={18} /> Back
+                                </button>
+                                <button className="btn-finish" onClick={() => void submitLandlordProfile()} disabled={loading}>
+                                    {loading ? 'Saving…' : 'Finish Setup'}
+                                </button>
+                            </div>
                         </div>
 
 
