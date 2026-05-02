@@ -16,13 +16,6 @@ const formatDate = (value: string): string => {
     return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
 };
 
-const getDueLabel = (daysUntilDue: number): string => {
-    if (daysUntilDue < 0) return 'Overdue';
-    if (daysUntilDue === 0) return 'Due today';
-    if (daysUntilDue === 1) return 'Due tomorrow';
-    return `Due in ${daysUntilDue} days`;
-};
-
 const Rewards = () => {
     const [dashboardData, setDashboardData] = useState<RewardsDashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -137,30 +130,6 @@ const Rewards = () => {
                                             )}
                                         </tbody>
                                     </table>
-                                </div>
-                            </section>
-
-                            <section className="rewards-card">
-                                <div className="section-head">
-                                    <h2>Upcoming rent</h2>
-                                </div>
-                                <div className="upcoming-list">
-                                    {dashboardData.upcomingRents.length === 0 ? (
-                                        <p className="rewards-muted">No upcoming rent found for active leases.</p>
-                                    ) : (
-                                        dashboardData.upcomingRents.map((entry) => (
-                                            <article className="upcoming-item" key={entry.id}>
-                                                <div>
-                                                    <h4>{formatDate(entry.dueDate)}</h4>
-                                                    <p className="rewards-muted">{getDueLabel(entry.daysUntilDue)}</p>
-                                                </div>
-                                                <div>
-                                                    <h4>{formatMoney(entry.amountDue)}</h4>
-                                                    <p className="rewards-muted">Expected reward: {formatMoney(entry.expectedRewards)}</p>
-                                                </div>
-                                            </article>
-                                        ))
-                                    )}
                                 </div>
                             </section>
 
