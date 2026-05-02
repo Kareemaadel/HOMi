@@ -3,20 +3,12 @@ const toNumber = (value: unknown, fallback: number): number => {
     return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const toBoolean = (value: unknown, fallback: boolean): boolean => {
-    if (typeof value !== 'string') return fallback;
-    const normalized = value.trim().toLowerCase();
-    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
-    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
-    return fallback;
-};
-
 export default {
     app: {
         nodeEnv: process.env.NODE_ENV ?? 'development',
         port: toNumber(process.env.PORT, 3000),
         clientUrl: process.env.CLIENT_URL ?? 'http://localhost:5173',
-        testDateEnabled: toBoolean(process.env.TEST_DATE, process.env.NODE_ENV !== 'production'),
+        testDateEnabled: false,
     },
     security: {
         corsOrigins: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
@@ -77,21 +69,21 @@ export default {
     },
     scalability: {
         redis: {
-            enabled: toBoolean(process.env.REDIS_ENABLED, true),
+            enabled: process.env.REDIS_ENABLED !== 'false',
             url: process.env.REDIS_URL,
             host: process.env.REDIS_HOST ?? 'localhost',
             port: toNumber(process.env.REDIS_PORT, 6379),
             username: process.env.REDIS_USERNAME,
             password: process.env.REDIS_PASSWORD,
             database: toNumber(process.env.REDIS_DB, 0),
-            tls: toBoolean(process.env.REDIS_TLS, false),
+            tls: process.env.REDIS_TLS === 'true',
             connectTimeoutMs: toNumber(process.env.REDIS_CONNECT_TIMEOUT_MS, 5000),
             commandTimeoutMs: toNumber(process.env.REDIS_COMMAND_TIMEOUT_MS, 5000),
             keyPrefix: process.env.REDIS_KEY_PREFIX ?? 'homi:',
             maxRetriesPerRequest: toNumber(process.env.REDIS_MAX_RETRIES_PER_REQUEST, 2),
         },
         rateLimit: {
-            enabled: toBoolean(process.env.RATE_LIMIT_ENABLED, true),
+            enabled: process.env.RATE_LIMIT_ENABLED !== 'false',
             windowSeconds: toNumber(process.env.RATE_LIMIT_WINDOW_SECONDS, 600),
             maxRequests: toNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 100),
             prefix: process.env.RATE_LIMIT_PREFIX ?? 'homi:ratelimit:ip',
@@ -99,7 +91,7 @@ export default {
             legacyHeaders: false,
         },
         cache: {
-            enabled: toBoolean(process.env.CACHE_ENABLED, true),
+            enabled: process.env.CACHE_ENABLED !== 'false',
             prefix: process.env.CACHE_PREFIX ?? 'homi:cache',
             defaultTtlSeconds: toNumber(process.env.CACHE_DEFAULT_TTL_SECONDS, 600),
             popularPropertiesTtlSeconds: toNumber(process.env.CACHE_POPULAR_PROPERTIES_TTL_SECONDS, 600),

@@ -11,9 +11,7 @@ const formatDateLabel = (iso: string): string => {
 };
 
 const TestingClockBadge = () => {
-    // Read directly from the Vite-injected import.meta.env so the value is
-    // baked in at build time and cannot be stale from a module-level cache.
-    const testDateEnabled = import.meta.env.VITE_TEST_DATE === 'true';
+    const testDateEnabled = import.meta.env.DEV;
 
     // Pre-populate with the real wall-clock date so the badge renders
     // immediately (before the API round-trip completes).
