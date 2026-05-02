@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { z } from 'zod';
-import defaultConfig from '../../config/default.js';
+import createDefaultConfig from '../../config/default.js';
 import developmentConfig from '../../config/development.js';
 import productionConfig from '../../config/production.js';
 
@@ -10,6 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+const defaultConfig = createDefaultConfig(process.env);
 
 const nodeEnvSchema = z.enum(['development', 'production', 'test']);
 type NodeEnvironment = z.infer<typeof nodeEnvSchema>;
