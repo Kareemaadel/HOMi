@@ -12,6 +12,11 @@ import Sidebar from '../../../components/global/Tenant/sidebar';
 import Footer from '../../../components/global/footer';
 import '../../home/pages/TenantHome.css'; // Reuse dashboard layout styles
 
+/**
+ * RoommateMatching Component
+ * Main feature page for finding roommates and apartments.
+ * Handles AI-based matching, eligibility checks, and request creation.
+ */
 const RoommateMatching: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'SEARCH_APARTMENT' | 'SEARCH_ROOMMATE'>('SEARCH_APARTMENT');
     const [eligibility, setEligibility] = useState<EligibilityResponse | null>(null);
