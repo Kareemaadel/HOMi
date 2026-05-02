@@ -1,9 +1,9 @@
-const toNumber = (value, fallback) => {
+const toNumber = (value: unknown, fallback: number): number => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const toBoolean = (value, fallback) => {
+const toBoolean = (value: unknown, fallback: boolean): boolean => {
     if (typeof value !== 'string') return fallback;
     const normalized = value.trim().toLowerCase();
     if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
