@@ -4,7 +4,7 @@ import { cacheService } from '../../../shared/services/cache.service.js';
 
 const buildQuerySignature = (query: Request['query']): string => {
     const entries = Object.entries(query)
-        .map(([key, value]) => [key, Array.isArray(value) ? value.join(',') : String(value)] as const)
+        .map(([key, value]) => [key, Array.isArray(value) ? value.join(',') : String(value)] as [string, string])
         .sort(([a], [b]) => a.localeCompare(b));
 
     return new URLSearchParams(entries).toString();

@@ -1,11 +1,22 @@
+/**
+ * rate-limit.middleware.ts
+ * ─────────────────────────────────────────────────────────────
+ * Global Express middleware that enforces the distributed
+ * sliding-window rate limit via Upstash Redis.
+ *
+ * • Disabled in development (RATE_LIMIT_ENABLED=false).
+ * • Falls back to pass-through when Upstash is unreachable.
+ * • Attaches standard RateLimit-* headers to every response.
+ */
+
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../../config/env.js';
-import { getRedisClient } from '../infrastructure/redis.client.js';
+import { checkRateLimit } from '../services/upstash-ratelimit.service.js';
 
 const getClientIp = (req: Request): string => {
     const forwardedFor = req.headers['x-forwarded-for'];
     if (typeof forwardedFor === 'string' && forwardedFor.length > 0) {
-        return forwardedFor.split(',')[0]?.trim() ?? req.ip;
+        return forwardedFor.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
     }
     return req.ip || req.socket.remoteAddress || 'unknown';
 };
@@ -20,38 +31,18 @@ export const globalRateLimiter = async (
         return;
     }
 
-    const redisClient = getRedisClient();
-    if (!redisClient) {
-        // Fail-open to keep API available if Redis is temporarily down.
-        next();
-        return;
-    }
-
     try {
-        const key = `${env.RATE_LIMIT_PREFIX}:${getClientIp(req)}`;
-        const currentCount = await redisClient.incr(key);
+        const identifier = getClientIp(req);
+        const { success, limit, remaining, reset } = await checkRateLimit(identifier);
 
-        if (currentCount === 1) {
-            await redisClient.expire(key, env.RATE_LIMIT_WINDOW_SECONDS);
-        }
-
-        const ttl = await redisClient.ttl(key);
-        const remaining = Math.max(0, env.RATE_LIMIT_MAX_REQUESTS - currentCount);
-        const resetAtEpochSeconds = Math.floor(Date.now() / 1000) + Math.max(ttl, 0);
-
+        // Attach standard RateLimit-* headers
         if (env.RATE_LIMIT_STANDARD_HEADERS) {
-            res.setHeader('RateLimit-Limit', String(env.RATE_LIMIT_MAX_REQUESTS));
+            res.setHeader('RateLimit-Limit', String(limit));
             res.setHeader('RateLimit-Remaining', String(remaining));
-            res.setHeader('RateLimit-Reset', String(resetAtEpochSeconds));
+            res.setHeader('RateLimit-Reset', String(reset));
         }
 
-        if (env.RATE_LIMIT_LEGACY_HEADERS) {
-            res.setHeader('X-RateLimit-Limit', String(env.RATE_LIMIT_MAX_REQUESTS));
-            res.setHeader('X-RateLimit-Remaining', String(remaining));
-            res.setHeader('X-RateLimit-Reset', String(resetAtEpochSeconds));
-        }
-
-        if (currentCount > env.RATE_LIMIT_MAX_REQUESTS) {
+        if (!success) {
             res.status(429).json({
                 success: false,
                 message: 'Too many requests. Please try again later.',
@@ -62,7 +53,8 @@ export const globalRateLimiter = async (
 
         next();
     } catch (error) {
-        console.error('Rate limiter error:', error);
+        // Fail-open: never block a request due to a Redis error.
+        console.error('[RateLimiter] Unexpected error — failing open:', error);
         next();
     }
 };

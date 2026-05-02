@@ -86,17 +86,9 @@ const appConfigSchema = z.object({
     scalability: z.object({
         redis: z.object({
             enabled: z.boolean(),
-            url: z.string().optional(),
-            host: z.string().min(1),
-            port: z.number().int().positive(),
-            username: z.string().optional(),
-            password: z.string().optional(),
-            database: z.number().int().nonnegative(),
-            tls: z.boolean(),
-            connectTimeoutMs: z.number().int().positive(),
-            commandTimeoutMs: z.number().int().positive(),
+            restUrl: z.string().min(1),
+            restToken: z.string().min(1),
             keyPrefix: z.string().min(1),
-            maxRetriesPerRequest: z.number().int().nonnegative(),
         }),
         rateLimit: z.object({
             enabled: z.boolean(),
@@ -111,6 +103,7 @@ const appConfigSchema = z.object({
             prefix: z.string().min(1),
             defaultTtlSeconds: z.number().int().positive(),
             popularPropertiesTtlSeconds: z.number().int().positive(),
+            sessionTtlSeconds: z.number().int().positive(),
         }),
     }),
 });
@@ -204,17 +197,9 @@ export interface EnvConfig {
     GEMINI_MODEL_NAME: string;
 
     REDIS_ENABLED: boolean;
-    REDIS_URL: string | undefined;
-    REDIS_HOST: string;
-    REDIS_PORT: number;
-    REDIS_USERNAME: string | undefined;
-    REDIS_PASSWORD: string | undefined;
-    REDIS_DB: number;
-    REDIS_TLS: boolean;
-    REDIS_CONNECT_TIMEOUT_MS: number;
-    REDIS_COMMAND_TIMEOUT_MS: number;
+    UPSTASH_REDIS_REST_URL: string;
+    UPSTASH_REDIS_REST_TOKEN: string;
     REDIS_KEY_PREFIX: string;
-    REDIS_MAX_RETRIES_PER_REQUEST: number;
 
     RATE_LIMIT_ENABLED: boolean;
     RATE_LIMIT_WINDOW_SECONDS: number;
@@ -227,6 +212,7 @@ export interface EnvConfig {
     CACHE_PREFIX: string;
     CACHE_DEFAULT_TTL_SECONDS: number;
     CACHE_POPULAR_PROPERTIES_TTL_SECONDS: number;
+    SESSION_TTL_SECONDS: number;
 }
 
 export const env: EnvConfig = {
@@ -279,17 +265,9 @@ export const env: EnvConfig = {
     GEMINI_MODEL_NAME: appConfig.gemini.modelName,
 
     REDIS_ENABLED: appConfig.scalability.redis.enabled,
-    REDIS_URL: appConfig.scalability.redis.url,
-    REDIS_HOST: appConfig.scalability.redis.host,
-    REDIS_PORT: appConfig.scalability.redis.port,
-    REDIS_USERNAME: appConfig.scalability.redis.username,
-    REDIS_PASSWORD: appConfig.scalability.redis.password,
-    REDIS_DB: appConfig.scalability.redis.database,
-    REDIS_TLS: appConfig.scalability.redis.tls,
-    REDIS_CONNECT_TIMEOUT_MS: appConfig.scalability.redis.connectTimeoutMs,
-    REDIS_COMMAND_TIMEOUT_MS: appConfig.scalability.redis.commandTimeoutMs,
+    UPSTASH_REDIS_REST_URL: appConfig.scalability.redis.restUrl,
+    UPSTASH_REDIS_REST_TOKEN: appConfig.scalability.redis.restToken,
     REDIS_KEY_PREFIX: appConfig.scalability.redis.keyPrefix,
-    REDIS_MAX_RETRIES_PER_REQUEST: appConfig.scalability.redis.maxRetriesPerRequest,
 
     RATE_LIMIT_ENABLED: appConfig.scalability.rateLimit.enabled,
     RATE_LIMIT_WINDOW_SECONDS: appConfig.scalability.rateLimit.windowSeconds,
@@ -302,6 +280,7 @@ export const env: EnvConfig = {
     CACHE_PREFIX: appConfig.scalability.cache.prefix,
     CACHE_DEFAULT_TTL_SECONDS: appConfig.scalability.cache.defaultTtlSeconds,
     CACHE_POPULAR_PROPERTIES_TTL_SECONDS: appConfig.scalability.cache.popularPropertiesTtlSeconds,
+    SESSION_TTL_SECONDS: appConfig.scalability.cache.sessionTtlSeconds,
 };
 
 export default env;

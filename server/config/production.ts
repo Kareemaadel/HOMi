@@ -15,12 +15,10 @@ export default {
         },
     },
     scalability: {
+        // ✅ Upstash Redis is active in production.
+        // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in the prod environment.
         redis: {
             enabled: true,
-            tls: true,
-            connectTimeoutMs: 3000,
-            commandTimeoutMs: 3000,
-            maxRetriesPerRequest: 3,
         },
         rateLimit: {
             enabled: true,
@@ -31,6 +29,7 @@ export default {
             enabled: true,
             defaultTtlSeconds: 900,
             popularPropertiesTtlSeconds: 600,
+            sessionTtlSeconds: 900,
         },
     },
 };

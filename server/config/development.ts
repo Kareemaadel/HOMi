@@ -7,19 +7,17 @@ export default {
         corsOrigins: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
     },
     scalability: {
+        // ⚠️  Upstash is a metered free-tier service.
+        // Keep ALL redis features OFF in development to avoid burning quota.
         redis: {
-            enabled: true,
-            tls: false,
+            enabled: false,
         },
         rateLimit: {
-            enabled: true,
-            windowSeconds: 600,
-            maxRequests: 100,
+            enabled: false,
         },
         cache: {
-            enabled: true,
-            defaultTtlSeconds: 600,
-            popularPropertiesTtlSeconds: 600,
+            enabled: false,
+            sessionTtlSeconds: 900,
         },
     },
 };

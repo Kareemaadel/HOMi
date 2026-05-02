@@ -127,9 +127,14 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
             `);
             await sequelize.query(`DROP INDEX IF EXISTS "unique_tenant_property_request";`);
             await sequelize.query(`
-                CREATE UNIQUE INDEX IF NOT EXISTS "uniq_pending_rental_request_per_tenant_property"
-                ON "rental_requests" ("tenant_id", "property_id")
-                WHERE "status" = 'PENDING';
+                DO $$
+                BEGIN
+                    IF to_regclass('public.rental_requests') IS NOT NULL THEN
+                        CREATE UNIQUE INDEX IF NOT EXISTS "uniq_pending_rental_request_per_tenant_property"
+                        ON "rental_requests" ("tenant_id", "property_id")
+                        WHERE "status" = 'PENDING';
+                    END IF;
+                END $$;
             `);
 
             // ── Safely drop any stale FK constraints that Sequelize alter-mode
@@ -164,6 +169,8 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 END $$;
             `);
         }
+        await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });
+
         // ─── WebAuthn / passkey tables (idempotent; required when alter: false in production) ─
         await sequelize.query(`
             CREATE TABLE IF NOT EXISTS "user_passkeys" (
@@ -282,8 +289,6 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 WHERE "deleted_at" IS NULL;
         `);
         // ──────────────────────────────────────────────────────────────────
-
-        await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });
 
         // One DM thread per participant pair (legacy rows were split by property_id).
         try {

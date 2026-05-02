@@ -69,21 +69,13 @@ export const createDefaultConfig = (rawEnv: NodeJS.ProcessEnv = process.env) => 
     },
     scalability: {
         redis: {
-            enabled: rawEnv.REDIS_ENABLED !== 'false',
-            url: rawEnv.REDIS_URL,
-            host: rawEnv.REDIS_HOST ?? 'localhost',
-            port: toNumber(rawEnv.REDIS_PORT, 6379),
-            username: rawEnv.REDIS_USERNAME,
-            password: rawEnv.REDIS_PASSWORD,
-            database: toNumber(rawEnv.REDIS_DB, 0),
-            tls: rawEnv.REDIS_TLS === 'true',
-            connectTimeoutMs: toNumber(rawEnv.REDIS_CONNECT_TIMEOUT_MS, 5000),
-            commandTimeoutMs: toNumber(rawEnv.REDIS_COMMAND_TIMEOUT_MS, 5000),
+            enabled: rawEnv.REDIS_ENABLED === 'true',
+            restUrl: rawEnv.UPSTASH_REDIS_REST_URL ?? '',
+            restToken: rawEnv.UPSTASH_REDIS_REST_TOKEN ?? '',
             keyPrefix: rawEnv.REDIS_KEY_PREFIX ?? 'homi:',
-            maxRetriesPerRequest: toNumber(rawEnv.REDIS_MAX_RETRIES_PER_REQUEST, 2),
         },
         rateLimit: {
-            enabled: rawEnv.RATE_LIMIT_ENABLED !== 'false',
+            enabled: rawEnv.RATE_LIMIT_ENABLED === 'true',
             windowSeconds: toNumber(rawEnv.RATE_LIMIT_WINDOW_SECONDS, 600),
             maxRequests: toNumber(rawEnv.RATE_LIMIT_MAX_REQUESTS, 100),
             prefix: rawEnv.RATE_LIMIT_PREFIX ?? 'homi:ratelimit:ip',
@@ -91,10 +83,11 @@ export const createDefaultConfig = (rawEnv: NodeJS.ProcessEnv = process.env) => 
             legacyHeaders: false,
         },
         cache: {
-            enabled: rawEnv.CACHE_ENABLED !== 'false',
+            enabled: rawEnv.CACHE_ENABLED === 'true',
             prefix: rawEnv.CACHE_PREFIX ?? 'homi:cache',
             defaultTtlSeconds: toNumber(rawEnv.CACHE_DEFAULT_TTL_SECONDS, 600),
             popularPropertiesTtlSeconds: toNumber(rawEnv.CACHE_POPULAR_PROPERTIES_TTL_SECONDS, 600),
+            sessionTtlSeconds: toNumber(rawEnv.SESSION_TTL_SECONDS, 900),
         },
     },
 });

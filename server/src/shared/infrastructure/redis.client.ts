@@ -1,87 +1,66 @@
-import { createClient, type RedisClientType, type RedisModules, type RedisFunctions, type RedisScripts } from 'redis';
+/**
+ * redis.client.ts
+ * ─────────────────────────────────────────────────────────────
+ * Upstash Redis client wrapper (REST-based, no persistent TCP).
+ *
+ * Enabled in production   → all four features active.
+ * Disabled in development → zero Upstash API calls.
+ *
+ * Exports keep the same surface as the old node-redis client so
+ * every caller (index.ts, rate-limit.middleware.ts, etc.) compiles
+ * without modification.
+ */
+
+import { Redis } from '@upstash/redis';
 import { env } from '../../config/env.js';
 
-type RedisClient = RedisClientType<RedisModules, RedisFunctions, RedisScripts>;
+let upstashClient: Redis | null = null;
+let _isReady = false;
 
-let redisClient: RedisClient | null = null;
-let isConnected = false;
-
-const buildRedisClient = (): RedisClient => {
-    const commonSocketOptions = {
-        connectTimeout: env.REDIS_CONNECT_TIMEOUT_MS,
-        reconnectStrategy: (retries: number) => {
-            if (retries > env.REDIS_MAX_RETRIES_PER_REQUEST) {
-                return false;
-            }
-            return Math.min(retries * 100, 1000);
-        },
-        tls: env.REDIS_TLS,
-    };
-
-    if (env.REDIS_URL) {
-        return createClient({
-            url: env.REDIS_URL,
-            socket: commonSocketOptions,
-            pingInterval: env.REDIS_COMMAND_TIMEOUT_MS,
-        });
-    }
-
-    return createClient({
-        socket: {
-            ...commonSocketOptions,
-            host: env.REDIS_HOST,
-            port: env.REDIS_PORT,
-        },
-        username: env.REDIS_USERNAME,
-        password: env.REDIS_PASSWORD,
-        database: env.REDIS_DB,
-        pingInterval: env.REDIS_COMMAND_TIMEOUT_MS,
-    });
-};
-
+/**
+ * Initialise (or skip) the Upstash Redis connection.
+ * Called once at server boot from index.ts.
+ */
 export const connectRedis = async (): Promise<void> => {
     if (!env.REDIS_ENABLED) {
-        console.warn('⚠️ Redis disabled by configuration. Running in degraded mode.');
+        console.warn('⚠️  Redis disabled by configuration. Running without caching/rate-limiting.');
         return;
     }
 
-    if (redisClient && isConnected) {
-        return;
-    }
+    if (_isReady) return;
 
-    redisClient = buildRedisClient();
-
-    redisClient.on('error', (error) => {
-        isConnected = false;
-        console.error('❌ Redis client error:', error);
+    upstashClient = new Redis({
+        url: env.UPSTASH_REDIS_REST_URL,
+        token: env.UPSTASH_REDIS_REST_TOKEN,
     });
 
-    redisClient.on('ready', () => {
-        isConnected = true;
-        console.log('✅ Redis client ready.');
-    });
-
-    await redisClient.connect();
-};
-
-export const disconnectRedis = async (): Promise<void> => {
-    if (!redisClient) return;
-
+    // Upstash REST is stateless — validate by pinging.
     try {
-        await redisClient.quit();
-    } catch {
-        await redisClient.disconnect();
-    } finally {
-        isConnected = false;
-        redisClient = null;
+        await upstashClient.ping();
+        _isReady = true;
+        console.log('✅ Upstash Redis client ready.');
+    } catch (error) {
+        _isReady = false;
+        upstashClient = null;
+        console.error('❌ Upstash Redis connection failed:', error);
     }
 };
 
-export const getRedisClient = (): RedisClient | null => {
-    if (!redisClient || !isConnected) {
-        return null;
-    }
-    return redisClient;
+/**
+ * No-op for Upstash (REST is stateless).
+ * Exists to keep index.ts shutdown logic identical.
+ */
+export const disconnectRedis = async (): Promise<void> => {
+    _isReady = false;
+    upstashClient = null;
 };
 
-export const isRedisReady = (): boolean => isConnected;
+/**
+ * Returns the active Upstash Redis instance, or null if disabled / not ready.
+ */
+export const getRedisClient = (): Redis | null => {
+    if (!_isReady || !upstashClient) return null;
+    return upstashClient;
+};
+
+export const isRedisReady = (): boolean => _isReady;
