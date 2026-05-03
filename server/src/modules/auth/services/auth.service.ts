@@ -481,7 +481,8 @@ export class AuthService {
                 throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
             }
 
-            if (profile.isVerificationComplete()) {
+            // Allow correcting identity until role choice is confirmed (onboarding step 2).
+            if (profile.isVerificationComplete() && profile.onboarding_step2_completed) {
                 await transaction.commit();
                 return {
                     success: true,
