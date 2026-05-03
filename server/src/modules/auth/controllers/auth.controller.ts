@@ -42,6 +42,20 @@ export class AuthController {
         }
     }
 
+    /**
+     * POST /auth/check-signup-availability
+     * Public — whether email/phone are already taken (HOMi email signup).
+     */
+    async checkSignupAvailability(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const input = req.body as { email?: string; phone?: string };
+            const result = await authService.checkSignupAvailability(input);
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async applyMaintenanceProvider(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const input = req.body as MaintenanceApplicationRequest;
@@ -150,6 +164,23 @@ export class AuthController {
             const input = req.body as CompleteVerificationRequest;
             const result = await authService.completeVerification(userId, input);
 
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/onboarding/skip-step3
+     * Marks optional step 3 as skipped (account stays partially verified until completed in Settings).
+     */
+    async skipOnboardingStep3(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+            const result = await authService.skipOnboardingStep3(userId);
             res.status(200).json(result);
         } catch (error) {
             next(error);

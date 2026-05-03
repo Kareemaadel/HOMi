@@ -30,6 +30,32 @@ const EmailVerificationPage: React.FC = () => {
         return cr === 'LANDLORD' ? 'landlord' : 'tenant';
     }, [locationState?.role]);
 
+    /** After email verify: resume step 3 only if identity + role steps are already done; otherwise start at step 1/2. */
+    const navigateToCompleteProfileAfterVerify = useCallback(
+        async (replace: boolean) => {
+            if (authService.isAuthenticated()) {
+                try {
+                    await authService.getProfile();
+                } catch {
+                    /* use cached profile if refresh fails */
+                }
+            }
+            const cached = authService.getCurrentUser();
+            const profile = cached?.profile;
+            const idDone = profile?.isVerificationComplete === true;
+            const step2Done = profile?.onboardingStep2Completed === true;
+            if (cached && idDone && step2Done) {
+                navigate('/complete-profile', {
+                    replace,
+                    state: { step: 3, role: resolveRoleForStep3() },
+                });
+            } else {
+                navigate('/complete-profile', { replace });
+            }
+        },
+        [navigate, resolveRoleForStep3]
+    );
+
     const displayEmail = useMemo(() => {
         const fromNav = locationState?.email;
         if (fromNav) return fromNav;
@@ -75,9 +101,6 @@ const EmailVerificationPage: React.FC = () => {
                 if (cancelled) return;
                 setVerifyPhase('success');
 
-                // Wakes other tabs only (StorageEvent does not fire in this tab).
-                localStorage.setItem('WAKE_UP_TAB_1_STEP_3', Date.now().toString());
-
                 navigate('/verify-email', { replace: true, state: location.state });
             } catch (err) {
                 if (cancelled) return;
@@ -92,7 +115,6 @@ const EmailVerificationPage: React.FC = () => {
                         const { user } = await authService.getProfile();
                         if (user.emailVerified) {
                             setVerifyPhase('success');
-                            localStorage.setItem('WAKE_UP_TAB_1_STEP_3', Date.now().toString());
                             navigate('/verify-email', { replace: true, state: location.state });
                             return;
                         }
@@ -114,40 +136,16 @@ const EmailVerificationPage: React.FC = () => {
         };
     }, [tokenFromUrl, navigate, location.state]);
 
-    useEffect(() => {
-        const forceRouteToStep3 = () => {
-            navigate('/complete-profile', {
-                state: { step: 3, role: resolveRoleForStep3() },
-                replace: true,
-            });
-        };
-
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'WAKE_UP_TAB_1_STEP_3' && e.newValue) {
-                localStorage.removeItem('WAKE_UP_TAB_1_STEP_3');
-                forceRouteToStep3();
-            }
-        };
-        window.addEventListener('storage', handleStorageChange);
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-        };
-    }, [navigate, resolveRoleForStep3]);
-
-    /** After a successful verify-from-link flow, continue to complete profile step 3 automatically. */
+    /** After a successful verify-from-link flow, continue onboarding (step 1 unless already past 1–2). */
     useEffect(() => {
         if (verifyPhase !== 'success') return;
 
         const t = window.setTimeout(() => {
-            navigate('/complete-profile', {
-                replace: true,
-                state: { step: 3, role: resolveRoleForStep3() },
-            });
+            void navigateToCompleteProfileAfterVerify(true);
         }, 1600);
 
         return () => window.clearTimeout(t);
-    }, [verifyPhase, navigate, resolveRoleForStep3]);
+    }, [verifyPhase, navigateToCompleteProfileAfterVerify]);
 
     useEffect(() => {
         if (countdown <= 0) {
@@ -176,10 +174,7 @@ const EmailVerificationPage: React.FC = () => {
     };
 
     const handleContinueProfile = () => {
-        navigate('/complete-profile', {
-            state: { step: 3, role: resolveRoleForStep3() },
-            replace: false,
-        });
+        void navigateToCompleteProfileAfterVerify(false);
     };
 
     const handleLogout = async () => {
@@ -228,7 +223,8 @@ const EmailVerificationPage: React.FC = () => {
                             Your account is now verified
                         </p>
                         <p style={{ color: '#475569', fontSize: '0.95rem', margin: '8px 0 0', lineHeight: 1.5 }}>
-                            You can continue the Complete profile flow from step 3.
+                            Next, finish your identity and role in Complete profile. If you already did those steps,
+                            you&apos;ll pick up where you left off.
                         </p>
                     </div>
 

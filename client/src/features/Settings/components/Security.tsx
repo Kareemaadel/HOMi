@@ -70,16 +70,13 @@ const Security: React.FC<SecurityProps> = ({ role }) => {
         const step1Done = Boolean(profile?.isVerificationComplete);
 
         let step3Done = false;
-        if (userRole === 'TENANT') {
-            step3Done = profile?.preferredBudgetMin != null;
-        } else if (userRole === 'LANDLORD') {
-            // bio is set to the business address/name when landlord completes Step 3
-            step3Done = Boolean(profile?.bio);
+        if (userRole === 'TENANT' || userRole === 'LANDLORD') {
+            step3Done = profile?.onboardingStep3Completed === true;
         } else {
-            // ADMIN / MAINTENANCE_PROVIDER don't have step 3
             step3Done = true;
         }
-        return { step1Done, step3Done, fullyComplete: step1Done && step3Done };
+        const fullyVerified = Boolean(cached?.user?.isVerified);
+        return { step1Done, step3Done, fullyComplete: step1Done && step3Done && fullyVerified };
     };
 
     const initial = computeCompletionState();
@@ -88,6 +85,8 @@ const Security: React.FC<SecurityProps> = ({ role }) => {
     const [isPasskeyEnabled, setIsPasskeyEnabled] = useState<boolean>(false);
     const [passkeyBusy, setPasskeyBusy] = useState(false);
     const [passkeyMessage, setPasskeyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    const isPasswordProtected = true;
 
     const securityScore = isMaintainer
         ? (isPasswordProtected ? 80 : 0) + (isPasskeyEnabled ? 20 : 0)
@@ -107,11 +106,11 @@ const Security: React.FC<SecurityProps> = ({ role }) => {
                 const profile = fresh.profile;
                 const step1 = Boolean(profile?.isVerificationComplete);
                 let step3 = false;
-                if (userRole === 'TENANT') step3 = profile?.preferredBudgetMin != null;
-                else if (userRole === 'LANDLORD') step3 = Boolean(profile?.bio);
-                else step3 = true;
+                if (userRole === 'TENANT' || userRole === 'LANDLORD') {
+                    step3 = profile?.onboardingStep3Completed === true;
+                } else step3 = true;
                 setIsStep1Complete(step1);
-                setIsProfileComplete(step1 && step3);
+                setIsProfileComplete(step1 && step3 && Boolean(fresh.user?.isVerified));
                 setIsPasskeyEnabled(Boolean(fresh.passkeyEnabled));
             } catch {
                 if (!mounted) return;
@@ -127,7 +126,6 @@ const Security: React.FC<SecurityProps> = ({ role }) => {
     // Track whether the user has started typing the new password (to show checklist)
     const newPasswordTouched = newPassword.length > 0;
     const allChecksPassed = checks.every(c => c.test(newPassword));
-    const isPasswordProtected = true;
 
     const handlePasskeySetup = async () => {
         setPasskeyMessage(null);
@@ -307,7 +305,9 @@ const Security: React.FC<SecurityProps> = ({ role }) => {
                                 // If Step 1 is done, go directly to Step 3 (preferences)
                                 // If Step 1 is missing, start from the beginning
                                 navigate('/complete-profile', {
-                                    state: { fromSettings: true, step: isStep1Complete ? 3 : 1 },
+                                    state: isStep1Complete
+                                        ? { fromSettings: true, step: 3, role }
+                                        : { fromSettings: true, initialStep: 1 },
                                 });
                             }}
                         >

@@ -110,11 +110,12 @@ interface ProfileBannerProps {
     userRole: string | null;
     isVerificationComplete: boolean;
     hasPreferences: boolean;
-    onComplete: () => void;
+    onCompleteIdentity: () => void;
+    onCompletePreferences: () => void;
 }
 
 const IncompleteProfileBanner: React.FC<ProfileBannerProps> = ({
-    userRole, isVerificationComplete, hasPreferences, onComplete,
+    userRole, isVerificationComplete, hasPreferences, onCompleteIdentity, onCompletePreferences,
 }) => {
     if (userRole !== 'TENANT' && userRole !== 'LANDLORD') return null;
 
@@ -143,7 +144,7 @@ const IncompleteProfileBanner: React.FC<ProfileBannerProps> = ({
                     </div>
                 </div>
                 <button
-                    onClick={onComplete}
+                    onClick={onCompleteIdentity}
                     style={{
                         background: '#d97706', color: '#fff', border: 'none',
                         padding: '9px 18px', borderRadius: '8px', cursor: 'pointer',
@@ -185,7 +186,7 @@ const IncompleteProfileBanner: React.FC<ProfileBannerProps> = ({
                     </div>
                 </div>
                 <button
-                    onClick={onComplete}
+                    onClick={onCompletePreferences}
                     style={{
                         background: '#3b82f6', color: '#fff', border: 'none',
                         padding: '9px 18px', borderRadius: '8px', cursor: 'pointer',
@@ -214,7 +215,7 @@ const Settings: React.FC = () => {
     }
 
     const cached = authService.getCurrentUser();
-    const isVerificationComplete = cached?.profile?.isVerificationComplete ?? true;
+    const isVerificationComplete = cached?.profile?.isVerificationComplete ?? false;
 
     // Pick the correct sidebar based on the stored user role
     const storedUser = localStorage.getItem('user');
@@ -225,19 +226,17 @@ const Settings: React.FC = () => {
             ? MaintenanceSideBar
             : TenantSidebar;
 
-    // Detect whether step 3 (preferences / business) is complete — DB-based:
-    // - Tenant:   preferredBudgetMin is set server-side after Step 3 submission
-    // - Landlord: bio is set to business address/name after Step 3 submission
-    const hasPreferences = (() => {
-        if (userRole === 'TENANT') return cached?.profile?.preferredBudgetMin != null;
-        if (userRole === 'LANDLORD') return Boolean(cached?.profile?.bio);
-        return true;
-    })();
+    const hasPreferences = cached?.profile?.onboardingStep3Completed === true;
 
-    const isProfileFullyComplete = isVerificationComplete && hasPreferences;
+    const isProfileFullyComplete =
+        isVerificationComplete && hasPreferences && (cached?.user?.isVerified ?? false);
 
-    const handleCompleteProfile = () => {
+    const handleCompletePreferences = () => {
         navigate('/complete-profile', { state: { step: 3, fromSettings: true, role: userRole } });
+    };
+
+    const handleCompleteIdentity = () => {
+        navigate('/complete-profile', { state: { fromSettings: true, initialStep: 1 } });
     };
 
     // Component mapping by active tab
@@ -265,14 +264,15 @@ const Settings: React.FC = () => {
                         userRole={userRole}
                         isVerificationComplete={isVerificationComplete}
                         hasPreferences={hasPreferences}
-                        onComplete={handleCompleteProfile}
+                        onCompleteIdentity={handleCompleteIdentity}
+                        onCompletePreferences={handleCompletePreferences}
                     />
 
                     {/* "Update Preferences" shortcut for fully-verified users */}
                     {isProfileFullyComplete && (userRole === 'TENANT' || userRole === 'LANDLORD') && (
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', paddingRight: '4px' }}>
                             <button
-                                onClick={handleCompleteProfile}
+                                onClick={handleCompletePreferences}
                                 style={{
                                     background: 'transparent', color: '#6366f1',
                                     border: '1px solid #c7d2fe', padding: '8px 16px',

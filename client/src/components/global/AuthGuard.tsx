@@ -60,7 +60,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
         return <Navigate to="/complete-profile" replace />;
     }
 
-    if (isAuthenticated && cached?.user && !cached.user.emailVerified) {
+    if (
+        isAuthenticated &&
+        cached?.user &&
+        !cached.user.emailVerified &&
+        localStorage.getItem('authProvider') === 'email'
+    ) {
         return <Navigate to="/verify-email" replace />;
     }
 
@@ -69,6 +74,17 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
         isAuthenticated &&
         cached?.profile &&
         !cached.profile.isVerificationComplete &&
+        (role === 'TENANT' || role === 'LANDLORD')
+    ) {
+        return <Navigate to="/complete-profile" replace />;
+    }
+
+    // Step 2 (role confirmation in onboarding) — cannot be skipped via URL
+    if (
+        isAuthenticated &&
+        cached?.profile &&
+        cached.profile.isVerificationComplete &&
+        cached.profile.onboardingStep2Completed !== true &&
         (role === 'TENANT' || role === 'LANDLORD')
     ) {
         return <Navigate to="/complete-profile" replace />;

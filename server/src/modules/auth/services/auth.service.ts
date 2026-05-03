@@ -181,6 +181,36 @@ export class AuthService {
         return user;
     }
 
+    /** Maps a Profile model row to API profile DTO (single place for /me, login, role update). */
+    private mapProfileToResponse(profile: Profile): ProfileResponse {
+        return {
+            id: profile.id,
+            userId: profile.user_id,
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            phoneNumber: profile.phone_number,
+            bio: profile.bio ?? null,
+            avatarUrl: profile.avatar_url ?? null,
+            gender: profile.gender ?? null,
+            birthdate: profile.birthdate ? String(profile.birthdate) : null,
+            gamificationPoints: profile.gamification_points,
+            preferredBudgetMin:
+                profile.preferred_budget_min != null ? Number(profile.preferred_budget_min) : null,
+            preferredBudgetMax:
+                profile.preferred_budget_max != null ? Number(profile.preferred_budget_max) : null,
+            currentLocation: profile.current_location ?? null,
+            isVerificationComplete: profile.isVerificationComplete(),
+            preferredLanguage: profile.preferred_language ?? null,
+            tenantRentalPreferences:
+                (profile.tenant_rental_preferences as Record<string, unknown> | null) ?? null,
+            landlordBusinessProfile:
+                (profile.landlord_business_profile as Record<string, unknown> | null) ?? null,
+            onboardingStep3Skipped: profile.onboarding_step3_skipped ?? false,
+            onboardingStep3Completed: profile.onboarding_step3_completed ?? false,
+            onboardingStep2Completed: profile.onboarding_step2_completed ?? true,
+        };
+    }
+
     private buildLoginResponse(user: User, tokens: TokenPair): LoginResponse {
         const profile = user.profile;
         if (!profile) {
@@ -196,22 +226,7 @@ export class AuthService {
             createdAt: user.created_at,
         };
 
-        const profileResponse: ProfileResponse = {
-            id: profile.id,
-            userId: profile.user_id,
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            phoneNumber: profile.phone_number,
-            bio: profile.bio ?? null,
-            avatarUrl: profile.avatar_url ?? null,
-            gender: profile.gender ?? null,
-            birthdate: profile.birthdate ? String(profile.birthdate) : null,
-            gamificationPoints: profile.gamification_points,
-            preferredBudgetMin: profile.preferred_budget_min ?? null,
-            preferredBudgetMax: profile.preferred_budget_max ?? null,
-            currentLocation: profile.current_location ?? null,
-            isVerificationComplete: profile.isVerificationComplete(),
-        };
+        const profileResponse = this.mapProfileToResponse(profile);
 
         return {
             accessToken: tokens.accessToken,
@@ -256,7 +271,11 @@ export class AuthService {
             });
 
             if (existingUser) {
-                throw new AuthError('Email already registered', 409, 'EMAIL_EXISTS');
+                throw new AuthError(
+                    'This email address is already registered. Sign in with that email, or use a different one.',
+                    409,
+                    'EMAIL_EXISTS'
+                );
             }
 
             // Check if phone number already exists
@@ -266,7 +285,11 @@ export class AuthService {
             });
 
             if (existingProfile) {
-                throw new AuthError('Phone number already registered', 409, 'PHONE_EXISTS');
+                throw new AuthError(
+                    'This phone number is already registered. Sign in, or use a different phone number.',
+                    409,
+                    'PHONE_EXISTS'
+                );
             }
 
             // Create user with hashed password (hook handles hashing)
@@ -281,18 +304,20 @@ export class AuthService {
                 { transaction }
             );
 
-            // Create profile with only essential fields
-            // national_id, gender, birthdate will be filled during verification
+            const hasIdentity =
+                Boolean(input.nationalId?.trim()) && Boolean(input.gender) && Boolean(input.birthdate);
+
             await Profile.create(
                 {
                     user_id: user.id,
                     first_name: input.firstName,
                     last_name: input.lastName,
                     phone_number: input.phone,
-                    // Verification fields left null
-                    national_id: null,
-                    gender: null,
-                    birthdate: null,
+                    national_id: hasIdentity ? input.nationalId!.trim() : null,
+                    gender: hasIdentity ? input.gender! : null,
+                    birthdate: hasIdentity ? new Date(input.birthdate!) : null,
+                    preferred_language: input.preferredLanguage?.trim() || null,
+                    onboarding_step2_completed: false,
                 },
                 { transaction }
             );
@@ -324,6 +349,28 @@ export class AuthService {
             console.error('Registration error:', error);
             throw new AuthError('Registration failed. Please try again.', 500, 'REGISTRATION_FAILED');
         }
+    }
+
+    /**
+     * Public check before signup — whether email and/or phone are already taken.
+     */
+    async checkSignupAvailability(input: {
+        email?: string;
+        phone?: string;
+    }): Promise<{ emailTaken: boolean; phoneTaken: boolean }> {
+        const email = input.email?.trim().toLowerCase();
+        const phone = input.phone?.trim();
+        let emailTaken = false;
+        let phoneTaken = false;
+        if (email) {
+            const u = await User.findOne({ where: { email } });
+            emailTaken = Boolean(u);
+        }
+        if (phone) {
+            const p = await Profile.findOne({ where: { phone_number: phone } });
+            phoneTaken = Boolean(p);
+        }
+        return { emailTaken, phoneTaken };
     }
 
     async applyAsMaintenanceProvider(input: MaintenanceApplicationRequest): Promise<AuthSuccessResponse> {
@@ -364,6 +411,7 @@ export class AuthService {
                     national_id: null,
                     gender: null,
                     birthdate: null,
+                    onboarding_step2_completed: true,
                 },
                 { transaction }
             );
@@ -401,9 +449,8 @@ export class AuthService {
     }
 
     /**
-     * Complete user verification by filling required profile fields
-     * Requires email to be verified first
-     * Sets is_verified = true after successful completion
+     * Complete step-1 identity (national ID, gender, birthdate).
+     * Requires verified email. Does not set is_verified — that happens after step 3 (onboarding preferences).
      */
     async completeVerification(
         userId: string,
@@ -412,7 +459,6 @@ export class AuthService {
         const transaction = await sequelize.transaction();
 
         try {
-            // Find user and profile
             const user = await User.findByPk(userId, {
                 include: [{ model: Profile, as: 'profile' }],
                 transaction,
@@ -422,11 +468,6 @@ export class AuthService {
                 throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
             }
 
-            if (user.is_verified) {
-                throw new AuthError('Account is already verified', 400, 'ALREADY_VERIFIED');
-            }
-
-            // Check if email is verified first
             if (!user.email_verified) {
                 throw new AuthError(
                     'Please verify your email address first before completing profile verification',
@@ -440,37 +481,39 @@ export class AuthService {
                 throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
             }
 
-            // Update profile with verification fields
+            if (profile.isVerificationComplete()) {
+                await transaction.commit();
+                return {
+                    success: true,
+                    message: 'Identity verification is already on file.',
+                };
+            }
+
             await profile.update(
                 {
-                    national_id: input.nationalId, // Will be encrypted by beforeUpdate hook
+                    national_id: input.nationalId,
                     gender: input.gender,
                     birthdate: new Date(input.birthdate),
+                    ...(input.preferredLanguage?.trim()
+                        ? { preferred_language: input.preferredLanguage.trim() }
+                        : {}),
                 },
-                { transaction }
-            );
-
-            // Mark user as verified
-            await user.update(
-                { is_verified: true },
                 { transaction }
             );
 
             await transaction.commit();
 
-            // Send welcome email
-            await emailService.sendWelcomeEmail(user.email, profile.first_name);
             await activityLogService.log({
                 actor: { userId: user.id, role: user.role, email: user.email },
                 action: 'AUTH_VERIFICATION_COMPLETED',
                 entityType: 'USER',
                 entityId: user.id,
-                description: 'User completed profile verification.',
+                description: 'User completed identity verification (step 1).',
             });
 
             return {
                 success: true,
-                message: 'Verification completed successfully. Your account is now fully verified.',
+                message: 'Identity saved. Continue to finish your profile.',
             };
         } catch (error) {
             await transaction.rollback();
@@ -481,6 +524,83 @@ export class AuthService {
 
             console.error('Verification error:', error);
             throw new AuthError('Verification failed. Please try again.', 500, 'VERIFICATION_FAILED');
+        }
+    }
+
+    /**
+     * Skip optional step 3 — user stays unverified (is_verified false) until preferences/business are submitted.
+     */
+    async skipOnboardingStep3(userId: string): Promise<AuthSuccessResponse> {
+        const transaction = await sequelize.transaction();
+        try {
+            const user = await User.findByPk(userId, {
+                include: [{ model: Profile, as: 'profile' }],
+                transaction,
+            });
+
+            if (!user) {
+                throw new AuthError('User not found', 404, 'USER_NOT_FOUND');
+            }
+
+            if (user.role !== UserRole.TENANT && user.role !== UserRole.LANDLORD) {
+                throw new AuthError('Onboarding skip is only for tenant or landlord accounts', 400, 'INVALID_ROLE');
+            }
+
+            if (!user.email_verified) {
+                throw new AuthError(
+                    'Please verify your email address first',
+                    400,
+                    'EMAIL_NOT_VERIFIED'
+                );
+            }
+
+            const profile = user.profile;
+            if (!profile) {
+                throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
+            }
+
+            if (!profile.isVerificationComplete()) {
+                throw new AuthError(
+                    'Complete identity verification before skipping this step',
+                    400,
+                    'IDENTITY_INCOMPLETE'
+                );
+            }
+
+            if (profile.onboarding_step3_completed) {
+                throw new AuthError('Profile is already fully completed', 400, 'ONBOARDING_ALREADY_COMPLETE');
+            }
+
+            await profile.update(
+                {
+                    onboarding_step3_skipped: true,
+                    onboarding_step3_completed: false,
+                },
+                { transaction }
+            );
+            await user.update({ is_verified: false }, { transaction });
+
+            await transaction.commit();
+
+            await activityLogService.log({
+                actor: { userId: user.id, role: user.role, email: user.email },
+                action: 'AUTH_ONBOARDING_STEP3_SKIPPED',
+                entityType: 'USER',
+                entityId: user.id,
+                description: 'User skipped optional onboarding step 3.',
+            });
+
+            return {
+                success: true,
+                message: 'You can complete rental preferences or business details anytime in Settings.',
+            };
+        } catch (error) {
+            await transaction.rollback();
+            if (error instanceof AuthError) {
+                throw error;
+            }
+            console.error('skipOnboardingStep3 error:', error);
+            throw new AuthError('Could not update onboarding state.', 500, 'ONBOARDING_SKIP_FAILED');
         }
     }
 
@@ -709,6 +829,7 @@ export class AuthService {
                         gender: null, // Must be collected later
                         birthdate: null, // Must be collected later
                         avatar_url: picture || null,
+                        onboarding_step2_completed: false,
                     },
                     { transaction }
                 );
@@ -748,22 +869,7 @@ export class AuthService {
             throw new AuthError('User profile not found', 500, 'PROFILE_NOT_FOUND');
         }
 
-        const profileResponse: ProfileResponse = {
-            id: profile.id,
-            userId: profile.user_id,
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            phoneNumber: profile.phone_number,
-            bio: profile.bio ?? null,
-            avatarUrl: profile.avatar_url ?? null,
-            gender: profile.gender ?? null,
-            birthdate: profile.birthdate ? String(profile.birthdate) : null,
-            gamificationPoints: profile.gamification_points,
-            preferredBudgetMin: profile.preferred_budget_min ?? null,
-            preferredBudgetMax: profile.preferred_budget_max ?? null,
-            currentLocation: profile.current_location ?? null,
-            isVerificationComplete: profile.isVerificationComplete(),
-        };
+        const profileResponse = this.mapProfileToResponse(profile);
 
         return {
             accessToken: tokens.accessToken,
@@ -803,22 +909,7 @@ export class AuthService {
             createdAt: user.created_at,
         };
 
-        const profileResponse: ProfileResponse = {
-            id: profile.id,
-            userId: profile.user_id,
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            phoneNumber: profile.phone_number,
-            bio: profile.bio ?? null,
-            avatarUrl: profile.avatar_url ?? null,
-            gender: profile.gender ?? null,
-            birthdate: profile.birthdate ? String(profile.birthdate) : null,
-            gamificationPoints: profile.gamification_points,
-            preferredBudgetMin: profile.preferred_budget_min ?? null,
-            preferredBudgetMax: profile.preferred_budget_max ?? null,
-            currentLocation: profile.current_location ?? null,
-            isVerificationComplete: profile.isVerificationComplete(),
-        };
+        const profileResponse = this.mapProfileToResponse(profile);
 
         const passkeyCount = await UserPasskey.count({ where: { user_id: userId } });
 
@@ -855,17 +946,9 @@ export class AuthService {
                 throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
             }
 
-            // Build update object with only provided fields
-            const updateData: Partial<{
-                first_name: string;
-                last_name: string;
-                phone_number: string;
-                bio: string | null;
-                avatar_url: string | null;
-                current_location: string | null;
-                preferred_budget_min: number | null;
-                preferred_budget_max: number | null;
-            }> = {};
+            const onboardingStep3WasAlreadyComplete = profile.onboarding_step3_completed === true;
+
+            const updateData: Record<string, unknown> = {};
 
             if (input.firstName !== undefined) updateData.first_name = input.firstName;
             if (input.lastName !== undefined) updateData.last_name = input.lastName;
@@ -875,13 +958,90 @@ export class AuthService {
             if (input.currentLocation !== undefined) updateData.current_location = input.currentLocation;
             if (input.preferredBudgetMin !== undefined) updateData.preferred_budget_min = input.preferredBudgetMin;
             if (input.preferredBudgetMax !== undefined) updateData.preferred_budget_max = input.preferredBudgetMax;
+            if (input.preferredLanguage !== undefined) updateData.preferred_language = input.preferredLanguage;
 
-            // Update profile
-            await profile.update(updateData, { transaction });
+            if (input.onboardingStep3Complete === true) {
+                if (!user.email_verified) {
+                    throw new AuthError(
+                        'Please verify your email address before completing your profile',
+                        400,
+                        'EMAIL_NOT_VERIFIED'
+                    );
+                }
+                if (!profile.isVerificationComplete()) {
+                    throw new AuthError(
+                        'Complete identity verification first',
+                        400,
+                        'IDENTITY_INCOMPLETE'
+                    );
+                }
+
+                if (user.role === UserRole.TENANT) {
+                    if (!input.tenantRentalPreferences) {
+                        throw new AuthError(
+                            'Tenant rental preferences are required',
+                            400,
+                            'TENANT_PREFS_REQUIRED'
+                        );
+                    }
+                    if (input.preferredBudgetMin == null || input.preferredBudgetMax == null) {
+                        throw new AuthError('Budget range is required', 400, 'BUDGET_REQUIRED');
+                    }
+                    updateData.tenant_rental_preferences = input.tenantRentalPreferences as unknown as Record<
+                        string,
+                        unknown
+                    >;
+                    updateData.onboarding_step3_completed = true;
+                    updateData.onboarding_step3_skipped = false;
+                    await user.update({ is_verified: true }, { transaction });
+                    user.is_verified = true;
+                } else if (user.role === UserRole.LANDLORD) {
+                    if (!input.landlordBusinessProfile) {
+                        throw new AuthError(
+                            'Landlord business profile is required',
+                            400,
+                            'LANDLORD_BUSINESS_REQUIRED'
+                        );
+                    }
+                    const addr = input.bio != null ? String(input.bio).trim() : '';
+                    if (addr.length < 1) {
+                        throw new AuthError('Business address is required', 400, 'BIO_REQUIRED');
+                    }
+                    updateData.landlord_business_profile = input.landlordBusinessProfile as unknown as Record<
+                        string,
+                        unknown
+                    >;
+                    updateData.onboarding_step3_completed = true;
+                    updateData.onboarding_step3_skipped = false;
+                    await user.update({ is_verified: true }, { transaction });
+                    user.is_verified = true;
+                } else {
+                    throw new AuthError(
+                        'Onboarding completion is only for tenant or landlord accounts',
+                        400,
+                        'INVALID_ROLE'
+                    );
+                }
+            }
+
+            await profile.update(updateData as Partial<Profile>, { transaction });
 
             await transaction.commit();
 
-            // Return updated user and profile
+            await profile.reload();
+
+            if (
+                input.onboardingStep3Complete === true &&
+                !onboardingStep3WasAlreadyComplete &&
+                profile.onboarding_step3_completed === true
+            ) {
+                try {
+                    await emailService.sendWelcomeEmail(user.email, profile.first_name ?? 'there');
+                } catch (e) {
+                    console.warn('Welcome email failed after first-time profile completion:', e);
+                }
+            }
+
             const userResponse: UserResponse = {
                 id: user.id,
                 email: user.email,
@@ -891,22 +1051,7 @@ export class AuthService {
                 createdAt: user.created_at,
             };
 
-            const profileResponse: ProfileResponse = {
-                id: profile.id,
-                userId: profile.user_id,
-                firstName: profile.first_name,
-                lastName: profile.last_name,
-                phoneNumber: profile.phone_number,
-                bio: profile.bio ?? null,
-                avatarUrl: profile.avatar_url ?? null,
-                gender: profile.gender ?? null,
-                birthdate: profile.birthdate ? String(profile.birthdate) : null,
-                gamificationPoints: profile.gamification_points,
-                preferredBudgetMin: profile.preferred_budget_min ?? null,
-                preferredBudgetMax: profile.preferred_budget_max ?? null,
-                currentLocation: profile.current_location ?? null,
-                isVerificationComplete: profile.isVerificationComplete(),
-            };
+            const profileResponse = this.mapProfileToResponse(profile);
 
             const passkeyCount = await UserPasskey.count({ where: { user_id: userId } });
 
@@ -953,10 +1098,12 @@ export class AuthService {
                 throw new AuthError('Profile not found', 404, 'PROFILE_NOT_FOUND');
             }
 
-            // Update user role
+            // Update user role and mark onboarding step 2 (role choice) as confirmed
             await user.update({ role: input.role }, { transaction });
+            await profile.update({ onboarding_step2_completed: true }, { transaction });
 
             await transaction.commit();
+            await profile.reload();
             await activityLogService.log({
                 actor: { userId: user.id, role: user.role, email: user.email },
                 action: 'AUTH_ROLE_UPDATED',
@@ -978,22 +1125,7 @@ export class AuthService {
                 createdAt: user.created_at,
             };
 
-            const profileResponse: ProfileResponse = {
-                id: profile.id,
-                userId: profile.user_id,
-                firstName: profile.first_name,
-                lastName: profile.last_name,
-                phoneNumber: profile.phone_number,
-                bio: profile.bio ?? null,
-                avatarUrl: profile.avatar_url ?? null,
-                gender: profile.gender ?? null,
-                birthdate: profile.birthdate ? String(profile.birthdate) : null,
-                gamificationPoints: profile.gamification_points,
-                preferredBudgetMin: profile.preferred_budget_min ?? null,
-                preferredBudgetMax: profile.preferred_budget_max ?? null,
-                currentLocation: profile.current_location ?? null,
-                isVerificationComplete: profile.isVerificationComplete(),
-            };
+            const profileResponse = this.mapProfileToResponse(profile);
 
             return {
                 accessToken: tokens.accessToken,

@@ -9,17 +9,9 @@ import axios from 'axios';
 import './CompleteProfile.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../../services/auth.service';
-import type { Gender, RegisterRequest } from '../../../types/auth.types';
+import type { Gender } from '../../../types/auth.types';
 
 type UserRole = 'tenant' | 'landlord' | null;
-
-interface SignUpFormData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-}
 
 interface Step1Draft {
     birthdate: string;
@@ -46,20 +38,6 @@ interface LandlordStep3Draft {
     yearsExperience: string;
     businessAddress: string;
     availability: string;
-}
-
-const STEP1_SESSION_KEY = 'homi_completeProfile_step1';
-
-function step1LocalKey(userId: string): string {
-    return `homi_completeProfile_step1_${userId}`;
-}
-
-function step3SkippedKey(userId: string): string {
-    return `homi_step3_skipped_${userId}`;
-}
-
-function step3DraftKey(userId: string): string {
-    return `homi_completeProfile_step3_draft_${userId}`;
 }
 
 function formatDateForInput(iso: string | null | undefined): string {
@@ -95,40 +73,53 @@ const defaultLandlordStep3 = (): LandlordStep3Draft => ({
     availability: '',
 });
 
-function loadStep1Draft(userId: string | undefined): Step1Draft {
+type CachedProfile = NonNullable<ReturnType<typeof authService.getCurrentUser>>['profile'];
+
+function hydrateStep1FromProfile(profile: CachedProfile | null | undefined): Step1Draft {
     const d = defaultStep1();
-    try {
-        const s = sessionStorage.getItem(STEP1_SESSION_KEY);
-        if (s) Object.assign(d, JSON.parse(s) as Partial<Step1Draft>);
-    } catch {
-        /* ignore */
-    }
-    if (userId) {
-        try {
-            const loc = localStorage.getItem(step1LocalKey(userId));
-            if (loc) Object.assign(d, JSON.parse(loc) as Partial<Step1Draft>);
-        } catch {
-            /* ignore */
-        }
-    }
+    if (!profile) return d;
+    d.birthdate = formatDateForInput(profile.birthdate);
+    d.gender = (profile.gender as Gender | '') || '';
+    d.nationalId = '';
+    d.preferredLanguage = profile.preferredLanguage || 'en';
     return d;
 }
 
-function persistStep1Draft(draft: Step1Draft): void {
-    const json = JSON.stringify(draft);
-    sessionStorage.setItem(STEP1_SESSION_KEY, json);
-    const uid = authService.getCurrentUser()?.user?.id;
-    if (uid) localStorage.setItem(step1LocalKey(uid), json);
+function tenantPrefsFromProfile(profile: CachedProfile | null | undefined): Partial<TenantStep3Draft> {
+    const out: Partial<TenantStep3Draft> = {};
+    if (!profile) return out;
+    const raw = profile.tenantRentalPreferences;
+    if (raw && typeof raw === 'object') {
+        const o = raw as Record<string, unknown>;
+        const s = (v: unknown) => (typeof v === 'string' ? v : '');
+        out.employment = s(o.employment);
+        out.workplace = s(o.workplace);
+        out.incomeRange = s(o.incomeRange);
+        out.moveInDate = s(o.moveInDate);
+        out.propertyType = s(o.propertyType);
+        out.duration = s(o.duration);
+    }
+    if (profile.preferredBudgetMin != null) out.budgetMin = String(profile.preferredBudgetMin);
+    if (profile.preferredBudgetMax != null) out.budgetMax = String(profile.preferredBudgetMax);
+    return out;
 }
 
-function copyStep1SessionToLocal(userId: string): void {
-    const s = sessionStorage.getItem(STEP1_SESSION_KEY);
-    if (s) localStorage.setItem(step1LocalKey(userId), s);
-}
-
-function clearStep1Draft(userId: string | undefined): void {
-    sessionStorage.removeItem(STEP1_SESSION_KEY);
-    if (userId) localStorage.removeItem(step1LocalKey(userId));
+function landlordBizFromProfile(profile: CachedProfile | null | undefined): Partial<LandlordStep3Draft> {
+    const out: Partial<LandlordStep3Draft> = {};
+    if (!profile) return out;
+    const raw = profile.landlordBusinessProfile;
+    if (raw && typeof raw === 'object') {
+        const o = raw as Record<string, unknown>;
+        const s = (v: unknown) => (typeof v === 'string' ? v : '');
+        const n = (v: unknown) => (typeof v === 'number' ? String(v) : typeof v === 'string' ? v : '');
+        out.accountType = s(o.accountType);
+        out.companyName = s(o.companyName);
+        out.totalProperties = n(o.totalProperties);
+        out.yearsExperience = n(o.yearsExperience);
+        out.availability = s(o.availability);
+    }
+    if (profile.bio) out.businessAddress = profile.bio;
+    return out;
 }
 
 function validateTenantStep3(t: TenantStep3Draft): string | null {
@@ -165,7 +156,6 @@ function validateLandlordStep3(t: LandlordStep3Draft): string | null {
 const CompleteProfile: React.FC = () => {
     const [step, setStep] = useState(1);
     const [role, setRole] = useState<UserRole>(null);
-    const [signupData, setSignupData] = useState<SignUpFormData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -188,8 +178,8 @@ const CompleteProfile: React.FC = () => {
             const locState = location.state as {
                 step?: number;
                 role?: string;
-                /** When true with step 3, back navigation stays in settings-only flow (step 2 ↔ 3). */
                 fromSettings?: boolean;
+                initialStep?: number;
             } | null;
 
             const isAuthed = authService.isAuthenticated();
@@ -204,6 +194,44 @@ const CompleteProfile: React.FC = () => {
             if (cancelled) return;
 
             const cached = authService.getCurrentUser();
+            const profile = cached?.profile;
+            const emailVerified = cached?.user?.emailVerified ?? false;
+
+            if (
+                isAuthed &&
+                cached &&
+                !locState?.fromSettings &&
+                !locState?.step &&
+                !locState?.initialStep
+            ) {
+                const step2Done = profile?.onboardingStep2Completed === true;
+                const onboardingDone =
+                    profile?.onboardingStep3Completed === true || profile?.onboardingStep3Skipped === true;
+                if (profile?.isVerificationComplete && step2Done && onboardingDone) {
+                    navigate('/', {
+                        state: { next: authService.resolvePostAuthRoute(), force: true },
+                        replace: true,
+                    });
+                    setHydrated(true);
+                    return;
+                }
+            }
+
+            if (
+                locState?.fromSettings &&
+                locState?.initialStep === 1 &&
+                isAuthed &&
+                cached &&
+                profile?.isVerificationComplete
+            ) {
+                setSettingsOnlyFlow(true);
+                setStep(1);
+                setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
+                setAlreadyLoggedIn(true);
+                setStep1(hydrateStep1FromProfile(profile));
+                setHydrated(true);
+                return;
+            }
 
             if (locState?.step === 3) {
                 setSettingsOnlyFlow(!!locState.fromSettings);
@@ -212,53 +240,25 @@ const CompleteProfile: React.FC = () => {
                 setRole(r === 'LANDLORD' ? 'landlord' : 'tenant');
                 if (cached) {
                     setAlreadyLoggedIn(true);
-                    setSignupData({
-                        email: cached.user.email,
-                        password: '',
-                        firstName: cached.profile?.firstName || '',
-                        lastName: cached.profile?.lastName || '',
-                        phone: cached.profile?.phoneNumber || '',
-                    });
-                }
-                const uid = cached?.user?.id;
-                if (uid) {
-                    try {
-                        const d = localStorage.getItem(step3DraftKey(uid));
-                        if (d) {
-                            const parsed = JSON.parse(d) as {
-                                tenant?: TenantStep3Draft;
-                                landlord?: LandlordStep3Draft;
-                            };
-                            if (parsed.tenant) setTenantStep3({ ...defaultTenantStep3(), ...parsed.tenant });
-                            if (parsed.landlord) setLandlordStep3({ ...defaultLandlordStep3(), ...parsed.landlord });
-                        }
-                    } catch {
-                        /* ignore */
+                    setStep1(hydrateStep1FromProfile(cached.profile));
+                    if (r === 'TENANT') {
+                        setTenantStep3({
+                            ...defaultTenantStep3(),
+                            ...tenantPrefsFromProfile(cached.profile),
+                        });
+                    } else {
+                        setLandlordStep3({
+                            ...defaultLandlordStep3(),
+                            ...landlordBizFromProfile(cached.profile),
+                        });
                     }
                 }
                 setHydrated(true);
                 return;
             }
 
-            const storedData = sessionStorage.getItem('signupData');
-            if (storedData) {
-                setSignupData(JSON.parse(storedData) as SignUpFormData);
-                setAlreadyLoggedIn(false);
-                setSettingsOnlyFlow(false);
-                setStep1(loadStep1Draft(undefined));
-                setHydrated(true);
-                return;
-            }
-
             if (cached) {
                 setAlreadyLoggedIn(true);
-                setSignupData({
-                    email: cached.user.email,
-                    password: '',
-                    firstName: cached.profile?.firstName || '',
-                    lastName: cached.profile?.lastName || '',
-                    phone: cached.profile?.phoneNumber || '',
-                });
 
                 const hasAppRole = cached.user.role === 'LANDLORD' || cached.user.role === 'TENANT';
                 const idDone = !!cached.profile?.isVerificationComplete;
@@ -267,53 +267,74 @@ const CompleteProfile: React.FC = () => {
                     setSettingsOnlyFlow(true);
                     setStep(3);
                     setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
-                    const uid = cached.user.id;
-                    try {
-                        const d = localStorage.getItem(step3DraftKey(uid));
-                        if (d) {
-                            const parsed = JSON.parse(d) as {
-                                tenant?: TenantStep3Draft;
-                                landlord?: LandlordStep3Draft;
-                            };
-                            if (parsed.tenant) setTenantStep3({ ...defaultTenantStep3(), ...parsed.tenant });
-                            if (parsed.landlord) setLandlordStep3({ ...defaultLandlordStep3(), ...parsed.landlord });
-                        }
-                    } catch {
-                        /* ignore */
-                    }
-                    if (cached.profile?.preferredBudgetMin != null) {
-                        setTenantStep3((t) => ({
-                            ...t,
-                            budgetMin: String(cached.profile!.preferredBudgetMin),
-                        }));
-                    }
-                    if (cached.profile?.preferredBudgetMax != null) {
-                        setTenantStep3((t) => ({
-                            ...t,
-                            budgetMax: String(cached.profile!.preferredBudgetMax),
-                        }));
+                    setStep1(hydrateStep1FromProfile(cached.profile));
+                    if (cached.user.role === 'TENANT') {
+                        setTenantStep3({
+                            ...defaultTenantStep3(),
+                            ...tenantPrefsFromProfile(cached.profile),
+                        });
+                    } else {
+                        setLandlordStep3({
+                            ...defaultLandlordStep3(),
+                            ...landlordBizFromProfile(cached.profile),
+                        });
                     }
                     setHydrated(true);
                     return;
                 }
 
                 setSettingsOnlyFlow(false);
-                const merged = loadStep1Draft(cached.user.id);
-                if (!merged.birthdate) merged.birthdate = formatDateForInput(cached.profile?.birthdate);
-                if (!merged.gender) merged.gender = (cached.profile?.gender as Gender | '') || '';
-                setStep1(merged);
 
-                if (cached.profile?.preferredBudgetMin != null) {
-                    setTenantStep3((t) => ({
-                        ...t,
-                        budgetMin: String(cached.profile.preferredBudgetMin),
-                    }));
-                }
-                if (cached.profile?.preferredBudgetMax != null) {
-                    setTenantStep3((t) => ({
-                        ...t,
-                        budgetMax: String(cached.profile.preferredBudgetMax),
-                    }));
+                if (!idDone) {
+                    setStep(1);
+                    setStep1(hydrateStep1FromProfile(cached.profile));
+                } else if (
+                    localStorage.getItem('authProvider') === 'email' &&
+                    !emailVerified
+                ) {
+                    navigate('/verify-email', {
+                        replace: true,
+                        state: {
+                            email: cached.user.email,
+                            returnUrl: '/complete-profile',
+                            role: cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant',
+                        },
+                    });
+                    setHydrated(true);
+                    return;
+                } else if (hasAppRole && cached.profile?.onboardingStep2Completed !== true) {
+                    setStep(2);
+                    setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
+                    setStep1(hydrateStep1FromProfile(cached.profile));
+                } else if (
+                    hasAppRole &&
+                    !cached.profile?.onboardingStep3Completed &&
+                    !cached.profile?.onboardingStep3Skipped
+                ) {
+                    setStep(3);
+                    setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
+                    setStep1(hydrateStep1FromProfile(cached.profile));
+                    if (cached.user.role === 'TENANT') {
+                        setTenantStep3({
+                            ...defaultTenantStep3(),
+                            ...tenantPrefsFromProfile(cached.profile),
+                        });
+                    } else {
+                        setLandlordStep3({
+                            ...defaultLandlordStep3(),
+                            ...landlordBizFromProfile(cached.profile),
+                        });
+                    }
+                } else if (!hasAppRole) {
+                    setStep(2);
+                    setStep1(hydrateStep1FromProfile(cached.profile));
+                } else {
+                    navigate('/', {
+                        state: { next: authService.resolvePostAuthRoute(), force: true },
+                        replace: true,
+                    });
+                    setHydrated(true);
+                    return;
                 }
 
                 setHydrated(true);
@@ -329,20 +350,6 @@ const CompleteProfile: React.FC = () => {
         };
     }, [navigate, location.state]);
 
-    const userId = authService.getCurrentUser()?.user?.id;
-
-    useEffect(() => {
-        if (step !== 3 || !userId) return;
-        try {
-            localStorage.setItem(
-                step3DraftKey(userId),
-                JSON.stringify({ tenant: tenantStep3, landlord: landlordStep3 })
-            );
-        } catch {
-            /* ignore */
-        }
-    }, [step, userId, tenantStep3, landlordStep3]);
-
     useEffect(() => {
         if (step !== 2 || role !== null) return;
         const r = authService.getCurrentUser()?.user?.role;
@@ -357,7 +364,7 @@ const CompleteProfile: React.FC = () => {
         return null;
     };
 
-    const goNextFromStep1 = () => {
+    const goNextFromStep1 = async () => {
         const cached = authService.getCurrentUser();
         const verificationComplete = !!cached?.profile?.isVerificationComplete;
         const msg = validateStep1(step1, verificationComplete);
@@ -366,7 +373,73 @@ const CompleteProfile: React.FC = () => {
             return;
         }
         setError(null);
-        persistStep1Draft(step1);
+
+        if (settingsOnlyFlow) {
+            setLoading(true);
+            try {
+                if (alreadyLoggedIn && cached?.user) {
+                    if (localStorage.getItem('authProvider') === 'email' && !cached.user.emailVerified) {
+                        setError('Please verify your email before saving identity.');
+                        return;
+                    }
+                    if (!verificationComplete) {
+                        await authService.completeVerification({
+                            nationalId: step1.nationalId.trim(),
+                            gender: step1.gender as Gender,
+                            birthdate: step1.birthdate,
+                            preferredLanguage: step1.preferredLanguage,
+                        });
+                    } else if (step1.preferredLanguage) {
+                        await authService.updateProfile({
+                            preferredLanguage: step1.preferredLanguage,
+                        });
+                    }
+                    await authService.getProfile();
+                }
+                navigate('/settings');
+            } catch (err) {
+                let errorMessage = 'Could not save identity. Please try again.';
+                if (axios.isAxiosError(err) && err.response?.data) {
+                    const data = err.response.data as { message?: string };
+                    if (data.message) errorMessage = data.message;
+                }
+                setError(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        if (alreadyLoggedIn && cached?.user) {
+            if (localStorage.getItem('authProvider') === 'email' && !cached.user.emailVerified) {
+                setError('Please verify your email before saving identity.');
+                return;
+            }
+            if (!verificationComplete) {
+                setLoading(true);
+                try {
+                    await authService.completeVerification({
+                        nationalId: step1.nationalId.trim(),
+                        gender: step1.gender as Gender,
+                        birthdate: step1.birthdate,
+                        preferredLanguage: step1.preferredLanguage,
+                    });
+                    await authService.getProfile();
+                } catch (err) {
+                    let errorMessage = 'Could not save identity. Please try again.';
+                    if (axios.isAxiosError(err) && err.response?.data) {
+                        const data = err.response.data as { message?: string; code?: string };
+                        if (data.message) errorMessage = data.message;
+                    }
+                    setError(errorMessage);
+                    setLoading(false);
+                    return;
+                } finally {
+                    setLoading(false);
+                }
+            }
+        }
+
         setStep(2);
     };
 
@@ -376,70 +449,56 @@ const CompleteProfile: React.FC = () => {
             return;
         }
 
+        if (!alreadyLoggedIn) {
+            setError('Please sign in to continue.');
+            navigate('/auth', { replace: true });
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
-            let userEmail = signupData?.email;
+            await authService.updateRole({ role: role.toUpperCase() });
+            await authService.getProfile();
+            const u = authService.getCurrentUser();
+            const userEmail = u?.user?.email;
 
-            if (alreadyLoggedIn) {
-                await authService.updateRole({ role: role.toUpperCase() });
-                await authService.getProfile();
-                userEmail = signupData?.email || authService.getCurrentUser()?.user?.email;
-                const u = authService.getCurrentUser()?.user;
-                if (u?.emailVerified && role) {
-                    navigate('/complete-profile', {
-                        replace: true,
-                        state: {
-                            step: 3,
-                            role: role as 'tenant' | 'landlord',
-                            ...(settingsOnlyFlow ? { fromSettings: true } : {}),
-                        },
-                    });
-                    return;
-                }
-            } else if (signupData) {
-                const registerData: RegisterRequest = {
-                    email: signupData.email,
-                    password: signupData.password,
-                    firstName: signupData.firstName,
-                    lastName: signupData.lastName,
-                    phone: signupData.phone,
-                    role: role.toUpperCase() as 'TENANT' | 'LANDLORD',
-                };
-
-                await authService.register(registerData);
-                await authService.login({
-                    identifier: signupData.email,
-                    password: signupData.password,
+            if (localStorage.getItem('authProvider') === 'email' && !u?.user.emailVerified) {
+                navigate('/verify-email', {
+                    replace: true,
+                    state: {
+                        email: userEmail,
+                        returnUrl: '/complete-profile',
+                        step: 3,
+                        role,
+                    },
                 });
-                sessionStorage.removeItem('signupData');
-
-                userEmail = signupData.email;
-
-                const newUid = authService.getCurrentUser()?.user?.id;
-                if (newUid) copyStep1SessionToLocal(newUid);
-
-                try {
-                    await authService.sendVerificationEmail();
-                } catch {
-                    console.warn('Could not send verification email automatically');
-                }
+                return;
             }
 
-            navigate('/verify-email', {
+            const p = u?.profile;
+            if (p?.onboardingStep3Completed || p?.onboardingStep3Skipped) {
+                navigate('/', {
+                    state: { next: authService.resolvePostAuthRoute(), force: true },
+                    replace: true,
+                });
+                return;
+            }
+
+            navigate('/complete-profile', {
+                replace: true,
                 state: {
-                    email: userEmail,
-                    returnUrl: '/complete-profile',
                     step: 3,
-                    role,
+                    role: role as 'tenant' | 'landlord',
+                    ...(settingsOnlyFlow ? { fromSettings: true } : {}),
                 },
             });
         } catch (err) {
-            console.error('❌ Registration failed:', err);
-            let errorMessage = 'Registration failed. Please try again.';
+            console.error('❌ Role update failed:', err);
+            let errorMessage = 'Could not save your role. Please try again.';
             if (axios.isAxiosError(err) && err.response?.data) {
-                const data = err.response.data;
+                const data = err.response.data as { message?: string; errors?: { message: string }[] };
                 if (Array.isArray(data.errors) && data.errors.length > 0) {
                     errorMessage = data.errors[0].message;
                 } else if (data.message) {
@@ -455,53 +514,20 @@ const CompleteProfile: React.FC = () => {
     const goBack = () => {
         setError(null);
         if (settingsOnlyFlow) {
-            if (step === 3) setStep(2);
-            else navigate('/settings');
+            navigate('/settings');
             return;
         }
         if (step > 1) setStep((s) => s - 1);
     };
 
     const handleStep3Skip = async () => {
-        const cached = authService.getCurrentUser();
-        const uid = cached?.user?.id;
-
         setLoading(true);
         setError(null);
         try {
-            // If Step 1 identity data hasn't been saved to the server yet, save it now.
-            // (completeVerification is normally called inside submitTenantProfile /
-            //  submitLandlordProfile, but "Skip" bypasses those.)
-            if (cached && !cached.profile?.isVerificationComplete) {
-                const s1 = loadStep1Draft(uid);
-                const verifyErr = validateStep1(s1, false);
-                if (verifyErr) {
-                    // Step 1 is incomplete — can't skip without saving it first
-                    setError(`Please finish Step 1 first: ${verifyErr}`);
-                    setLoading(false);
-                    return;
-                }
-                await authService.completeVerification({
-                    nationalId: s1.nationalId.trim(),
-                    gender: s1.gender as Gender,
-                    birthdate: s1.birthdate,
-                });
-                if (uid) clearStep1Draft(uid);
-                await authService.getProfile();
-            }
-
-            if (uid) localStorage.setItem(step3SkippedKey(uid), '1');
-            const home = role === 'landlord' ? '/landlord-home' : '/tenant-home';
-            navigate('/', { state: { next: home, force: true }, replace: true });
+            await authService.skipOnboardingStep3();
+            navigate('/', { state: { next: authService.resolvePostAuthRoute(), force: true }, replace: true });
         } catch (err) {
             console.error('Skip failed:', err);
-            // ALREADY_VERIFIED is fine — just navigate
-            if (axios.isAxiosError(err) && err.response?.data?.code === 'ALREADY_VERIFIED') {
-                if (uid) localStorage.setItem(step3SkippedKey(uid), '1');
-                const home = role === 'landlord' ? '/landlord-home' : '/tenant-home';
-                navigate('/', { state: { next: home, force: true }, replace: true });
-                return;
-            }
             const msg =
                 axios.isAxiosError(err) && err.response?.data?.message
                     ? (err.response.data as { message: string }).message
@@ -534,19 +560,17 @@ const CompleteProfile: React.FC = () => {
                 return;
             }
 
-            const uid = cached.user.id;
-            const s1 = loadStep1Draft(uid);
-
             if (!cached.profile.isVerificationComplete) {
-                const msg = validateStep1(s1, false);
+                const msg = validateStep1(step1, false);
                 if (msg) {
                     setError(msg);
                     return;
                 }
                 await authService.completeVerification({
-                    nationalId: s1.nationalId.trim(),
-                    gender: s1.gender as Gender,
-                    birthdate: s1.birthdate,
+                    nationalId: step1.nationalId.trim(),
+                    gender: step1.gender as Gender,
+                    birthdate: step1.birthdate,
+                    preferredLanguage: step1.preferredLanguage,
                 });
             }
 
@@ -555,15 +579,21 @@ const CompleteProfile: React.FC = () => {
             await authService.updateProfile({
                 preferredBudgetMin: min,
                 preferredBudgetMax: max,
+                preferredLanguage: step1.preferredLanguage || null,
+                tenantRentalPreferences: {
+                    employment: tenantStep3.employment.trim(),
+                    workplace: tenantStep3.workplace.trim(),
+                    incomeRange: tenantStep3.incomeRange.trim(),
+                    moveInDate: tenantStep3.moveInDate.trim(),
+                    propertyType: tenantStep3.propertyType.trim(),
+                    duration: tenantStep3.duration.trim(),
+                },
+                onboardingStep3Complete: true,
             });
-
-            localStorage.removeItem(step3SkippedKey(uid));
-            localStorage.removeItem(step3DraftKey(uid));
-            clearStep1Draft(uid);
 
             await authService.getProfile();
 
-            navigate('/', { state: { next: '/tenant-home', force: true }, replace: true });
+            navigate('/', { state: { next: authService.resolvePostAuthRoute(), force: true }, replace: true });
         } catch (err) {
             console.error(err);
             let errorMessage = 'Could not save your profile. Please try again.';
@@ -595,34 +625,39 @@ const CompleteProfile: React.FC = () => {
                 return;
             }
 
-            const uid = cached.user.id;
-            const s1 = loadStep1Draft(uid);
-
             if (!cached.profile.isVerificationComplete) {
-                const msg = validateStep1(s1, false);
+                const msg = validateStep1(step1, false);
                 if (msg) {
                     setError(msg);
                     return;
                 }
                 await authService.completeVerification({
-                    nationalId: s1.nationalId.trim(),
-                    gender: s1.gender as Gender,
-                    birthdate: s1.birthdate,
+                    nationalId: step1.nationalId.trim(),
+                    gender: step1.gender as Gender,
+                    birthdate: step1.birthdate,
+                    preferredLanguage: step1.preferredLanguage,
                 });
             }
 
-            // Save landlord Step 3 data to the DB:
-            // Use bio = businessAddress so Step 3 completion is tracked server-side
-            const businessBio = landlordStep3.businessAddress || landlordStep3.companyName || 'completed';
-            await authService.updateProfile({ bio: businessBio });
-
-            localStorage.removeItem(step3SkippedKey(uid));
-            localStorage.removeItem(step3DraftKey(uid));
-            clearStep1Draft(uid);
+            const businessBio = landlordStep3.businessAddress.trim();
+            const tp = Number(landlordStep3.totalProperties);
+            const ye = Number(landlordStep3.yearsExperience);
+            await authService.updateProfile({
+                bio: businessBio,
+                preferredLanguage: step1.preferredLanguage || null,
+                landlordBusinessProfile: {
+                    accountType: landlordStep3.accountType.trim(),
+                    companyName: landlordStep3.companyName.trim(),
+                    totalProperties: tp,
+                    yearsExperience: ye,
+                    availability: landlordStep3.availability.trim(),
+                },
+                onboardingStep3Complete: true,
+            });
 
             await authService.getProfile();
 
-            navigate('/', { state: { next: '/landlord-home', force: true }, replace: true });
+            navigate('/', { state: { next: authService.resolvePostAuthRoute(), force: true }, replace: true });
         } catch (err) {
             console.error(err);
             let errorMessage = 'Could not save your profile. Please try again.';
@@ -642,6 +677,11 @@ const CompleteProfile: React.FC = () => {
                 const completed = step > num;
                 const active = step === num;
                 return { completed, active };
+            }
+            if (step === 1) {
+                if (num === 1) return { completed: false, active: true };
+                if (num === 2) return { completed: false, active: false };
+                return { completed: false, active: false };
             }
             if (num === 1) return { completed: true, active: false };
             if (num === 2) return { completed: step === 3, active: step === 2 };
@@ -716,7 +756,7 @@ const CompleteProfile: React.FC = () => {
                     </div>
                 )}
 
-                {!settingsOnlyFlow && step === 1 && (
+                {step === 1 && (
                     <div className="step-fade-in">
                         <div className="section-title">
                             <h1>Create your identity</h1>
@@ -793,7 +833,7 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-continue" onClick={goNextFromStep1}>
+                            <button className="btn-continue" onClick={() => void goNextFromStep1()}>
                                 Next Step <ArrowRight size={18} />
                             </button>
                         </div>
@@ -831,10 +871,21 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            {/* No Back button in initial onboarding — the logout button is the only exit */}
-                            <button className="btn-continue" disabled={!role || loading} onClick={handleRoleSelection}>
-                                {loading ? 'Saving…' : 'Continue'} <ArrowRight size={18} />
-                            </button>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {!settingsOnlyFlow && (
+                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
+                                        <ArrowLeft size={18} /> Back to identity
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    className="btn-continue"
+                                    disabled={!role || loading}
+                                    onClick={() => void handleRoleSelection()}
+                                >
+                                    {loading ? 'Saving…' : 'Continue'} <ArrowRight size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

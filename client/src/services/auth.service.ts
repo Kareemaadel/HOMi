@@ -10,6 +10,7 @@ import apiClient from '../config/api';
 import socketService from './socket.service';
 import type {
     RegisterRequest,
+    CheckSignupAvailabilityResponse,
     LoginRequest,
     LoginResponse,
     AuthSuccessResponse,
@@ -85,24 +86,41 @@ class AuthService {
      * Incomplete profiles must finish onboarding before any dashboard.
      */
     resolvePostAuthRoute(source?: {
-        user?: { role?: string | null };
-        profile?: { isVerificationComplete?: boolean | null };
+        user?: { role?: string | null; emailVerified?: boolean | null };
+        profile?: {
+            isVerificationComplete?: boolean | null;
+            onboardingStep2Completed?: boolean | null;
+            onboardingStep3Completed?: boolean | null;
+            onboardingStep3Skipped?: boolean | null;
+        };
         isNewUser?: boolean;
     }): string {
         const cached = source ?? this.getCurrentUser() ?? undefined;
         const role = cached?.user?.role;
         const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN' || role === 'MAINTENANCE_PROVIDER';
         const isVerificationComplete = cached?.profile?.isVerificationComplete ?? false;
+        const emailVerified = cached?.user?.emailVerified ?? false;
+        const authProvider =
+            typeof localStorage !== 'undefined' ? localStorage.getItem('authProvider') : null;
+        const onboarding2Done = cached?.profile?.onboardingStep2Completed === true;
+        const onboarding3Done = cached?.profile?.onboardingStep3Completed === true;
+        const onboarding3Skipped = cached?.profile?.onboardingStep3Skipped === true;
 
-        // Brand-new user (Google or any auth) → always start onboarding
         if ((source as { isNewUser?: boolean } | undefined)?.isNewUser) return '/complete-profile';
 
-        // User has no role → onboarding step 2 (role selection)
         if (!hasAppRole) return '/complete-profile';
 
-        // Has a role but hasn't finished identity verification (step 1) → re-enter onboarding
-        // ADMIN and MAINTENANCE_PROVIDER don't go through the regular onboarding
+        if (authProvider === 'email' && !emailVerified) return '/verify-email';
+
         if (!isVerificationComplete && (role === 'TENANT' || role === 'LANDLORD')) return '/complete-profile';
+
+        if ((role === 'TENANT' || role === 'LANDLORD') && !onboarding2Done) {
+            return '/complete-profile';
+        }
+
+        if ((role === 'TENANT' || role === 'LANDLORD') && !onboarding3Done && !onboarding3Skipped) {
+            return '/complete-profile';
+        }
 
         if (role === 'ADMIN') return '/admin/dashboard';
         if (role === 'LANDLORD') return '/landlord-home';
@@ -117,6 +135,17 @@ class AuthService {
      */
     async register(data: RegisterRequest): Promise<AuthSuccessResponse> {
         const response = await apiClient.post<AuthSuccessResponse>('/auth/register', data);
+        return response.data;
+    }
+
+    async checkSignupAvailability(data: {
+        email?: string;
+        phone?: string;
+    }): Promise<CheckSignupAvailabilityResponse> {
+        const response = await apiClient.post<CheckSignupAvailabilityResponse>(
+            '/auth/check-signup-availability',
+            data
+        );
         return response.data;
     }
 
@@ -275,6 +304,15 @@ class AuthService {
         // Refresh user data after completing verification
         await this.getProfile();
 
+        return response.data;
+    }
+
+    /**
+     * Skip optional onboarding step 3 (server-tracked; account stays partially verified).
+     */
+    async skipOnboardingStep3(): Promise<AuthSuccessResponse> {
+        const response = await apiClient.post<AuthSuccessResponse>('/auth/onboarding/skip-step3', {});
+        await this.getProfile();
         return response.data;
     }
 

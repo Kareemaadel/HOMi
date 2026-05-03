@@ -4,6 +4,7 @@ import { validate } from '../../../shared/middleware/validate.middleware.js';
 import { protect } from '../../../shared/middleware/auth.middleware.js';
 import {
     RegisterSchema,
+    CheckSignupAvailabilitySchema,
     LoginSchema,
     ForgotPasswordSchema,
     ResetPasswordSchema,
@@ -56,6 +57,12 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+router.post(
+    '/check-signup-availability',
+    validate(CheckSignupAvailabilitySchema),
+    authController.checkSignupAvailability.bind(authController)
+);
+
 router.post(
     '/register',
     validate(RegisterSchema),
@@ -272,6 +279,12 @@ router.post(
     protect,
     validate(CompleteVerificationSchema),
     authController.completeVerification.bind(authController)
+);
+
+router.post(
+    '/onboarding/skip-step3',
+    protect,
+    authController.skipOnboardingStep3.bind(authController)
 );
 
 /**
