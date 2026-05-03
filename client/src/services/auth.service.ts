@@ -7,6 +7,7 @@ import type {
     AuthenticationResponseJSON,
 } from '@simplewebauthn/browser';
 import apiClient from '../config/api';
+import { notifyAccessTokenChanged } from '../lib/auth-events';
 import socketService from './socket.service';
 import type {
     RegisterRequest,
@@ -60,6 +61,7 @@ function isAccessTokenValid(accessToken: string): boolean {
  */
 function persistLoginSession(data: LoginResponse, rememberMe: boolean): void {
     localStorage.setItem('accessToken', data.accessToken);
+    notifyAccessTokenChanged();
 
     if (data.refreshToken) {
         sessionStorage.setItem('refreshToken', data.refreshToken);
@@ -193,14 +195,9 @@ class AuthService {
     }
 
     /**
-     * Logout — clears httpOnly refresh cookie on the server and local session data
+     * Drop tokens and cached user without calling the server (e.g. JWT valid but user row deleted after DB reset).
      */
-    async logout(): Promise<void> {
-        try {
-            await apiClient.post('/auth/logout', {});
-        } catch {
-            // Still clear client state if the network fails
-        }
+    clearLocalAuthState(): void {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem(REFRESH_VIA_COOKIE);
@@ -211,6 +208,19 @@ class AuthService {
         localStorage.removeItem('passkeyEnabled');
         socketService.disconnect();
         socketService.resetAuthState();
+        notifyAccessTokenChanged();
+    }
+
+    /**
+     * Logout — clears httpOnly refresh cookie on the server and local session data
+     */
+    async logout(): Promise<void> {
+        try {
+            await apiClient.post('/auth/logout', {});
+        } catch {
+            // Still clear client state if the network fails
+        }
+        this.clearLocalAuthState();
     }
 
     /**
@@ -238,27 +248,54 @@ class AuthService {
     }
 
     /**
+     * True when an access token exists and its JWT role is TENANT.
+     * Use instead of cached localStorage `user.role` so we do not call tenant-only APIs without a token
+     * or when profile cache is stale vs the JWT (avoids 401 spam on /maintenance/tenant/awaiting-confirmation).
+     */
+    isTenantSession(): boolean {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return false;
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1])) as { role?: string };
+            return payload.role === 'TENANT';
+        } catch {
+            return false;
+        }
+    }
+
+    /**
      * Restore a logged-in session: valid access JWT, or refresh via cookie / stored refresh token.
      * Use on /auth (redirect away) and in AuthGuard before treating the user as logged out.
      */
     async tryRestoreSession(): Promise<boolean> {
         const token = localStorage.getItem('accessToken');
-        let cached = this.getCurrentUser();
 
         if (token && isAccessTokenValid(token)) {
-            const jwtUserId = parseJwtUserId(token);
-            const cacheMismatch =
-                Boolean(jwtUserId && cached?.user?.id && jwtUserId !== cached.user.id);
-            if (!cached || cacheMismatch) {
-                try {
-                    await this.getProfile();
-                    cached = this.getCurrentUser();
-                } catch {
-                    localStorage.removeItem('accessToken');
-                    return false;
+            try {
+                await this.getProfile();
+                return !!this.getCurrentUser();
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    const code = error.response?.data?.code as string | undefined;
+                    const status = error.response?.status;
+                    if (status === 404 && code === 'USER_NOT_FOUND') {
+                        this.clearLocalAuthState();
+                        return false;
+                    }
+                    if (status === 500 && code === 'PROFILE_NOT_FOUND') {
+                        this.clearLocalAuthState();
+                        return false;
+                    }
                 }
+                const jwtUserId = parseJwtUserId(token);
+                const fallback = this.getCurrentUser();
+                if (fallback?.user?.id && jwtUserId === fallback.user.id) {
+                    return true;
+                }
+                localStorage.removeItem('accessToken');
+                notifyAccessTokenChanged();
+                return false;
             }
-            return !!cached;
         }
 
         const refreshViaCookie = localStorage.getItem(REFRESH_VIA_COOKIE) === '1';
@@ -268,6 +305,7 @@ class AuthService {
         if (!refreshViaCookie && !refreshToken) {
             if (token) {
                 localStorage.removeItem('accessToken');
+                notifyAccessTokenChanged();
             }
             return false;
         }
@@ -281,16 +319,26 @@ class AuthService {
                 { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
             );
             localStorage.setItem('accessToken', data.accessToken);
+            notifyAccessTokenChanged();
             // Always re-fetch profile after refresh: stored user JSON may belong to a different
             // account than the refresh cookie / token (e.g. leftover localStorage + another user's "Remember me").
             try {
                 await this.getProfile();
                 return !!this.getCurrentUser();
-            } catch {
+            } catch (error) {
+                if (
+                    axios.isAxiosError(error) &&
+                    error.response?.status === 404 &&
+                    error.response?.data?.code === 'USER_NOT_FOUND'
+                ) {
+                    this.clearLocalAuthState();
+                    return false;
+                }
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('user');
                 localStorage.removeItem('profile');
                 localStorage.removeItem('passkeyEnabled');
+                notifyAccessTokenChanged();
                 return false;
             }
         } catch {
@@ -298,6 +346,7 @@ class AuthService {
             localStorage.removeItem(REFRESH_VIA_COOKIE);
             sessionStorage.removeItem('refreshToken');
             localStorage.removeItem('refreshToken');
+            notifyAccessTokenChanged();
             return false;
         }
     }
@@ -368,6 +417,7 @@ class AuthService {
 
         if (response.data.accessToken) {
             localStorage.setItem('accessToken', response.data.accessToken);
+            notifyAccessTokenChanged();
             if (response.data.refreshToken) {
                 sessionStorage.setItem('refreshToken', response.data.refreshToken);
                 localStorage.removeItem('refreshToken');
@@ -437,10 +487,14 @@ class AuthService {
      * Login with Google OAuth
      */
     async loginWithGoogle(googleAccessToken: string, rememberMe = false): Promise<LoginResponse> {
-        const response = await apiClient.post<LoginResponse>('/auth/google', {
-            googleAccessToken,
-            rememberMe,
-        });
+        const response = await apiClient.post<LoginResponse>(
+            '/auth/google',
+            {
+                googleAccessToken,
+                rememberMe,
+            },
+            { timeout: 25_000 }
+        );
 
         if (response.data.accessToken) {
             persistLoginSession(response.data, rememberMe);
@@ -487,6 +541,7 @@ class AuthService {
         localStorage.removeItem('passkeyEnabled');
         socketService.disconnect();
         socketService.resetAuthState();
+        notifyAccessTokenChanged();
 
         return response.data;
     }

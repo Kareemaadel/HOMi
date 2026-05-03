@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
 import SignIn from '../components/signin.tsx';
 import SignUp from '../components/signup.tsx';
 import { GoogleLoginBtn } from '../components/GoogleLoginBtn.tsx';
@@ -24,8 +25,13 @@ const AuthPage = () => {
       if (ok) {
         try {
           await authService.getProfile();
-        } catch {
-          /* still allow redirect using cached user */
+        } catch (e) {
+          if (axios.isAxiosError(e) && e.response?.data?.code === 'USER_NOT_FOUND') {
+            authService.clearLocalAuthState();
+            setSessionResolved(true);
+            return;
+          }
+          /* still allow redirect using cached user for transient errors */
         }
 
         const currentUser = authService.getCurrentUser();

@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { notifyAccessTokenChanged } from '../lib/auth-events';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 // Create axios instance with default configuration
 export const apiClient = axios.create({
@@ -48,6 +49,15 @@ apiClient.interceptors.response.use(
             !originalRequest._retry &&
             !BUSINESS_LOGIC_401_CODES.has(errorCode ?? '');
 
+        if (error.response?.status === 404 && errorCode === 'USER_NOT_FOUND') {
+            const { authService } = await import('../services/auth.service');
+            authService.clearLocalAuthState();
+            const path = globalThis.location.pathname;
+            if (path !== '/auth' && !path.startsWith('/auth/')) {
+                globalThis.location.href = '/auth';
+            }
+        }
+
         if (isTokenError) {
             originalRequest._retry = true;
 
@@ -70,6 +80,7 @@ apiClient.interceptors.response.use(
 
                     const { accessToken } = response.data;
                     localStorage.setItem('accessToken', accessToken);
+                    notifyAccessTokenChanged();
 
                     // Keep cached user/profile aligned with the JWT (same issue as tryRestoreSession refresh path).
                     try {
@@ -91,6 +102,7 @@ apiClient.interceptors.response.use(
                 sessionStorage.removeItem('refreshToken');
                 localStorage.removeItem('user');
                 localStorage.removeItem('profile');
+                notifyAccessTokenChanged();
                 globalThis.location.href = '/auth';
                 throw refreshError;
             }
