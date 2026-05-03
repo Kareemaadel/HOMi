@@ -41,6 +41,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
             const nextPath = authService.resolvePostAuthRoute(res);
             navigate(nextPath, { replace: true });
         } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.data?.code === 'ACCOUNT_BANNED') {
+                await authService.logout();
+                navigate('/account-banned', {
+                    state: err.response.data.details || {},
+                    replace: true,
+                });
+                onClose?.();
+                return;
+            }
             let msg = 'Sign in failed. Please check your credentials.';
             if (axios.isAxiosError(err)) {
                 const data = err.response?.data;
@@ -65,8 +74,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, closeable = true }) => {
                 const res = await authService.loginWithGoogle(tokenResponse.access_token, rememberMe);
                 const nextPath = authService.resolvePostAuthRoute(res);
                 navigate(nextPath, { replace: true });
-            } catch {
-                setError('Google sign-in failed. Please try again.');
+            } catch (err) {
+                if (axios.isAxiosError(err) && err.response?.data?.code === 'ACCOUNT_BANNED') {
+                    await authService.logout();
+                    navigate('/account-banned', {
+                        state: err.response.data.details || {},
+                        replace: true,
+                    });
+                    onClose?.();
+                    return;
+                }
+                let msg = 'Google sign-in failed. Please try again.';
+                if (axios.isAxiosError(err)) {
+                    const data = err.response?.data as { message?: string } | undefined;
+                    if (data?.message) msg = data.message;
+                }
+                setError(msg);
             } finally {
                 setGoogleLoading(false);
             }

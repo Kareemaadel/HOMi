@@ -16,6 +16,10 @@ export interface RegisterRequest {
     lastName: string;
     phone: string;
     role: 'LANDLORD' | 'TENANT';
+    nationalId?: string;
+    gender?: Gender;
+    birthdate?: string;
+    preferredLanguage?: string;
 }
 
 export interface LoginRequest {
@@ -63,6 +67,24 @@ export interface CompleteVerificationRequest {
     nationalId: string;
     gender: Gender;
     birthdate: string;
+    preferredLanguage?: string;
+}
+
+export interface TenantRentalPreferencesPayload {
+    employment: string;
+    workplace: string;
+    incomeRange: string;
+    moveInDate: string;
+    propertyType: string;
+    duration: string;
+}
+
+export interface LandlordBusinessProfilePayload {
+    accountType: string;
+    companyName: string;
+    totalProperties: number;
+    yearsExperience: number;
+    availability: string;
 }
 
 export interface UpdateProfileRequest {
@@ -74,6 +96,10 @@ export interface UpdateProfileRequest {
     currentLocation?: string | null;
     preferredBudgetMin?: number;
     preferredBudgetMax?: number;
+    preferredLanguage?: string | null;
+    tenantRentalPreferences?: TenantRentalPreferencesPayload | null;
+    landlordBusinessProfile?: LandlordBusinessProfilePayload | null;
+    onboardingStep3Complete?: boolean;
 }
 
 export interface ChangePasswordRequest {
@@ -100,6 +126,17 @@ export interface ProfileResponse {
     preferredBudgetMax: number | null;
     currentLocation: string | null;
     isVerificationComplete: boolean;
+    preferredLanguage: string | null;
+    tenantRentalPreferences: Record<string, unknown> | null;
+    landlordBusinessProfile: Record<string, unknown> | null;
+    onboardingStep3Skipped: boolean;
+    onboardingStep3Completed: boolean;
+    onboardingStep2Completed: boolean;
+}
+
+export interface CheckSignupAvailabilityResponse {
+    emailTaken: boolean;
+    phoneTaken: boolean;
 }
 
 export interface UserResponse {

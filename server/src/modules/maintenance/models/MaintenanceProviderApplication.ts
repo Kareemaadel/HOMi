@@ -60,6 +60,11 @@ MaintenanceProviderApplication.init(
             type: DataTypes.UUID,
             allowNull: false,
             unique: true,
+            references: {
+                model: 'users',
+                key: 'id',
+            },
+            onDelete: 'CASCADE',
         },
         provider_type: {
             type: DataTypes.ENUM(...Object.values(MaintenanceProviderType)),

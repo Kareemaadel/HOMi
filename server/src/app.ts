@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import swaggerSpec from './config/swagger.js';
+import { globalRateLimiter } from './shared/middleware/rate-limit.middleware.js';
+import { isRedisReady } from './shared/infrastructure/redis.client.js';
 import { AuthError } from './modules/auth/services/auth.service.js';
 import { PropertyError } from './modules/properties/services/property.service.js';
 import { RentalRequestError } from './modules/rental-requests/services/rental-request.service.js';
@@ -14,6 +16,7 @@ import { SavedPropertiesError } from './modules/saved-properties/services/saved-
 import { MessageError } from './modules/messages/services/message.service.js';
 import { AdminError } from './modules/admin/services/admin.service.js';
 import { MaintenanceError } from './modules/maintenance/services/maintenance.service.js';
+import { RoommateMatchingError } from './modules/roommate-matching/services/roommate-matching.service.js';
 
 // Import routes
 import authRoutes from './modules/auth/routes/auth.routes.js';
@@ -26,6 +29,7 @@ import messageRoutes from './modules/messages/routes/message.routes.js';
 import adminRoutes from './modules/admin/routes/admin.routes.js';
 import maintenanceRoutes from './modules/maintenance/routes/maintenance.routes.js';
 import notificationRoutes from './modules/notifications/routes/notification.routes.js';
+import roommateMatchingRoutes from './modules/roommate-matching/routes/roommate-matching.routes.js';
 
 // Import models to register them
 import './modules/auth/models/index.js';
@@ -38,6 +42,7 @@ import './modules/messages/models/index.js';
 import './modules/admin/models/ActivityLog.js';
 import './modules/maintenance/models/index.js';
 import './modules/notifications/models/Notification.js';
+import './modules/roommate-matching/models/index.js';
 
 // Create Express app
 const app = express();
@@ -57,13 +62,12 @@ if (env.NODE_ENV === 'production') {
     app.use(helmet({ ...helmetOptions, contentSecurityPolicy: false }));
 }
 app.use(cors({
-    origin: env.NODE_ENV === 'production'
-        ? ['https://homi.app']
-        : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+    origin: env.CORS_ORIGINS,
     credentials: true,
 }));
 
 app.use(cookieParser());
+app.use(globalRateLimiter);
 
 // ======================
 // Body Parsing
@@ -96,6 +100,10 @@ app.get('/health', (_req: Request, res: Response) => {
         message: 'HOMi API is running',
         timestamp: new Date().toISOString(),
         environment: env.NODE_ENV,
+        redis: {
+            enabled: env.REDIS_ENABLED,
+            ready: isRedisReady(),
+        },
     });
 });
 
@@ -112,6 +120,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/roommate-matching', roommateMatchingRoutes);
 
 // ======================
 // 404 Handler
@@ -216,6 +225,15 @@ app.use((
     }
 
     if (err instanceof MaintenanceError) {
+        res.status(err.statusCode).json({
+            success: false,
+            message: err.message,
+            code: err.code,
+        });
+        return;
+    }
+
+    if (err instanceof RoommateMatchingError) {
         res.status(err.statusCode).json({
             success: false,
             message: err.message,

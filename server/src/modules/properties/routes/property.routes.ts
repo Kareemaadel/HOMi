@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { propertyController } from '../controllers/property.controller.js';
 import { validate, validateQuery } from '../../../shared/middleware/validate.middleware.js';
 import { protect, requireVerified, restrictTo } from '../../../shared/middleware/auth.middleware.js';
+import { propertiesListCacheMiddleware } from '../middleware/properties-cache.middleware.js';
 import {
     CreatePropertySchema,
     UpdatePropertySchema,
@@ -306,6 +307,7 @@ router.post(
 router.get(
     '/',
     validateQuery(PropertyQuerySchema),
+    propertiesListCacheMiddleware,
     propertyController.getAllProperties.bind(propertyController)
 );
 

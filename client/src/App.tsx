@@ -13,6 +13,7 @@ import BrowseProperties from "./features/BrowseProperties/pages/BrowseProperties
 import ActiveRental from "./features/ActiveRental/pages/ActiveRental";
 import Settings from "./features/Settings/pages/Settings";
 import Messages from "./features/Messages/pages/Messages";
+import RoommateMatching from "./features/RoommateMatching/pages/RoommateMatching";
 import Balance from "./features/Balance/pages/Balance";
 import PrePayment from "./features/PrePayment/pages/PrePayment";
 import PaymobVerify from "./features/PrePayment/pages/PaymobVerify";
@@ -25,7 +26,6 @@ import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
 import HowItWorksChoose from "./features/HowItWorks/pages/HowItWorksChoose";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
-import ComingSoon from "./features/ComingSoon/pages/ComingSoon";
 import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
 import Rewards from "./features/Rewards/pages/Rewards";
 import AdminLogin from "./features/admin/pages/AdminLogin";
@@ -37,6 +37,7 @@ import AdminUserManagement from "./features/admin/pages/AdminUserManagement";
 import AdminSupportInbox from "./features/admin/pages/AdminSupportInbox";
 import AdminMaintenanceApprovals from "./features/admin/pages/AdminMaintenanceApprovals";
 import AdminMaintainers from "./features/admin/pages/AdminMaintainers";
+import AdminRoommateMatching from "./features/admin/pages/AdminRoommateMatching";
 
 import Contract from "./features/TenantContractView/pages/Contract";
 import LandlordContract from "./features/LandlordContractView/pages/Contract";
@@ -82,12 +83,12 @@ function App() {
         <Route path="/sent-requests" element={<AuthGuard allowedRoles={['TENANT']}><SentRequests /></AuthGuard>} />
         <Route path="/rewards" element={<AuthGuard allowedRoles={['TENANT']}><Rewards /></AuthGuard>} />
         <Route
-          path="/roommate-matching"
-          element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Roommate Matching" description="Roommate matching is coming soon." /></AuthGuard>}
+          path="/matching"
+          element={<AuthGuard allowedRoles={['TENANT']}><RoommateMatching /></AuthGuard>}
         />
         <Route
-          path="/matching"
-          element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Roommate Matching" description="Roommate matching is coming soon." /></AuthGuard>}
+          path="/roommate-matching"
+          element={<AuthGuard allowedRoles={['TENANT']}><RoommateMatching /></AuthGuard>}
         />
         <Route path="/tenant-maintenance" element={<AuthGuard allowedRoles={['TENANT']}><TenantMaintenance /></AuthGuard>} />
 
@@ -109,9 +110,7 @@ function App() {
         <Route path="/maintenance-providers" element={<MaintenanceProviderOnboarding />} />
 
         {/* Global Dashboard Routes */}
-        <Route path="/balance" element={<Balance />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/messages" element={<Messages />} />
+
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/get-help" element={<GetHelp />} />
         <Route path="/how-it-works-choose" element={<HowItWorksChoose />} />
@@ -122,9 +121,9 @@ function App() {
 
         {/* Global Dashboard Routes — protected */}
         <Route path="/balance" element={<AuthGuard><Balance /></AuthGuard>} />
-        <Route path="/settings" element={<Settings />} /> {/* has its own guard */}
+        <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
         <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
-        <Route path="/about-us" element={<AboutUs />} />
+
         <Route path="/not-found" element={<PageNotFound />} />
 
         {/* Guest Routes — public */}
@@ -142,6 +141,7 @@ function App() {
         <Route path="/admin/support-inbox" element={<AuthGuard allowedRoles={['ADMIN']}><AdminSupportInbox /></AuthGuard>} />
         <Route path="/admin/maintenance-approvals" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceApprovals /></AuthGuard>} />
         <Route path="/admin/maintainers" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintainers /></AuthGuard>} />
+        <Route path="/admin/roommate-matching" element={<AuthGuard allowedRoles={['ADMIN']}><AdminRoommateMatching /></AuthGuard>} />
         <Route path="/admin/maintenance-conflicts" element={<AuthGuard allowedRoles={['ADMIN']}><AdminMaintenanceConflicts /></AuthGuard>} />
 
         {/* Auth Routes — public */}

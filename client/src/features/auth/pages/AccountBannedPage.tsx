@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/auth.service';
 import './AccountBannedPage.css';
 
 type BannedState = {
@@ -15,6 +16,10 @@ const AccountBannedPage = () => {
     const location = useLocation();
     const state = (location.state || {}) as BannedState;
     const [now, setNow] = useState(0);
+
+    useEffect(() => {
+        void authService.logout();
+    }, []);
 
     useEffect(() => {
         if (state.isUnlimited) return;

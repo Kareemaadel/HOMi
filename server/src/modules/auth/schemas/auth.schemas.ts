@@ -17,41 +17,73 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]
  * Only requires essential fields for account creation
  * Additional fields (national_id, gender, birthdate) are completed during verification
  */
-export const RegisterSchema = z.object({
-    // User fields
-    email: z
-        .string()
-        .email('Invalid email address')
-        .max(255, 'Email must be at most 255 characters'),
-    password: z
-        .string()
-        .min(8, 'Password must be at least 8 characters')
-        .max(100, 'Password must be at most 100 characters')
-        .regex(
-            passwordRegex,
-            'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character'
-        ),
-    role: z.enum([UserRole.LANDLORD, UserRole.TENANT], {
-        message: 'Role must be LANDLORD or TENANT',
-    }),
-    // Profile fields (required for registration)
-    firstName: z
-        .string()
-        .min(1, 'First name is required')
-        .max(100, 'First name must be at most 100 characters')
-        .trim(),
-    lastName: z
-        .string()
-        .min(1, 'Last name is required')
-        .max(100, 'Last name must be at most 100 characters')
-        .trim(),
-    phone: z
-        .string()
-        .min(1, 'Phone number is required')
-        .max(20, 'Phone number must be at most 20 characters'),
-});
+export const RegisterSchema = z
+    .object({
+        // User fields
+        email: z
+            .string()
+            .email('Invalid email address')
+            .max(255, 'Email must be at most 255 characters'),
+        password: z
+            .string()
+            .min(8, 'Password must be at least 8 characters')
+            .max(100, 'Password must be at most 100 characters')
+            .regex(
+                passwordRegex,
+                'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character'
+            ),
+        role: z.enum([UserRole.LANDLORD, UserRole.TENANT], {
+            message: 'Role must be LANDLORD or TENANT',
+        }),
+        // Profile fields (required for registration)
+        firstName: z
+            .string()
+            .min(1, 'First name is required')
+            .max(100, 'First name must be at most 100 characters')
+            .trim(),
+        lastName: z
+            .string()
+            .min(1, 'Last name is required')
+            .max(100, 'Last name must be at most 100 characters')
+            .trim(),
+        phone: z
+            .string()
+            .min(1, 'Phone number is required')
+            .max(20, 'Phone number must be at most 20 characters'),
+        nationalId: z.string().min(1).max(50).optional(),
+        gender: z.enum([Gender.MALE, Gender.FEMALE, Gender.PREFER_NOT_TO_SAY]).optional(),
+        birthdate: z
+            .string()
+            .refine((val) => !isNaN(Date.parse(val)), 'Invalid date format')
+            .optional(),
+        preferredLanguage: z.string().min(2).max(10).optional(),
+    })
+    .superRefine((data, ctx) => {
+        const hasAny = data.nationalId || data.gender || data.birthdate;
+        if (!hasAny) return;
+        if (!data.nationalId) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'National ID is required with identity fields', path: ['nationalId'] });
+        }
+        if (!data.gender) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Gender is required with identity fields', path: ['gender'] });
+        }
+        if (!data.birthdate) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Birthdate is required with identity fields', path: ['birthdate'] });
+        }
+    });
 
 export type RegisterInput = z.infer<typeof RegisterSchema>;
+
+export const CheckSignupAvailabilitySchema = z
+    .object({
+        email: z.string().email('Invalid email address').max(255).optional(),
+        phone: z.string().min(1).max(20).optional(),
+    })
+    .refine((data) => Boolean(data.email || data.phone), {
+        message: 'Provide an email and/or phone number to check',
+    });
+
+export type CheckSignupAvailabilityInput = z.infer<typeof CheckSignupAvailabilitySchema>;
 
 /**
  * Complete Verification Schema
@@ -60,14 +92,24 @@ export type RegisterInput = z.infer<typeof RegisterSchema>;
 export const CompleteVerificationSchema = z.object({
     nationalId: z
         .string()
-        .min(1, 'National ID is required')
-        .max(50, 'National ID must be at most 50 characters'),
-    gender: z.enum([Gender.MALE, Gender.FEMALE, Gender.PREFER_NOT_TO_SAY], {
-        message: 'Gender must be MALE, FEMALE, or PREFER_NOT_TO_SAY',
+        .trim()
+        .regex(/^\d{14}$/, 'National ID must be exactly 14 digits'),
+    gender: z.enum([Gender.MALE, Gender.FEMALE], {
+        message: 'Gender must be Male or Female',
     }),
     birthdate: z
         .string()
-        .refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+        .refine((val) => !isNaN(Date.parse(val)), 'Invalid date format')
+        .refine((val) => {
+            const birth = new Date(val);
+            if (Number.isNaN(birth.getTime())) return false;
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age -= 1;
+            return age >= 18;
+        }, 'You must be at least 18 years old'),
+    preferredLanguage: z.string().min(2).max(10).optional(),
 });
 
 export type CompleteVerificationInput = z.infer<typeof CompleteVerificationSchema>;
@@ -182,7 +224,7 @@ export const UpdateProfileSchema = z.object({
         .optional(),
     bio: z
         .string()
-        .max(500, 'Bio must be at most 500 characters')
+        .max(2000, 'Bio must be at most 2000 characters')
         .optional()
         .nullable(),
     avatarUrl: z
@@ -211,18 +253,70 @@ export const UpdateProfileSchema = z.object({
         .trim()
         .optional()
         .nullable(),
-}).refine(
-    (data) => {
-        if (data.preferredBudgetMin && data.preferredBudgetMax) {
-            return data.preferredBudgetMin <= data.preferredBudgetMax;
+    preferredLanguage: z.string().min(2).max(10).trim().optional().nullable(),
+    onboardingStep3Complete: z.boolean().optional(),
+    tenantRentalPreferences: z
+        .object({
+            employment: z.string().min(1),
+            workplace: z.string().min(1),
+            incomeRange: z.string().min(1),
+            moveInDate: z.string().min(1),
+            propertyType: z.string().min(1),
+            duration: z.string().min(1),
+        })
+        .optional()
+        .nullable(),
+    landlordBusinessProfile: z
+        .object({
+            accountType: z.string().min(1),
+            companyName: z.string().min(1),
+            totalProperties: z.number().nonnegative(),
+            yearsExperience: z.number().nonnegative(),
+            availability: z.string().min(1),
+        })
+        .optional()
+        .nullable(),
+})
+    .refine(
+        (data) => {
+            if (data.preferredBudgetMin && data.preferredBudgetMax) {
+                return data.preferredBudgetMin <= data.preferredBudgetMax;
+            }
+            return true;
+        },
+        {
+            message: 'Minimum budget must be less than or equal to maximum budget',
+            path: ['preferredBudgetMin'],
         }
-        return true;
-    },
-    {
-        message: 'Minimum budget must be less than or equal to maximum budget',
-        path: ['preferredBudgetMin'],
-    }
-);
+    )
+    .superRefine((data, ctx) => {
+        if (!data.onboardingStep3Complete) return;
+        if (data.tenantRentalPreferences == null && data.landlordBusinessProfile == null) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'tenantRentalPreferences or landlordBusinessProfile is required to finish onboarding',
+                path: ['onboardingStep3Complete'],
+            });
+        }
+        if (data.tenantRentalPreferences != null) {
+            if (data.preferredBudgetMin == null || data.preferredBudgetMax == null) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'Budget min and max are required to finish tenant onboarding',
+                    path: ['preferredBudgetMin'],
+                });
+            }
+        }
+        if (data.landlordBusinessProfile != null) {
+            if (data.bio == null || String(data.bio).trim().length < 1) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'Business address (bio) is required to finish landlord onboarding',
+                    path: ['bio'],
+                });
+            }
+        }
+    });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 
@@ -379,6 +473,7 @@ export type PasskeyAuthenticationVerifyInput = z.infer<typeof PasskeyAuthenticat
 
 export default {
     RegisterSchema,
+    CheckSignupAvailabilitySchema,
     CompleteVerificationSchema,
     LoginSchema,
     ForgotPasswordSchema,

@@ -5,6 +5,16 @@ import type { GenderType } from '../models/Profile.js';
  * Registration Request DTO
  * Simplified - only essential fields required
  */
+export interface CheckSignupAvailabilityRequest {
+    email?: string;
+    phone?: string;
+}
+
+export interface CheckSignupAvailabilityResponse {
+    emailTaken: boolean;
+    phoneTaken: boolean;
+}
+
 export interface RegisterRequest {
     email: string;
     password: string;
@@ -12,6 +22,11 @@ export interface RegisterRequest {
     lastName: string;
     phone: string;
     role: 'LANDLORD' | 'TENANT'; // Only LANDLORD or TENANT can self-register
+    /** When set with gender and birthdate, identity is stored at signup (HOMi email flow). */
+    nationalId?: string;
+    gender?: GenderType;
+    birthdate?: string;
+    preferredLanguage?: string;
 }
 
 /**
@@ -22,6 +37,7 @@ export interface CompleteVerificationRequest {
     nationalId: string;
     gender: GenderType;
     birthdate: string;
+    preferredLanguage?: string;
 }
 
 /**
@@ -89,6 +105,13 @@ export interface ProfileResponse {
     preferredBudgetMax: number | null;
     currentLocation: string | null;
     isVerificationComplete: boolean;
+    preferredLanguage: string | null;
+    tenantRentalPreferences: Record<string, unknown> | null;
+    landlordBusinessProfile: Record<string, unknown> | null;
+    onboardingStep3Skipped: boolean;
+    onboardingStep3Completed: boolean;
+    /** False until user confirms tenant vs landlord in onboarding step 2. */
+    onboardingStep2Completed: boolean;
 }
 
 /**
@@ -160,6 +183,23 @@ export interface UserProfileResponse {
  * Update Profile Request DTO
  * All fields are optional - only provided fields will be updated
  */
+export interface TenantRentalPreferencesPayload {
+    employment: string;
+    workplace: string;
+    incomeRange: string;
+    moveInDate: string;
+    propertyType: string;
+    duration: string;
+}
+
+export interface LandlordBusinessProfilePayload {
+    accountType: string;
+    companyName: string;
+    totalProperties: number;
+    yearsExperience: number;
+    availability: string;
+}
+
 export interface UpdateProfileRequest {
     firstName?: string;
     lastName?: string;
@@ -169,6 +209,11 @@ export interface UpdateProfileRequest {
     preferredBudgetMin?: number;
     preferredBudgetMax?: number;
     currentLocation?: string | null;
+    preferredLanguage?: string | null;
+    tenantRentalPreferences?: TenantRentalPreferencesPayload | null;
+    landlordBusinessProfile?: LandlordBusinessProfilePayload | null;
+    /** When true with valid step-3 payloads, marks onboarding complete and sets user.is_verified. */
+    onboardingStep3Complete?: boolean;
 }
 
 /**

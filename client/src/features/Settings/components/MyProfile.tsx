@@ -7,9 +7,11 @@ import type { UserResponse, ProfileResponse, UpdateProfileRequest } from '../../
 
 interface MyProfileProps {
     role?: string | null;
+    /** Shown next to Active since / Points when profile is complete — opens step 3 in Complete profile. */
+    onUpdatePreferencesShortcut?: () => void;
 }
 
-const MyProfile: React.FC<MyProfileProps> = ({ role }) => {
+const MyProfile: React.FC<MyProfileProps> = ({ role, onUpdatePreferencesShortcut }) => {
     const isMaintainer = role === 'MAINTENANCE_PROVIDER';
     const [user, setUser] = useState<UserResponse | null>(null);
     const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -25,6 +27,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ role }) => {
     const [currentLocation, setCurrentLocation] = useState('');
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     const originalFirstName = profile?.firstName ?? '';
     const originalLastName = profile?.lastName ?? '';
@@ -225,49 +228,64 @@ const MyProfile: React.FC<MyProfileProps> = ({ role }) => {
         );
     }
 
+    const updatePrefsLabel =
+        user?.role === 'LANDLORD' ? 'Update business profile' : 'Update rental preferences';
+
     return (
         <div className="profile-wrapper">
             <div className="profile-identity-card">
-                <div className="avatar-main-wrapper">
-                    <img
-                        src={avatarSrc}
-                        alt="Profile"
-                        onError={() => setAvatarSrc(fallbackAvatar)}
-                        referrerPolicy="no-referrer"
-                        style={{ opacity: uploadingAvatar ? 0.6 : 1, transition: 'opacity 0.2s' }}
-                    />
-                    {/* Hidden file input */}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={handleAvatarChange}
-                    />
-                    <button
-                        className="edit-btn-floating"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingAvatar}
-                        title="Change profile photo"
-                        style={{ opacity: uploadingAvatar ? 0.6 : 1 }}
-                    >
-                        <FaCamera />
-                    </button>
-                </div>
-                <div className="identity-text">
-                    <h3>{`${firstName} ${lastName}`.trim() || 'User'}</h3>
-                    <p>{getRoleLabel(user?.role)}</p>
+                <div className="identity-left-cluster">
+                    <div className="avatar-main-wrapper">
+                        <img
+                            src={avatarSrc}
+                            alt="Profile"
+                            onError={() => setAvatarSrc(fallbackAvatar)}
+                            referrerPolicy="no-referrer"
+                            style={{ opacity: uploadingAvatar ? 0.6 : 1, transition: 'opacity 0.2s' }}
+                        />
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handleAvatarChange}
+                        />
+                        <button
+                            className="edit-btn-floating"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingAvatar}
+                            title="Change profile photo"
+                            style={{ opacity: uploadingAvatar ? 0.6 : 1 }}
+                        >
+                            <FaCamera />
+                        </button>
+                    </div>
+                    <div className="identity-text">
+                        <h3>{`${firstName} ${lastName}`.trim() || 'User'}</h3>
+                        <p>{getRoleLabel(user?.role)}</p>
+                    </div>
                 </div>
                 {!isMaintainer && (
-                    <div className="identity-stats">
-                        <div className="stat">
-                            <span>Active Since</span>
-                            <strong>{formatDate(user?.createdAt)}</strong>
+                    <div className="identity-stats-actions">
+                        <div className="identity-stats">
+                            <div className="stat">
+                                <span>Active Since</span>
+                                <strong>{formatDate(user?.createdAt)}</strong>
+                            </div>
+                            <div className="stat">
+                                <span>Points</span>
+                                <strong>{profile?.gamificationPoints ?? 0}</strong>
+                            </div>
                         </div>
-                        <div className="stat">
-                            <span>Points</span>
-                            <strong>{profile?.gamificationPoints ?? 0}</strong>
-                        </div>
+                        {onUpdatePreferencesShortcut ? (
+                            <button
+                                type="button"
+                                className="profile-update-prefs-btn"
+                                onClick={onUpdatePreferencesShortcut}
+                            >
+                                {updatePrefsLabel}
+                            </button>
+                        ) : null}
                     </div>
                 )}
             </div>
@@ -381,6 +399,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ role }) => {
                         </div>
                     )}
                 </div>
+
 
                 <button
                     className="prime-save-button"
