@@ -71,6 +71,14 @@ apiClient.interceptors.response.use(
                     const { accessToken } = response.data;
                     localStorage.setItem('accessToken', accessToken);
 
+                    // Keep cached user/profile aligned with the JWT (same issue as tryRestoreSession refresh path).
+                    try {
+                        const { authService } = await import('../services/auth.service');
+                        await authService.getProfile();
+                    } catch {
+                        /* Token is still valid for retry; profile sync is best-effort */
+                    }
+
                     // Retry the original request with new token
                     originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                     return apiClient(originalRequest);

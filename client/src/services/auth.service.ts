@@ -39,6 +39,16 @@ function parseJwtExpMs(accessToken: string): number | null {
     }
 }
 
+/** HOMi access tokens encode `userId` (see server jwt.util). Used to detect stale cached user vs JWT. */
+function parseJwtUserId(accessToken: string): string | null {
+    try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1])) as { userId?: string };
+        return typeof payload.userId === 'string' ? payload.userId : null;
+    } catch {
+        return null;
+    }
+}
+
 function isAccessTokenValid(accessToken: string): boolean {
     const expMs = parseJwtExpMs(accessToken);
     if (expMs === null) return false;
@@ -236,7 +246,10 @@ class AuthService {
         let cached = this.getCurrentUser();
 
         if (token && isAccessTokenValid(token)) {
-            if (!cached) {
+            const jwtUserId = parseJwtUserId(token);
+            const cacheMismatch =
+                Boolean(jwtUserId && cached?.user?.id && jwtUserId !== cached.user.id);
+            if (!cached || cacheMismatch) {
                 try {
                     await this.getProfile();
                     cached = this.getCurrentUser();
@@ -268,10 +281,18 @@ class AuthService {
                 { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
             );
             localStorage.setItem('accessToken', data.accessToken);
-            if (!this.getCurrentUser()) {
+            // Always re-fetch profile after refresh: stored user JSON may belong to a different
+            // account than the refresh cookie / token (e.g. leftover localStorage + another user's "Remember me").
+            try {
                 await this.getProfile();
+                return !!this.getCurrentUser();
+            } catch {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('user');
+                localStorage.removeItem('profile');
+                localStorage.removeItem('passkeyEnabled');
+                return false;
             }
-            return true;
         } catch {
             localStorage.removeItem('accessToken');
             localStorage.removeItem(REFRESH_VIA_COOKIE);
