@@ -151,14 +151,19 @@ describe('AuthService', () => {
 
         it('should complete verification successfully', async () => {
             const profile = sequelizeMock({ id: 'p1' });
+            profile.isVerificationComplete = vi.fn().mockReturnValue(false);
             const user = sequelizeMock({ id: 'u1', email_verified: true, profile });
             vi.mocked(User.findByPk).mockResolvedValue(user as any);
 
-            const res = await authService.completeVerification('u1', { nationalId: '123', gender: 'MALE', birthdate: '1990-01-01' });
+            const res = await authService.completeVerification('u1', {
+                nationalId: '29001011234567',
+                gender: 'MALE',
+                birthdate: '1990-01-01',
+            });
             expect(res.success).toBe(true);
             expect(profile.update).toHaveBeenCalled();
-            expect(user.update).toHaveBeenCalledWith({ is_verified: true }, expect.any(Object));
-            expect(emailService.sendWelcomeEmail).toHaveBeenCalled();
+            expect(user.update).not.toHaveBeenCalled();
+            expect(emailService.sendWelcomeEmail).not.toHaveBeenCalled();
         });
     });
 
@@ -250,6 +255,84 @@ describe('AuthService', () => {
                 expect.any(Object)
             );
             expect(res.profile.firstName).toBe('Jane');
+        });
+
+        it('rejects phone number already used by another account', async () => {
+            const profile = sequelizeMock({ id: 'p1', phone_number: '+1000000001' });
+            const user = sequelizeMock({ id: 'u1', profile });
+            vi.mocked(User.findByPk).mockResolvedValue(user as any);
+            vi.mocked(Profile.findOne).mockResolvedValue({ id: 'p2', user_id: 'u2', phone_number: '+2000000002' } as any);
+
+            await expect(authService.updateProfile('u1', { phone: '+2000000002' })).rejects.toMatchObject({
+                code: 'PHONE_EXISTS',
+            });
+            expect(profile.update).not.toHaveBeenCalled();
+        });
+
+        it('allows updating phone when the number is not taken', async () => {
+            const profile = sequelizeMock({ id: 'p1', phone_number: '+1000000001' });
+            const user = sequelizeMock({ id: 'u1', profile });
+            vi.mocked(User.findByPk).mockResolvedValue(user as any);
+            vi.mocked(Profile.findOne).mockResolvedValue(null);
+
+            await authService.updateProfile('u1', { phone: '+1999999999' });
+            expect(profile.update).toHaveBeenCalledWith(
+                expect.objectContaining({ phone_number: '+1999999999' }),
+                expect.any(Object)
+            );
+        });
+
+        it('sends welcome email once when completing onboarding step 3 for the first time', async () => {
+            const profile = sequelizeMock({
+                id: 'p1',
+                first_name: 'Jane',
+                onboarding_step3_completed: false,
+            });
+            profile.isVerificationComplete = vi.fn().mockReturnValue(true);
+            const user = sequelizeMock({
+                id: 'u1',
+                email: 'jane@example.com',
+                email_verified: true,
+                role: 'TENANT',
+                profile,
+            });
+            vi.mocked(User.findByPk).mockResolvedValue(user as any);
+
+            await authService.updateProfile('u1', {
+                onboardingStep3Complete: true,
+                preferredBudgetMin: 500,
+                preferredBudgetMax: 2000,
+                tenantRentalPreferences: { employment: 'Employed' },
+            } as any);
+
+            expect(emailService.sendWelcomeEmail).toHaveBeenCalledTimes(1);
+            expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith('jane@example.com', 'Jane');
+        });
+
+        it('does not send welcome email again when step 3 was already completed', async () => {
+            const profile = sequelizeMock({
+                id: 'p1',
+                first_name: 'Jane',
+                onboarding_step3_completed: true,
+            });
+            profile.isVerificationComplete = vi.fn().mockReturnValue(true);
+            const user = sequelizeMock({
+                id: 'u1',
+                email: 'jane@example.com',
+                email_verified: true,
+                role: 'TENANT',
+                profile,
+            });
+            vi.mocked(User.findByPk).mockResolvedValue(user as any);
+
+            await authService.updateProfile('u1', {
+                onboardingStep3Complete: true,
+                preferredBudgetMin: 600,
+                preferredBudgetMax: 2200,
+                tenantRentalPreferences: { employment: 'Student' },
+            } as any);
+
+            expect(emailService.sendWelcomeEmail).not.toHaveBeenCalled();
         });
     });
 

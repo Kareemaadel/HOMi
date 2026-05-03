@@ -113,9 +113,7 @@ function App() {
         <Route path="/maintenance-providers" element={<MaintenanceProviderOnboarding />} />
 
         {/* Global Dashboard Routes */}
-        <Route path="/balance" element={<Balance />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/messages" element={<Messages />} />
+
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/get-help" element={<GetHelp />} />
         <Route path="/how-it-works-choose" element={<HowItWorksChoose />} />
@@ -126,9 +124,9 @@ function App() {
 
         {/* Global Dashboard Routes — protected */}
         <Route path="/balance" element={<AuthGuard><Balance /></AuthGuard>} />
-        <Route path="/settings" element={<Settings />} /> {/* has its own guard */}
+        <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
         <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
-        <Route path="/about-us" element={<AboutUs />} />
+
         <Route path="/not-found" element={<PageNotFound />} />
 
         {/* Guest Routes — public */}

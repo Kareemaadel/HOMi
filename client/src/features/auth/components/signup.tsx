@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, UserPlus, PhoneCall } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, PhoneCall, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
+import { authService } from '../../../services/auth.service';
 
 interface SignUpFormData {
   firstName: string;
@@ -16,6 +18,7 @@ const SignUp: React.FC = () => {
   const [strength, setStrength] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState<SignUpFormData>({
     firstName: '',
@@ -46,7 +49,7 @@ const SignUp: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -63,13 +66,90 @@ const SignUp: React.FC = () => {
       return;
     }
 
-    // Store signup data in sessionStorage to be used in CompleteProfile
-    sessionStorage.setItem('signupData', JSON.stringify(formData));
-    navigate("/complete-profile");
+    const email = formData.email.trim().toLowerCase();
+    const phone = formData.phone.trim();
+
+    setSubmitting(true);
+    try {
+      const { emailTaken, phoneTaken } = await authService.checkSignupAvailability({
+        email,
+        phone,
+      });
+      if (emailTaken && phoneTaken) {
+        setFormError(
+          'This email and phone number are already registered. Sign in with your email, or use different details.'
+        );
+        return;
+      }
+      if (emailTaken) {
+        setFormError(
+          'This email address is already registered. Sign in instead, or use a different email.'
+        );
+        return;
+      }
+      if (phoneTaken) {
+        setFormError(
+          'This phone number is already registered. Sign in instead, or use a different phone number.'
+        );
+        return;
+      }
+
+      await authService.register({
+        email,
+        password: formData.password,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone,
+        role: 'TENANT',
+      });
+
+      await authService.login({
+        identifier: email,
+        password: formData.password,
+        rememberMe: false,
+      });
+
+      localStorage.setItem('authProvider', 'email');
+
+      try {
+        await authService.sendVerificationEmail();
+      } catch {
+        console.warn('Could not send verification email automatically');
+      }
+
+      navigate('/verify-email', {
+        replace: true,
+        state: {
+          email,
+          returnUrl: '/complete-profile',
+        },
+      });
+    } catch (err) {
+      let msg = 'Could not create your account. Please try again.';
+      if (axios.isAxiosError(err) && err.response?.data) {
+        const data = err.response.data as { message?: string; code?: string; errors?: { message: string }[] };
+        if (Array.isArray(data.errors) && data.errors.length > 0) {
+          msg = data.errors[0].message;
+        } else if (data.message) {
+          msg = data.message;
+        }
+        if (data.code === 'EMAIL_EXISTS') {
+          msg =
+            'This email address is already registered. Sign in instead, or use a different email.';
+        }
+        if (data.code === 'PHONE_EXISTS') {
+          msg =
+            'This phone number is already registered. Sign in instead, or use a different phone number.';
+        }
+      }
+      setFormError(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <form className="form-layout-v2" onSubmit={handleSubmit}>
+    <form className="form-layout-v2" onSubmit={(e) => void handleSubmit(e)}>
       {formError && (
         <div style={{
           padding: '10px 14px', marginBottom: 12,
@@ -88,6 +168,7 @@ const SignUp: React.FC = () => {
             value={formData.firstName}
             onChange={handleChange}
             required 
+            disabled={submitting}
           />
         </div>
         <div className="input-block">
@@ -99,6 +180,7 @@ const SignUp: React.FC = () => {
             value={formData.lastName}
             onChange={handleChange}
             required 
+            disabled={submitting}
           />
         </div>
       </div>
@@ -112,6 +194,7 @@ const SignUp: React.FC = () => {
           value={formData.email}
           onChange={handleChange}
           required 
+          disabled={submitting}
         />
       </div>
 
@@ -124,6 +207,7 @@ const SignUp: React.FC = () => {
           value={formData.phone}
           onChange={handleChange}
           required 
+          disabled={submitting}
         />
       </div>
 
@@ -136,6 +220,7 @@ const SignUp: React.FC = () => {
           value={formData.password}
           onChange={handleChange}
           required 
+          disabled={submitting}
         />
       </div>
 
@@ -150,6 +235,7 @@ const SignUp: React.FC = () => {
           name="agreeToTerms"
           checked={agreeToTerms}
           onChange={(e) => setAgreeToTerms(e.target.checked)}
+          disabled={submitting}
         />
         <span className="remember-me-text">
           {t('auth.agreeToTerms')}{' '}
@@ -157,9 +243,9 @@ const SignUp: React.FC = () => {
         </span>
       </label>
 
-      <button type="submit" className="btn-primary-v2">
-        <UserPlus size={18}/> 
-        <span>{t('auth.signUp')}</span>
+      <button type="submit" className="btn-primary-v2" disabled={submitting}>
+        {submitting ? <Loader2 size={18} style={{ display: 'inline', verticalAlign: 'middle' }} /> : <UserPlus size={18}/>} 
+        <span>{submitting ? t('auth.loading') : t('auth.signUp')}</span>
       </button>
     </form>
   );

@@ -20,6 +20,7 @@ import type {
 } from '../interfaces/auth.interfaces.js';
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/server';
 import { webauthnService } from '../services/webauthn.service.js';
+import { env } from '../../../config/env.js';
 
 /**
  * Authentication Controller
@@ -36,6 +37,20 @@ export class AuthController {
             const result = await authService.register(input);
 
             res.status(201).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/check-signup-availability
+     * Public — whether email/phone are already taken (HOMi email signup).
+     */
+    async checkSignupAvailability(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const input = req.body as { email?: string; phone?: string };
+            const result = await authService.checkSignupAvailability(input);
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }
@@ -149,6 +164,23 @@ export class AuthController {
             const input = req.body as CompleteVerificationRequest;
             const result = await authService.completeVerification(userId, input);
 
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/onboarding/skip-step3
+     * Marks optional step 3 as skipped (account stays partially verified until completed in Settings).
+     */
+    async skipOnboardingStep3(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                throw new AuthError('User not authenticated', 401, 'NOT_AUTHENTICATED');
+            }
+            const result = await authService.skipOnboardingStep3(userId);
             res.status(200).json(result);
         } catch (error) {
             next(error);
@@ -387,7 +419,7 @@ export class AuthController {
         </div>
         <h1>Email Verified! 🎉</h1>
         <p>${result.message}</p>
-        <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" class="button">Continue to HOMi</a>
+        <a href="${env.CLIENT_URL}" class="button">Continue to HOMi</a>
     </div>
 </body>
 </html>

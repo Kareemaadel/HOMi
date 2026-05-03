@@ -1,25 +1,17 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
     User, IdCard, Globe,
     Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
     Calendar, Clock, CheckCircle2,
-    Briefcase,
+    Briefcase, LogOut,
 } from 'lucide-react';
 import axios from 'axios';
 import './CompleteProfile.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../../services/auth.service';
-import type { Gender, RegisterRequest } from '../../../types/auth.types';
+import type { Gender } from '../../../types/auth.types';
 
 type UserRole = 'tenant' | 'landlord' | null;
-
-interface SignUpFormData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-}
 
 interface Step1Draft {
     birthdate: string;
@@ -46,20 +38,6 @@ interface LandlordStep3Draft {
     yearsExperience: string;
     businessAddress: string;
     availability: string;
-}
-
-const STEP1_SESSION_KEY = 'homi_completeProfile_step1';
-
-function step1LocalKey(userId: string): string {
-    return `homi_completeProfile_step1_${userId}`;
-}
-
-function step3SkippedKey(userId: string): string {
-    return `homi_step3_skipped_${userId}`;
-}
-
-function step3DraftKey(userId: string): string {
-    return `homi_completeProfile_step3_draft_${userId}`;
 }
 
 function formatDateForInput(iso: string | null | undefined): string {
@@ -95,40 +73,180 @@ const defaultLandlordStep3 = (): LandlordStep3Draft => ({
     availability: '',
 });
 
-function loadStep1Draft(userId: string | undefined): Step1Draft {
+type CachedProfile = NonNullable<ReturnType<typeof authService.getCurrentUser>>['profile'];
+
+function hydrateStep1FromProfile(profile: CachedProfile | null | undefined): Step1Draft {
     const d = defaultStep1();
-    try {
-        const s = sessionStorage.getItem(STEP1_SESSION_KEY);
-        if (s) Object.assign(d, JSON.parse(s) as Partial<Step1Draft>);
-    } catch {
-        /* ignore */
-    }
-    if (userId) {
-        try {
-            const loc = localStorage.getItem(step1LocalKey(userId));
-            if (loc) Object.assign(d, JSON.parse(loc) as Partial<Step1Draft>);
-        } catch {
-            /* ignore */
-        }
-    }
+    if (!profile) return d;
+    d.birthdate = formatDateForInput(profile.birthdate);
+    const rawG = (profile.gender as Gender | '') || '';
+    d.gender = rawG === 'MALE' || rawG === 'FEMALE' ? rawG : '';
+    d.nationalId = '';
+    d.preferredLanguage = profile.preferredLanguage || 'en';
     return d;
 }
 
-function persistStep1Draft(draft: Step1Draft): void {
-    const json = JSON.stringify(draft);
-    sessionStorage.setItem(STEP1_SESSION_KEY, json);
-    const uid = authService.getCurrentUser()?.user?.id;
-    if (uid) localStorage.setItem(step1LocalKey(uid), json);
+/** API never returns national ID; preserve in-flight draft until onboarding step 2 is saved. */
+function mergeStep1Hydration(profile: CachedProfile | null | undefined, prev: Step1Draft): Step1Draft {
+    const next = hydrateStep1FromProfile(profile);
+    const roleLocked = profile?.onboardingStep2Completed === true;
+    const hadDraft = prev.nationalId.replace(/\D/g, '').length > 0;
+    if (!roleLocked && hadDraft) {
+        next.nationalId = prev.nationalId;
+    }
+    return next;
 }
 
-function copyStep1SessionToLocal(userId: string): void {
-    const s = sessionStorage.getItem(STEP1_SESSION_KEY);
-    if (s) localStorage.setItem(step1LocalKey(userId), s);
+/** Age at last birthday; null if date invalid. */
+function ageFromBirthdate(isoYmd: string): number | null {
+    const t = isoYmd.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+    const [y, m, d] = t.split('-').map(Number);
+    const birth = new Date(y, m - 1, d);
+    if (Number.isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const md = today.getMonth() - birth.getMonth();
+    if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age -= 1;
+    return age;
 }
 
-function clearStep1Draft(userId: string | undefined): void {
-    sessionStorage.removeItem(STEP1_SESSION_KEY);
-    if (userId) localStorage.removeItem(step1LocalKey(userId));
+function maxBirthdateForMinimumAge(minAge: number): string {
+    const cap = new Date();
+    cap.setFullYear(cap.getFullYear() - minAge);
+    return cap.toISOString().slice(0, 10);
+}
+
+const MONTH_NAMES = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+] as const;
+
+function parseYmdParts(isoYmd: string): { y: number; m: number; d: number } | null {
+    const t = isoYmd.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+    const [y, m, d] = t.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    if (Number.isNaN(dt.getTime())) return null;
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+    return { y, m, d };
+}
+
+function daysInMonth(year: number, month: number): number {
+    return new Date(year, month, 0).getDate();
+}
+
+/** Calendar-valid YYYY-MM-DD; normalizes day when month/year constrain it */
+function normalizeBirthIso(y: number, m: number, d: number): string | null {
+    const dim = daysInMonth(y, m);
+    const day = Math.min(Math.max(1, d), dim);
+    const dt = new Date(y, m - 1, day);
+    if (Number.isNaN(dt.getTime())) return null;
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1) return null;
+    const mm = String(m).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+}
+
+function formatBirthdateDisplayLong(isoYmd: string): string {
+    const p = parseYmdParts(isoYmd);
+    if (!p) return '';
+    const dt = new Date(p.y, p.m - 1, p.d);
+    return dt.toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+}
+
+type DobPart = number | '';
+
+interface DobParts {
+    d: DobPart;
+    m: DobPart;
+    y: DobPart;
+}
+
+const AVATAR_ACCEPT = 'image/jpeg,image/png,image/webp';
+
+/** Resize and encode as JPEG data URL so profile updates stay within API limits. */
+function fileToAvatarDataUrl(file: File, maxDim = 720, quality = 0.82): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const blobUrl = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(blobUrl);
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+                const scale = maxDim / Math.max(width, height);
+                width = Math.round(width * scale);
+                height = Math.round(height * scale);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('Could not process image.'));
+                return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(blobUrl);
+            reject(new Error('Could not read image.'));
+        };
+        img.src = blobUrl;
+    });
+}
+
+function tenantPrefsFromProfile(profile: CachedProfile | null | undefined): Partial<TenantStep3Draft> {
+    const out: Partial<TenantStep3Draft> = {};
+    if (!profile) return out;
+    const raw = profile.tenantRentalPreferences;
+    if (raw && typeof raw === 'object') {
+        const o = raw as Record<string, unknown>;
+        const s = (v: unknown) => (typeof v === 'string' ? v : '');
+        out.employment = s(o.employment);
+        out.workplace = s(o.workplace);
+        out.incomeRange = s(o.incomeRange);
+        out.moveInDate = s(o.moveInDate);
+        out.propertyType = s(o.propertyType);
+        out.duration = s(o.duration);
+    }
+    if (profile.preferredBudgetMin != null) out.budgetMin = String(profile.preferredBudgetMin);
+    if (profile.preferredBudgetMax != null) out.budgetMax = String(profile.preferredBudgetMax);
+    return out;
+}
+
+function landlordBizFromProfile(profile: CachedProfile | null | undefined): Partial<LandlordStep3Draft> {
+    const out: Partial<LandlordStep3Draft> = {};
+    if (!profile) return out;
+    const raw = profile.landlordBusinessProfile;
+    if (raw && typeof raw === 'object') {
+        const o = raw as Record<string, unknown>;
+        const s = (v: unknown) => (typeof v === 'string' ? v : '');
+        const n = (v: unknown) => (typeof v === 'number' ? String(v) : typeof v === 'string' ? v : '');
+        out.accountType = s(o.accountType);
+        out.companyName = s(o.companyName);
+        out.totalProperties = n(o.totalProperties);
+        out.yearsExperience = n(o.yearsExperience);
+        out.availability = s(o.availability);
+    }
+    if (profile.bio) out.businessAddress = profile.bio;
+    return out;
 }
 
 function validateTenantStep3(t: TenantStep3Draft): string | null {
@@ -165,7 +283,6 @@ function validateLandlordStep3(t: LandlordStep3Draft): string | null {
 const CompleteProfile: React.FC = () => {
     const [step, setStep] = useState(1);
     const [role, setRole] = useState<UserRole>(null);
-    const [signupData, setSignupData] = useState<SignUpFormData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,12 +291,132 @@ const CompleteProfile: React.FC = () => {
     const [tenantStep3, setTenantStep3] = useState<TenantStep3Draft>(defaultTenantStep3);
     const [landlordStep3, setLandlordStep3] = useState<LandlordStep3Draft>(defaultLandlordStep3);
 
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const [headerAvatarUrl, setHeaderAvatarUrl] = useState<string | null>(
+        () => authService.getCurrentUser()?.profile?.avatarUrl ?? null
+    );
+
     const navigate = useNavigate();
     const location = useLocation();
 
     const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
     const [hydrated, setHydrated] = useState(false);
     const [settingsOnlyFlow, setSettingsOnlyFlow] = useState(false);
+
+    const maxBirthdateFor18Plus = useMemo(() => maxBirthdateForMinimumAge(18), []);
+
+    const latestAllowedBirth = useMemo(
+        () => parseYmdParts(maxBirthdateFor18Plus),
+        [maxBirthdateFor18Plus]
+    );
+
+    const minBirthYear = useMemo(() => new Date().getFullYear() - 120, []);
+
+    const birthYearOptions = useMemo(() => {
+        if (!latestAllowedBirth) return [] as number[];
+        const years: number[] = [];
+        for (let y = latestAllowedBirth.y; y >= minBirthYear; y--) {
+            years.push(y);
+        }
+        return years;
+    }, [latestAllowedBirth, minBirthYear]);
+
+    const [dobParts, setDobParts] = useState<DobParts>({ d: '', m: '', y: '' });
+
+    /** Keep dropdowns in sync when step1 is hydrated from the server (not while user is editing partial selection). */
+    useEffect(() => {
+        const p = parseYmdParts(step1.birthdate);
+        if (p) {
+            setDobParts({ d: p.d, m: p.m, y: p.y });
+        }
+    }, [step1.birthdate]);
+
+    const monthOptionsForYear = useMemo(() => {
+        return MONTH_NAMES.map((name, i) => ({ value: i + 1, name }));
+    }, []);
+
+    const monthSelectOptions = useMemo(() => {
+        if (!latestAllowedBirth || dobParts.y === '') return monthOptionsForYear;
+        const y = Number(dobParts.y);
+        if (y < latestAllowedBirth.y) return monthOptionsForYear;
+        if (y > latestAllowedBirth.y) return monthOptionsForYear;
+        return monthOptionsForYear.filter((m) => m.value <= latestAllowedBirth.m);
+    }, [dobParts.y, latestAllowedBirth, monthOptionsForYear]);
+
+    const daySelectOptions = useMemo(() => {
+        if (dobParts.y === '' || dobParts.m === '') {
+            return Array.from({ length: 31 }, (_, i) => i + 1);
+        }
+        const y = Number(dobParts.y);
+        const m = Number(dobParts.m);
+        let max = daysInMonth(y, m);
+        if (latestAllowedBirth && y === latestAllowedBirth.y && m === latestAllowedBirth.m) {
+            max = Math.min(max, latestAllowedBirth.d);
+        }
+        return Array.from({ length: max }, (_, i) => i + 1);
+    }, [dobParts.y, dobParts.m, latestAllowedBirth]);
+
+    const applyDobChange = useCallback(
+        (patch: Partial<DobParts>) => {
+            setDobParts((prev) => {
+                const next: DobParts = {
+                    d: patch.d !== undefined ? patch.d : prev.d,
+                    m: patch.m !== undefined ? patch.m : prev.m,
+                    y: patch.y !== undefined ? patch.y : prev.y,
+                };
+
+                if (next.d === '' || next.m === '' || next.y === '') {
+                    setStep1((s) => ({ ...s, birthdate: '' }));
+                    return next;
+                }
+
+                const y = Number(next.y);
+                const m = Number(next.m);
+                const d = Number(next.d);
+                let iso = normalizeBirthIso(y, m, d);
+                if (!iso) {
+                    setStep1((s) => ({ ...s, birthdate: '' }));
+                    return next;
+                }
+                if (iso > maxBirthdateFor18Plus) {
+                    iso = maxBirthdateFor18Plus;
+                }
+                const normalized = parseYmdParts(iso);
+                if (!normalized) {
+                    setStep1((s) => ({ ...s, birthdate: '' }));
+                    return next;
+                }
+                setStep1((s) => ({ ...s, birthdate: iso }));
+                return { d: normalized.d, m: normalized.m, y: normalized.y };
+            });
+        },
+        [maxBirthdateFor18Plus]
+    );
+
+    /** If the selected year/month no longer allows the current month (18+ cap), clamp. */
+    useEffect(() => {
+        if (dobParts.y === '' || dobParts.m === '' || !latestAllowedBirth) return;
+        const y = Number(dobParts.y);
+        const m = Number(dobParts.m);
+        if (y === latestAllowedBirth.y && m > latestAllowedBirth.m) {
+            applyDobChange({ m: latestAllowedBirth.m });
+        }
+    }, [dobParts.y, dobParts.m, latestAllowedBirth, applyDobChange]);
+
+    /** If the selected day is invalid for the month/year (e.g. 31 → February), clamp. */
+    useEffect(() => {
+        if (dobParts.y === '' || dobParts.m === '' || dobParts.d === '' || !latestAllowedBirth) return;
+        const y = Number(dobParts.y);
+        const mo = Number(dobParts.m);
+        const d = Number(dobParts.d);
+        let max = daysInMonth(y, mo);
+        if (y === latestAllowedBirth.y && mo === latestAllowedBirth.m) {
+            max = Math.min(max, latestAllowedBirth.d);
+        }
+        if (d > max) {
+            applyDobChange({ d: max });
+        }
+    }, [dobParts.y, dobParts.m, dobParts.d, latestAllowedBirth, applyDobChange]);
 
     useEffect(() => {
         let cancelled = false;
@@ -188,8 +425,8 @@ const CompleteProfile: React.FC = () => {
             const locState = location.state as {
                 step?: number;
                 role?: string;
-                /** When true with step 3, back navigation stays in settings-only flow (step 2 ↔ 3). */
                 fromSettings?: boolean;
+                initialStep?: number;
             } | null;
 
             const isAuthed = authService.isAuthenticated();
@@ -204,6 +441,44 @@ const CompleteProfile: React.FC = () => {
             if (cancelled) return;
 
             const cached = authService.getCurrentUser();
+            const profile = cached?.profile;
+            const emailVerified = cached?.user?.emailVerified ?? false;
+
+            if (
+                isAuthed &&
+                cached &&
+                !locState?.fromSettings &&
+                !locState?.step &&
+                !locState?.initialStep
+            ) {
+                const step2Done = profile?.onboardingStep2Completed === true;
+                const onboardingDone =
+                    profile?.onboardingStep3Completed === true || profile?.onboardingStep3Skipped === true;
+                if (profile?.isVerificationComplete && step2Done && onboardingDone) {
+                    navigate('/', {
+                        state: { next: authService.resolvePostAuthRoute(), force: true },
+                        replace: true,
+                    });
+                    setHydrated(true);
+                    return;
+                }
+            }
+
+            if (
+                locState?.fromSettings &&
+                locState?.initialStep === 1 &&
+                isAuthed &&
+                cached &&
+                profile?.isVerificationComplete
+            ) {
+                setSettingsOnlyFlow(true);
+                setStep(1);
+                setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
+                setAlreadyLoggedIn(true);
+                setStep1((prev) => mergeStep1Hydration(profile, prev));
+                setHydrated(true);
+                return;
+            }
 
             if (locState?.step === 3) {
                 setSettingsOnlyFlow(!!locState.fromSettings);
@@ -212,53 +487,25 @@ const CompleteProfile: React.FC = () => {
                 setRole(r === 'LANDLORD' ? 'landlord' : 'tenant');
                 if (cached) {
                     setAlreadyLoggedIn(true);
-                    setSignupData({
-                        email: cached.user.email,
-                        password: '',
-                        firstName: cached.profile?.firstName || '',
-                        lastName: cached.profile?.lastName || '',
-                        phone: cached.profile?.phoneNumber || '',
-                    });
-                }
-                const uid = cached?.user?.id;
-                if (uid) {
-                    try {
-                        const d = localStorage.getItem(step3DraftKey(uid));
-                        if (d) {
-                            const parsed = JSON.parse(d) as {
-                                tenant?: TenantStep3Draft;
-                                landlord?: LandlordStep3Draft;
-                            };
-                            if (parsed.tenant) setTenantStep3({ ...defaultTenantStep3(), ...parsed.tenant });
-                            if (parsed.landlord) setLandlordStep3({ ...defaultLandlordStep3(), ...parsed.landlord });
-                        }
-                    } catch {
-                        /* ignore */
+                    setStep1((prev) => mergeStep1Hydration(cached.profile, prev));
+                    if (r === 'TENANT') {
+                        setTenantStep3({
+                            ...defaultTenantStep3(),
+                            ...tenantPrefsFromProfile(cached.profile),
+                        });
+                    } else {
+                        setLandlordStep3({
+                            ...defaultLandlordStep3(),
+                            ...landlordBizFromProfile(cached.profile),
+                        });
                     }
                 }
                 setHydrated(true);
                 return;
             }
 
-            const storedData = sessionStorage.getItem('signupData');
-            if (storedData) {
-                setSignupData(JSON.parse(storedData) as SignUpFormData);
-                setAlreadyLoggedIn(false);
-                setSettingsOnlyFlow(false);
-                setStep1(loadStep1Draft(undefined));
-                setHydrated(true);
-                return;
-            }
-
             if (cached) {
                 setAlreadyLoggedIn(true);
-                setSignupData({
-                    email: cached.user.email,
-                    password: '',
-                    firstName: cached.profile?.firstName || '',
-                    lastName: cached.profile?.lastName || '',
-                    phone: cached.profile?.phoneNumber || '',
-                });
 
                 const hasAppRole = cached.user.role === 'LANDLORD' || cached.user.role === 'TENANT';
                 const idDone = !!cached.profile?.isVerificationComplete;
@@ -267,53 +514,74 @@ const CompleteProfile: React.FC = () => {
                     setSettingsOnlyFlow(true);
                     setStep(3);
                     setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
-                    const uid = cached.user.id;
-                    try {
-                        const d = localStorage.getItem(step3DraftKey(uid));
-                        if (d) {
-                            const parsed = JSON.parse(d) as {
-                                tenant?: TenantStep3Draft;
-                                landlord?: LandlordStep3Draft;
-                            };
-                            if (parsed.tenant) setTenantStep3({ ...defaultTenantStep3(), ...parsed.tenant });
-                            if (parsed.landlord) setLandlordStep3({ ...defaultLandlordStep3(), ...parsed.landlord });
-                        }
-                    } catch {
-                        /* ignore */
-                    }
-                    if (cached.profile?.preferredBudgetMin != null) {
-                        setTenantStep3((t) => ({
-                            ...t,
-                            budgetMin: String(cached.profile!.preferredBudgetMin),
-                        }));
-                    }
-                    if (cached.profile?.preferredBudgetMax != null) {
-                        setTenantStep3((t) => ({
-                            ...t,
-                            budgetMax: String(cached.profile!.preferredBudgetMax),
-                        }));
+                    setStep1((prev) => mergeStep1Hydration(cached.profile, prev));
+                    if (cached.user.role === 'TENANT') {
+                        setTenantStep3({
+                            ...defaultTenantStep3(),
+                            ...tenantPrefsFromProfile(cached.profile),
+                        });
+                    } else {
+                        setLandlordStep3({
+                            ...defaultLandlordStep3(),
+                            ...landlordBizFromProfile(cached.profile),
+                        });
                     }
                     setHydrated(true);
                     return;
                 }
 
                 setSettingsOnlyFlow(false);
-                const merged = loadStep1Draft(cached.user.id);
-                if (!merged.birthdate) merged.birthdate = formatDateForInput(cached.profile?.birthdate);
-                if (!merged.gender) merged.gender = (cached.profile?.gender as Gender | '') || '';
-                setStep1(merged);
 
-                if (cached.profile?.preferredBudgetMin != null) {
-                    setTenantStep3((t) => ({
-                        ...t,
-                        budgetMin: String(cached.profile.preferredBudgetMin),
-                    }));
-                }
-                if (cached.profile?.preferredBudgetMax != null) {
-                    setTenantStep3((t) => ({
-                        ...t,
-                        budgetMax: String(cached.profile.preferredBudgetMax),
-                    }));
+                if (!idDone) {
+                    setStep(1);
+                    setStep1((prev) => mergeStep1Hydration(cached.profile, prev));
+                } else if (
+                    localStorage.getItem('authProvider') === 'email' &&
+                    !emailVerified
+                ) {
+                    navigate('/verify-email', {
+                        replace: true,
+                        state: {
+                            email: cached.user.email,
+                            returnUrl: '/complete-profile',
+                            role: cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant',
+                        },
+                    });
+                    setHydrated(true);
+                    return;
+                } else if (hasAppRole && cached.profile?.onboardingStep2Completed !== true) {
+                    setStep(2);
+                    setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
+                    setStep1((prev) => mergeStep1Hydration(cached.profile, prev));
+                } else if (
+                    hasAppRole &&
+                    !cached.profile?.onboardingStep3Completed &&
+                    !cached.profile?.onboardingStep3Skipped
+                ) {
+                    setStep(3);
+                    setRole(cached.user.role === 'LANDLORD' ? 'landlord' : 'tenant');
+                    setStep1((prev) => mergeStep1Hydration(cached.profile, prev));
+                    if (cached.user.role === 'TENANT') {
+                        setTenantStep3({
+                            ...defaultTenantStep3(),
+                            ...tenantPrefsFromProfile(cached.profile),
+                        });
+                    } else {
+                        setLandlordStep3({
+                            ...defaultLandlordStep3(),
+                            ...landlordBizFromProfile(cached.profile),
+                        });
+                    }
+                } else if (!hasAppRole) {
+                    setStep(2);
+                    setStep1((prev) => mergeStep1Hydration(cached.profile, prev));
+                } else {
+                    navigate('/', {
+                        state: { next: authService.resolvePostAuthRoute(), force: true },
+                        replace: true,
+                    });
+                    setHydrated(true);
+                    return;
                 }
 
                 setHydrated(true);
@@ -329,19 +597,10 @@ const CompleteProfile: React.FC = () => {
         };
     }, [navigate, location.state]);
 
-    const userId = authService.getCurrentUser()?.user?.id;
-
     useEffect(() => {
-        if (step !== 3 || !userId) return;
-        try {
-            localStorage.setItem(
-                step3DraftKey(userId),
-                JSON.stringify({ tenant: tenantStep3, landlord: landlordStep3 })
-            );
-        } catch {
-            /* ignore */
-        }
-    }, [step, userId, tenantStep3, landlordStep3]);
+        if (!hydrated) return;
+        setHeaderAvatarUrl(authService.getCurrentUser()?.profile?.avatarUrl ?? null);
+    }, [hydrated]);
 
     useEffect(() => {
         if (step !== 2 || role !== null) return;
@@ -350,23 +609,104 @@ const CompleteProfile: React.FC = () => {
         else if (r === 'TENANT') setRole('tenant');
     }, [step, role]);
 
-    const validateStep1 = (draft: Step1Draft, verificationComplete: boolean): string | null => {
+    /**
+     * When `nationalIdOptional` is true, skip national ID checks (field locked after role step or settings).
+     */
+    const validateStep1 = (draft: Step1Draft, nationalIdOptional: boolean): string | null => {
         if (!draft.birthdate.trim()) return 'Please enter your date of birth.';
-        if (!draft.gender) return 'Please select a gender.';
-        if (!verificationComplete && !draft.nationalId.trim()) return 'Please enter your National ID or passport number.';
+        const age = ageFromBirthdate(draft.birthdate);
+        if (age === null) return 'Please enter a valid date of birth.';
+        if (age < 18) return 'You must be at least 18 years old to use HOMi.';
+        if (draft.gender !== 'MALE' && draft.gender !== 'FEMALE') return 'Please select Male or Female.';
+        if (!nationalIdOptional) {
+            const digits = draft.nationalId.replace(/\D/g, '');
+            if (!digits) return 'Please enter your National ID.';
+            if (!/^\d{14}$/.test(digits)) return 'National ID must be exactly 14 digits.';
+        }
         return null;
     };
 
-    const goNextFromStep1 = () => {
+    const goNextFromStep1 = async () => {
         const cached = authService.getCurrentUser();
         const verificationComplete = !!cached?.profile?.isVerificationComplete;
-        const msg = validateStep1(step1, verificationComplete);
+        const nationalIdLocked =
+            cached?.profile?.onboardingStep2Completed === true ||
+            (!!settingsOnlyFlow && verificationComplete);
+        const msg = validateStep1(step1, nationalIdLocked);
         if (msg) {
             setError(msg);
             return;
         }
         setError(null);
-        persistStep1Draft(step1);
+
+        if (settingsOnlyFlow) {
+            setLoading(true);
+            try {
+                if (alreadyLoggedIn && cached?.user) {
+                    if (localStorage.getItem('authProvider') === 'email' && !cached.user.emailVerified) {
+                        setError('Please verify your email before saving identity.');
+                        return;
+                    }
+                    if (!verificationComplete) {
+                        await authService.completeVerification({
+                            nationalId: step1.nationalId.replace(/\D/g, ''),
+                            gender: step1.gender as Gender,
+                            birthdate: step1.birthdate,
+                            preferredLanguage: step1.preferredLanguage,
+                        });
+                    } else if (step1.preferredLanguage) {
+                        await authService.updateProfile({
+                            preferredLanguage: step1.preferredLanguage,
+                        });
+                    }
+                    await authService.getProfile();
+                    setHeaderAvatarUrl(authService.getCurrentUser()?.profile?.avatarUrl ?? null);
+                }
+                navigate('/settings');
+            } catch (err) {
+                let errorMessage = 'Could not save identity. Please try again.';
+                if (axios.isAxiosError(err) && err.response?.data) {
+                    const data = err.response.data as { message?: string };
+                    if (data.message) errorMessage = data.message;
+                }
+                setError(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        if (alreadyLoggedIn && cached?.user) {
+            if (localStorage.getItem('authProvider') === 'email' && !cached.user.emailVerified) {
+                setError('Please verify your email before saving identity.');
+                return;
+            }
+            if (!cached.profile?.onboardingStep2Completed) {
+                setLoading(true);
+                try {
+                    await authService.completeVerification({
+                        nationalId: step1.nationalId.replace(/\D/g, ''),
+                        gender: step1.gender as Gender,
+                        birthdate: step1.birthdate,
+                        preferredLanguage: step1.preferredLanguage,
+                    });
+                    await authService.getProfile();
+                    setHeaderAvatarUrl(authService.getCurrentUser()?.profile?.avatarUrl ?? null);
+                } catch (err) {
+                    let errorMessage = 'Could not save identity. Please try again.';
+                    if (axios.isAxiosError(err) && err.response?.data) {
+                        const data = err.response.data as { message?: string; code?: string };
+                        if (data.message) errorMessage = data.message;
+                    }
+                    setError(errorMessage);
+                    setLoading(false);
+                    return;
+                } finally {
+                    setLoading(false);
+                }
+            }
+        }
+
         setStep(2);
     };
 
@@ -376,70 +716,56 @@ const CompleteProfile: React.FC = () => {
             return;
         }
 
+        if (!alreadyLoggedIn) {
+            setError('Please sign in to continue.');
+            navigate('/auth', { replace: true });
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
-            let userEmail = signupData?.email;
+            await authService.updateRole({ role: role.toUpperCase() });
+            await authService.getProfile();
+            const u = authService.getCurrentUser();
+            const userEmail = u?.user?.email;
 
-            if (alreadyLoggedIn) {
-                await authService.updateRole({ role: role.toUpperCase() });
-                await authService.getProfile();
-                userEmail = signupData?.email || authService.getCurrentUser()?.user?.email;
-                const u = authService.getCurrentUser()?.user;
-                if (u?.emailVerified && role) {
-                    navigate('/complete-profile', {
-                        replace: true,
-                        state: {
-                            step: 3,
-                            role: role as 'tenant' | 'landlord',
-                            ...(settingsOnlyFlow ? { fromSettings: true } : {}),
-                        },
-                    });
-                    return;
-                }
-            } else if (signupData) {
-                const registerData: RegisterRequest = {
-                    email: signupData.email,
-                    password: signupData.password,
-                    firstName: signupData.firstName,
-                    lastName: signupData.lastName,
-                    phone: signupData.phone,
-                    role: role.toUpperCase() as 'TENANT' | 'LANDLORD',
-                };
-
-                await authService.register(registerData);
-                await authService.login({
-                    identifier: signupData.email,
-                    password: signupData.password,
+            if (localStorage.getItem('authProvider') === 'email' && !u?.user.emailVerified) {
+                navigate('/verify-email', {
+                    replace: true,
+                    state: {
+                        email: userEmail,
+                        returnUrl: '/complete-profile',
+                        step: 3,
+                        role,
+                    },
                 });
-                sessionStorage.removeItem('signupData');
-
-                userEmail = signupData.email;
-
-                const newUid = authService.getCurrentUser()?.user?.id;
-                if (newUid) copyStep1SessionToLocal(newUid);
-
-                try {
-                    await authService.sendVerificationEmail();
-                } catch {
-                    console.warn('Could not send verification email automatically');
-                }
+                return;
             }
 
-            navigate('/verify-email', {
+            const p = u?.profile;
+            if (p?.onboardingStep3Completed || p?.onboardingStep3Skipped) {
+                navigate('/', {
+                    state: { next: authService.resolvePostAuthRoute(), force: true },
+                    replace: true,
+                });
+                return;
+            }
+
+            navigate('/complete-profile', {
+                replace: true,
                 state: {
-                    email: userEmail,
-                    returnUrl: '/complete-profile',
                     step: 3,
-                    role,
+                    role: role as 'tenant' | 'landlord',
+                    ...(settingsOnlyFlow ? { fromSettings: true } : {}),
                 },
             });
         } catch (err) {
-            console.error('❌ Registration failed:', err);
-            let errorMessage = 'Registration failed. Please try again.';
+            console.error('❌ Role update failed:', err);
+            let errorMessage = 'Could not save your role. Please try again.';
             if (axios.isAxiosError(err) && err.response?.data) {
-                const data = err.response.data;
+                const data = err.response.data as { message?: string; errors?: { message: string }[] };
                 if (Array.isArray(data.errors) && data.errors.length > 0) {
                     errorMessage = data.errors[0].message;
                 } else if (data.message) {
@@ -455,19 +781,76 @@ const CompleteProfile: React.FC = () => {
     const goBack = () => {
         setError(null);
         if (settingsOnlyFlow) {
-            if (step === 3) setStep(2);
-            else navigate('/settings');
+            navigate('/settings');
             return;
         }
         if (step > 1) setStep((s) => s - 1);
     };
 
-    const handleStep3Skip = () => {
-        const uid = authService.getCurrentUser()?.user?.id;
-        if (uid) localStorage.setItem(step3SkippedKey(uid), '1');
-        const home = role === 'landlord' ? '/landlord-home' : '/tenant-home';
-        navigate('/', { state: { next: home, force: true }, replace: true });
+    const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setError('Please choose a JPG, PNG, or WebP image.');
+            return;
+        }
+        setAvatarUploading(true);
+        setError(null);
+        try {
+            const dataUrl = await fileToAvatarDataUrl(file);
+            await authService.updateProfile({ avatarUrl: dataUrl });
+            await authService.getProfile();
+            setHeaderAvatarUrl(authService.getCurrentUser()?.profile?.avatarUrl ?? null);
+        } catch (err) {
+            let msg = 'Could not upload photo. Try a smaller image.';
+            if (axios.isAxiosError(err) && err.response?.data) {
+                const data = err.response.data as { message?: string };
+                if (data.message) msg = data.message;
+            }
+            setError(msg);
+        } finally {
+            setAvatarUploading(false);
+        }
     };
+
+    /** Step bar: go back to a previous step (forward only via form buttons). */
+    const handleStepSegmentClick = (num: 1 | 2 | 3) => {
+        setError(null);
+        if (num >= step) return;
+        if (settingsOnlyFlow) {
+            if (step === 3 && num === 1) {
+                setStep(1);
+                return;
+            }
+            return;
+        }
+        setStep(num);
+    };
+
+    const handleStep3Skip = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            await authService.skipOnboardingStep3();
+            navigate('/', { state: { next: authService.resolvePostAuthRoute(), force: true }, replace: true });
+        } catch (err) {
+            console.error('Skip failed:', err);
+            const msg =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? (err.response.data as { message: string }).message
+                    : 'Could not save your profile. Please try again.';
+            setError(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        await authService.logout();
+        navigate('/auth', { replace: true });
+    };
+
 
     const submitTenantProfile = async () => {
         setLoading(true);
@@ -485,19 +868,17 @@ const CompleteProfile: React.FC = () => {
                 return;
             }
 
-            const uid = cached.user.id;
-            const s1 = loadStep1Draft(uid);
-
             if (!cached.profile.isVerificationComplete) {
-                const msg = validateStep1(s1, false);
+                const msg = validateStep1(step1, false);
                 if (msg) {
                     setError(msg);
                     return;
                 }
                 await authService.completeVerification({
-                    nationalId: s1.nationalId.trim(),
-                    gender: s1.gender as Gender,
-                    birthdate: s1.birthdate,
+                    nationalId: step1.nationalId.replace(/\D/g, ''),
+                    gender: step1.gender as Gender,
+                    birthdate: step1.birthdate,
+                    preferredLanguage: step1.preferredLanguage,
                 });
             }
 
@@ -506,15 +887,21 @@ const CompleteProfile: React.FC = () => {
             await authService.updateProfile({
                 preferredBudgetMin: min,
                 preferredBudgetMax: max,
+                preferredLanguage: step1.preferredLanguage || null,
+                tenantRentalPreferences: {
+                    employment: tenantStep3.employment.trim(),
+                    workplace: tenantStep3.workplace.trim(),
+                    incomeRange: tenantStep3.incomeRange.trim(),
+                    moveInDate: tenantStep3.moveInDate.trim(),
+                    propertyType: tenantStep3.propertyType.trim(),
+                    duration: tenantStep3.duration.trim(),
+                },
+                onboardingStep3Complete: true,
             });
-
-            localStorage.removeItem(step3SkippedKey(uid));
-            localStorage.removeItem(step3DraftKey(uid));
-            clearStep1Draft(uid);
 
             await authService.getProfile();
 
-            navigate('/', { state: { next: '/tenant-home', force: true }, replace: true });
+            navigate('/', { state: { next: authService.resolvePostAuthRoute(), force: true }, replace: true });
         } catch (err) {
             console.error(err);
             let errorMessage = 'Could not save your profile. Please try again.';
@@ -546,29 +933,39 @@ const CompleteProfile: React.FC = () => {
                 return;
             }
 
-            const uid = cached.user.id;
-            const s1 = loadStep1Draft(uid);
-
             if (!cached.profile.isVerificationComplete) {
-                const msg = validateStep1(s1, false);
+                const msg = validateStep1(step1, false);
                 if (msg) {
                     setError(msg);
                     return;
                 }
                 await authService.completeVerification({
-                    nationalId: s1.nationalId.trim(),
-                    gender: s1.gender as Gender,
-                    birthdate: s1.birthdate,
+                    nationalId: step1.nationalId.replace(/\D/g, ''),
+                    gender: step1.gender as Gender,
+                    birthdate: step1.birthdate,
+                    preferredLanguage: step1.preferredLanguage,
                 });
             }
 
-            localStorage.removeItem(step3SkippedKey(uid));
-            localStorage.removeItem(step3DraftKey(uid));
-            clearStep1Draft(uid);
+            const businessBio = landlordStep3.businessAddress.trim();
+            const tp = Number(landlordStep3.totalProperties);
+            const ye = Number(landlordStep3.yearsExperience);
+            await authService.updateProfile({
+                bio: businessBio,
+                preferredLanguage: step1.preferredLanguage || null,
+                landlordBusinessProfile: {
+                    accountType: landlordStep3.accountType.trim(),
+                    companyName: landlordStep3.companyName.trim(),
+                    totalProperties: tp,
+                    yearsExperience: ye,
+                    availability: landlordStep3.availability.trim(),
+                },
+                onboardingStep3Complete: true,
+            });
 
             await authService.getProfile();
 
-            navigate('/', { state: { next: '/landlord-home', force: true }, replace: true });
+            navigate('/', { state: { next: authService.resolvePostAuthRoute(), force: true }, replace: true });
         } catch (err) {
             console.error(err);
             let errorMessage = 'Could not save your profile. Please try again.';
@@ -589,6 +986,11 @@ const CompleteProfile: React.FC = () => {
                 const active = step === num;
                 return { completed, active };
             }
+            if (step === 1) {
+                if (num === 1) return { completed: false, active: true };
+                if (num === 2) return { completed: false, active: false };
+                return { completed: false, active: false };
+            }
             if (num === 1) return { completed: true, active: false };
             if (num === 2) return { completed: step === 3, active: step === 2 };
             return { completed: false, active: step === 3 };
@@ -608,22 +1010,109 @@ const CompleteProfile: React.FC = () => {
 
     const req = <span style={{ color: '#dc2626' }}>*</span>;
 
+    const cpProfile = authService.getCurrentUser()?.profile;
+    const nationalIdFieldLocked =
+        cpProfile?.onboardingStep2Completed === true ||
+        (!!settingsOnlyFlow && cpProfile?.isVerificationComplete === true);
+
+    const stepLabels: Array<{ num: 1 | 2 | 3; title: string; subtitle: string }> = [
+        { num: 1, title: 'Identity', subtitle: 'Basics' },
+        { num: 2, title: 'Journey', subtitle: 'Role' },
+        { num: 3, title: 'Profile', subtitle: 'Details' },
+    ];
+
     return (
-        <div className="onboarding-viewport">
-            <div className="onboarding-card">
-                <div className="stepper-nav">
-                    {[1, 2, 3].map((num) => {
+        <div
+            className={`onboarding-viewport${step > 1 && !settingsOnlyFlow ? ' onboarding-viewport--step-back' : ''}`}
+            onClick={(ev) => {
+                if (ev.target !== ev.currentTarget) return;
+                if (settingsOnlyFlow) return;
+                if (step > 1) goBack();
+            }}
+            role="presentation"
+        >
+            <div
+                className="onboarding-card cp-shell"
+                style={{ position: 'relative' }}
+                onClick={(e) => e.stopPropagation()}
+                role="presentation"
+            >
+                <nav className="cp-step-bar" aria-label="Onboarding steps">
+                    {stepLabels.map(({ num, title, subtitle }) => {
                         const { completed, active } = stepIndicator(num);
+                        const isPast = step > num;
+                        const isFuture = step < num;
+                        const settingsDeadMiddle = settingsOnlyFlow && num === 2;
+                        const canGoBack =
+                            isPast &&
+                            !settingsDeadMiddle &&
+                            (!settingsOnlyFlow || (settingsOnlyFlow && step === 3 && num === 1));
                         return (
-                            <div
+                            <button
                                 key={num}
-                                className={`step-indicator ${active ? 'active' : completed ? 'completed' : ''}`}
+                                type="button"
+                                className={[
+                                    'cp-step-segment',
+                                    active ? 'cp-step-segment--active' : '',
+                                    completed || isPast ? 'cp-step-segment--done' : '',
+                                    canGoBack ? 'cp-step-segment--clickable' : '',
+                                    isFuture ? 'cp-step-segment--future' : '',
+                                    settingsDeadMiddle ? 'cp-step-segment--muted' : '',
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')}
+                                aria-current={active ? 'step' : undefined}
+                                disabled={settingsDeadMiddle}
+                                onClick={() => {
+                                    if (!canGoBack) return;
+                                    handleStepSegmentClick(num);
+                                }}
                             >
-                                {completed && !active ? <CheckCircle2 size={18} /> : <span>{num}</span>}
-                            </div>
+                                <span className="cp-step-segment__track">
+                                    <span className="cp-step-segment__fill" aria-hidden />
+                                </span>
+                                <span className="cp-step-segment__body">
+                                    <span className="cp-step-segment__icon">
+                                        {completed && !active ? (
+                                            <CheckCircle2 size={18} strokeWidth={2.5} />
+                                        ) : (
+                                            <span className="cp-step-segment__num">{num}</span>
+                                        )}
+                                    </span>
+                                    <span className="cp-step-segment__text">
+                                        <span className="cp-step-segment__title">{title}</span>
+                                        <span className="cp-step-segment__subtitle">{subtitle}</span>
+                                    </span>
+                                </span>
+                            </button>
                         );
                     })}
-                </div>
+                </nav>
+
+                <div className="cp-card-body">
+                    <div className="cp-card-toolbar">
+                        {headerAvatarUrl ? (
+                            <div className="cp-toolbar-avatar" title="Profile photo">
+                                <img src={headerAvatarUrl} alt="" />
+                            </div>
+                        ) : (
+                            <span className="cp-toolbar-spacer" aria-hidden />
+                        )}
+                        {/* Logout — visible during initial onboarding (steps 1 & 2), not in settings flow */}
+                        {!settingsOnlyFlow && step < 3 ? (
+                            <button
+                                type="button"
+                                className="cp-logout-btn"
+                                onClick={() => void handleLogout()}
+                                title="Sign out"
+                            >
+                                <LogOut size={14} />
+                                Sign out
+                            </button>
+                        ) : (
+                            <span className="cp-toolbar-spacer" aria-hidden />
+                        )}
+                    </div>
 
                 {error && (
                     <div
@@ -640,7 +1129,7 @@ const CompleteProfile: React.FC = () => {
                     </div>
                 )}
 
-                {!settingsOnlyFlow && step === 1 && (
+                {step === 1 && (
                     <div className="step-fade-in">
                         <div className="section-title">
                             <h1>Create your identity</h1>
@@ -648,28 +1137,139 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="avatar-picker">
-                            <div className="avatar-circle" onClick={() => fileInputRef.current?.click()}>
-                                <UploadCloud size={28} />
-                                <span>Add Photo</span>
-                            </div>
-                            <input type="file" ref={fileInputRef} hidden />
+                            <button
+                                type="button"
+                                className={`avatar-circle ${headerAvatarUrl ? 'avatar-circle--has-photo' : ''}`}
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={avatarUploading}
+                            >
+                                {headerAvatarUrl ? (
+                                    <img className="avatar-circle__img" src={headerAvatarUrl} alt="" />
+                                ) : (
+                                    <>
+                                        <UploadCloud size={28} />
+                                        <span>{avatarUploading ? 'Uploading…' : 'Add Photo'}</span>
+                                    </>
+                                )}
+                                {headerAvatarUrl && !avatarUploading && (
+                                    <span className="avatar-circle__badge" aria-hidden>
+                                        <UploadCloud size={16} />
+                                    </span>
+                                )}
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                accept={AVATAR_ACCEPT}
+                                hidden
+                                onChange={(e) => void handleAvatarFileChange(e)}
+                            />
                         </div>
 
                         <div className="modern-form-grid">
-                            <div className="form-field">
-                                <label>Date of Birth {req}</label>
-                                <div className="input-wrapper">
-                                    <Calendar className="input-icon" size={18} />
-                                    <input
-                                        type="date"
-                                        value={step1.birthdate}
-                                        onChange={(e) => setStep1((s) => ({ ...s, birthdate: e.target.value }))}
-                                    />
+                            <div className="form-field full birthdate-field">
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-dob-day"
+                                >
+                                    <Calendar size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Date of Birth {req}</span>
+                                </label>
+                                <div
+                                    className="birthdate-summary"
+                                    role="status"
+                                    aria-live="polite"
+                                >
+                                    {step1.birthdate && ageFromBirthdate(step1.birthdate) !== null ? (
+                                        <span className="birthdate-summary__value">
+                                            {formatBirthdateDisplayLong(step1.birthdate)}
+                                        </span>
+                                    ) : (
+                                        <span className="birthdate-summary__placeholder">
+                                            Your selected date will appear here
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="birthdate-selects" aria-label="Date of birth">
+                                    <div className="birthdate-select-cell">
+                                        <span className="birthdate-select-caption" id="cp-dob-day-lbl">
+                                            Day
+                                        </span>
+                                        <select
+                                            id="cp-dob-day"
+                                            aria-labelledby="cp-dob-day-lbl"
+                                            className="birthdate-select"
+                                            value={dobParts.d === '' ? '' : String(dobParts.d)}
+                                            onChange={(e) => {
+                                                const v = e.target.value;
+                                                applyDobChange({ d: v === '' ? '' : Number(v) });
+                                            }}
+                                        >
+                                            <option value="">Day</option>
+                                            {daySelectOptions.map((day) => (
+                                                <option key={day} value={day}>
+                                                    {day}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="birthdate-select-cell">
+                                        <span className="birthdate-select-caption" id="cp-dob-month-lbl">
+                                            Month
+                                        </span>
+                                        <select
+                                            id="cp-dob-month"
+                                            aria-labelledby="cp-dob-month-lbl"
+                                            className="birthdate-select"
+                                            value={dobParts.m === '' ? '' : String(dobParts.m)}
+                                            onChange={(e) => {
+                                                const v = e.target.value;
+                                                applyDobChange({ m: v === '' ? '' : Number(v) });
+                                            }}
+                                        >
+                                            <option value="">Month</option>
+                                            {monthSelectOptions.map((mo) => (
+                                                <option key={mo.value} value={mo.value}>
+                                                    {mo.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="birthdate-select-cell">
+                                        <span className="birthdate-select-caption" id="cp-dob-year-lbl">
+                                            Year
+                                        </span>
+                                        <select
+                                            id="cp-dob-year"
+                                            aria-labelledby="cp-dob-year-lbl"
+                                            className="birthdate-select"
+                                            value={dobParts.y === '' ? '' : String(dobParts.y)}
+                                            onChange={(e) => {
+                                                const v = e.target.value;
+                                                applyDobChange({ y: v === '' ? '' : Number(v) });
+                                            }}
+                                        >
+                                            <option value="">Year</option>
+                                            {birthYearOptions.map((year) => (
+                                                <option key={year} value={year}>
+                                                    {year}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                             <div className="form-field">
-                                <label>Gender {req}</label>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step1-gender"
+                                >
+                                    <User size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Gender {req}</span>
+                                </label>
                                 <select
+                                    id="cp-step1-gender"
+                                    className="select-field-brand"
                                     value={step1.gender}
                                     onChange={(e) =>
                                         setStep1((s) => ({ ...s, gender: e.target.value as Gender | '' }))
@@ -678,46 +1278,62 @@ const CompleteProfile: React.FC = () => {
                                     <option value="">Select…</option>
                                     <option value="MALE">Male</option>
                                     <option value="FEMALE">Female</option>
-                                    <option value="PREFER_NOT_TO_SAY">Preferred not to say</option>
                                 </select>
                             </div>
                             <div className="form-field">
-                                <label>National ID / Passport {req}</label>
-                                <div className="input-wrapper">
-                                    <IdCard className="input-icon" size={18} />
-                                    <input
-                                        type="text"
-                                        placeholder="Document number"
-                                        value={step1.nationalId}
-                                        onChange={(e) => setStep1((s) => ({ ...s, nationalId: e.target.value }))}
-                                        disabled={!!authService.getCurrentUser()?.profile?.isVerificationComplete}
-                                        title={
-                                            authService.getCurrentUser()?.profile?.isVerificationComplete
-                                                ? 'Verified ID cannot be changed here'
-                                                : undefined
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step1-national-id"
+                                >
+                                    <IdCard size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>National ID / Passport {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step1-national-id"
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="off"
+                                    maxLength={14}
+                                    placeholder="14-digit National ID"
+                                    value={step1.nationalId}
+                                    onChange={(e) =>
+                                        setStep1((s) => ({
+                                            ...s,
+                                            nationalId: e.target.value.replace(/\D/g, '').slice(0, 14),
+                                        }))
+                                    }
+                                    disabled={nationalIdFieldLocked}
+                                    title={
+                                        nationalIdFieldLocked
+                                            ? 'National ID can no longer be changed at this step'
+                                            : undefined
+                                    }
+                                />
                             </div>
                             <div className="form-field">
-                                <label>Preferred Language</label>
-                                <div className="input-wrapper">
-                                    <Globe className="input-icon" size={18} />
-                                    <select
-                                        value={step1.preferredLanguage}
-                                        onChange={(e) =>
-                                            setStep1((s) => ({ ...s, preferredLanguage: e.target.value }))
-                                        }
-                                    >
-                                        <option value="ar">Arabic (العربية)</option>
-                                        <option value="en">English</option>
-                                    </select>
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step1-language"
+                                >
+                                    <Globe size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Preferred Language</span>
+                                </label>
+                                <select
+                                    id="cp-step1-language"
+                                    className="select-field-brand"
+                                    value={step1.preferredLanguage}
+                                    onChange={(e) =>
+                                        setStep1((s) => ({ ...s, preferredLanguage: e.target.value }))
+                                    }
+                                >
+                                    <option value="ar">Arabic (العربية)</option>
+                                    <option value="en">English</option>
+                                </select>
                             </div>
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-continue" onClick={goNextFromStep1}>
+                            <button className="btn-continue" onClick={() => void goNextFromStep1()}>
                                 Next Step <ArrowRight size={18} />
                             </button>
                         </div>
@@ -755,12 +1371,21 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-back" onClick={goBack} disabled={loading}>
-                                <ArrowLeft size={18} /> Back
-                            </button>
-                            <button className="btn-continue" disabled={!role || loading} onClick={handleRoleSelection}>
-                                {loading ? 'Saving…' : 'Continue'} <ArrowRight size={18} />
-                            </button>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {!settingsOnlyFlow && (
+                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
+                                        <ArrowLeft size={18} /> Back to identity
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    className="btn-continue"
+                                    disabled={!role || loading}
+                                    onClick={() => void handleRoleSelection()}
+                                >
+                                    {loading ? 'Saving…' : 'Continue'} <ArrowRight size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -790,18 +1415,22 @@ const CompleteProfile: React.FC = () => {
                                 </select>
                             </div>
                             <div className="form-field">
-                                <label>Workplace / Uni {req}</label>
-                                <div className="input-wrapper">
-                                    <Briefcase className="input-icon" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="Company/School"
-                                        value={tenantStep3.workplace}
-                                        onChange={(e) =>
-                                            setTenantStep3((s) => ({ ...s, workplace: e.target.value }))
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step3-workplace"
+                                >
+                                    <Briefcase size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Workplace / Uni {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step3-workplace"
+                                    type="text"
+                                    placeholder="Company/School"
+                                    value={tenantStep3.workplace}
+                                    onChange={(e) =>
+                                        setTenantStep3((s) => ({ ...s, workplace: e.target.value }))
+                                    }
+                                />
                             </div>
                             <div className="form-field">
                                 <label>Income range {req}</label>
@@ -885,33 +1514,41 @@ const CompleteProfile: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="action-footer">
-                            <button className="btn-back" onClick={goBack} disabled={loading}>
-                                <ArrowLeft size={18} /> Back
-                            </button>
-                            <button className="btn-finish" onClick={() => void submitTenantProfile()} disabled={loading}>
-                                {loading ? 'Saving…' : 'Complete Profile'}
-                            </button>
-                        </div>
-
-                        <div style={{ textAlign: 'center', marginTop: 16 }}>
-                            <button
-                                type="button"
-                                onClick={handleStep3Skip}
-                                disabled={loading}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: '#94a3b8',
-                                    fontSize: 13,
-                                    fontWeight: 500,
-                                    textDecoration: 'underline',
-                                    textUnderlineOffset: 3,
-                                }}
-                            >
-                                Skip for now
-                            </button>
+                        <div className="action-footer action-footer--step3">
+                            <div className="action-footer__primary-row">
+                                {settingsOnlyFlow ? (
+                                    <button
+                                        type="button"
+                                        className="btn-back"
+                                        onClick={() => navigate('/settings')}
+                                        disabled={loading}
+                                    >
+                                        <ArrowLeft size={18} /> Back to Settings
+                                    </button>
+                                ) : (
+                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
+                                        <ArrowLeft size={18} /> Back
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    className="btn-finish"
+                                    onClick={() => void submitTenantProfile()}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Saving…' : 'Complete Profile'}
+                                </button>
+                            </div>
+                            {!settingsOnlyFlow && (
+                                <button
+                                    type="button"
+                                    className="btn-skip"
+                                    onClick={() => void handleStep3Skip()}
+                                    disabled={loading}
+                                >
+                                    Skip for now
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -976,70 +1613,85 @@ const CompleteProfile: React.FC = () => {
                                 />
                             </div>
                             <div className="form-field full">
-                                <label>Business Address {req}</label>
-                                <div className="input-wrapper">
-                                    <Building2 className="input-icon" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="Full address"
-                                        value={landlordStep3.businessAddress}
-                                        onChange={(e) =>
-                                            setLandlordStep3((s) => ({ ...s, businessAddress: e.target.value }))
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step3-business-address"
+                                >
+                                    <Building2 size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Business Address {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step3-business-address"
+                                    type="text"
+                                    placeholder="Full address"
+                                    value={landlordStep3.businessAddress}
+                                    onChange={(e) =>
+                                        setLandlordStep3((s) => ({ ...s, businessAddress: e.target.value }))
+                                    }
+                                />
                             </div>
                             <div className="form-field">
-                                <label>Availability {req}</label>
-                                <div className="input-wrapper">
-                                    <Clock className="input-icon" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. 9AM - 5PM"
-                                        value={landlordStep3.availability}
-                                        onChange={(e) =>
-                                            setLandlordStep3((s) => ({ ...s, availability: e.target.value }))
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step3-availability"
+                                >
+                                    <Clock size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Availability {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step3-availability"
+                                    type="text"
+                                    placeholder="e.g. 9AM - 5PM"
+                                    value={landlordStep3.availability}
+                                    onChange={(e) =>
+                                        setLandlordStep3((s) => ({ ...s, availability: e.target.value }))
+                                    }
+                                />
                             </div>
                         </div>
 
-                        <div className="action-footer">
-                            <button className="btn-back" onClick={goBack} disabled={loading}>
-                                <ArrowLeft size={18} /> Back
-                            </button>
-                            <button className="btn-finish" onClick={() => void submitLandlordProfile()} disabled={loading}>
-                                {loading ? 'Saving…' : 'Finish Setup'}
-                            </button>
-                        </div>
-
-                        <div style={{ textAlign: 'center', marginTop: 16 }}>
-                            <button
-                                type="button"
-                                onClick={handleStep3Skip}
-                                disabled={loading}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: '#94a3b8',
-                                    fontSize: 13,
-                                    fontWeight: 500,
-                                    textDecoration: 'underline',
-                                    textUnderlineOffset: 3,
-                                }}
-                            >
-                                Skip for now
-                            </button>
+                        <div className="action-footer action-footer--step3">
+                            <div className="action-footer__primary-row">
+                                {settingsOnlyFlow ? (
+                                    <button
+                                        type="button"
+                                        className="btn-back"
+                                        onClick={() => navigate('/settings')}
+                                        disabled={loading}
+                                    >
+                                        <ArrowLeft size={18} /> Back to Settings
+                                    </button>
+                                ) : (
+                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
+                                        <ArrowLeft size={18} /> Back
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    className="btn-finish"
+                                    onClick={() => void submitLandlordProfile()}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Saving…' : 'Finish Setup'}
+                                </button>
+                            </div>
+                            {!settingsOnlyFlow && (
+                                <button
+                                    type="button"
+                                    className="btn-skip"
+                                    onClick={() => void handleStep3Skip()}
+                                    disabled={loading}
+                                >
+                                    Skip for now
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
+                </div>
             </div>
         </div>
     );
 };
 
 export default CompleteProfile;
-
-// export default CompleteProfile;

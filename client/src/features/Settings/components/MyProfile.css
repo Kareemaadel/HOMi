@@ -18,11 +18,53 @@
 
 .profile-identity-card {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 2rem;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
     padding-bottom: 3rem;
     border-bottom: 1px solid #f1f5f9;
     margin-bottom: 3rem;
+}
+
+.identity-left-cluster {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    min-width: 0;
+    flex: 1 1 220px;
+}
+
+.identity-stats-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem 1.25rem;
+    margin-left: auto;
+}
+
+.identity-stats-actions .identity-stats {
+    margin-top: 0;
+}
+
+.profile-update-prefs-btn {
+    background: transparent;
+    color: #6366f1;
+    border: 1px solid #c7d2fe;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    transition: background 0.2s, border-color 0.2s;
+    font-family: inherit;
+}
+
+.profile-update-prefs-btn:hover {
+    background: #eef2ff;
+    border-color: #a5b4fc;
 }
 
 .avatar-main-wrapper {
@@ -216,4 +258,17 @@
     0% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.5); opacity: 0.5; }
     100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+    .identity-stats-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    .profile-update-prefs-btn {
+        width: 100%;
+        max-width: 100%;
+    }
 }

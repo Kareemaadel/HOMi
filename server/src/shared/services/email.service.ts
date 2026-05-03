@@ -369,7 +369,7 @@ class EmailService {
         return this.sendEmail(email, 'Welcome to HOMi! 🎉', {
             title: `Welcome, ${firstName}!`,
             message: `
-                Your email has been verified successfully. You're now a fully verified member of HOMi! 🏠
+                You've finished setting up your profile on HOMi. Your account is ready to use! 🏠
                 <br><br>
                 Here's what you can do next:
                 <br><br>

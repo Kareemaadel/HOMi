@@ -27,9 +27,7 @@ function resolveToken(socket: Socket): string | null {
 export function initSocketServer(server: HttpServer): Server {
     io = new Server(server, {
         cors: {
-            origin: env.NODE_ENV === 'production'
-                ? ['https://homi.app']
-                : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+            origin: env.CORS_ORIGINS,
             credentials: true,
         },
     });

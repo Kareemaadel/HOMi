@@ -12,17 +12,110 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  margin-top: -9px;
+  /* Do not pull content under the fixed header */
+  margin-top: 0;
 }
 
 .settings-main-area {
   flex: 1;
   width: 100%;
-  /* Top padding clears the header (96px). 
-    Right/Bottom padding adds breathing room (1.5rem).
-    Left padding is 0 to stay flush against the sidebar. 
-  */
-  padding: 96px 1.5rem 1.5rem 0;
+  /* Fixed header is 88px — leave a clear gap so banners and content never sit under the navbar */
+  padding: calc(88px + 1.25rem) 1.5rem 1.5rem 0;
+}
+
+/* Banners sit below the header padding; keep stacking context sane vs. header (z-index 1000) */
+.settings-top-banner {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 1.5rem;
+}
+
+.settings-banner {
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.settings-banner--identity {
+  background: linear-gradient(135deg, #fef3c7, #fffbeb);
+  border: 1px solid #f59e0b;
+  border-left: 4px solid #d97706;
+}
+
+.settings-banner--preferences {
+  background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+  border: 1px solid #60a5fa;
+  border-left: 4px solid #3b82f6;
+}
+
+.settings-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-banner__title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.settings-banner__text {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.settings-banner--identity .settings-banner__title {
+  color: #92400e;
+}
+
+.settings-banner--identity .settings-banner__text {
+  color: #b45309;
+}
+
+.settings-banner--preferences .settings-banner__title {
+  color: #1e40af;
+}
+
+.settings-banner--preferences .settings-banner__text {
+  color: #1d4ed8;
+}
+
+.settings-banner__btn {
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.settings-banner__btn--identity {
+  background: #d97706;
+  color: #fff;
+}
+
+.settings-banner__btn--preferences {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.settings-banner__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.settings-banner__icon--warn {
+  color: #d97706;
+}
+
+.settings-banner__icon--info {
+  color: #3b82f6;
 }
 
 .settings-glass-card {
@@ -144,6 +237,13 @@
   }
 }
 
+@media (max-width: 560px) {
+  .settings-banner__btn {
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+
 @media (max-width: 1024px) {
   .settings-viewport {
     margin-left: 0;
@@ -151,7 +251,7 @@
 
   .settings-main-area {
     /* Add padding back to the left side on mobile since the sidebar is hidden */
-    padding: 88px 1.25rem 1.25rem 1.25rem; 
+    padding: calc(88px + 1.25rem) 1.25rem 1.25rem 1.25rem;
   }
 
   .settings-glass-card {
