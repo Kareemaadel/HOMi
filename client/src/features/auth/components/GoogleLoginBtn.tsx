@@ -35,7 +35,9 @@ export const GoogleLoginBtn = ({ rememberMe = false }: GoogleLoginBtnProps) => {
                     return;
                 }
                 const errorMessage = axios.isAxiosError(err)
-                    ? err.response?.data?.message || 'Google login failed. Please try again.'
+                    ? err.response?.data?.code === 'GOOGLE_VERIFICATION_UNAVAILABLE'
+                        ? 'Cannot reach Google (network or DNS). Check your connection or VPN, then try again.'
+                        : err.response?.data?.message || 'Google login failed. Please try again.'
                     : 'Google login failed. Please try again.';
                 setError(errorMessage);
             } finally {

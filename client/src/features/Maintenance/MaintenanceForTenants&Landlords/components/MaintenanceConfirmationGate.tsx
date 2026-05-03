@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import maintenanceService, {
     type MaintenanceRequest,
 } from '../../../../services/maintenance.service';
 import socketService from '../../../../services/socket.service';
 import authService from '../../../../services/auth.service';
+import { ACCESS_TOKEN_CHANGED_EVENT } from '../../../../lib/auth-events';
 import CompletionConfirmModal from './CompletionConfirmModal';
 
 /**
@@ -14,9 +15,17 @@ import CompletionConfirmModal from './CompletionConfirmModal';
 const MaintenanceConfirmationGate: React.FC = () => {
     const [pending, setPending] = useState<MaintenanceRequest | null>(null);
     const [disabledByAuth, setDisabledByAuth] = useState(false);
+    /** Bumps when access token is set/cleared so we re-read JWT (AuthGuard restores async; this component is outside AuthGuard). */
+    const [authEpoch, setAuthEpoch] = useState(0);
 
-    const cached = authService.getCurrentUser?.();
-    const isTenant = cached?.user?.role === 'TENANT';
+    useEffect(() => {
+        const onTokenChange = () => setAuthEpoch((n) => n + 1);
+        globalThis.addEventListener(ACCESS_TOKEN_CHANGED_EVENT, onTokenChange);
+        return () => globalThis.removeEventListener(ACCESS_TOKEN_CHANGED_EVENT, onTokenChange);
+    }, []);
+
+    /** JWT role must match API (protect + restrictTo); localStorage `user` can be stale vs token. */
+    const isTenant = useMemo(() => authService.isTenantSession(), [authEpoch]);
 
     const refresh = useCallback(async () => {
         if (!isTenant || disabledByAuth) return;

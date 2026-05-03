@@ -778,11 +778,27 @@ export class AuthService {
                 'https://www.googleapis.com/oauth2/v3/userinfo',
                 {
                     headers: { Authorization: `Bearer ${googleAccessToken}` },
+                    timeout: 12_000,
                 }
             );
             googleUser = response.data;
         } catch (error) {
             console.error('Google token verification failed:', error);
+            if (axios.isAxiosError(error)) {
+                const transient =
+                    error.code === 'ECONNRESET' ||
+                    error.code === 'ETIMEDOUT' ||
+                    error.code === 'ENOTFOUND' ||
+                    error.code === 'EAI_AGAIN' ||
+                    error.code === 'ECONNABORTED';
+                if (transient) {
+                    throw new AuthError(
+                        'Unable to reach Google. Check your network connection and try again.',
+                        503,
+                        'GOOGLE_VERIFICATION_UNAVAILABLE'
+                    );
+                }
+            }
             throw new AuthError('Invalid Google access token', 401, 'INVALID_GOOGLE_TOKEN');
         }
 

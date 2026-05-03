@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../../config/api';
+import { notifyAccessTokenChanged } from '../../../lib/auth-events';
 import './adminLogin.css';
 
 const AdminLogin = () => {
@@ -21,6 +22,7 @@ const AdminLogin = () => {
             if (response.data.success) {
                 const { accessToken, user, profile } = response.data.data;
                 localStorage.setItem('accessToken', accessToken);
+                notifyAccessTokenChanged();
                 localStorage.setItem('user', JSON.stringify(user));
                 if (profile) {
                     localStorage.setItem('profile', JSON.stringify(profile));
