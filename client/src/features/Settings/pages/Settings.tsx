@@ -20,6 +20,7 @@ import DeleteAccountSection from '../components/DeleteAccountSection';
 import LifestyleHabits from '../components/LifestyleHabits';
 
 import { FaLock, FaUserCircle } from 'react-icons/fa';
+import { AlertTriangle } from 'lucide-react';
 
 // ── Auth Guard Screen ──────────────────────────────────────────────────────────
 const SignInRequired: React.FC = () => {
@@ -43,7 +44,6 @@ const SignInRequired: React.FC = () => {
                 width: '100%',
                 textAlign: 'center',
             }}>
-                {/* Icon */}
                 <div style={{
                     width: 80, height: 80, borderRadius: '50%',
                     background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2))',
@@ -67,7 +67,6 @@ const SignInRequired: React.FC = () => {
                     Your profile, billing, notifications, and security options are only visible to signed-in users.
                 </p>
 
-                {/* CTA Buttons */}
                 <button
                     onClick={() => navigate('/auth')}
                     style={{
@@ -106,8 +105,106 @@ const SignInRequired: React.FC = () => {
     );
 };
 
+// ── Incomplete Profile Banner ──────────────────────────────────────────────────
+interface ProfileBannerProps {
+    userRole: string | null;
+    isVerificationComplete: boolean;
+    hasPreferences: boolean;
+    onComplete: () => void;
+}
+
+const IncompleteProfileBanner: React.FC<ProfileBannerProps> = ({
+    userRole, isVerificationComplete, hasPreferences, onComplete,
+}) => {
+    if (userRole !== 'TENANT' && userRole !== 'LANDLORD') return null;
+
+    // Step 1 incomplete: identity/ID/gender/birthdate not verified yet
+    if (!isVerificationComplete) {
+        return (
+            <div style={{
+                background: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
+                border: '1px solid #f59e0b',
+                borderLeft: '4px solid #d97706',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginBottom: '24px',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start',
+            }}>
+                <AlertTriangle size={20} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#92400e', marginBottom: 4 }}>
+                        Identity verification required
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#b45309', lineHeight: 1.5 }}>
+                        You haven't completed your identity verification. HOMi features like submitting rental
+                        requests and listing properties are locked until your profile is fully verified.
+                    </div>
+                </div>
+                <button
+                    onClick={onComplete}
+                    style={{
+                        background: '#d97706', color: '#fff', border: 'none',
+                        padding: '9px 18px', borderRadius: '8px', cursor: 'pointer',
+                        fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                    }}
+                >
+                    Complete Now
+                </button>
+            </div>
+        );
+    }
+
+    // Step 3 incomplete: preferences / business profile was skipped
+    if (!hasPreferences) {
+        const label = userRole === 'LANDLORD' ? 'Business Profile' : 'Rental Preferences';
+        const hint = userRole === 'LANDLORD'
+            ? 'Add your business profile to unlock property listings and rental management features.'
+            : 'Add your rental preferences to submit requests and unlock matching features.';
+        return (
+            <div style={{
+                background: 'linear-gradient(135deg, #eff6ff, #f0f9ff)',
+                border: '1px solid #60a5fa',
+                borderLeft: '4px solid #3b82f6',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                marginBottom: '24px',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start',
+            }}>
+                <AlertTriangle size={20} style={{ color: '#3b82f6', flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e40af', marginBottom: 4 }}>
+                        {label} not set up
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#1d4ed8', lineHeight: 1.5 }}>
+                        {hint}
+                    </div>
+                </div>
+                <button
+                    onClick={onComplete}
+                    style={{
+                        background: '#3b82f6', color: '#fff', border: 'none',
+                        padding: '9px 18px', borderRadius: '8px', cursor: 'pointer',
+                        fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                    }}
+                >
+                    Set Up Now
+                </button>
+            </div>
+        );
+    }
+
+    return null;
+};
+
 // ── Main Settings Page ─────────────────────────────────────────────────────────
 const Settings: React.FC = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('profile');
 
     // Auth guard — show sign-in screen if no token exists
@@ -127,7 +224,23 @@ const Settings: React.FC = () => {
         : userRole === 'MAINTENANCE_PROVIDER'
             ? MaintenanceSideBar
             : TenantSidebar;
-    // Senior Approach: Component Mapping Object
+
+    // Detect whether step 3 (preferences / business) is complete — DB-based:
+    // - Tenant:   preferredBudgetMin is set server-side after Step 3 submission
+    // - Landlord: bio is set to business address/name after Step 3 submission
+    const hasPreferences = (() => {
+        if (userRole === 'TENANT') return cached?.profile?.preferredBudgetMin != null;
+        if (userRole === 'LANDLORD') return Boolean(cached?.profile?.bio);
+        return true;
+    })();
+
+    const isProfileFullyComplete = isVerificationComplete && hasPreferences;
+
+    const handleCompleteProfile = () => {
+        navigate('/complete-profile', { state: { step: 3, fromSettings: true, role: userRole } });
+    };
+
+    // Component mapping by active tab
     const tabComponents: Record<string, React.ReactNode> = {
         profile: <MyProfile role={userRole} />,
         billing: <Billing />,
@@ -136,42 +249,38 @@ const Settings: React.FC = () => {
         privacy: <Privacy />,
         preferences: <Preferences />,
         lifestyle: <LifestyleHabits role={userRole} />,
-        delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />
+        delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />,
     };
 
     return (
         <div className="settings-layout">
             <SidebarComponent />
-            
+
             <div className="settings-viewport">
                 <Header />
-                
-                <main className="settings-main-area">
-                    {!isVerificationComplete && (
-                        <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', color: '#b45309', padding: '12px 24px', borderRadius: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 500, fontSize: '0.95rem' }}>
-                                Please complete your profile to access all HOMi features.
-                            </div>
-                            <button
-                                onClick={() => {
-                                    navigate('/complete-profile', { state: { step: 3, fromSettings: true, role: userRole } });
-                                }}
-                                style={{ background: '#d97706', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
-                            >
-                                Complete Profile
-                            </button>
-                        </div>
-                    )}
 
-                    {isVerificationComplete && (userRole === 'TENANT' || userRole === 'LANDLORD') && (
+                <main className="settings-main-area">
+                    {/* Incomplete profile warning — yellow for Step 1, blue for Step 3 */}
+                    <IncompleteProfileBanner
+                        userRole={userRole}
+                        isVerificationComplete={isVerificationComplete}
+                        hasPreferences={hasPreferences}
+                        onComplete={handleCompleteProfile}
+                    />
+
+                    {/* "Update Preferences" shortcut for fully-verified users */}
+                    {isProfileFullyComplete && (userRole === 'TENANT' || userRole === 'LANDLORD') && (
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', paddingRight: '4px' }}>
                             <button
-                                onClick={() => {
-                                    navigate('/complete-profile', { state: { step: 3, fromSettings: true, role: userRole } });
+                                onClick={handleCompleteProfile}
+                                style={{
+                                    background: 'transparent', color: '#6366f1',
+                                    border: '1px solid #c7d2fe', padding: '8px 16px',
+                                    borderRadius: '8px', cursor: 'pointer',
+                                    fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s',
                                 }}
-                                style={{ background: 'transparent', color: '#6366f1', border: '1px solid #c7d2fe', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s' }}
-                                onMouseOver={(e) => { e.currentTarget.style.background = '#e0e7ff'; }}
-                                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onMouseOver={e => { e.currentTarget.style.background = '#e0e7ff'; }}
+                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
                             >
                                 Update {userRole === 'LANDLORD' ? 'Business Profile' : 'Rental Preferences'}
                             </button>
@@ -179,19 +288,18 @@ const Settings: React.FC = () => {
                     )}
 
                     <div className="settings-glass-card">
-                        <SettingsSidebar 
-                            activeTab={activeTab} 
-                            setActiveTab={setActiveTab} 
+                        <SettingsSidebar
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
                             role={userRole}
                         />
-                        
+
                         <section className="settings-view-panel">
-                            {/* Render the component based on activeTab key, fallback to Profile */}
                             {tabComponents[activeTab] || tabComponents.profile}
                         </section>
                     </div>
                 </main>
-                
+
                 <Footer />
             </div>
         </div>

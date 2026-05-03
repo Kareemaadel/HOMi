@@ -87,13 +87,23 @@ class AuthService {
     resolvePostAuthRoute(source?: {
         user?: { role?: string | null };
         profile?: { isVerificationComplete?: boolean | null };
+        isNewUser?: boolean;
     }): string {
         const cached = source ?? this.getCurrentUser() ?? undefined;
         const role = cached?.user?.role;
         const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN' || role === 'MAINTENANCE_PROVIDER';
+        const isVerificationComplete = cached?.profile?.isVerificationComplete ?? false;
 
-        // Onboarding gate should enforce selecting a role, not forcing every optional profile field.
+        // Brand-new user (Google or any auth) → always start onboarding
+        if ((source as { isNewUser?: boolean } | undefined)?.isNewUser) return '/complete-profile';
+
+        // User has no role → onboarding step 2 (role selection)
         if (!hasAppRole) return '/complete-profile';
+
+        // Has a role but hasn't finished identity verification (step 1) → re-enter onboarding
+        // ADMIN and MAINTENANCE_PROVIDER don't go through the regular onboarding
+        if (!isVerificationComplete && (role === 'TENANT' || role === 'LANDLORD')) return '/complete-profile';
+
         if (role === 'ADMIN') return '/admin/dashboard';
         if (role === 'LANDLORD') return '/landlord-home';
         if (role === 'TENANT') return '/tenant-home';

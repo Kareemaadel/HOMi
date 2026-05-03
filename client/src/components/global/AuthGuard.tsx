@@ -64,7 +64,13 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
         return <Navigate to="/verify-email" replace />;
     }
 
-    if (isAuthenticated && cached?.profile && !cached.profile.phoneNumber && (role === 'LANDLORD' || role === 'TENANT')) {
+    // Step 1 (identity verification) is mandatory — gate any protected page until it's done
+    if (
+        isAuthenticated &&
+        cached?.profile &&
+        !cached.profile.isVerificationComplete &&
+        (role === 'TENANT' || role === 'LANDLORD')
+    ) {
         return <Navigate to="/complete-profile" replace />;
     }
 

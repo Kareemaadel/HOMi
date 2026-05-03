@@ -3,7 +3,7 @@ import {
     User, IdCard, Globe,
     Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
     Calendar, Clock, CheckCircle2,
-    Briefcase,
+    Briefcase, LogOut,
 } from 'lucide-react';
 import axios from 'axios';
 import './CompleteProfile.css';
@@ -462,12 +462,61 @@ const CompleteProfile: React.FC = () => {
         if (step > 1) setStep((s) => s - 1);
     };
 
-    const handleStep3Skip = () => {
-        const uid = authService.getCurrentUser()?.user?.id;
-        if (uid) localStorage.setItem(step3SkippedKey(uid), '1');
-        const home = role === 'landlord' ? '/landlord-home' : '/tenant-home';
-        navigate('/', { state: { next: home, force: true }, replace: true });
+    const handleStep3Skip = async () => {
+        const cached = authService.getCurrentUser();
+        const uid = cached?.user?.id;
+
+        setLoading(true);
+        setError(null);
+        try {
+            // If Step 1 identity data hasn't been saved to the server yet, save it now.
+            // (completeVerification is normally called inside submitTenantProfile /
+            //  submitLandlordProfile, but "Skip" bypasses those.)
+            if (cached && !cached.profile?.isVerificationComplete) {
+                const s1 = loadStep1Draft(uid);
+                const verifyErr = validateStep1(s1, false);
+                if (verifyErr) {
+                    // Step 1 is incomplete — can't skip without saving it first
+                    setError(`Please finish Step 1 first: ${verifyErr}`);
+                    setLoading(false);
+                    return;
+                }
+                await authService.completeVerification({
+                    nationalId: s1.nationalId.trim(),
+                    gender: s1.gender as Gender,
+                    birthdate: s1.birthdate,
+                });
+                if (uid) clearStep1Draft(uid);
+                await authService.getProfile();
+            }
+
+            if (uid) localStorage.setItem(step3SkippedKey(uid), '1');
+            const home = role === 'landlord' ? '/landlord-home' : '/tenant-home';
+            navigate('/', { state: { next: home, force: true }, replace: true });
+        } catch (err) {
+            console.error('Skip failed:', err);
+            // ALREADY_VERIFIED is fine — just navigate
+            if (axios.isAxiosError(err) && err.response?.data?.code === 'ALREADY_VERIFIED') {
+                if (uid) localStorage.setItem(step3SkippedKey(uid), '1');
+                const home = role === 'landlord' ? '/landlord-home' : '/tenant-home';
+                navigate('/', { state: { next: home, force: true }, replace: true });
+                return;
+            }
+            const msg =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? (err.response.data as { message: string }).message
+                    : 'Could not save your profile. Please try again.';
+            setError(msg);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const handleLogout = async () => {
+        await authService.logout();
+        navigate('/auth', { replace: true });
+    };
+
 
     const submitTenantProfile = async () => {
         setLoading(true);
@@ -562,6 +611,11 @@ const CompleteProfile: React.FC = () => {
                 });
             }
 
+            // Save landlord Step 3 data to the DB:
+            // Use bio = businessAddress so Step 3 completion is tracked server-side
+            const businessBio = landlordStep3.businessAddress || landlordStep3.companyName || 'completed';
+            await authService.updateProfile({ bio: businessBio });
+
             localStorage.removeItem(step3SkippedKey(uid));
             localStorage.removeItem(step3DraftKey(uid));
             clearStep1Draft(uid);
@@ -610,7 +664,29 @@ const CompleteProfile: React.FC = () => {
 
     return (
         <div className="onboarding-viewport">
-            <div className="onboarding-card">
+            <div className="onboarding-card" style={{ position: 'relative' }}>
+                {/* Logout button — visible during initial onboarding (steps 1 & 2), not in settings flow */}
+                {!settingsOnlyFlow && step < 3 && (
+                    <button
+                        onClick={() => void handleLogout()}
+                        title="Sign out"
+                        style={{
+                            position: 'absolute', top: 16, right: 16,
+                            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                            borderRadius: '8px', padding: '7px 12px', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            color: '#ef4444', fontSize: '0.8rem', fontWeight: 600,
+                            transition: 'background 0.2s',
+                            zIndex: 10,
+                        }}
+                        onMouseOver={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.16)'; }}
+                        onMouseOut={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
+                    >
+                        <LogOut size={14} />
+                        Sign out
+                    </button>
+                )}
+
                 <div className="stepper-nav">
                     {[1, 2, 3].map((num) => {
                         const { completed, active } = stepIndicator(num);
@@ -755,9 +831,7 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-back" onClick={goBack} disabled={loading}>
-                                <ArrowLeft size={18} /> Back
-                            </button>
+                            {/* No Back button in initial onboarding — the logout button is the only exit */}
                             <button className="btn-continue" disabled={!role || loading} onClick={handleRoleSelection}>
                                 {loading ? 'Saving…' : 'Continue'} <ArrowRight size={18} />
                             </button>
@@ -886,20 +960,30 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-skip" onClick={handleStep3Skip} disabled={loading}>
-                                Skip for now
-                            </button>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button className="btn-back" onClick={goBack} disabled={loading}>
-                                    <ArrowLeft size={18} /> Back
+                             {!settingsOnlyFlow && (
+                                <button className="btn-skip" onClick={() => void handleStep3Skip()} disabled={loading}>
+                                    Skip for now
                                 </button>
+                            )}
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                {settingsOnlyFlow ? (
+                                    <button
+                                        className="btn-back"
+                                        onClick={() => navigate('/settings')}
+                                        disabled={loading}
+                                    >
+                                        <ArrowLeft size={18} /> Back to Settings
+                                    </button>
+                                ) : (
+                                    <button className="btn-back" onClick={goBack} disabled={loading}>
+                                        <ArrowLeft size={18} /> Back
+                                    </button>
+                                )}
                                 <button className="btn-finish" onClick={() => void submitTenantProfile()} disabled={loading}>
                                     {loading ? 'Saving…' : 'Complete Profile'}
                                 </button>
                             </div>
                         </div>
-
-
                     </div>
                 )}
 
@@ -993,13 +1077,25 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
-                            <button className="btn-skip" onClick={handleStep3Skip} disabled={loading}>
-                                Skip for now
-                            </button>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button className="btn-back" onClick={goBack} disabled={loading}>
-                                    <ArrowLeft size={18} /> Back
+                            {!settingsOnlyFlow && (
+                                <button className="btn-skip" onClick={handleStep3Skip} disabled={loading}>
+                                    Skip for now
                                 </button>
+                            )}
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                {settingsOnlyFlow ? (
+                                    <button
+                                        className="btn-back"
+                                        onClick={() => navigate('/settings')}
+                                        disabled={loading}
+                                    >
+                                        <ArrowLeft size={18} /> Back to Settings
+                                    </button>
+                                ) : (
+                                    <button className="btn-back" onClick={goBack} disabled={loading}>
+                                        <ArrowLeft size={18} /> Back
+                                    </button>
+                                )}
                                 <button className="btn-finish" onClick={() => void submitLandlordProfile()} disabled={loading}>
                                     {loading ? 'Saving…' : 'Finish Setup'}
                                 </button>
