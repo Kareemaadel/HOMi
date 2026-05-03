@@ -114,21 +114,32 @@
     letter-spacing: 0.5px;
 }
 
-.input-wrapper {
-    position: relative;
+/* Icons sit in the label row (before the title), not inside the input */
+.form-field__label--with-icon {
     display: flex;
+    flex-direction: row;
     align-items: center;
-}
-
-.input-icon {
-    position: absolute;
-    left: 14px;
-    color: var(--text-slate);
-    opacity: 0.6;
-}
-
-.form-field input, .form-field select, .form-field textarea {
+    gap: 10px;
+    margin: 0;
+    padding: 0;
     width: 100%;
+}
+
+.form-field__label--with-icon .form-field__label-icon {
+    flex-shrink: 0;
+    color: var(--brand);
+    stroke-width: 2;
+}
+
+.form-field__label--with-icon span {
+    line-height: 1.25;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    width: 100%;
+    box-sizing: border-box;
     padding: 13px 16px;
     border-radius: 14px;
     border: 1.5px solid var(--border-light);
@@ -138,9 +149,9 @@
     color: var(--text-dark);
 }
 
-.input-wrapper input, .input-wrapper select { padding-left: 52px; }
-
-.form-field input:focus, .form-field select:focus {
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
     outline: none;
     border-color: var(--brand);
     background: var(--white);
@@ -210,6 +221,49 @@
     display: flex;
     gap: 16px;
     margin-top: 48px;
+}
+
+.action-footer--step3 {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.action-footer__primary-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.action-footer__primary-row .btn-back,
+.action-footer__primary-row .btn-finish {
+    flex: 0 1 auto;
+    min-width: min(100%, 180px);
+}
+
+.btn-skip {
+    background: transparent;
+    border: none;
+    color: var(--text-slate);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    padding: 8px 12px;
+    font-family: inherit;
+}
+
+.btn-skip:hover:not(:disabled) {
+    color: var(--brand);
+}
+
+.btn-skip:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .btn-continue, .btn-finish {

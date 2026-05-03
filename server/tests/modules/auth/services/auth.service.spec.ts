@@ -155,7 +155,11 @@ describe('AuthService', () => {
             const user = sequelizeMock({ id: 'u1', email_verified: true, profile });
             vi.mocked(User.findByPk).mockResolvedValue(user as any);
 
-            const res = await authService.completeVerification('u1', { nationalId: '123', gender: 'MALE', birthdate: '1990-01-01' });
+            const res = await authService.completeVerification('u1', {
+                nationalId: '29001011234567',
+                gender: 'MALE',
+                birthdate: '1990-01-01',
+            });
             expect(res.success).toBe(true);
             expect(profile.update).toHaveBeenCalled();
             expect(user.update).not.toHaveBeenCalled();

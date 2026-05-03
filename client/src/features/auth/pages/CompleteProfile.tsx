@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
     User, IdCard, Globe,
     Home, Building2, UploadCloud, ArrowRight, ArrowLeft,
@@ -79,10 +79,31 @@ function hydrateStep1FromProfile(profile: CachedProfile | null | undefined): Ste
     const d = defaultStep1();
     if (!profile) return d;
     d.birthdate = formatDateForInput(profile.birthdate);
-    d.gender = (profile.gender as Gender | '') || '';
+    const rawG = (profile.gender as Gender | '') || '';
+    d.gender = rawG === 'MALE' || rawG === 'FEMALE' ? rawG : '';
     d.nationalId = '';
     d.preferredLanguage = profile.preferredLanguage || 'en';
     return d;
+}
+
+/** Age at last birthday; null if date invalid. */
+function ageFromBirthdate(isoYmd: string): number | null {
+    const t = isoYmd.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+    const [y, m, d] = t.split('-').map(Number);
+    const birth = new Date(y, m - 1, d);
+    if (Number.isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const md = today.getMonth() - birth.getMonth();
+    if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age -= 1;
+    return age;
+}
+
+function maxBirthdateForMinimumAge(minAge: number): string {
+    const cap = new Date();
+    cap.setFullYear(cap.getFullYear() - minAge);
+    return cap.toISOString().slice(0, 10);
 }
 
 function tenantPrefsFromProfile(profile: CachedProfile | null | undefined): Partial<TenantStep3Draft> {
@@ -170,6 +191,8 @@ const CompleteProfile: React.FC = () => {
     const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
     const [hydrated, setHydrated] = useState(false);
     const [settingsOnlyFlow, setSettingsOnlyFlow] = useState(false);
+
+    const maxBirthdateFor18Plus = useMemo(() => maxBirthdateForMinimumAge(18), []);
 
     useEffect(() => {
         let cancelled = false;
@@ -359,8 +382,15 @@ const CompleteProfile: React.FC = () => {
 
     const validateStep1 = (draft: Step1Draft, verificationComplete: boolean): string | null => {
         if (!draft.birthdate.trim()) return 'Please enter your date of birth.';
-        if (!draft.gender) return 'Please select a gender.';
-        if (!verificationComplete && !draft.nationalId.trim()) return 'Please enter your National ID or passport number.';
+        const age = ageFromBirthdate(draft.birthdate);
+        if (age === null) return 'Please enter a valid date of birth.';
+        if (age < 18) return 'You must be at least 18 years old to use HOMi.';
+        if (draft.gender !== 'MALE' && draft.gender !== 'FEMALE') return 'Please select Male or Female.';
+        if (!verificationComplete) {
+            const digits = draft.nationalId.replace(/\D/g, '');
+            if (!digits) return 'Please enter your National ID.';
+            if (!/^\d{14}$/.test(digits)) return 'National ID must be exactly 14 digits.';
+        }
         return null;
     };
 
@@ -384,7 +414,7 @@ const CompleteProfile: React.FC = () => {
                     }
                     if (!verificationComplete) {
                         await authService.completeVerification({
-                            nationalId: step1.nationalId.trim(),
+                            nationalId: step1.nationalId.replace(/\D/g, ''),
                             gender: step1.gender as Gender,
                             birthdate: step1.birthdate,
                             preferredLanguage: step1.preferredLanguage,
@@ -419,7 +449,7 @@ const CompleteProfile: React.FC = () => {
                 setLoading(true);
                 try {
                     await authService.completeVerification({
-                        nationalId: step1.nationalId.trim(),
+                        nationalId: step1.nationalId.replace(/\D/g, ''),
                         gender: step1.gender as Gender,
                         birthdate: step1.birthdate,
                         preferredLanguage: step1.preferredLanguage,
@@ -567,7 +597,7 @@ const CompleteProfile: React.FC = () => {
                     return;
                 }
                 await authService.completeVerification({
-                    nationalId: step1.nationalId.trim(),
+                    nationalId: step1.nationalId.replace(/\D/g, ''),
                     gender: step1.gender as Gender,
                     birthdate: step1.birthdate,
                     preferredLanguage: step1.preferredLanguage,
@@ -632,7 +662,7 @@ const CompleteProfile: React.FC = () => {
                     return;
                 }
                 await authService.completeVerification({
-                    nationalId: step1.nationalId.trim(),
+                    nationalId: step1.nationalId.replace(/\D/g, ''),
                     gender: step1.gender as Gender,
                     birthdate: step1.birthdate,
                     preferredLanguage: step1.preferredLanguage,
@@ -773,19 +803,33 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="modern-form-grid">
                             <div className="form-field">
-                                <label>Date of Birth {req}</label>
-                                <div className="input-wrapper">
-                                    <Calendar className="input-icon" size={18} />
-                                    <input
-                                        type="date"
-                                        value={step1.birthdate}
-                                        onChange={(e) => setStep1((s) => ({ ...s, birthdate: e.target.value }))}
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step1-birthdate"
+                                >
+                                    <Calendar size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>
+                                        Date of Birth {req}
+                                    </span>
+                                </label>
+                                <input
+                                    id="cp-step1-birthdate"
+                                    type="date"
+                                    max={maxBirthdateFor18Plus}
+                                    value={step1.birthdate}
+                                    onChange={(e) => setStep1((s) => ({ ...s, birthdate: e.target.value }))}
+                                />
                             </div>
                             <div className="form-field">
-                                <label>Gender {req}</label>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step1-gender"
+                                >
+                                    <User size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Gender {req}</span>
+                                </label>
                                 <select
+                                    id="cp-step1-gender"
                                     value={step1.gender}
                                     onChange={(e) =>
                                         setStep1((s) => ({ ...s, gender: e.target.value as Gender | '' }))
@@ -794,41 +838,56 @@ const CompleteProfile: React.FC = () => {
                                     <option value="">Select…</option>
                                     <option value="MALE">Male</option>
                                     <option value="FEMALE">Female</option>
-                                    <option value="PREFER_NOT_TO_SAY">Preferred not to say</option>
                                 </select>
                             </div>
                             <div className="form-field">
-                                <label>National ID / Passport {req}</label>
-                                <div className="input-wrapper">
-                                    <IdCard className="input-icon" size={18} />
-                                    <input
-                                        type="text"
-                                        placeholder="Document number"
-                                        value={step1.nationalId}
-                                        onChange={(e) => setStep1((s) => ({ ...s, nationalId: e.target.value }))}
-                                        disabled={!!authService.getCurrentUser()?.profile?.isVerificationComplete}
-                                        title={
-                                            authService.getCurrentUser()?.profile?.isVerificationComplete
-                                                ? 'Verified ID cannot be changed here'
-                                                : undefined
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step1-national-id"
+                                >
+                                    <IdCard size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>National ID / Passport {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step1-national-id"
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="off"
+                                    maxLength={14}
+                                    placeholder="14-digit National ID"
+                                    value={step1.nationalId}
+                                    onChange={(e) =>
+                                        setStep1((s) => ({
+                                            ...s,
+                                            nationalId: e.target.value.replace(/\D/g, '').slice(0, 14),
+                                        }))
+                                    }
+                                    disabled={!!authService.getCurrentUser()?.profile?.isVerificationComplete}
+                                    title={
+                                        authService.getCurrentUser()?.profile?.isVerificationComplete
+                                            ? 'Verified ID cannot be changed here'
+                                            : undefined
+                                    }
+                                />
                             </div>
                             <div className="form-field">
-                                <label>Preferred Language</label>
-                                <div className="input-wrapper">
-                                    <Globe className="input-icon" size={18} />
-                                    <select
-                                        value={step1.preferredLanguage}
-                                        onChange={(e) =>
-                                            setStep1((s) => ({ ...s, preferredLanguage: e.target.value }))
-                                        }
-                                    >
-                                        <option value="ar">Arabic (العربية)</option>
-                                        <option value="en">English</option>
-                                    </select>
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step1-language"
+                                >
+                                    <Globe size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Preferred Language</span>
+                                </label>
+                                <select
+                                    id="cp-step1-language"
+                                    value={step1.preferredLanguage}
+                                    onChange={(e) =>
+                                        setStep1((s) => ({ ...s, preferredLanguage: e.target.value }))
+                                    }
+                                >
+                                    <option value="ar">Arabic (العربية)</option>
+                                    <option value="en">English</option>
+                                </select>
                             </div>
                         </div>
 
@@ -915,18 +974,22 @@ const CompleteProfile: React.FC = () => {
                                 </select>
                             </div>
                             <div className="form-field">
-                                <label>Workplace / Uni {req}</label>
-                                <div className="input-wrapper">
-                                    <Briefcase className="input-icon" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="Company/School"
-                                        value={tenantStep3.workplace}
-                                        onChange={(e) =>
-                                            setTenantStep3((s) => ({ ...s, workplace: e.target.value }))
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step3-workplace"
+                                >
+                                    <Briefcase size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Workplace / Uni {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step3-workplace"
+                                    type="text"
+                                    placeholder="Company/School"
+                                    value={tenantStep3.workplace}
+                                    onChange={(e) =>
+                                        setTenantStep3((s) => ({ ...s, workplace: e.target.value }))
+                                    }
+                                />
                             </div>
                             <div className="form-field">
                                 <label>Income range {req}</label>
@@ -1010,15 +1073,11 @@ const CompleteProfile: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="action-footer">
-                             {!settingsOnlyFlow && (
-                                <button className="btn-skip" onClick={() => void handleStep3Skip()} disabled={loading}>
-                                    Skip for now
-                                </button>
-                            )}
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                        <div className="action-footer action-footer--step3">
+                            <div className="action-footer__primary-row">
                                 {settingsOnlyFlow ? (
                                     <button
+                                        type="button"
                                         className="btn-back"
                                         onClick={() => navigate('/settings')}
                                         disabled={loading}
@@ -1026,14 +1085,29 @@ const CompleteProfile: React.FC = () => {
                                         <ArrowLeft size={18} /> Back to Settings
                                     </button>
                                 ) : (
-                                    <button className="btn-back" onClick={goBack} disabled={loading}>
+                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
                                         <ArrowLeft size={18} /> Back
                                     </button>
                                 )}
-                                <button className="btn-finish" onClick={() => void submitTenantProfile()} disabled={loading}>
+                                <button
+                                    type="button"
+                                    className="btn-finish"
+                                    onClick={() => void submitTenantProfile()}
+                                    disabled={loading}
+                                >
                                     {loading ? 'Saving…' : 'Complete Profile'}
                                 </button>
                             </div>
+                            {!settingsOnlyFlow && (
+                                <button
+                                    type="button"
+                                    className="btn-skip"
+                                    onClick={() => void handleStep3Skip()}
+                                    disabled={loading}
+                                >
+                                    Skip for now
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -1098,44 +1172,48 @@ const CompleteProfile: React.FC = () => {
                                 />
                             </div>
                             <div className="form-field full">
-                                <label>Business Address {req}</label>
-                                <div className="input-wrapper">
-                                    <Building2 className="input-icon" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="Full address"
-                                        value={landlordStep3.businessAddress}
-                                        onChange={(e) =>
-                                            setLandlordStep3((s) => ({ ...s, businessAddress: e.target.value }))
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step3-business-address"
+                                >
+                                    <Building2 size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Business Address {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step3-business-address"
+                                    type="text"
+                                    placeholder="Full address"
+                                    value={landlordStep3.businessAddress}
+                                    onChange={(e) =>
+                                        setLandlordStep3((s) => ({ ...s, businessAddress: e.target.value }))
+                                    }
+                                />
                             </div>
                             <div className="form-field">
-                                <label>Availability {req}</label>
-                                <div className="input-wrapper">
-                                    <Clock className="input-icon" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. 9AM - 5PM"
-                                        value={landlordStep3.availability}
-                                        onChange={(e) =>
-                                            setLandlordStep3((s) => ({ ...s, availability: e.target.value }))
-                                        }
-                                    />
-                                </div>
+                                <label
+                                    className="form-field__label form-field__label--with-icon"
+                                    htmlFor="cp-step3-availability"
+                                >
+                                    <Clock size={18} className="form-field__label-icon" aria-hidden />
+                                    <span>Availability {req}</span>
+                                </label>
+                                <input
+                                    id="cp-step3-availability"
+                                    type="text"
+                                    placeholder="e.g. 9AM - 5PM"
+                                    value={landlordStep3.availability}
+                                    onChange={(e) =>
+                                        setLandlordStep3((s) => ({ ...s, availability: e.target.value }))
+                                    }
+                                />
                             </div>
                         </div>
 
-                        <div className="action-footer">
-                            {!settingsOnlyFlow && (
-                                <button className="btn-skip" onClick={handleStep3Skip} disabled={loading}>
-                                    Skip for now
-                                </button>
-                            )}
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                        <div className="action-footer action-footer--step3">
+                            <div className="action-footer__primary-row">
                                 {settingsOnlyFlow ? (
                                     <button
+                                        type="button"
                                         className="btn-back"
                                         onClick={() => navigate('/settings')}
                                         disabled={loading}
@@ -1143,17 +1221,30 @@ const CompleteProfile: React.FC = () => {
                                         <ArrowLeft size={18} /> Back to Settings
                                     </button>
                                 ) : (
-                                    <button className="btn-back" onClick={goBack} disabled={loading}>
+                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
                                         <ArrowLeft size={18} /> Back
                                     </button>
                                 )}
-                                <button className="btn-finish" onClick={() => void submitLandlordProfile()} disabled={loading}>
+                                <button
+                                    type="button"
+                                    className="btn-finish"
+                                    onClick={() => void submitLandlordProfile()}
+                                    disabled={loading}
+                                >
                                     {loading ? 'Saving…' : 'Finish Setup'}
                                 </button>
                             </div>
+                            {!settingsOnlyFlow && (
+                                <button
+                                    type="button"
+                                    className="btn-skip"
+                                    onClick={() => void handleStep3Skip()}
+                                    disabled={loading}
+                                >
+                                    Skip for now
+                                </button>
+                            )}
                         </div>
-
-
                     </div>
                 )}
             </div>
@@ -1162,5 +1253,3 @@ const CompleteProfile: React.FC = () => {
 };
 
 export default CompleteProfile;
-
-// export default CompleteProfile;

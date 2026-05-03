@@ -92,14 +92,23 @@ export type CheckSignupAvailabilityInput = z.infer<typeof CheckSignupAvailabilit
 export const CompleteVerificationSchema = z.object({
     nationalId: z
         .string()
-        .min(1, 'National ID is required')
-        .max(50, 'National ID must be at most 50 characters'),
-    gender: z.enum([Gender.MALE, Gender.FEMALE, Gender.PREFER_NOT_TO_SAY], {
-        message: 'Gender must be MALE, FEMALE, or PREFER_NOT_TO_SAY',
+        .trim()
+        .regex(/^\d{14}$/, 'National ID must be exactly 14 digits'),
+    gender: z.enum([Gender.MALE, Gender.FEMALE], {
+        message: 'Gender must be Male or Female',
     }),
     birthdate: z
         .string()
-        .refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+        .refine((val) => !isNaN(Date.parse(val)), 'Invalid date format')
+        .refine((val) => {
+            const birth = new Date(val);
+            if (Number.isNaN(birth.getTime())) return false;
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age -= 1;
+            return age >= 18;
+        }, 'You must be at least 18 years old'),
     preferredLanguage: z.string().min(2).max(10).optional(),
 });
 
