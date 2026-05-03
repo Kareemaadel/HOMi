@@ -26,8 +26,8 @@ import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
 import HowItWorksChoose from "./features/HowItWorks/pages/HowItWorksChoose";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
-import ComingSoon from "./features/ComingSoon/pages/ComingSoon";
 import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
+import Rewards from "./features/Rewards/pages/Rewards";
 import AdminLogin from "./features/admin/pages/AdminLogin";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
 import AdminPropertyApprovals from "./features/admin/pages/AdminPropertyApprovals";
@@ -81,10 +81,7 @@ function App() {
         <Route path="/tenant-payment" element={<AuthGuard allowedRoles={['TENANT']}><TenantPayment /></AuthGuard>} />
         <Route path="/tenant-contracts" element={<AuthGuard allowedRoles={['TENANT']}><Contract /></AuthGuard>} />
         <Route path="/sent-requests" element={<AuthGuard allowedRoles={['TENANT']}><SentRequests /></AuthGuard>} />
-        <Route
-          path="/rewards"
-          element={<AuthGuard allowedRoles={['TENANT']}><ComingSoon title="Rewards" description="Rewards is coming soon." /></AuthGuard>}
-        />
+        <Route path="/rewards" element={<AuthGuard allowedRoles={['TENANT']}><Rewards /></AuthGuard>} />
         <Route
           path="/matching"
           element={<AuthGuard allowedRoles={['TENANT']}><RoommateMatching /></AuthGuard>}
