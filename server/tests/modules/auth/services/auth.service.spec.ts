@@ -253,6 +253,31 @@ describe('AuthService', () => {
             expect(res.profile.firstName).toBe('Jane');
         });
 
+        it('rejects phone number already used by another account', async () => {
+            const profile = sequelizeMock({ id: 'p1', phone_number: '+1000000001' });
+            const user = sequelizeMock({ id: 'u1', profile });
+            vi.mocked(User.findByPk).mockResolvedValue(user as any);
+            vi.mocked(Profile.findOne).mockResolvedValue({ id: 'p2', user_id: 'u2', phone_number: '+2000000002' } as any);
+
+            await expect(authService.updateProfile('u1', { phone: '+2000000002' })).rejects.toMatchObject({
+                code: 'PHONE_EXISTS',
+            });
+            expect(profile.update).not.toHaveBeenCalled();
+        });
+
+        it('allows updating phone when the number is not taken', async () => {
+            const profile = sequelizeMock({ id: 'p1', phone_number: '+1000000001' });
+            const user = sequelizeMock({ id: 'u1', profile });
+            vi.mocked(User.findByPk).mockResolvedValue(user as any);
+            vi.mocked(Profile.findOne).mockResolvedValue(null);
+
+            await authService.updateProfile('u1', { phone: '+1999999999' });
+            expect(profile.update).toHaveBeenCalledWith(
+                expect.objectContaining({ phone_number: '+1999999999' }),
+                expect.any(Object)
+            );
+        });
+
         it('sends welcome email once when completing onboarding step 3 for the first time', async () => {
             const profile = sequelizeMock({
                 id: 'p1',

@@ -122,35 +122,19 @@ const IncompleteProfileBanner: React.FC<ProfileBannerProps> = ({
     // Step 1 incomplete: identity/ID/gender/birthdate not verified yet
     if (!isVerificationComplete) {
         return (
-            <div style={{
-                background: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
-                border: '1px solid #f59e0b',
-                borderLeft: '4px solid #d97706',
-                borderRadius: '12px',
-                padding: '16px 20px',
-                marginBottom: '24px',
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'flex-start',
-            }}>
-                <AlertTriangle size={20} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#92400e', marginBottom: 4 }}>
-                        Identity verification required
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: '#b45309', lineHeight: 1.5 }}>
-                        You haven't completed your identity verification. HOMi features like submitting rental
+            <div className="settings-top-banner settings-banner settings-banner--identity">
+                <AlertTriangle size={20} className="settings-banner__icon settings-banner__icon--warn" />
+                <div className="settings-banner__body">
+                    <div className="settings-banner__title">Identity verification required</div>
+                    <div className="settings-banner__text">
+                        You haven&apos;t completed your identity verification. HOMi features like submitting rental
                         requests and listing properties are locked until your profile is fully verified.
                     </div>
                 </div>
                 <button
+                    type="button"
                     onClick={onCompleteIdentity}
-                    style={{
-                        background: '#d97706', color: '#fff', border: 'none',
-                        padding: '9px 18px', borderRadius: '8px', cursor: 'pointer',
-                        fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                    }}
+                    className="settings-banner__btn settings-banner__btn--identity"
                 >
                     Complete Now
                 </button>
@@ -165,34 +149,16 @@ const IncompleteProfileBanner: React.FC<ProfileBannerProps> = ({
             ? 'Add your business profile to unlock property listings and rental management features.'
             : 'Add your rental preferences to submit requests and unlock matching features.';
         return (
-            <div style={{
-                background: 'linear-gradient(135deg, #eff6ff, #f0f9ff)',
-                border: '1px solid #60a5fa',
-                borderLeft: '4px solid #3b82f6',
-                borderRadius: '12px',
-                padding: '16px 20px',
-                marginBottom: '24px',
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'flex-start',
-            }}>
-                <AlertTriangle size={20} style={{ color: '#3b82f6', flexShrink: 0, marginTop: 2 }} />
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e40af', marginBottom: 4 }}>
-                        {label} not set up
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: '#1d4ed8', lineHeight: 1.5 }}>
-                        {hint}
-                    </div>
+            <div className="settings-top-banner settings-banner settings-banner--preferences">
+                <AlertTriangle size={20} className="settings-banner__icon settings-banner__icon--info" />
+                <div className="settings-banner__body">
+                    <div className="settings-banner__title">{label} not set up</div>
+                    <div className="settings-banner__text">{hint}</div>
                 </div>
                 <button
+                    type="button"
                     onClick={onCompletePreferences}
-                    style={{
-                        background: '#3b82f6', color: '#fff', border: 'none',
-                        padding: '9px 18px', borderRadius: '8px', cursor: 'pointer',
-                        fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                    }}
+                    className="settings-banner__btn settings-banner__btn--preferences"
                 >
                     Set Up Now
                 </button>
@@ -239,9 +205,20 @@ const Settings: React.FC = () => {
         navigate('/complete-profile', { state: { fromSettings: true, initialStep: 1 } });
     };
 
+    const profileTab = (
+        <MyProfile
+            role={userRole}
+            onUpdatePreferencesShortcut={
+                isProfileFullyComplete && (userRole === 'TENANT' || userRole === 'LANDLORD')
+                    ? handleCompletePreferences
+                    : undefined
+            }
+        />
+    );
+
     // Component mapping by active tab
     const tabComponents: Record<string, React.ReactNode> = {
-        profile: <MyProfile role={userRole} />,
+        profile: profileTab,
         billing: <Billing />,
         notifications: <Notifications role={userRole} />,
         security: <Security role={userRole} />,
@@ -267,25 +244,6 @@ const Settings: React.FC = () => {
                         onCompleteIdentity={handleCompleteIdentity}
                         onCompletePreferences={handleCompletePreferences}
                     />
-
-                    {/* "Update Preferences" shortcut for fully-verified users */}
-                    {isProfileFullyComplete && (userRole === 'TENANT' || userRole === 'LANDLORD') && (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', paddingRight: '4px' }}>
-                            <button
-                                onClick={handleCompletePreferences}
-                                style={{
-                                    background: 'transparent', color: '#6366f1',
-                                    border: '1px solid #c7d2fe', padding: '8px 16px',
-                                    borderRadius: '8px', cursor: 'pointer',
-                                    fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s',
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = '#e0e7ff'; }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
-                            >
-                                Update {userRole === 'LANDLORD' ? 'Business Profile' : 'Rental Preferences'}
-                            </button>
-                        </div>
-                    )}
 
                     <div className="settings-glass-card">
                         <SettingsSidebar

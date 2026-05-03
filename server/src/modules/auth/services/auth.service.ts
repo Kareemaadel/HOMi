@@ -952,7 +952,24 @@ export class AuthService {
 
             if (input.firstName !== undefined) updateData.first_name = input.firstName;
             if (input.lastName !== undefined) updateData.last_name = input.lastName;
-            if (input.phone !== undefined) updateData.phone_number = input.phone;
+            if (input.phone !== undefined) {
+                const newPhone = input.phone.trim();
+                const currentPhone = (profile.phone_number ?? '').trim();
+                if (newPhone.length > 0 && newPhone !== currentPhone) {
+                    const taken = await Profile.findOne({
+                        where: { phone_number: newPhone },
+                        transaction,
+                    });
+                    if (taken && taken.user_id !== user.id) {
+                        throw new AuthError(
+                            'This phone number is already registered to another account. Use a different number.',
+                            409,
+                            'PHONE_EXISTS'
+                        );
+                    }
+                }
+                updateData.phone_number = newPhone;
+            }
             if (input.bio !== undefined) updateData.bio = input.bio;
             if (input.avatarUrl !== undefined) updateData.avatar_url = input.avatarUrl;
             if (input.currentLocation !== undefined) updateData.current_location = input.currentLocation;
