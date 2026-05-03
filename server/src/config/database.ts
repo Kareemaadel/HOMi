@@ -122,14 +122,12 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
             //    contract has ended. The constraint must only fire for the
             //    in-flight PENDING row.
             await sequelize.query(`
-                ALTER TABLE IF EXISTS "rental_requests"
-                    DROP CONSTRAINT IF EXISTS "unique_tenant_property_request";
-            `);
-            await sequelize.query(`DROP INDEX IF EXISTS "unique_tenant_property_request";`);
-            await sequelize.query(`
                 DO $$
                 BEGIN
                     IF to_regclass('public.rental_requests') IS NOT NULL THEN
+                        ALTER TABLE "rental_requests"
+                            DROP CONSTRAINT IF EXISTS "unique_tenant_property_request";
+                        DROP INDEX IF EXISTS "unique_tenant_property_request";
                         CREATE UNIQUE INDEX IF NOT EXISTS "uniq_pending_rental_request_per_tenant_property"
                         ON "rental_requests" ("tenant_id", "property_id")
                         WHERE "status" = 'PENDING';
@@ -327,9 +325,14 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
             $$;
         `);
         await sequelize.query(`
-            CREATE INDEX IF NOT EXISTS "conversations_is_support_last_message"
-                ON "conversations" ("is_support", "last_message_at")
-                WHERE "deleted_at" IS NULL;
+            DO $$
+            BEGIN
+                IF to_regclass('"public"."conversations"') IS NOT NULL THEN
+                    CREATE INDEX IF NOT EXISTS "conversations_is_support_last_message"
+                        ON "conversations" ("is_support", "last_message_at")
+                        WHERE "deleted_at" IS NULL;
+                END IF;
+            END $$;
         `);
         // ──────────────────────────────────────────────────────────────────
 
@@ -343,13 +346,17 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
 
         if (sequelize.getDialect() === 'postgres') {
             await sequelize.query(`
-                ALTER TABLE conversations DROP CONSTRAINT IF EXISTS uniq_conversation_participants_property;
-            `);
-            await sequelize.query(`DROP INDEX IF EXISTS uniq_conversation_participants_property;`);
-            await sequelize.query(`
-                CREATE UNIQUE INDEX IF NOT EXISTS uniq_conversation_participants_active
-                ON conversations (participant_one_id, participant_two_id)
-                WHERE deleted_at IS NULL;
+                DO $$
+                BEGIN
+                    IF to_regclass('"public"."conversations"') IS NOT NULL THEN
+                        ALTER TABLE "conversations"
+                            DROP CONSTRAINT IF EXISTS "uniq_conversation_participants_property";
+                        DROP INDEX IF EXISTS "uniq_conversation_participants_property";
+                        CREATE UNIQUE INDEX IF NOT EXISTS "uniq_conversation_participants_active"
+                        ON "conversations" ("participant_one_id", "participant_two_id")
+                        WHERE "deleted_at" IS NULL;
+                    END IF;
+                END $$;
             `);
         }
 
