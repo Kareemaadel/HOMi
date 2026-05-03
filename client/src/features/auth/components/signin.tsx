@@ -44,12 +44,17 @@ const SignIn: React.FC<SignInProps> = ({ rememberMe, onRememberMeChange }) => {
     } catch (err) {
       console.error('❌ Login failed:', err);
       if (axios.isAxiosError(err) && err.response?.data?.code === 'ACCOUNT_BANNED') {
+        await authService.logout();
         navigate('/account-banned', { state: err.response.data.details || {} });
         return;
       }
-      const errorMessage = axios.isAxiosError(err)
+      let errorMessage = axios.isAxiosError(err)
         ? err.response?.data?.message || t('auth.loginFailed')
         : t('auth.loginFailed');
+      if (axios.isAxiosError(err) && err.response?.data?.code === 'INVALID_CREDENTIALS') {
+        errorMessage =
+          `${errorMessage} If you already created an account, use the same email and password, or reset your password.`;
+      }
       setError(errorMessage);
     } finally {
       setLoading(false);

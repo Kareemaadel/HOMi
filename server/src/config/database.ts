@@ -8,10 +8,10 @@ const getDatabaseConfig = (): Options => {
             dialect: 'postgres',
             logging: false,
             pool: {
-                max: 10,
-                min: 2,
-                acquire: 30000,
-                idle: 30000,
+                max: env.DB_POOL_MAX,
+                min: env.DB_POOL_MIN,
+                acquire: env.DB_POOL_ACQUIRE_MS,
+                idle: env.DB_POOL_IDLE_MS,
             },
             define: {
                 timestamps: true,
@@ -38,10 +38,10 @@ const getDatabaseConfig = (): Options => {
         username: env.DB_USER,
         password: env.DB_PASSWORD,
         pool: {
-            max: 10,
-            min: 2,
-            acquire: 30000,
-            idle: 30000,
+            max: env.DB_POOL_MAX,
+            min: env.DB_POOL_MIN,
+            acquire: env.DB_POOL_ACQUIRE_MS,
+            idle: env.DB_POOL_IDLE_MS,
         },
         define: {
             timestamps: true,
@@ -127,9 +127,14 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
             `);
             await sequelize.query(`DROP INDEX IF EXISTS "unique_tenant_property_request";`);
             await sequelize.query(`
-                CREATE UNIQUE INDEX IF NOT EXISTS "uniq_pending_rental_request_per_tenant_property"
-                ON "rental_requests" ("tenant_id", "property_id")
-                WHERE "status" = 'PENDING';
+                DO $$
+                BEGIN
+                    IF to_regclass('public.rental_requests') IS NOT NULL THEN
+                        CREATE UNIQUE INDEX IF NOT EXISTS "uniq_pending_rental_request_per_tenant_property"
+                        ON "rental_requests" ("tenant_id", "property_id")
+                        WHERE "status" = 'PENDING';
+                    END IF;
+                END $$;
             `);
 
             // ── Safely drop any stale FK constraints that Sequelize alter-mode
@@ -150,10 +155,13 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                               'property_detailed_locations', 'property_ownership_docs',
                               'rental_requests', 'saved_properties',
                               'property_amenities', 'property_house_rules',
-                              'messages', 'payment_methods', 'notifications',
+                              'messages', 'conversations', 'payment_methods', 'notifications',
                               'maintenance_requests', 'maintenance_job_applications',
                               'maintenance_locations', 'maintenance_conflicts',
-                              'maintenance_ratings', 'landlord_maintenance_charges'
+                              'maintenance_ratings', 'landlord_maintenance_charges',
+                              'maintenance_provider_applications',
+                              'roommate_matches', 'roommate_requests',
+                              'activity_logs', 'user_passkeys', 'webauthn_challenges'
                           )
                     LOOP
                         EXECUTE format(
@@ -164,6 +172,48 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 END $$;
             `);
         }
+
+        // Onboarding / rental preferences (profiles) — all environments, idempotent
+        await sequelize.query(`
+            ALTER TABLE IF EXISTS "profiles"
+                ADD COLUMN IF NOT EXISTS "preferred_language" VARCHAR(10),
+                ADD COLUMN IF NOT EXISTS "tenant_rental_preferences" JSONB,
+                ADD COLUMN IF NOT EXISTS "landlord_business_profile" JSONB,
+                ADD COLUMN IF NOT EXISTS "onboarding_step3_skipped" BOOLEAN NOT NULL DEFAULT false,
+                ADD COLUMN IF NOT EXISTS "onboarding_step3_completed" BOOLEAN NOT NULL DEFAULT false;
+        `);
+        await sequelize.query(`
+            UPDATE profiles p
+            SET onboarding_step3_completed = true
+            FROM users u
+            WHERE u.id = p.user_id
+              AND (
+                (u.role = 'TENANT' AND p.preferred_budget_min IS NOT NULL)
+                OR (u.role = 'LANDLORD' AND p.bio IS NOT NULL AND length(trim(p.bio)) > 0)
+              )
+              AND p.onboarding_step3_completed = false
+              AND p.onboarding_step3_skipped = false;
+        `);
+        await sequelize.query(`
+            UPDATE users u
+            SET is_verified = EXISTS (
+                SELECT 1 FROM profiles p
+                WHERE p.user_id = u.id
+                  AND p.onboarding_step3_completed = true
+                  AND p.national_id IS NOT NULL
+                  AND p.gender IS NOT NULL
+                  AND p.birthdate IS NOT NULL
+            )
+            WHERE u.role IN ('TENANT', 'LANDLORD');
+        `);
+
+        await sequelize.query(`
+            ALTER TABLE IF EXISTS "profiles"
+                ADD COLUMN IF NOT EXISTS "onboarding_step2_completed" BOOLEAN NOT NULL DEFAULT true;
+        `);
+
+        await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });
+
         // ─── WebAuthn / passkey tables (idempotent; required when alter: false in production) ─
         await sequelize.query(`
             CREATE TABLE IF NOT EXISTS "user_passkeys" (
@@ -282,8 +332,6 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
                 WHERE "deleted_at" IS NULL;
         `);
         // ──────────────────────────────────────────────────────────────────
-
-        await sequelize.sync({ force, alter: env.NODE_ENV === 'development' });
 
         // One DM thread per participant pair (legacy rows were split by property_id).
         try {

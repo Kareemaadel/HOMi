@@ -270,7 +270,8 @@ interface ContractListResponse {
 
 /**
  * Stub returned by testing-clock helpers when the client is built with
- * `VITE_TEST_DATE=false`. Mimics the disabled state from the server so the
+ * test-date disabled mode (non-development build). Mimics the disabled state
+ * from the server so the
  * rest of the app never sees `enabled: true` in that mode.
  */
 const buildDisabledTestingClockState = (): TestingClockState => ({

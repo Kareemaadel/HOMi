@@ -1,46 +1,177 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { z } from 'zod';
+import createDefaultConfig from '../../config/default.js';
+import developmentConfig from '../../config/development.js';
+import productionConfig from '../../config/production.js';
 
-// Get directory name in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env file
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+const defaultConfig = createDefaultConfig(process.env);
 
-interface EnvConfig {
-    // Server
-    NODE_ENV: 'development' | 'production' | 'test';
+const nodeEnvSchema = z.enum(['development', 'production', 'test']);
+type NodeEnvironment = z.infer<typeof nodeEnvSchema>;
+
+type DeepPartial<T> = {
+    [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};
+
+const appConfigSchema = z.object({
+    app: z.object({
+        nodeEnv: nodeEnvSchema,
+        port: z.number().int().positive(),
+        clientUrl: z.string().min(1),
+        testDateEnabled: z.boolean(),
+    }),
+    security: z.object({
+        corsOrigins: z.array(z.string().min(1)).min(1),
+    }),
+    database: z.object({
+        host: z.string().min(1),
+        port: z.number().int().positive(),
+        name: z.string().min(1),
+        user: z.string().min(1),
+        password: z.string(),
+        url: z.string().optional(),
+        pool: z.object({
+            max: z.number().int().positive(),
+            min: z.number().int().nonnegative(),
+            acquireMs: z.number().int().positive(),
+            idleMs: z.number().int().positive(),
+        }),
+    }),
+    auth: z.object({
+        jwt: z.object({
+            accessSecret: z.string().min(1),
+            refreshSecret: z.string().min(1),
+            accessExpiration: z.string().min(1),
+            refreshExpiration: z.string().min(1),
+        }),
+        webauthn: z.object({
+            rpId: z.string().optional(),
+            origin: z.string().optional(),
+        }),
+    }),
+    encryption: z.object({
+        key: z.string().min(1),
+    }),
+    email: z.object({
+        host: z.string().min(1),
+        port: z.number().int().positive(),
+        user: z.string(),
+        pass: z.string(),
+        fromEmail: z.string().min(1),
+        fromName: z.string().min(1),
+    }),
+    adminSeed: z.object({
+        email: z.string().min(1),
+        password: z.string().min(1),
+    }),
+    paymob: z.object({
+        baseUrl: z.string().min(1),
+        apiKey: z.string(),
+        integrationId: z.number().int().nonnegative(),
+        walletIntegrationId: z.number().int().nonnegative(),
+        iframeId: z.number().int().nonnegative(),
+        walletIframeId: z.number().int().nonnegative(),
+        hmacSecret: z.string(),
+    }),
+    gemini: z.object({
+        apiKey: z.string(),
+        modelName: z.string().min(1),
+    }),
+    scalability: z.object({
+        redis: z.object({
+            enabled: z.boolean(),
+            restUrl: z.string().min(1),
+            restToken: z.string().min(1),
+            keyPrefix: z.string().min(1),
+        }),
+        rateLimit: z.object({
+            enabled: z.boolean(),
+            windowSeconds: z.number().int().positive(),
+            maxRequests: z.number().int().positive(),
+            prefix: z.string().min(1),
+            standardHeaders: z.boolean(),
+            legacyHeaders: z.boolean(),
+        }),
+        cache: z.object({
+            enabled: z.boolean(),
+            prefix: z.string().min(1),
+            defaultTtlSeconds: z.number().int().positive(),
+            popularPropertiesTtlSeconds: z.number().int().positive(),
+            sessionTtlSeconds: z.number().int().positive(),
+        }),
+    }),
+});
+
+export type AppConfig = z.infer<typeof appConfigSchema>;
+
+const deepMerge = <T extends object>(target: T, source: DeepPartial<T>): T => {
+    const output = { ...target } as Record<string, unknown>;
+    for (const [key, sourceValue] of Object.entries(source)) {
+        const targetValue = output[key];
+        if (
+            sourceValue &&
+            typeof sourceValue === 'object' &&
+            !Array.isArray(sourceValue) &&
+            targetValue &&
+            typeof targetValue === 'object' &&
+            !Array.isArray(targetValue)
+        ) {
+            output[key] = deepMerge(
+                targetValue as Record<string, unknown>,
+                sourceValue as Record<string, unknown>
+            );
+            continue;
+        }
+        output[key] = sourceValue;
+    }
+    return output as T;
+};
+
+const getProfileOverrides = (nodeEnv: NodeEnvironment): DeepPartial<AppConfig> => {
+    if (nodeEnv === 'production') return productionConfig as DeepPartial<AppConfig>;
+    return developmentConfig as DeepPartial<AppConfig>;
+};
+
+const resolvedNodeEnv = nodeEnvSchema.parse(process.env.NODE_ENV ?? defaultConfig.app.nodeEnv);
+
+const mergedConfig = deepMerge(
+    defaultConfig as AppConfig,
+    getProfileOverrides(resolvedNodeEnv)
+);
+
+export const appConfig = appConfigSchema.parse(mergedConfig);
+
+export interface EnvConfig {
+    NODE_ENV: NodeEnvironment;
     PORT: number;
-
-    /**
-     * When true, the simulated "test date" system is active app-wide:
-     * - Navbar shows the Test Date badge (advance 15 days / reset).
-     * - All "today" references (rent dues, payment history, lease lifecycle)
-     *   use the simulated date instead of the real one.
-     * When false, every date reference uses the real wall-clock time.
-     */
     TEST_DATE: boolean;
+    CLIENT_URL: string;
+    CORS_ORIGINS: string[];
 
-    // Database
     DB_HOST: string;
     DB_PORT: number;
     DB_NAME: string;
     DB_USER: string;
     DB_PASSWORD: string;
     DATABASE_URL: string | undefined;
+    DB_POOL_MAX: number;
+    DB_POOL_MIN: number;
+    DB_POOL_ACQUIRE_MS: number;
+    DB_POOL_IDLE_MS: number;
 
-    // JWT
     JWT_SECRET: string;
     JWT_REFRESH_SECRET: string;
     JWT_ACCESS_EXPIRATION: string;
     JWT_REFRESH_EXPIRATION: string;
 
-    // Encryption
     ENCRYPTION_KEY: string;
 
-    // Email Service (SMTP)
     SMTP_HOST: string;
     SMTP_PORT: number;
     SMTP_USER: string;
@@ -48,19 +179,12 @@ interface EnvConfig {
     SMTP_FROM_EMAIL: string;
     SMTP_FROM_NAME: string;
 
-    // Client URL (for verification links)
-    CLIENT_URL: string;
-
-    /** WebAuthn / passkey — RP ID (hostname only, e.g. app.example.com). Defaults to hostname of CLIENT_URL. */
     WEBAUTHN_RP_ID: string | undefined;
-    /** Allowed origin(s) for WebAuthn ceremonies — full URL, e.g. https://app.example.com. Defaults to CLIENT_URL. */
     WEBAUTHN_ORIGIN: string | undefined;
-    
-    // Default seeded admin account (dev/testing)
+
     ADMIN_SEED_EMAIL: string;
     ADMIN_SEED_PASSWORD: string;
 
-    // Paymob
     PAYMOB_BASE_URL: string;
     PAYMOB_API_KEY: string;
     PAYMOB_INTEGRATION_ID: number;
@@ -68,109 +192,95 @@ interface EnvConfig {
     PAYMOB_IFRAME_ID: number;
     PAYMOB_WALLET_IFRAME_ID: number;
     PAYMOB_HMAC_SECRET: string;
-    
-    // Gemini AI
+
     GEMINI_API_KEY: string;
     GEMINI_MODEL_NAME: string;
-}
 
-function getEnvString(key: string, defaultValue?: string): string {
-    const value = process.env[key];
-    if (value === undefined) {
-        if (defaultValue !== undefined) {
-            return defaultValue;
-        }
-        throw new Error(`Environment variable ${key} is required but not set`);
-    }
-    return value;
-}
+    REDIS_ENABLED: boolean;
+    UPSTASH_REDIS_REST_URL: string;
+    UPSTASH_REDIS_REST_TOKEN: string;
+    REDIS_KEY_PREFIX: string;
 
-function getEnvBoolean(key: string, defaultValue: boolean): boolean {
-    const value = process.env[key];
-    if (value === undefined || value === '') return defaultValue;
-    const normalized = value.trim().toLowerCase();
-    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
-    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
-    return defaultValue;
-}
+    RATE_LIMIT_ENABLED: boolean;
+    RATE_LIMIT_WINDOW_SECONDS: number;
+    RATE_LIMIT_MAX_REQUESTS: number;
+    RATE_LIMIT_PREFIX: string;
+    RATE_LIMIT_STANDARD_HEADERS: boolean;
+    RATE_LIMIT_LEGACY_HEADERS: boolean;
 
-function getEnvNumber(key: string, defaultValue?: number): number {
-    const value = process.env[key];
-    if (value === undefined) {
-        if (defaultValue !== undefined) {
-            return defaultValue;
-        }
-        throw new Error(`Environment variable ${key} is required but not set`);
-    }
-    const parsed = parseInt(value, 10);
-    if (isNaN(parsed)) {
-        throw new Error(`Environment variable ${key} must be a valid number`);
-    }
-    return parsed;
-}
-
-function validateNodeEnv(value: string): 'development' | 'production' | 'test' {
-    if (value === 'development' || value === 'production' || value === 'test') {
-        return value;
-    }
-    throw new Error(`NODE_ENV must be 'development', 'production', or 'test'`);
+    CACHE_ENABLED: boolean;
+    CACHE_PREFIX: string;
+    CACHE_DEFAULT_TTL_SECONDS: number;
+    CACHE_POPULAR_PROPERTIES_TTL_SECONDS: number;
+    SESSION_TTL_SECONDS: number;
 }
 
 export const env: EnvConfig = {
-    // Server
-    NODE_ENV: validateNodeEnv(getEnvString('NODE_ENV', 'development')),
-    PORT: getEnvNumber('PORT', 3000),
+    NODE_ENV: appConfig.app.nodeEnv,
+    PORT: appConfig.app.port,
+    TEST_DATE: appConfig.app.testDateEnabled,
+    CLIENT_URL: appConfig.app.clientUrl,
+    CORS_ORIGINS: appConfig.security.corsOrigins,
 
-    // App-wide test date toggle (default: enabled outside production)
-    TEST_DATE: getEnvBoolean('TEST_DATE', process.env['NODE_ENV'] !== 'production'),
+    DB_HOST: appConfig.database.host,
+    DB_PORT: appConfig.database.port,
+    DB_NAME: appConfig.database.name,
+    DB_USER: appConfig.database.user,
+    DB_PASSWORD: appConfig.database.password,
+    DATABASE_URL: appConfig.database.url,
+    DB_POOL_MAX: appConfig.database.pool.max,
+    DB_POOL_MIN: appConfig.database.pool.min,
+    DB_POOL_ACQUIRE_MS: appConfig.database.pool.acquireMs,
+    DB_POOL_IDLE_MS: appConfig.database.pool.idleMs,
 
-    // Database
-    DB_HOST: getEnvString('DB_HOST', 'localhost'),
-    DB_PORT: getEnvNumber('DB_PORT', 5432),
-    DB_NAME: getEnvString('DB_NAME', 'homi_db'),
-    DB_USER: getEnvString('DB_USER', 'postgres'),
-    DB_PASSWORD: getEnvString('DB_PASSWORD', ''),
-    DATABASE_URL: process.env['DATABASE_URL'],
+    JWT_SECRET: appConfig.auth.jwt.accessSecret,
+    JWT_REFRESH_SECRET: appConfig.auth.jwt.refreshSecret,
+    JWT_ACCESS_EXPIRATION: appConfig.auth.jwt.accessExpiration,
+    JWT_REFRESH_EXPIRATION: appConfig.auth.jwt.refreshExpiration,
 
-    // JWT
-    JWT_SECRET: getEnvString('JWT_SECRET', 'dev-jwt-secret-change-in-production'),
-    JWT_REFRESH_SECRET: getEnvString('JWT_REFRESH_SECRET', 'dev-refresh-secret-change-in-production'),
-    JWT_ACCESS_EXPIRATION: getEnvString('JWT_ACCESS_EXPIRATION', '15m'),
-    JWT_REFRESH_EXPIRATION: getEnvString('JWT_REFRESH_EXPIRATION', '7d'),
+    ENCRYPTION_KEY: appConfig.encryption.key,
 
-    // Encryption (32 bytes = 64 hex characters for AES-256)
-    ENCRYPTION_KEY: getEnvString('ENCRYPTION_KEY', '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),
+    SMTP_HOST: appConfig.email.host,
+    SMTP_PORT: appConfig.email.port,
+    SMTP_USER: appConfig.email.user,
+    SMTP_PASS: appConfig.email.pass,
+    SMTP_FROM_EMAIL: appConfig.email.fromEmail,
+    SMTP_FROM_NAME: appConfig.email.fromName,
 
-    // Email Service (SMTP - Gmail defaults)
-    SMTP_HOST: getEnvString('SMTP_HOST', 'smtp.gmail.com'),
-    SMTP_PORT: getEnvNumber('SMTP_PORT', 587),
-    SMTP_USER: getEnvString('SMTP_USER', ''),
-    SMTP_PASS: getEnvString('SMTP_PASS', ''),
-    SMTP_FROM_EMAIL: getEnvString('SMTP_FROM_EMAIL', 'noreply@homi.com'),
-    SMTP_FROM_NAME: getEnvString('SMTP_FROM_NAME', 'HOMi'),
+    WEBAUTHN_RP_ID: appConfig.auth.webauthn.rpId,
+    WEBAUTHN_ORIGIN: appConfig.auth.webauthn.origin,
 
-    // Client URL (for verification links)
-    CLIENT_URL: getEnvString('CLIENT_URL', 'http://localhost:5173'),
+    ADMIN_SEED_EMAIL: appConfig.adminSeed.email,
+    ADMIN_SEED_PASSWORD: appConfig.adminSeed.password,
 
-    WEBAUTHN_RP_ID: process.env['WEBAUTHN_RP_ID'],
-    WEBAUTHN_ORIGIN: process.env['WEBAUTHN_ORIGIN'],
+    PAYMOB_BASE_URL: appConfig.paymob.baseUrl,
+    PAYMOB_API_KEY: appConfig.paymob.apiKey,
+    PAYMOB_INTEGRATION_ID: appConfig.paymob.integrationId,
+    PAYMOB_WALLET_INTEGRATION_ID: appConfig.paymob.walletIntegrationId,
+    PAYMOB_IFRAME_ID: appConfig.paymob.iframeId,
+    PAYMOB_WALLET_IFRAME_ID: appConfig.paymob.walletIframeId,
+    PAYMOB_HMAC_SECRET: appConfig.paymob.hmacSecret,
 
-    // Seeded admin account
-    ADMIN_SEED_EMAIL: getEnvString('ADMIN_SEED_EMAIL', 'Homi@admin.com'),
-    ADMIN_SEED_PASSWORD: getEnvString('ADMIN_SEED_PASSWORD', 'HomiAdmin'),
+    GEMINI_API_KEY: appConfig.gemini.apiKey,
+    GEMINI_MODEL_NAME: appConfig.gemini.modelName,
 
-    // Paymob
-    PAYMOB_BASE_URL: getEnvString('PAYMOB_BASE_URL', 'https://accept.paymob.com'),
-    PAYMOB_API_KEY: getEnvString('PAYMOB_API_KEY', ''),
-    PAYMOB_INTEGRATION_ID: getEnvNumber('PAYMOB_INTEGRATION_ID', 0),
-    PAYMOB_WALLET_INTEGRATION_ID: getEnvNumber('PAYMOB_WALLET_INTEGRATION_ID', 5607894),
-    PAYMOB_IFRAME_ID: getEnvNumber('PAYMOB_IFRAME_ID', 0),
-    PAYMOB_WALLET_IFRAME_ID: getEnvNumber('PAYMOB_WALLET_IFRAME_ID', 0),
-    PAYMOB_HMAC_SECRET: getEnvString('PAYMOB_HMAC_SECRET', ''),
+    REDIS_ENABLED: appConfig.scalability.redis.enabled,
+    UPSTASH_REDIS_REST_URL: appConfig.scalability.redis.restUrl,
+    UPSTASH_REDIS_REST_TOKEN: appConfig.scalability.redis.restToken,
+    REDIS_KEY_PREFIX: appConfig.scalability.redis.keyPrefix,
 
-    // Gemini AI
-    GEMINI_API_KEY: getEnvString('GEMINI_API_KEY', ''),
-    GEMINI_MODEL_NAME: getEnvString('GEMINI_MODEL_NAME', 'gemini-2.0-flash'),
+    RATE_LIMIT_ENABLED: appConfig.scalability.rateLimit.enabled,
+    RATE_LIMIT_WINDOW_SECONDS: appConfig.scalability.rateLimit.windowSeconds,
+    RATE_LIMIT_MAX_REQUESTS: appConfig.scalability.rateLimit.maxRequests,
+    RATE_LIMIT_PREFIX: appConfig.scalability.rateLimit.prefix,
+    RATE_LIMIT_STANDARD_HEADERS: appConfig.scalability.rateLimit.standardHeaders,
+    RATE_LIMIT_LEGACY_HEADERS: appConfig.scalability.rateLimit.legacyHeaders,
+
+    CACHE_ENABLED: appConfig.scalability.cache.enabled,
+    CACHE_PREFIX: appConfig.scalability.cache.prefix,
+    CACHE_DEFAULT_TTL_SECONDS: appConfig.scalability.cache.defaultTtlSeconds,
+    CACHE_POPULAR_PROPERTIES_TTL_SECONDS: appConfig.scalability.cache.popularPropertiesTtlSeconds,
+    SESSION_TTL_SECONDS: appConfig.scalability.cache.sessionTtlSeconds,
 };
 
 export default env;

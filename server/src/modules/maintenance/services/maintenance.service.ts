@@ -144,6 +144,11 @@ function propertyMini(p?: Property | null): PropertyMini | undefined {
 }
 
 class MaintenanceService {
+    private readonly profileAttributes = [
+        'id', 'user_id', 'first_name', 'last_name',
+        'phone_number', 'avatar_url', 'bio', 'current_location'
+    ];
+
     // ─── Wallet helpers ────────────────────────────────────────────────────
 
     private async debitWallet(
@@ -196,27 +201,49 @@ class MaintenanceService {
                 model: User,
                 as: 'tenant',
                 attributes: ['id', 'email', 'role'],
-                include: [{ model: Profile, as: 'profile' }],
+                include: [{
+                    model: Profile,
+                    as: 'profile',
+                    attributes: this.profileAttributes
+                }],
             },
             {
                 model: User,
                 as: 'landlord',
                 attributes: ['id', 'email', 'role'],
-                include: [{ model: Profile, as: 'profile' }],
+                include: [{
+                    model: Profile,
+                    as: 'profile',
+                    attributes: this.profileAttributes
+                }],
             },
             {
                 model: User,
                 as: 'provider',
                 required: false,
                 attributes: ['id', 'email', 'role'],
-                include: [{ model: Profile, as: 'profile' }],
+                include: [{
+                    model: Profile,
+                    as: 'profile',
+                    attributes: this.profileAttributes
+                }],
             },
             {
                 model: Property,
                 as: 'property',
+                attributes: ['id', 'landlord_id', 'title', 'address'],
                 include: [
-                    { model: PropertyImage, as: 'images' },
-                    { model: PropertyDetailedLocation, as: 'detailedLocation' },
+                    {
+                        model: PropertyImage,
+                        as: 'images',
+                        separate: true,
+                        attributes: ['id', 'property_id', 'image_url', 'is_main']
+                    },
+                    {
+                        model: PropertyDetailedLocation,
+                        as: 'detailedLocation',
+                        attributes: ['id', 'property_id', 'location_lat', 'location_long']
+                    },
                 ],
             },
             {
@@ -240,12 +267,17 @@ class MaintenanceService {
                         model: MaintenanceJobApplication,
                         as: 'applications',
                         required: false,
+                        separate: true,
                         include: [
                             {
                                 model: User,
                                 as: 'provider',
                                 attributes: ['id', 'email'],
-                                include: [{ model: Profile, as: 'profile' }],
+                                include: [{
+                                    model: Profile,
+                                    as: 'profile',
+                                    attributes: this.profileAttributes
+                                }],
                             },
                         ],
                     },
@@ -457,9 +489,19 @@ class MaintenanceService {
                 {
                     model: Property,
                     as: 'property',
+                    attributes: ['id', 'landlord_id', 'title', 'address'],
                     include: [
-                        { model: PropertyImage, as: 'images' },
-                        { model: PropertyDetailedLocation, as: 'detailedLocation' },
+                        { 
+                            model: PropertyImage, 
+                            as: 'images', 
+                            separate: true,
+                            attributes: ['id', 'property_id', 'image_url', 'is_main']
+                        },
+                        { 
+                            model: PropertyDetailedLocation, 
+                            as: 'detailedLocation',
+                            attributes: ['id', 'property_id', 'location_lat', 'location_long']
+                        },
                     ],
                 },
             ],
@@ -554,7 +596,11 @@ class MaintenanceService {
             User.findAll({
                 where: { id: { [Op.in]: landlordIds } },
                 attributes: ['id', 'email'],
-                include: [{ model: Profile, as: 'profile' }],
+                include: [{ 
+                    model: Profile, 
+                    as: 'profile',
+                    attributes: this.profileAttributes
+                }],
             }),
             Profile.findOne({ where: { user_id: tenantId }, attributes: ['wallet_balance'] }),
         ]);
@@ -682,7 +728,11 @@ class MaintenanceService {
         if (userIds.length === 0) return [];
         return User.findAll({
             where: { id: { [Op.in]: userIds }, is_banned: false },
-            include: [{ model: Profile, as: 'profile' }],
+            include: [{ 
+                model: Profile, 
+                as: 'profile',
+                attributes: this.profileAttributes
+            }],
         });
     }
 
@@ -769,7 +819,11 @@ class MaintenanceService {
                         model: User,
                         as: 'provider',
                         attributes: ['id', 'email'],
-                        include: [{ model: Profile, as: 'profile' }],
+                        include: [{ 
+                            model: Profile, 
+                            as: 'profile',
+                            attributes: this.profileAttributes
+                        }],
                     },
                 ],
             });
@@ -877,7 +931,11 @@ class MaintenanceService {
                     model: User,
                     as: 'provider',
                     attributes: ['id', 'email'],
-                    include: [{ model: Profile, as: 'profile' }],
+                    include: [{ 
+                        model: Profile, 
+                        as: 'profile',
+                        attributes: this.profileAttributes
+                    }],
                 },
                 {
                     model: MaintenanceRequest,
@@ -888,14 +946,28 @@ class MaintenanceService {
                             model: User,
                             as: 'tenant',
                             attributes: ['id', 'email'],
-                            include: [{ model: Profile, as: 'profile' }],
+                            include: [{ 
+                                model: Profile, 
+                                as: 'profile',
+                                attributes: this.profileAttributes
+                            }],
                         },
                         {
                             model: Property,
                             as: 'property',
+                            attributes: ['id', 'landlord_id', 'title', 'address'],
                             include: [
-                                { model: PropertyImage, as: 'images' },
-                                { model: PropertyDetailedLocation, as: 'detailedLocation' },
+                                { 
+                                    model: PropertyImage, 
+                                    as: 'images', 
+                                    separate: true,
+                                    attributes: ['id', 'property_id', 'image_url', 'is_main']
+                                },
+                                { 
+                                    model: PropertyDetailedLocation, 
+                                    as: 'detailedLocation',
+                                    attributes: ['id', 'property_id', 'location_lat', 'location_long']
+                                },
                             ],
                         },
                     ],

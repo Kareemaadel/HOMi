@@ -30,6 +30,7 @@ export const GoogleLoginBtn = ({ rememberMe = false }: GoogleLoginBtnProps) => {
             } catch (err) {
                 console.error('❌ Google Login failed:', err);
                 if (axios.isAxiosError(err) && err.response?.data?.code === 'ACCOUNT_BANNED') {
+                    await authService.logout();
                     navigate('/account-banned', { state: err.response.data.details || {} });
                     return;
                 }

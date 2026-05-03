@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FaForward, FaUndo } from 'react-icons/fa';
 import contractService from '../../services/contract.service';
-import { isTestDateEnabled } from '../../shared/utils/testingClock';
 import './TestingClockBadge.css';
 
 const formatDateLabel = (iso: string): string => {
@@ -11,15 +10,13 @@ const formatDateLabel = (iso: string): string => {
 };
 
 const TestingClockBadge = () => {
-    // Read directly from the Vite-injected import.meta.env so the value is
-    // baked in at build time and cannot be stale from a module-level cache.
-    const testDateEnabled = import.meta.env.VITE_TEST_DATE === 'true';
+    const testDateEnabled = import.meta.env.DEV;
 
     // Pre-populate with the real wall-clock date so the badge renders
     // immediately (before the API round-trip completes).
     const [now, setNow] = useState<string>(() => new Date().toISOString());
     const [offsetDays, setOffsetDays] = useState<number>(0);
-    const [serverEnabled, setServerEnabled] = useState<boolean>(false);
+    const [serverEnabled, setServerEnabled] = useState<boolean | null>(null);
     const [isBusy, setIsBusy] = useState<boolean>(false);
     const [lastError, setLastError] = useState<string | null>(null);
 
@@ -79,14 +76,15 @@ const TestingClockBadge = () => {
         }
     };
 
-    if (!testDateEnabled) return null;
+    // Hide completely when client mode disables test-date OR server config disables it.
+    if (!testDateEnabled || serverEnabled !== true) return null;
 
     return (
         <div className="testing-clock-badge" title={lastError ?? 'Simulated date for testing — affects rentals, payments, and maintenance.'}>
             <div className="testing-clock-meta">
                 <span className="testing-clock-label">Test Date</span>
                 <span className="testing-clock-value">
-                    {serverEnabled ? formatDateLabel(now) : 'Unavailable'}
+                    {formatDateLabel(now)}
                     {offsetDays > 0 ? <span className="testing-clock-offset"> +{offsetDays}d</span> : null}
                 </span>
             </div>

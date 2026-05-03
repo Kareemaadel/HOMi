@@ -60,6 +60,36 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
         return <Navigate to="/complete-profile" replace />;
     }
 
+    if (
+        isAuthenticated &&
+        cached?.user &&
+        !cached.user.emailVerified &&
+        localStorage.getItem('authProvider') === 'email'
+    ) {
+        return <Navigate to="/verify-email" replace />;
+    }
+
+    // Step 1 (identity verification) is mandatory — gate any protected page until it's done
+    if (
+        isAuthenticated &&
+        cached?.profile &&
+        !cached.profile.isVerificationComplete &&
+        (role === 'TENANT' || role === 'LANDLORD')
+    ) {
+        return <Navigate to="/complete-profile" replace />;
+    }
+
+    // Step 2 (role confirmation in onboarding) — cannot be skipped via URL
+    if (
+        isAuthenticated &&
+        cached?.profile &&
+        cached.profile.isVerificationComplete &&
+        cached.profile.onboardingStep2Completed !== true &&
+        (role === 'TENANT' || role === 'LANDLORD')
+    ) {
+        return <Navigate to="/complete-profile" replace />;
+    }
+
     return (
         <>
             {/* Always render children so the page layout is visible behind the modal */}

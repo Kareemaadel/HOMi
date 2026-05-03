@@ -59,6 +59,15 @@ export class Profile extends Model<
     declare wallet_pending_amount_cents: CreationOptional<number | null>;
     declare wallet_pending_save_card: CreationOptional<boolean>;
 
+    /** ISO code, e.g. en / ar */
+    declare preferred_language: CreationOptional<string | null>;
+    declare tenant_rental_preferences: CreationOptional<Record<string, unknown> | null>;
+    declare landlord_business_profile: CreationOptional<Record<string, unknown> | null>;
+    declare onboarding_step3_skipped: CreationOptional<boolean>;
+    declare onboarding_step3_completed: CreationOptional<boolean>;
+    /** True after user confirms tenant vs landlord (updateRole from onboarding step 2). */
+    declare onboarding_step2_completed: CreationOptional<boolean>;
+
     // Timestamps
     declare created_at: CreationOptional<Date>;
     declare updated_at: CreationOptional<Date>;
@@ -82,6 +91,11 @@ export class Profile extends Model<
     // Check if profile verification is complete
     isVerificationComplete(): boolean {
         return !!(this.national_id && this.gender && this.birthdate);
+    }
+
+    /** Step 3 (rental prefs or landlord business) submitted and saved */
+    isOnboardingStep3Complete(): boolean {
+        return this.onboarding_step3_completed === true;
     }
 
     // Sanitize profile data for response
@@ -174,6 +188,33 @@ Profile.init(
             allowNull: true,
         },
         wallet_pending_save_card: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
+        preferred_language: {
+            type: DataTypes.STRING(10),
+            allowNull: true,
+        },
+        tenant_rental_preferences: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+        },
+        landlord_business_profile: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+        },
+        onboarding_step3_skipped: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
+        onboarding_step3_completed: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
+        onboarding_step2_completed: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: false,

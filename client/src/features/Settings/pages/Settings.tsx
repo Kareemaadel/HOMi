@@ -7,6 +7,7 @@ import MaintenanceSideBar from '../../Maintenance/MaintenanceProvider/SideBar/Ma
 import Footer from '../../../components/global/footer';
 import SettingsSidebar from '../components/SettingsSidebar';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/auth.service';
 
 // Component Imports
 import MyProfile from '../components/MyProfile';
@@ -19,6 +20,7 @@ import DeleteAccountSection from '../components/DeleteAccountSection';
 import LifestyleHabits from '../components/LifestyleHabits';
 
 import { FaLock, FaUserCircle } from 'react-icons/fa';
+import { AlertTriangle } from 'lucide-react';
 
 // ── Auth Guard Screen ──────────────────────────────────────────────────────────
 const SignInRequired: React.FC = () => {
@@ -42,7 +44,6 @@ const SignInRequired: React.FC = () => {
                 width: '100%',
                 textAlign: 'center',
             }}>
-                {/* Icon */}
                 <div style={{
                     width: 80, height: 80, borderRadius: '50%',
                     background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2))',
@@ -66,7 +67,6 @@ const SignInRequired: React.FC = () => {
                     Your profile, billing, notifications, and security options are only visible to signed-in users.
                 </p>
 
-                {/* CTA Buttons */}
                 <button
                     onClick={() => navigate('/auth')}
                     style={{
@@ -105,8 +105,73 @@ const SignInRequired: React.FC = () => {
     );
 };
 
+// ── Incomplete Profile Banner ──────────────────────────────────────────────────
+interface ProfileBannerProps {
+    userRole: string | null;
+    isVerificationComplete: boolean;
+    hasPreferences: boolean;
+    onCompleteIdentity: () => void;
+    onCompletePreferences: () => void;
+}
+
+const IncompleteProfileBanner: React.FC<ProfileBannerProps> = ({
+    userRole, isVerificationComplete, hasPreferences, onCompleteIdentity, onCompletePreferences,
+}) => {
+    if (userRole !== 'TENANT' && userRole !== 'LANDLORD') return null;
+
+    // Step 1 incomplete: identity/ID/gender/birthdate not verified yet
+    if (!isVerificationComplete) {
+        return (
+            <div className="settings-top-banner settings-banner settings-banner--identity">
+                <AlertTriangle size={20} className="settings-banner__icon settings-banner__icon--warn" />
+                <div className="settings-banner__body">
+                    <div className="settings-banner__title">Identity verification required</div>
+                    <div className="settings-banner__text">
+                        You haven&apos;t completed your identity verification. HOMi features like submitting rental
+                        requests and listing properties are locked until your profile is fully verified.
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={onCompleteIdentity}
+                    className="settings-banner__btn settings-banner__btn--identity"
+                >
+                    Complete Now
+                </button>
+            </div>
+        );
+    }
+
+    // Step 3 incomplete: preferences / business profile was skipped
+    if (!hasPreferences) {
+        const label = userRole === 'LANDLORD' ? 'Business Profile' : 'Rental Preferences';
+        const hint = userRole === 'LANDLORD'
+            ? 'Add your business profile to unlock property listings and rental management features.'
+            : 'Add your rental preferences to submit requests and unlock matching features.';
+        return (
+            <div className="settings-top-banner settings-banner settings-banner--preferences">
+                <AlertTriangle size={20} className="settings-banner__icon settings-banner__icon--info" />
+                <div className="settings-banner__body">
+                    <div className="settings-banner__title">{label} not set up</div>
+                    <div className="settings-banner__text">{hint}</div>
+                </div>
+                <button
+                    type="button"
+                    onClick={onCompletePreferences}
+                    className="settings-banner__btn settings-banner__btn--preferences"
+                >
+                    Set Up Now
+                </button>
+            </div>
+        );
+    }
+
+    return null;
+};
+
 // ── Main Settings Page ─────────────────────────────────────────────────────────
 const Settings: React.FC = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('profile');
 
     // Auth guard — show sign-in screen if no token exists
@@ -114,6 +179,9 @@ const Settings: React.FC = () => {
     if (!isAuthenticated) {
         return <SignInRequired />;
     }
+
+    const cached = authService.getCurrentUser();
+    const isVerificationComplete = cached?.profile?.isVerificationComplete ?? false;
 
     // Pick the correct sidebar based on the stored user role
     const storedUser = localStorage.getItem('user');
@@ -123,41 +191,73 @@ const Settings: React.FC = () => {
         : userRole === 'MAINTENANCE_PROVIDER'
             ? MaintenanceSideBar
             : TenantSidebar;
-    // Senior Approach: Component Mapping Object
+
+    const hasPreferences = cached?.profile?.onboardingStep3Completed === true;
+
+    const isProfileFullyComplete =
+        isVerificationComplete && hasPreferences && (cached?.user?.isVerified ?? false);
+
+    const handleCompletePreferences = () => {
+        navigate('/complete-profile', { state: { step: 3, fromSettings: true, role: userRole } });
+    };
+
+    const handleCompleteIdentity = () => {
+        navigate('/complete-profile', { state: { fromSettings: true, initialStep: 1 } });
+    };
+
+    const profileTab = (
+        <MyProfile
+            role={userRole}
+            onUpdatePreferencesShortcut={
+                isProfileFullyComplete && (userRole === 'TENANT' || userRole === 'LANDLORD')
+                    ? handleCompletePreferences
+                    : undefined
+            }
+        />
+    );
+
+    // Component mapping by active tab
     const tabComponents: Record<string, React.ReactNode> = {
-        profile: <MyProfile role={userRole} />,
+        profile: profileTab,
         billing: <Billing />,
         notifications: <Notifications role={userRole} />,
         security: <Security role={userRole} />,
         privacy: <Privacy />,
         preferences: <Preferences />,
         lifestyle: <LifestyleHabits role={userRole} />,
-        delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />
+        delete: <DeleteAccountSection onBackToProfile={() => setActiveTab('profile')} />,
     };
 
     return (
         <div className="settings-layout">
             <SidebarComponent />
-            
+
             <div className="settings-viewport">
                 <Header />
-                
+
                 <main className="settings-main-area">
+                    {/* Incomplete profile warning — yellow for Step 1, blue for Step 3 */}
+                    <IncompleteProfileBanner
+                        userRole={userRole}
+                        isVerificationComplete={isVerificationComplete}
+                        hasPreferences={hasPreferences}
+                        onCompleteIdentity={handleCompleteIdentity}
+                        onCompletePreferences={handleCompletePreferences}
+                    />
 
                     <div className="settings-glass-card">
-                        <SettingsSidebar 
-                            activeTab={activeTab} 
-                            setActiveTab={setActiveTab} 
+                        <SettingsSidebar
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
                             role={userRole}
                         />
-                        
+
                         <section className="settings-view-panel">
-                            {/* Render the component based on activeTab key, fallback to Profile */}
                             {tabComponents[activeTab] || tabComponents.profile}
                         </section>
                     </div>
                 </main>
-                
+
                 <Footer />
             </div>
         </div>

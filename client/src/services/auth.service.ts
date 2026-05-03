@@ -10,6 +10,7 @@ import apiClient from '../config/api';
 import socketService from './socket.service';
 import type {
     RegisterRequest,
+    CheckSignupAvailabilityResponse,
     LoginRequest,
     LoginResponse,
     AuthSuccessResponse,
@@ -33,6 +34,16 @@ function parseJwtExpMs(accessToken: string): number | null {
     try {
         const payload = JSON.parse(atob(accessToken.split('.')[1])) as { exp?: number };
         return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+    } catch {
+        return null;
+    }
+}
+
+/** HOMi access tokens encode `userId` (see server jwt.util). Used to detect stale cached user vs JWT. */
+function parseJwtUserId(accessToken: string): string | null {
+    try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1])) as { userId?: string };
+        return typeof payload.userId === 'string' ? payload.userId : null;
     } catch {
         return null;
     }
@@ -85,15 +96,42 @@ class AuthService {
      * Incomplete profiles must finish onboarding before any dashboard.
      */
     resolvePostAuthRoute(source?: {
-        user?: { role?: string | null };
-        profile?: { isVerificationComplete?: boolean | null };
+        user?: { role?: string | null; emailVerified?: boolean | null };
+        profile?: {
+            isVerificationComplete?: boolean | null;
+            onboardingStep2Completed?: boolean | null;
+            onboardingStep3Completed?: boolean | null;
+            onboardingStep3Skipped?: boolean | null;
+        };
+        isNewUser?: boolean;
     }): string {
         const cached = source ?? this.getCurrentUser() ?? undefined;
         const role = cached?.user?.role;
         const hasAppRole = role === 'LANDLORD' || role === 'TENANT' || role === 'ADMIN' || role === 'MAINTENANCE_PROVIDER';
+        const isVerificationComplete = cached?.profile?.isVerificationComplete ?? false;
+        const emailVerified = cached?.user?.emailVerified ?? false;
+        const authProvider =
+            typeof localStorage !== 'undefined' ? localStorage.getItem('authProvider') : null;
+        const onboarding2Done = cached?.profile?.onboardingStep2Completed === true;
+        const onboarding3Done = cached?.profile?.onboardingStep3Completed === true;
+        const onboarding3Skipped = cached?.profile?.onboardingStep3Skipped === true;
 
-        // Onboarding gate should enforce selecting a role, not forcing every optional profile field.
+        if ((source as { isNewUser?: boolean } | undefined)?.isNewUser) return '/complete-profile';
+
         if (!hasAppRole) return '/complete-profile';
+
+        if (authProvider === 'email' && !emailVerified) return '/verify-email';
+
+        if (!isVerificationComplete && (role === 'TENANT' || role === 'LANDLORD')) return '/complete-profile';
+
+        if ((role === 'TENANT' || role === 'LANDLORD') && !onboarding2Done) {
+            return '/complete-profile';
+        }
+
+        if ((role === 'TENANT' || role === 'LANDLORD') && !onboarding3Done && !onboarding3Skipped) {
+            return '/complete-profile';
+        }
+
         if (role === 'ADMIN') return '/admin/dashboard';
         if (role === 'LANDLORD') return '/landlord-home';
         if (role === 'TENANT') return '/tenant-home';
@@ -107,6 +145,17 @@ class AuthService {
      */
     async register(data: RegisterRequest): Promise<AuthSuccessResponse> {
         const response = await apiClient.post<AuthSuccessResponse>('/auth/register', data);
+        return response.data;
+    }
+
+    async checkSignupAvailability(data: {
+        email?: string;
+        phone?: string;
+    }): Promise<CheckSignupAvailabilityResponse> {
+        const response = await apiClient.post<CheckSignupAvailabilityResponse>(
+            '/auth/check-signup-availability',
+            data
+        );
         return response.data;
     }
 
@@ -197,7 +246,10 @@ class AuthService {
         let cached = this.getCurrentUser();
 
         if (token && isAccessTokenValid(token)) {
-            if (!cached) {
+            const jwtUserId = parseJwtUserId(token);
+            const cacheMismatch =
+                Boolean(jwtUserId && cached?.user?.id && jwtUserId !== cached.user.id);
+            if (!cached || cacheMismatch) {
                 try {
                     await this.getProfile();
                     cached = this.getCurrentUser();
@@ -229,10 +281,18 @@ class AuthService {
                 { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
             );
             localStorage.setItem('accessToken', data.accessToken);
-            if (!this.getCurrentUser()) {
+            // Always re-fetch profile after refresh: stored user JSON may belong to a different
+            // account than the refresh cookie / token (e.g. leftover localStorage + another user's "Remember me").
+            try {
                 await this.getProfile();
+                return !!this.getCurrentUser();
+            } catch {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('user');
+                localStorage.removeItem('profile');
+                localStorage.removeItem('passkeyEnabled');
+                return false;
             }
-            return true;
         } catch {
             localStorage.removeItem('accessToken');
             localStorage.removeItem(REFRESH_VIA_COOKIE);
@@ -265,6 +325,15 @@ class AuthService {
         // Refresh user data after completing verification
         await this.getProfile();
 
+        return response.data;
+    }
+
+    /**
+     * Skip optional onboarding step 3 (server-tracked; account stays partially verified).
+     */
+    async skipOnboardingStep3(): Promise<AuthSuccessResponse> {
+        const response = await apiClient.post<AuthSuccessResponse>('/auth/onboarding/skip-step3', {});
+        await this.getProfile();
         return response.data;
     }
 

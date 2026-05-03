@@ -59,47 +59,73 @@ const Security: React.FC<SecurityProps> = ({ role }) => {
     const [showConfirm, setShowConfirm] = useState(false);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [isProfileComplete, setIsProfileComplete] = useState<boolean>(
-        Boolean(authService.getCurrentUser()?.profile?.isVerificationComplete)
-    );
+
+    // ── Profile completion: two phases ─────────────────────────────────────────
+    // Phase 1: identity verified (national_id / gender / birthdate) — gates app access
+    // Phase 2: preferences filled (budget for tenant, bio/business for landlord) — gates features
+    const computeCompletionState = () => {
+        const cached = authService.getCurrentUser();
+        const profile = cached?.profile;
+        const userRole = cached?.user?.role;
+        const step1Done = Boolean(profile?.isVerificationComplete);
+
+        let step3Done = false;
+        if (userRole === 'TENANT' || userRole === 'LANDLORD') {
+            step3Done = profile?.onboardingStep3Completed === true;
+        } else {
+            step3Done = true;
+        }
+        const fullyVerified = Boolean(cached?.user?.isVerified);
+        return { step1Done, step3Done, fullyComplete: step1Done && step3Done && fullyVerified };
+    };
+
+    const initial = computeCompletionState();
+    const [isStep1Complete, setIsStep1Complete] = useState(initial.step1Done);
+    const [isProfileComplete, setIsProfileComplete] = useState(initial.fullyComplete);
     const [isPasskeyEnabled, setIsPasskeyEnabled] = useState<boolean>(false);
     const [passkeyBusy, setPasskeyBusy] = useState(false);
     const [passkeyMessage, setPasskeyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    const isPasswordProtected = true;
+
+    const securityScore = isMaintainer
+        ? (isPasswordProtected ? 80 : 0) + (isPasskeyEnabled ? 20 : 0)
+        : (isPasswordProtected ? 40 : 0) + (isProfileComplete ? 45 : 0) + (isPasskeyEnabled ? 15 : 0);
+    const scoreLabel = securityScore >= 100 ? 'Excellent' : securityScore >= 70 ? 'Good' : 'Needs attention';
+    const isPerfectScore = securityScore === 100;
+    const scoreStrokeColor = isPerfectScore ? '#22c55e' : '#2563eb';
 
     useEffect(() => {
         let mounted = true;
 
         const syncProfileCompletion = async () => {
             try {
-                const profile = await authService.getProfile();
+                const fresh = await authService.getProfile();
                 if (!mounted) return;
-                setIsProfileComplete(Boolean(profile.profile?.isVerificationComplete));
-                setIsPasskeyEnabled(Boolean(profile.passkeyEnabled));
+                const userRole = fresh.user?.role;
+                const profile = fresh.profile;
+                const step1 = Boolean(profile?.isVerificationComplete);
+                let step3 = false;
+                if (userRole === 'TENANT' || userRole === 'LANDLORD') {
+                    step3 = profile?.onboardingStep3Completed === true;
+                } else step3 = true;
+                setIsStep1Complete(step1);
+                setIsProfileComplete(step1 && step3 && Boolean(fresh.user?.isVerified));
+                setIsPasskeyEnabled(Boolean(fresh.passkeyEnabled));
             } catch {
                 if (!mounted) return;
-                setIsProfileComplete(Boolean(authService.getCurrentUser()?.profile?.isVerificationComplete));
                 setIsPasskeyEnabled(localStorage.getItem('passkeyEnabled') === '1');
             }
         };
 
         void syncProfileCompletion();
 
-        return () => {
-            mounted = false;
-        };
+        return () => { mounted = false; };
     }, []);
 
     // Track whether the user has started typing the new password (to show checklist)
     const newPasswordTouched = newPassword.length > 0;
     const allChecksPassed = checks.every(c => c.test(newPassword));
-    const isPasswordProtected = true; // Password flow already implemented for both email and Google users.
-
-    const securityScore = isMaintainer
-        ? (isPasswordProtected ? 80 : 0) + (isPasskeyEnabled ? 20 : 0)
-        : (isPasswordProtected ? 45 : 0) + (isProfileComplete ? 40 : 0) + (isPasskeyEnabled ? 15 : 0);
-    const scoreLabel = securityScore >= 100 ? 'Excellent' : securityScore >= 70 ? 'Good' : 'Needs attention';
-    const isPerfectScore = securityScore === 100;
-    const scoreStrokeColor = isPerfectScore ? '#22c55e' : '#2563eb';
 
     const handlePasskeySetup = async () => {
         setPasskeyMessage(null);
@@ -264,16 +290,28 @@ const Security: React.FC<SecurityProps> = ({ role }) => {
                     <div className={`tool-card ${isProfileComplete ? 'tool-card-complete' : ''}`}>
                         <div className="tool-icon-box"><FaHistory /></div>
                         <h4>{isProfileComplete ? 'Profile Complete' : 'Complete Profile'}</h4>
-                        <p>{isProfileComplete ? 'Your verification details are already completed.' : 'Finish setting up your account'}</p>
+                        <p>
+                            {isProfileComplete
+                                ? 'Your profile and preferences are fully set up.'
+                                : isStep1Complete
+                                    ? 'Almost there! Add your rental preferences to unlock all features.'
+                                    : 'Finish setting up your identity to access all features.'}
+                        </p>
                         <button
                             className="tool-btn"
                             disabled={isProfileComplete}
                             onClick={() => {
                                 if (isProfileComplete) return;
-                                navigate('/complete-profile', { state: { fromSettings: true } });
+                                // If Step 1 is done, go directly to Step 3 (preferences)
+                                // If Step 1 is missing, start from the beginning
+                                navigate('/complete-profile', {
+                                    state: isStep1Complete
+                                        ? { fromSettings: true, step: 3, role }
+                                        : { fromSettings: true, initialStep: 1 },
+                                });
                             }}
                         >
-                            {isProfileComplete ? 'Completed' : 'Continue'}
+                            {isProfileComplete ? 'Completed ✓' : isStep1Complete ? 'Add Preferences' : 'Continue Setup'}
                         </button>
                     </div>
                 )}
