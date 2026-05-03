@@ -14,7 +14,7 @@ import authService from '../../../services/auth.service';
 import propertyService from '../../../services/property.service';
 import type { PropertyResponse } from '../../../services/property.service';
 import contractService, { type LandlordContract } from '../../../services/contract.service';
-import './landlordHome.css';
+import './LandlordHome.css';
 
 const LandlordHome = () => {
   const { t } = useTranslation();
