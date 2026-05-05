@@ -880,7 +880,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
             </div>
             <div className="success-text-content">
               <h2>{t('landlordHomeComponents.pendingApproval', { defaultValue: 'Pending Approval' })}</h2>
-              <p>{t('landlordHomeComponents.successDesc')}</p>
+              <p>{t('landlordHomeComponents.successDesc', { defaultValue: 'Your property has been submitted for review. You can track its status in your portfolio.' })}</p>
               <button
                 className="final-close-btn"
                 onClick={() => {
@@ -888,7 +888,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ onClose, onProperty
                   onClose();
                 }}
               >
-                {t('landlordHomeComponents.viewPortfolio')}
+                {t('landlordHomeComponents.viewPortfolio', { defaultValue: 'View Portfolio' })}
               </button>
             </div>
           </div>
