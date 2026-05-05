@@ -126,7 +126,8 @@
     "lifestyleSuits": "Suits Your Lifestyle",
     "lifestyleCurated": "Curated picks based on modern renting trends.",
     "newlyListed": "Newly Listed",
-    "brandNewAdditions": "Be the first to tour these brand new additions."
+    "brandNewAdditions": "Be the first to tour these brand new additions.",
+    "area": "Area"
   },
   "header": {
     "home": "Home",
@@ -404,7 +405,8 @@
     "clearAllHistory": "Clear All History",
     "labelPayment": "Payment",
     "labelMaintenance": "Maintenance",
-    "labelLease": "Lease"
+    "labelLease": "Lease",
+    "status": "Property Status"
   },
   "tenantHomeComponents": {
     "primaryResidence": "Primary Residence",
@@ -578,8 +580,10 @@
       "lifestyles": "Lifestyles & Habits",
       "noHabits": "No lifestyle habits provided.",
       "proposedLease": "Proposed Lease",
-      "AvailabilityDate": "Availability Date",
-      "occupants": "Total Occupants"
+      "moveIn": "Availability Date",
+      "occupants": "Total Occupants",
+      "occupant": "Occupant",
+      "occupant_plural": "Occupants"
     },
     "modals": {
       "approveTitle": "Review Confirmation",
@@ -590,9 +594,6 @@
       "goToContracts": "Go to Contracts Hub",
       "declinedSuccessText": "The applicant will be notified. Use the close control when you are ready to return to your requests."
     }
-  },
-  "common": {
-    "close": "Close"
   },
   "notificationCenter": {
     "title": "Notification Center",
@@ -634,7 +635,9 @@
     "next": "Next",
     "save": "Save",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "month": "month",
+    "month_plural": "months"
   },
   "landlordContract": {
     "pageTitle": "Property Management",
@@ -973,5 +976,18 @@
     "houseRules": "House Rules",
     "propertyRules": "Property Rules",
     "executionNote": "This agreement was digitally executed and timestamped on the HOMI platform."
+  },
+  "signature": {
+    "digitalSignature": "Digital Signature",
+    "signWithinBox": "Sign clearly within the box",
+    "draw": "Draw",
+    "upload": "Upload",
+    "clear": "Clear",
+    "remove": "Remove",
+    "uploadImagePNG": "Upload Image (PNG)",
+    "secureESign": "HOMI Secure e-Sign",
+    "cancel": "Cancel",
+    "confirmSignature": "Confirm Signature",
+    "pleaseDrawSignature": "Please draw your signature first."
   }
 }

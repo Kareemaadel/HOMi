@@ -121,23 +121,80 @@
     align-items: center;
 }
 
-.security-tag { font-size: 12px; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 4px; }
+.security-tag { 
+    font-size: 12px; 
+    font-weight: 600; 
+    color: #10b981; 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+}
 
-.footer-actions { display: flex; gap: 12px; }
+.footer-actions { 
+    display: flex; 
+    gap: 12px; 
+}
 
-/* Update this in your SignatureModal.css */
+.footer-actions button {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.footer-actions .btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.footer-actions .btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+.footer-actions .btn-primary {
+    background: #000;
+    color: white;
+    border: none;
+    min-width: 140px;
+}
+
+.footer-actions .btn-primary:hover {
+    background: #222;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Fix for overlapping buttons on small screens */
+@media (max-width: 480px) {
+    .modal-footer {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    .footer-actions {
+        flex-direction: column;
+    }
+}
+
 .sig-canvas {
-    display: block; /* Ensure it's not inline */
+    display: block;
     cursor: crosshair;
     background-color: transparent;
 }
 
-/* Ensure the container has a set height so the canvas knows where to live */
 .canvas-container {
-    height: 200px;
-    border: 2px dashed #eee;
+    height: 220px;
+    border: 2px dashed #e2e8f0;
     border-radius: 12px;
     position: relative;
-    background: #fafafa;
-    overflow: hidden; /* Keep the canvas inside the borders */
+    background: #fff;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.canvas-container:hover {
+    border-color: #cbd5e1;
 }

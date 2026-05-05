@@ -25,7 +25,7 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             const data = sigCanvas.current.toData(); // save strokes
 
             const width = containerRef.current.offsetWidth;
-            const height = 200;
+            const height = 220;
 
             if (canvas.width !== width) {
                 canvas.width = width;

@@ -126,7 +126,8 @@
     "lifestyleSuits": "يناسب نمط حياتك",
     "lifestyleCurated": "اختيارات مختارة بناءً على اتجاهات التأجير الحديثة.",
     "newlyListed": "أضيف حديثاً",
-    "brandNewAdditions": "كن أول من يتجول في هذه الإضافات الجديدة تماماً."
+    "brandNewAdditions": "كن أول من يتجول في هذه الإضافات الجديدة تماماً.",
+    "area": "المنطقة"
   },
   "header": {
     "home": "الرئيسية",
@@ -404,7 +405,8 @@
     "clearAllHistory": "مسح كل السجل",
     "labelPayment": "دفعة",
     "labelMaintenance": "صيانة",
-    "labelLease": "عقد"
+    "labelLease": "عقد",
+    "status": "حالة العقار"
   },
   "tenantHomeComponents": {
     "primaryResidence": "السكن الأساسي",
@@ -579,7 +581,9 @@
       "noHabits": "لم يتم تقديم عادات نمط الحياة.",
       "proposedLease": "عقد الإيجار المقترح",
       "moveIn": "تاريخ الانتقال المطلوب",
-      "occupants": "إجمالي الساكنين"
+      "occupants": "إجمالي الساكنين",
+      "occupant": "ساكن",
+      "occupant_plural": "ساكنين"
     },
     "modals": {
       "approveTitle": "تأكيد المراجعة",
@@ -596,7 +600,9 @@
     "next": "التالي",
     "save": "حفظ",
     "cancel": "إلغاء",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "month": "شهر",
+    "month_plural": "أشهر"
   },
   "notificationCenter": {
     "title": "مركز التنبيهات",
@@ -963,5 +969,18 @@
     "houseRules": "قواعد المنزل",
     "propertyRules": "قواعد العقار",
     "executionNote": "تم تنفيذ هذا الاتفاق رقمياً وتم ختمه بالوقت على منصة HOMI."
+  },
+  "signature": {
+    "digitalSignature": "التوقيع الرقمي",
+    "signWithinBox": "وقع بوضوح داخل الصندوق",
+    "draw": "رسم",
+    "upload": "رفع",
+    "clear": "مسح",
+    "remove": "إزالة",
+    "uploadImagePNG": "رفع صورة (PNG)",
+    "secureESign": "توقيع HOMI الإلكتروني الآمن",
+    "cancel": "إلغاء",
+    "confirmSignature": "تأكيد التوقيع",
+    "pleaseDrawSignature": "يرجى رسم توقيعك أولاً."
   }
 }

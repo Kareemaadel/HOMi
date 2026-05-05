@@ -193,14 +193,6 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                                         <label>{t('tenantContract.contractDate')}</label>
                                         <input className="readonly-field" disabled type="date" value={new Date().toISOString().split('T')[0]} />
                                     </div>
-                                    <div className="input-group">
-                                        <label>{t('tenantContract.emergencyContactName')}</label>
-                                        <input type="text" value={tenantData.emergencyName} onChange={(e) => setTenantData({ ...tenantData, emergencyName: e.target.value })} />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>{t('tenantContract.emergencyPhone')}</label>
-                                        <input type="tel" value={tenantData.emergencyPhone} onChange={(e) => setTenantData({ ...tenantData, emergencyPhone: e.target.value })} />
-                                    </div>
                                 </div>
                             </section>
 
@@ -271,6 +263,26 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                             <h3 className="step-heading">{t('tenantContract.emergencyMaintenance')}</h3>
                             <section className="info-section">
                                 <div className="section-title"><User size={16} /> <h4>{t('tenantContract.emergencyContact')}</h4></div>
+                                <div className="input-grid">
+                                    <div className="input-group">
+                                        <label>{t('tenantContract.emergencyContactName')}</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Full Name"
+                                            value={tenantData.emergencyName} 
+                                            onChange={(e) => setTenantData({ ...tenantData, emergencyName: e.target.value })} 
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label>{t('tenantContract.emergencyPhone')}</label>
+                                        <input 
+                                            type="tel" 
+                                            placeholder="Phone Number"
+                                            value={tenantData.emergencyPhone} 
+                                            onChange={(e) => setTenantData({ ...tenantData, emergencyPhone: e.target.value })} 
+                                        />
+                                    </div>
+                                </div>
                             </section>
 
                             <section className="info-section">
@@ -485,7 +497,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
                         className="btn-nav-primary"
                         disabled={
                             submitting ||
-                            (step === 3 && (!tenantData.idNumber || !tenantData.emergencyName || !tenantData.emergencyPhone)) ||
+                            (step === 1 && (!tenantData.idFullName || !tenantData.idNumber || !tenantData.currentAddress || !tenantData.mainPhone)) ||
+                            (step === 3 && (!tenantData.emergencyName || !tenantData.emergencyPhone)) ||
                             (step === 6 && (!savedSignature || !tenantData.confirmed))
                         }
                         onClick={step === 6 ? handleFinalExecute : handleNext}

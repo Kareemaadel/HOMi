@@ -311,14 +311,14 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                                         <FaHourglassHalf />
                                         <div>
                                             <label>{t('tenantHomeComponents.leaseProgress')}</label>
-                                            <p>{duration || "12"} {t('guestHome.perMonth')}</p>
+                                            <p>{duration || "12"} {t('common.month', { count: Number(duration || 12) })}</p>
                                         </div>
                                     </div>
                                     <div className="lease-item">
                                         <FaUsers />
                                         <div>
                                             <label>{t('rentalRequests.labels.occupants')}</label>
-                                            <p>{occupants || "1"} {t('guestHome.landlordsTenants')}</p>
+                                            <p>{occupants || "1"} {t('rentalRequests.labels.occupant', { count: Number(occupants || 1) })}</p>
                                         </div>
                                     </div>
                                     <div className="lease-item">

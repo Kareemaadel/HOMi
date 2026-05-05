@@ -6,6 +6,7 @@ import { seedHouseRules } from './seeds/house_rules.seed.js';
 import { seedHabits } from './seeds/habits.seed.js';
 import { seedAdminAccount } from './seeds/admin.seed.js';
 import app from './app.js';
+// Triggering seed re-run
 import { initSocketServer } from './shared/realtime/socket.js';
 import { connectRedis, disconnectRedis } from './shared/infrastructure/redis.client.js';
 
