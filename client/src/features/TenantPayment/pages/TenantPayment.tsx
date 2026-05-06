@@ -25,6 +25,7 @@ import {
     Landmark,
     SearchX,
     CalendarX,
+    ArrowLeft,
 } from 'lucide-react';
 import './TenantPayment.css';
 import CreditCardModal from '../components/CreditCardModal';
@@ -44,7 +45,7 @@ import {
     getRentInstallmentStats,
 } from '../utils/rentSchedule';
 
-type TabType = 'overview' | 'upcoming' | 'history' | 'topup' | 'methods' | 'pending';
+type TabType = 'overview' | 'upcoming' | 'history' | 'topup' | 'methods' | 'pending' | 'receipt';
 
 const formatMoney = (amount: number): string =>
     `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -89,6 +90,14 @@ const TenantPayment: React.FC = () => {
     const [isTopupVerifying, setIsTopupVerifying] = useState(false);
     const topupVerifiedRef = useRef(false);
     const [paymentActionError, setPaymentActionError] = useState<string | null>(null);
+    const [paymentReviewData, setPaymentReviewData] = useState<{
+        contractId: string;
+        propertyTitle: string;
+        rent: number;
+        deposit: number;
+        serviceFee: number;
+        total: number;
+    } | null>(null);
 
     const tenantProfile = authService.getCurrentUser()?.profile;
     const accountHolderName = `${tenantProfile?.firstName ?? ''} ${tenantProfile?.lastName ?? ''}`.trim() || 'Account Holder';
@@ -469,6 +478,7 @@ const TenantPayment: React.FC = () => {
             setWalletBalance(Number(result.remainingBalance ?? 0));
             setSuccessMessage(`Payment of ${formatMoney(Number(result.debitedAmount ?? 0))} deducted from your wallet successfully.`);
             setShowSuccessToast(true);
+            setPaymentReviewData(null);
             await loadPaymentData();
             setActiveTab('history');
         } catch (error: unknown) {
@@ -478,6 +488,136 @@ const TenantPayment: React.FC = () => {
         } finally {
             setIsProcessingPayment(false);
         }
+    };
+
+    const renderReceipt = () => {
+        if (!paymentReviewData) return null;
+        const { propertyTitle, rent, deposit, serviceFee, total, contractId } = paymentReviewData;
+
+        return (
+            <div className="tab-viewport animate-fade-up">
+                <div className="checkout-distributed-layout">
+                    <div className="checkout-main-content">
+                        <header className="checkout-page-header">
+                            <button className="back-button-link" onClick={() => { setPaymentReviewData(null); setActiveTab('pending'); }}>
+                                <ArrowLeft size={16} /> Back to Applications
+                            </button>
+                            <h2>Complete Your Payment</h2>
+                            <p>Review the breakdown below and confirm your lease execution.</p>
+                        </header>
+
+                        <div className="checkout-sections-stack">
+                            <section className="checkout-block">
+                                <div className="block-header">
+                                    <div className="icon-circle"><FileSearch size={18} /></div>
+                                    <h3>Lease Details</h3>
+                                </div>
+                                <div className="property-summary-box">
+                                    <div className="prop-details">
+                                        <span className="prop-label">Contract For</span>
+                                        <span className="prop-name">{propertyTitle}</span>
+                                    </div>
+                                    <div className="prop-status-badge">Approved</div>
+                                </div>
+                            </section>
+
+                            <section className="checkout-block">
+                                <div className="block-header">
+                                    <div className="icon-circle"><Wallet size={18} /></div>
+                                    <h3>Payment Source</h3>
+                                </div>
+                                <div className="wallet-summary-box">
+                                    <div className="wallet-balance-info">
+                                        <span className="balance-label">HOMi Wallet Balance</span>
+                                        <span className="balance-value">{formatMoney(walletBalance)}</span>
+                                    </div>
+                                    <div className="wallet-status-indicator">
+                                        {walletBalance < total ? (
+                                            <button className="btn-topup-inline" onClick={() => { setPaymentReviewData(null); setActiveTab('topup'); }}>
+                                                Add Funds
+                                            </button>
+                                        ) : (
+                                            <span className="ready-to-pay"><CheckCircle2 size={16} /> Sufficient Funds</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="checkout-block">
+                                <div className="block-header">
+                                    <div className="icon-circle"><ShieldCheck size={18} /></div>
+                                    <h3>Execution Terms</h3>
+                                </div>
+                                <div className="execution-terms-box">
+                                    <p>By clicking "Pay & Execute", you agree to the lease terms and authorize HOMi to transfer the security deposit to the landlord's escrow account.</p>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <aside className="checkout-order-summary">
+                        <div className="summary-sticky-card">
+                            <h3 className="summary-title">Payment Summary</h3>
+                            
+                            <div className="summary-rows">
+                                <div className="summary-row-item">
+                                    <span>First Month Rent</span>
+                                    <span>{formatMoney(rent)}</span>
+                                </div>
+                                <div className="summary-row-item">
+                                    <span>Security Deposit</span>
+                                    <span>{formatMoney(deposit)}</span>
+                                </div>
+                                <div className="summary-row-item">
+                                    <span>Platform Service Fee</span>
+                                    <span>{formatMoney(serviceFee)}</span>
+                                </div>
+                                
+                                <div className="summary-hr"></div>
+                                
+                                <div className="summary-total-display">
+                                    <div className="total-label-col">
+                                        <span className="total-label">Total Amount</span>
+                                        <span className="total-subtext">VAT Included</span>
+                                    </div>
+                                    <span className="total-value-big">{formatMoney(total)}</span>
+                                </div>
+                            </div>
+
+                            <button 
+                                className="btn-execute-payment"
+                                disabled={isProcessingPayment || walletBalance < total}
+                                onClick={() => void handlePayFromBalance(contractId)}
+                            >
+                                {isProcessingPayment ? (
+                                    <>
+                                        <Loader2 size={18} className="animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    'Pay & Execute Contract'
+                                )}
+                            </button>
+
+                            {walletBalance < total && (
+                                <div className="insufficient-funds-alert">
+                                    <p>Your wallet balance is insufficient for this payment.</p>
+                                </div>
+                            )}
+
+                            {paymentActionError && (
+                                <div className="checkout-error-msg">{paymentActionError}</div>
+                            )}
+
+                            <div className="checkout-security-badge">
+                                <ShieldCheck size={14} />
+                                Secure Encypted Payment
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        );
     };
 
     const handleStartTopup = async () => {
@@ -729,7 +869,15 @@ const TenantPayment: React.FC = () => {
                                                 return;
                                             }
                                             if (req.contractStatus === 'PENDING_PAYMENT' && req.contractId) {
-                                                void handlePayFromBalance(req.contractId);
+                                                setPaymentReviewData({
+                                                    contractId: req.contractId,
+                                                    propertyTitle: req.property,
+                                                    rent: req.rent,
+                                                    deposit: req.deposit,
+                                                    serviceFee: req.serviceFee,
+                                                    total: req.totalDue
+                                                });
+                                                setActiveTab('receipt');
                                             }
                                         }}
                                     >
@@ -869,6 +1017,7 @@ const TenantPayment: React.FC = () => {
                 {activeTab === 'topup' && renderTopUp()}
                 {activeTab === 'methods' && renderMethods()}
                 {activeTab === 'pending' && renderPending()}
+                {activeTab === 'receipt' && renderReceipt()}
             </>
         );
     })();
