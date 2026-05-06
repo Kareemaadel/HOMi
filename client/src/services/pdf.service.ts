@@ -29,7 +29,7 @@ export interface PDFContractData {
 class PDFService {
     async generateContractPDF(data: PDFContractData, lang: 'en' | 'ar') {
         const isAr = lang === 'ar';
-        
+
         // Helper for styles
         const styles = `
             .pdf-page {
@@ -135,17 +135,20 @@ class PDFService {
                 margin: 15px 0;
             }
             .footer {
-                margin-top: 25px;
+                margin-top: 40px;
                 text-align: center;
                 font-size: 11px;
                 color: #95a5a6;
                 border-top: 1px solid #ecf0f1;
                 padding-top: 15px;
-                letter-spacing: 0.5px;
+                letter-spacing: ${isAr ? '0' : '0.5px'};
+                width: 100%;
             }
             [dir="rtl"] .section-title { text-align: right; }
             [dir="rtl"] .data-grid { text-align: right; }
             [dir="rtl"] .clause-item { text-align: right; }
+            [dir="rtl"] .pdf-header { text-align: center; }
+            [dir="rtl"] .footer { text-align: center; }
         `;
 
         const t = {
@@ -159,7 +162,6 @@ class PDFService {
                 sec3: '3. FINANCIAL OBLIGATIONS',
                 sec4: '4. RULES & PERMISSIONS',
                 sec5: '5. LEGAL CLAUSES & COVENANTS',
-                sec6: '6. EXECUTION & SIGNATURES',
                 id: 'National ID',
                 address: 'Primary Address',
                 propAddr: 'Property Address',
@@ -172,7 +174,8 @@ class PDFService {
                 permittedUse: 'Permitted Use',
                 rightToEnter: 'Access/Entry Rights',
                 notice: 'Notice Period',
-                signature: 'Digital Signature',
+                landlordSig: 'Landlord Signature',
+                tenantSig: 'Tenant Signature',
                 date: 'Execution Date',
                 footer: 'Digitally Verified Agreement • HOMI Platform • Timestamped Security',
                 clause1: '1. Description: The property is located at {{address}}. It consists of the unit specified ({{type}}).',
@@ -193,14 +196,13 @@ class PDFService {
             ar: {
                 title: 'عقد إيجار وحدة سكنية',
                 ref: 'رقم مرجع العقد',
-                sec1: '1. أطراف التعاقد',
+                sec1: '١. أطراف التعاقد',
                 lessor: 'المؤجر (الطرف الأول)',
                 lessee: 'المستأجر (الطرف الثاني)',
-                sec2: '2. بيانات العقار والمدة',
-                sec3: '3. الالتزامات المالية',
-                sec4: '4. القواعد والأذونات',
-                sec5: '5. البنود القانونية',
-                sec6: '6. التوقيع والتنفيذ',
+                sec2: '٢. بيانات العقار والمدة',
+                sec3: '٣. الالتزامات المالية',
+                sec4: '٤. القواعد والأذونات',
+                sec5: '٥. البنود القانونية',
                 id: 'الرقم القومي',
                 address: 'العنوان الحالي',
                 propAddr: 'عنوان العقار المؤجر',
@@ -213,33 +215,98 @@ class PDFService {
                 permittedUse: 'الغرض من الاستخدام',
                 rightToEnter: 'حق الدخول للمعاينة',
                 notice: 'مدة الإخطار المسبق',
-                signature: 'التوقيع الرقمي',
+                landlordSig: 'توقيع المؤجر',
+                tenantSig: 'توقيع المستأجر',
                 date: 'تاريخ التوقيع',
                 footer: 'عقد موثق رقمياً • منصة هومي (HOMI) • حماية تقنية وتوقيع زمنى',
-                clause1: '1. الوصف: يقع العقار في {{address}}. ويتكون من الوحدة المحددة ({{type}}).',
-                clause2: '2. المدة: يبدأ العقد في {{startDate}} ومدته {{duration}}.',
-                clause3: '3. القيمة: مبلغ الإيجار الشهري هو {{amount}}. يجب دفعه مقدماً في بداية كل شهر.',
-                clause4: '4. التأمين: يتم دفع تأمين قدره {{deposit}}. يسترد إذا لم تكن هناك أضرار أو فواتير.',
-                clause5: '5. التأخير: تطبق غرامة {{lateFee}} في حال التأخر عن الدفع لأكثر من 5 أيام.',
-                clause6: '6. التنازل: لا يجوز للمستأجر التنازل عن الإيجار أو تغيير العقار دون موافقة.',
-                clause7: '7. الاستخدام: يستخدم العقار للسكن فقط. أي استخدام آخر ينهي العقد تلقائياً.',
-                clause8: '8. المصاريف: مصاريف المستأجر (تحسينات/ديكور) لا يستردها وتصبح جزءاً من العقار.',
-                clause9: '9. الحالة: يجب إعادة العقار بحالته الأصلية. المستأجر مسؤول عن أي إهمال.',
-                clause10: '10. الإخلاء: يجب الإخلاء عند انتهاء العقد. التأخير يعتبر شغلاً غير قانوني.',
-                clause11: '11. المرافق: المستأجر مسؤول عن دفع فواتير الكهرباء والمياه والغاز والإنترنت.',
-                clause12: '12. الإنهاء: يتطلب الإنهاء المبكر إخطاراً قبل شهر أو دفع إيجار شهر غرامة.',
-                clause13: '13. المراسلات: العناوين المذكورة صحيحة لجميع الإخطارات القانونية والمراسلات.',
-                clause14: '14. الاختصاص: نسختان رقميتان للطرفين. يخضع العقد للمحاكم المحلية.'
+                clause1: '١. الوصف: يقع العقار في {{address}}. ويتكون من الوحدة المحددة ({{type}}).',
+                clause2: '٢. المدة: يبدأ العقد في {{startDate}} ومدته {{duration}}.',
+                clause3: '٣. القيمة: مبلغ الإيجار الشهرى هو {{amount}}. يجب دفعه مقدماً في بداية كل شهر.',
+                clause4: '٤. التأمين: يتم دفع تأمين قدره {{deposit}}. يسترد إذا لم تكن هناك أضرار أو فواتير.',
+                clause5: '٥. التأخير: تطبق غرامة {{lateFee}} في حال التأخر عن الدفع لأكثر من ٥ أيام.',
+                clause6: '٦. التنازل: لا يجوز للمستأجر التنازل عن الإيجار أو تغيير العقار دون موافقة.',
+                clause7: '٧. الاستخدام: يستخدم العقار للسكن فقط. أي استخدام آخر ينهي العقد تلقائياً.',
+                clause8: '٨. المصاريف: مصاريف المستأجر (تحسينات/ديكور) لا يستردها وتصبح جزءاً من العقار.',
+                clause9: '٩. الحالة: يجب إعادة العقار بحالته الأصلية. المستأجر مسؤول عن أي إهمال.',
+                clause10: '١٠. الإخلاء: يجب الإخلاء عند انتهاء العقد. التأخير يعتبر شغلاً غير قانوني.',
+                clause11: '١١. المرافق: المستأجر مسؤول عن دفع فواتير الكهرباء والمياه والغاز والإنترنت.',
+                clause12: '١٢. الإنهاء: يتطلب الإنهاء المبكر إخطاراً قبل شهر أو دفع إيجار شهر غرامة.',
+                clause13: '١٣. المراسلات: العناوين المذكورة صحيحة لجميع الإخطارات القانونية والمراسلات.',
+                clause14: '١٤. الاختصاص: نسختان رقميتان للطرفين. يخضع العقد للمحاكم المحلية.'
             }
         }[lang];
 
+        const toArNum = (val: string | number | undefined | null) => {
+            if (val === undefined || val === null) return '—';
+            if (!isAr) return val.toString();
+            return val.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
+        };
+
+        const monthsAr: { [key: string]: string } = {
+            'Jan': 'يناير', 'Feb': 'فبراير', 'Mar': 'مارس', 'Apr': 'أبريل', 'May': 'مايو', 'Jun': 'يونيو',
+            'Jul': 'يوليو', 'Aug': 'أغسطس', 'Sep': 'سبتمبر', 'Oct': 'أكتوبر', 'Nov': 'نوفمبر', 'Dec': 'ديسمبر',
+            'January': 'يناير', 'February': 'فبراير', 'March': 'مارس', 'April': 'أبريل', 'June': 'يونيو',
+            'July': 'يوليو', 'August': 'أغسطس', 'September': 'سبتمبر', 'October': 'أكتوبر', 'November': 'نوفمبر', 'December': 'ديسمبر'
+        };
+
+        const translateDate = (dateStr: string | undefined | null) => {
+            if (!dateStr) return '—';
+            if (!isAr) return dateStr;
+            let res = dateStr;
+            Object.keys(monthsAr).forEach(m => {
+                res = res.replace(new RegExp(m, 'gi'), monthsAr[m]);
+            });
+            return toArNum(res);
+        };
+
+        const formatDurationAr = (durationStr: string | undefined | null) => {
+            if (!durationStr) return '—';
+            if (!isAr) return durationStr;
+            
+            const numMatch = durationStr.match(/\d+/);
+            if (!numMatch) return durationStr;
+            
+            const n = parseInt(numMatch[0]);
+            const isMonth = durationStr.toLowerCase().includes('month');
+            const isYear = durationStr.toLowerCase().includes('year');
+            
+            if (isMonth) {
+                if (n === 1) return 'شهر واحد';
+                if (n === 2) return 'شهرين';
+                if (n >= 3 && n <= 10) return `${toArNum(n)} شهور`;
+                return `${toArNum(n)} شهر`;
+            }
+            if (isYear) {
+                if (n === 1) return 'سنة واحدة';
+                if (n === 2) return 'سنتين';
+                if (n >= 3 && n <= 10) return `${toArNum(n)} سنوات`;
+                return `${toArNum(n)} سنة`;
+            }
+            return toArNum(durationStr);
+        };
+
         const replace = (text: string, values: any) => text.replace(/{{(\w+)}}/g, (_, k) => values[k] || '');
+
+        const localizedData = {
+            id: toArNum(data.id),
+            amount: toArNum(data.amount),
+            deposit: toArNum(data.deposit),
+            lateFee: toArNum(data.lateFeeAmount || 0),
+            startDate: translateDate(data.startDate),
+            duration: formatDurationAr(data.duration),
+            propertyType: isAr ? 'وحدة سكنية' : (data.propertyType || 'Residential'),
+            permittedUse: isAr ? 'للسكن فقط' : (data.permittedUse || 'Residential'),
+            rightToEnter: isAr ? 'بإخطار مسبق ٢٤ ساعة' : (data.rightToEnter || 'With 24h Notice'),
+            notice: isAr ? '٢٤ ساعة' : (data.noticePeriod || '24 Hours'),
+            executionDate: translateDate(data.executionDate)
+        };
+
         const clauses = [
-            replace(t.clause1, { address: data.propertyAddress, type: data.propertyType }),
-            replace(t.clause2, { startDate: data.startDate, duration: data.duration }),
-            replace(t.clause3, { amount: `$${data.amount}` }),
-            replace(t.clause4, { deposit: `$${data.deposit}` }),
-            replace(t.clause5, { lateFee: `$${data.lateFeeAmount || 0}` }),
+            replace(t.clause1, { address: data.propertyAddress, type: localizedData.propertyType }),
+            replace(t.clause2, { startDate: localizedData.startDate, duration: localizedData.duration }),
+            replace(t.clause3, { amount: `${isAr ? '' : 'L.E'}${localizedData.amount}${isAr ? ' جنية مصري' : ''}` }),
+            replace(t.clause4, { deposit: `${isAr ? '' : 'L.E'}${localizedData.deposit}${isAr ? ' جنية مصري' : ''}` }),
+            replace(t.clause5, { lateFee: `${isAr ? '' : 'L.E'}${localizedData.lateFee}${isAr ? ' جنية مصري' : ''}` }),
             t.clause6, t.clause7, t.clause8, t.clause9, t.clause10, t.clause11, t.clause12, t.clause13, t.clause14
         ];
 
@@ -248,7 +315,7 @@ class PDFService {
                 <style>${styles}</style>
                 <div class="pdf-header">
                     <h1>${t.title}</h1>
-                    <div class="ref-no">${t.ref}: ${data.id}</div>
+                    <div class="ref-no">${t.ref}: ${localizedData.id}</div>
                 </div>
                 ${content}
                 <div class="footer">${t.footer}</div>
@@ -262,13 +329,13 @@ class PDFService {
                     <div class="party-card">
                         <span class="data-label">${t.lessor}</span>
                         <span class="data-value" style="font-size: 15px; font-weight: bold;">${data.landlord}</span><br/>
-                        <span class="data-label" style="margin-top: 8px;">${t.id}:</span> <span class="data-value">${data.landlordNationalId || '—'}</span><br/>
+                        <span class="data-label" style="margin-top: 8px;">${t.id}:</span> <span class="data-value">${toArNum(data.landlordNationalId)}</span><br/>
                         <span class="data-label">${t.address}:</span> <span class="data-value">${data.landlordAddress || '—'}</span>
                     </div>
                     <div class="party-card">
                         <span class="data-label">${t.lessee}</span>
                         <span class="data-value" style="font-size: 15px; font-weight: bold;">${data.tenant}</span><br/>
-                        <span class="data-label" style="margin-top: 8px;">${t.id}:</span> <span class="data-value">${data.tenantNationalId || '—'}</span><br/>
+                        <span class="data-label" style="margin-top: 8px;">${t.id}:</span> <span class="data-value">${toArNum(data.tenantNationalId)}</span><br/>
                         <span class="data-label">${t.address}:</span> <span class="data-value">${data.tenantAddress || '—'}</span>
                     </div>
                 </div>
@@ -278,27 +345,27 @@ class PDFService {
                 <div class="section-title">${t.sec2}</div>
                 <div class="data-grid">
                     <div class="data-item"><span class="data-label">${t.propAddr}</span><span class="data-value">${data.propertyAddress}</span></div>
-                    <div class="data-item"><span class="data-label">${t.propType}</span><span class="data-value">${data.propertyType}</span></div>
-                    <div class="data-item"><span class="data-label">${t.startDate}</span><span class="data-value">${data.startDate}</span></div>
-                    <div class="data-item"><span class="data-label">${t.duration}</span><span class="data-value">${data.duration}</span></div>
+                    <div class="data-item"><span class="data-label">${t.propType}</span><span class="data-value">${localizedData.propertyType}</span></div>
+                    <div class="data-item"><span class="data-label">${t.startDate}</span><span class="data-value">${localizedData.startDate}</span></div>
+                    <div class="data-item"><span class="data-label">${t.duration}</span><span class="data-value">${localizedData.duration}</span></div>
                 </div>
             </div>
 
             <div class="section">
                 <div class="section-title">${t.sec3}</div>
                 <div class="data-grid" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="data-item"><span class="data-label">${t.monthlyRent}</span><span class="data-value" style="font-size: 18px; color: #27ae60; font-weight: bold;">$${data.amount}</span></div>
-                    <div class="data-item"><span class="data-label">${t.securityDeposit}</span><span class="data-value" style="font-size: 18px; color: #2980b9; font-weight: bold;">$${data.deposit}</span></div>
-                    <div class="data-item"><span class="data-label">${t.lateFee}</span><span class="data-value" style="font-size: 18px; color: #c0392b; font-weight: bold;">$${data.lateFeeAmount || 0}</span></div>
+                    <div class="data-item"><span class="data-label">${t.monthlyRent}</span><span class="data-value" style="font-size: 18px; color: #27ae60; font-weight: bold;">${isAr ? '' : 'L.E'}${localizedData.amount}${isAr ? ' جنية مصري' : ''}</span></div>
+                    <div class="data-item"><span class="data-label">${t.securityDeposit}</span><span class="data-value" style="font-size: 18px; color: #2980b9; font-weight: bold;">${isAr ? '' : 'L.E'}${localizedData.deposit}${isAr ? ' جنية مصري' : ''}</span></div>
+                    <div class="data-item"><span class="data-label">${t.lateFee}</span><span class="data-value" style="font-size: 18px; color: #c0392b; font-weight: bold;">${isAr ? '' : 'L.E'}${localizedData.lateFee}${isAr ? ' جنية مصري' : ''}</span></div>
                 </div>
             </div>
 
             <div class="section">
                 <div class="section-title">${t.sec4}</div>
                 <div class="data-grid">
-                    <div class="data-item"><span class="data-label">${t.permittedUse}</span><span class="data-value">${data.permittedUse || 'Residential'}</span></div>
-                    <div class="data-item"><span class="data-label">${t.rightToEnter}</span><span class="data-value">${data.rightToEnter || 'With 24h Notice'}</span></div>
-                    <div class="data-item"><span class="data-label">${t.notice}</span><span class="data-value">${data.noticePeriod || '24 Hours'}</span></div>
+                    <div class="data-item"><span class="data-label">${t.permittedUse}</span><span class="data-value">${localizedData.permittedUse}</span></div>
+                    <div class="data-item"><span class="data-label">${t.rightToEnter}</span><span class="data-value">${localizedData.rightToEnter}</span></div>
+                    <div class="data-item"><span class="data-label">${t.notice}</span><span class="data-value">${localizedData.notice}</span></div>
                 </div>
             </div>
         `;
@@ -315,12 +382,12 @@ class PDFService {
                 <div class="sig-box">
                     <span class="data-label">${t.landlordSig}</span>
                     ${data.landlordSignature ? `<img src="${data.landlordSignature}" class="sig-img" />` : '<div style="height: 70px; border: 1px dashed #ccc; margin: 10px 0;"></div>'}
-                    <div style="font-size: 11px;">${t.date}: ${data.executionDate}</div>
+                    <div style="font-size: 11px;">${t.date}: ${localizedData.executionDate}</div>
                 </div>
                 <div class="sig-box">
                     <span class="data-label">${t.tenantSig}</span>
                     ${data.tenantSignature ? `<img src="${data.tenantSignature}" class="sig-img" />` : '<div style="height: 70px; border: 1px dashed #ccc; margin: 10px 0;"></div>'}
-                    <div style="font-size: 11px;">${t.date}: ${data.executionDate}</div>
+                    <div style="font-size: 11px;">${t.date}: ${localizedData.executionDate}</div>
                 </div>
             </div>
         `;
@@ -335,7 +402,7 @@ class PDFService {
         try {
             const pages = container.querySelectorAll('.pdf-page');
             const pdf = new jsPDF('p', 'mm', 'a4');
-            
+
             for (let i = 0; i < pages.length; i++) {
                 const canvas = await html2canvas(pages[i] as HTMLElement, {
                     scale: 2,
@@ -346,7 +413,7 @@ class PDFService {
                 if (i > 0) pdf.addPage();
                 pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
             }
-            
+
             pdf.save(`${data.property.replace(/\s+/g, '_')}_Contract_${lang}.pdf`);
         } finally {
             document.body.removeChild(container);
