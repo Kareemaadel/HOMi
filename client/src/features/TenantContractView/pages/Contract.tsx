@@ -98,6 +98,11 @@ const Contract: React.FC = () => {
         landlordSignature: contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined,
         tenantSignature: contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined,
         landlordNationalId: contract.landlordNationalId || '',
+        landlordAddress: 'Verified Legal Address on File',
+        tenantAddress: contract.property?.address || '—',
+        permittedUse: 'Residential Only',
+        rightToEnter: 'With 24h Prior Notice',
+        noticePeriod: '30 Days',
     });
 
     const fetchContracts = useCallback(async () => {

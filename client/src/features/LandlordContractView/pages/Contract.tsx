@@ -69,35 +69,41 @@ const LandlordContract: React.FC = () => {
             certify_ownership?: boolean;
         };
         return ({
-        id: contract.contractId,
-        internalId: contract.id,
-        property: contract.property?.title || 'Property',
-        tenant: `${contract.tenant?.firstName || ''} ${contract.tenant?.lastName || ''}`.trim() || 'Tenant',
-        landlord: `${contract.landlord?.firstName || ''} ${contract.landlord?.lastName || ''}`.trim() || 'Landlord',
-        amount: contract.rentAmount || 0,
-        deposit: contract.securityDeposit || 0,
-        status: (contract.status === 'TERMINATED' ? 'EXPIRED' : 
-                 contract.status === 'PENDING_PAYMENT' ? 'PENDING_TENANT' : 
-                 contract.status) as LeaseContract['status'],
-        startDate: formatDate(contract.moveInDate),
-        duration: `${contract.leaseDurationMonths} Months`,
-        rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
-        lateFeeAmount: contract.lateFeeAmount || 0,
-        maxOccupants: contract.maxOccupants || 1,
-        propertyAddress: contract.property?.address || '—',
-        propertyType: contract.property?.type || 'Residential',
-        propertyFurnishing: contract.property?.furnishing || 'N/A',
-        tenantEmail: contract.tenant?.email || '',
-        landlordEmail: contract.landlord?.email || '',
-        landlordNationalId: contract.landlordNationalId || '',
-        certifyOwnership: apiContract.certifyOwnership ?? apiContract.certify_ownership ?? false,
-        propertyRegistrationNumber: contract.propertyRegistrationNumber || '',
-        createdAt: contract.createdAt,
-        maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
-        landlordSignature: contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined, // Assuming a convention if not explicitly in API yet
-        tenantSignature: contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined,
-        tenantNationalId: contract.tenantNationalId || '',
-    });
+            id: contract.contractId,
+            internalId: contract.id,
+            property: contract.property?.title || 'Property',
+            tenant: `${contract.tenant?.firstName || ''} ${contract.tenant?.lastName || ''}`.trim() || 'Tenant',
+            landlord: `${contract.landlord?.firstName || ''} ${contract.landlord?.lastName || ''}`.trim() || 'Landlord',
+            amount: contract.rentAmount || 0,
+            deposit: contract.securityDeposit || 0,
+            status: (contract.status === 'TERMINATED' ? 'EXPIRED' : 
+                     contract.status === 'PENDING_PAYMENT' ? 'PENDING_TENANT' : 
+                     contract.status) as LeaseContract['status'],
+            startDate: formatDate(contract.moveInDate),
+            duration: `${contract.leaseDurationMonths} Months`,
+            rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
+            lateFeeAmount: contract.lateFeeAmount || 0,
+            maxOccupants: contract.maxOccupants || 1,
+            propertyAddress: contract.property?.address || '—',
+            propertyType: contract.property?.type || 'Residential',
+            propertyFurnishing: contract.property?.furnishing || 'N/A',
+            tenantEmail: contract.tenant?.email || '',
+            landlordEmail: contract.landlord?.email || '',
+            landlordNationalId: contract.landlordNationalId || '',
+            certifyOwnership: apiContract.certifyOwnership ?? apiContract.certify_ownership ?? false,
+            propertyRegistrationNumber: contract.propertyRegistrationNumber || '',
+            createdAt: contract.createdAt,
+            maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
+            landlordSignature: contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined,
+            tenantSignature: contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined,
+            tenantNationalId: contract.tenantNationalId || '',
+            landlordAddress: 'Verified Legal Address on File', // Placeholder for now or pull from profile if available
+            tenantAddress: contract.property?.address || '—',
+            permittedUse: 'Residential Only',
+            rightToEnter: 'With 24h Prior Notice',
+            noticePeriod: '30 Days',
+            leaseId: contract.leaseId || undefined,
+        });
     };
 
     const fetchContracts = useCallback(async () => {
