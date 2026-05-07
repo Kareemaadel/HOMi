@@ -1,0 +1,115 @@
+/* Terms.css */
+.terms-root {
+    --sidebar-width: 260px;
+    --primary: #2563eb;
+    --bg-color: #f8fafc;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg-color);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+.terms-root.guest-view {
+    display: block;
+    /* Header acts as normal block flow */
+}
+
+.terms-root .main-wrapper {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.terms-full-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin-top: 80px;
+    /* Offset for fixed header */
+}
+
+.terms-content-area {
+    max-width: 1550px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    flex: 1;
+}
+
+.with-sidebar .terms-content-area {
+    margin-top: 60px;
+}
+
+.terms-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.terms-header h1 {
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 12px;
+}
+
+.terms-header p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+}
+
+.last-updated {
+    font-size: 0.9rem !important;
+    margin-top: 10px;
+    font-weight: 600;
+    color: var(--primary) !important;
+}
+
+.terms-body {
+    background: #ffffff;
+    padding: clamp(24px, 5vw, 48px);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.legal-section {
+    margin-bottom: 40px;
+}
+
+.legal-section:last-child {
+    margin-bottom: 0;
+}
+
+.legal-section h2 {
+    font-size: 1.8rem;
+    color: var(--text-main);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.legal-section h3 {
+    font-size: 1.25rem;
+    color: var(--text-main);
+    margin-top: 30px;
+    margin-bottom: 12px;
+}
+
+.legal-section p {
+    line-height: 1.7;
+    color: #475569;
+    margin-bottom: 16px;
+    font-size: 1.05rem;
+}
+
+@media (max-width: 992px) {
+    .terms-root .main-wrapper {
+        margin-left: 0;
+        width: 100%;
+    }
+}

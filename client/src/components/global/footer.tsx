@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  FaTwitter, 
-  FaLinkedinIn, 
-  FaInstagram, 
-  FaFacebookF, 
+import {
+  FaTwitter,
+  FaLinkedinIn,
+  FaInstagram,
+  FaFacebookF,
   FaEnvelope,
   FaPhoneAlt
 } from 'react-icons/fa';
@@ -20,7 +20,7 @@ const Footer = () => {
 
       <div className="footer-section-container">
         <div className="footer-grid">
-          
+
           {/* Brand Section */}
           <div className="footer-brand">
             <Link to="/" className="brand-logo">
@@ -30,7 +30,7 @@ const Footer = () => {
             <p className="brand-description">
               {t('footer.brandDescription')}
             </p>
-            
+
             {/* Social Media */}
             <div className="footer-socials">
               <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter"><FaTwitter /></a>
@@ -69,8 +69,8 @@ const Footer = () => {
             </div>
             <div className="footer-divider"></div>
             <Link to="/terms">{t('footer.terms')}</Link>
-            <Link to="/privacy">{t('footer.privacy')}</Link>
-            <Link to="/trust">{t('footer.trust')}</Link>
+            {/* <Link to="/privacy">{t('footer.privacy')}</Link>
+            <Link to="/trust">{t('footer.trust')}</Link> */}
           </div>
 
         </div>

@@ -60,6 +60,8 @@ import LandlordMaintenance from "./features/Maintenance/MaintenanceForTenants&La
 import MaintenanceProviderOnboarding from "./features/MaintenanceProvider/pages/MaintenanceProviderOnboarding";
 import MaintenanceConfirmationGate from "./features/Maintenance/MaintenanceForTenants&Landlords/components/MaintenanceConfirmationGate";
 import AdminMaintenanceConflicts from "./features/admin/pages/AdminMaintenanceConflicts";
+import Terms from "./features/Terms/pages/Terms";
+
 
 function App() {
   return (
@@ -118,6 +120,7 @@ function App() {
         <Route path="/for-landlords" element={<HowItWorks />} />
         <Route path="/for-tenants" element={<ForTenants />} />
         <Route path="/homi-plus" element={<AuthGuard allowedRoles={['LANDLORD', 'TENANT']}><HomiPlusComingSoon /></AuthGuard>} />
+        <Route path="/terms" element={<Terms />} />
 
         {/* Global Dashboard Routes — protected */}
         <Route path="/balance" element={<AuthGuard><Balance /></AuthGuard>} />
