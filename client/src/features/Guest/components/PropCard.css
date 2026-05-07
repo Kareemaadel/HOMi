@@ -172,3 +172,106 @@
   color: var(--neutral-500, #6b7280);
   margin-left: 4px;
 }
+
+/* --- Mobile Horizontal Layout (Mockup Match) --- */
+@media (max-width: 767px) {
+  .prop-card {
+    flex-direction: row !important;
+    height: 165px !important; /* Increased for better content breathing room */
+    border-radius: 16px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important;
+    transform: none !important;
+    background: white !important;
+    border: 1px solid rgba(0,0,0,0.04) !important;
+  }
+
+  .prop-card:hover {
+    transform: none !important;
+  }
+
+  .prop-img-wrapper {
+    width: 42% !important;
+    height: 100% !important;
+    aspect-ratio: auto !important;
+    border-radius: 16px 0 0 16px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .prop-details {
+    width: 58% !important;
+    padding: 14px 16px !important;
+    justify-content: space-between !important;
+  }
+
+  .prop-title {
+    font-size: 15px !important;
+    margin-bottom: 2px !important;
+    -webkit-line-clamp: 2 !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
+  }
+
+  .prop-meta-top {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    margin-bottom: 4px !important;
+    font-size: 12px !important;
+  }
+
+  .prop-loc {
+    max-width: 100% !important;
+    font-size: 12px !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+  }
+
+  .prop-rating {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+  }
+
+  .prop-specs, .host-mini-avatar {
+    display: none !important;
+  }
+
+  .prop-footer-split {
+    margin-top: 0 !important;
+    justify-content: flex-start !important;
+    border-top: 1px solid #f1f5f9 !important;
+    padding-top: 8px !important;
+  }
+
+  .price-val {
+    font-size: 17px !important;
+    color: #2563eb !important;
+    font-weight: 800 !important;
+  }
+
+  .price-period {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+  }
+
+  .prop-badge {
+    top: 10px !important;
+    left: 10px !important;
+    padding: 5px 10px !important;
+    font-size: 10px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+
+  .heart-btn {
+    top: 10px !important;
+    right: 10px !important;
+    width: 30px !important;
+    height: 30px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #94a3b8 !important;
+  }
+}

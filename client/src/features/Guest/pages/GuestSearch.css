@@ -2,15 +2,17 @@
 
 /* --- Global & Layout --- */
 .search-layout {
-  height: 100vh; /* Locks exact screen height */
-  background-color: #ffffff; 
+  height: 100vh;
+  /* Locks exact screen height */
+  background-color: #ffffff;
   font-family: var(--font-main, system-ui, sans-serif);
-  padding-top: 80px; /* Leaves exact room for the fixed nav */
+  padding-top: 80px;
+  /* Leaves exact room for the fixed nav */
   box-sizing: border-box;
-  overflow: hidden; /* Absolutely prevents the whole page from scrolling */
+  overflow: hidden;
+  /* Absolutely prevents the whole page from scrolling */
   display: flex;
   flex-direction: column;
-  margin-top: 60px;
 }
 
 .search-layout * {
@@ -19,8 +21,10 @@
 
 /* --- Navigation --- */
 .glass-panel-nav {
-  position: fixed; 
-  top: 0; left: 0; width: 100%; 
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
@@ -88,32 +92,36 @@
 }
 
 /* --- Main Content & 3-Column Container --- */
-.search-main-content {
-  flex-grow: 1; 
+.guest-search-main-content {
+  flex-grow: 1;
   width: 100%;
   padding-top: 32px;
-  display: flex; /* Crucial for controlling inner heights */
+  display: flex;
+  /* Crucial for controlling inner heights */
   flex-direction: column;
-  min-height: 0; /* THE FIX: Stops content from stretching beyond 100vh */
+  min-height: 0;
+  /* THE FIX: Stops content from stretching beyond 100vh */
 }
 
 .search-container {
   max-width: 1600px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 40px; 
+  padding: 0 40px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
-  flex-grow: 1; 
-  min-height: 0; /* THE FIX: Forces grid to stay within bounds */
+  flex-grow: 1;
+  min-height: 0;
+  /* THE FIX: Forces grid to stay within bounds */
 }
 
 /* --- The Vertical Scroll Columns --- */
 .property-scroll-section {
   display: flex;
   flex-direction: column;
-  min-height: 0; /* THE FIX: Allows the internal scroller to work */
+  min-height: 0;
+  /* THE FIX: Allows the internal scroller to work */
   height: 100%;
 }
 
@@ -125,7 +133,8 @@
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 2px solid var(--neutral-100, #f3f4f6);
-  flex-shrink: 0; /* Keeps header visible while scrolling */
+  flex-shrink: 0;
+  /* Keeps header visible while scrolling */
 }
 
 .title-area {
@@ -173,33 +182,39 @@
 /* --- Vertical Properties Scroller --- */
 .properties-scroller {
   display: flex;
-  flex-direction: column; 
+  flex-direction: column;
   gap: 20px;
-  overflow-y: auto; /* Adds the scrollbar */
-  flex-grow: 1; 
-  min-height: 0; /* THE FIX: Allows the container to actually scroll */
-  padding-right: 8px; 
+  overflow-y: auto;
+  /* Adds the scrollbar */
+  flex-grow: 1;
+  min-height: 0;
+  /* THE FIX: Allows the container to actually scroll */
+  padding-right: 8px;
   padding-bottom: 40px;
-  
+
   /* Modern Scrollbar Styling */
   scrollbar-width: thin;
   scrollbar-color: var(--neutral-300, #d1d5db) transparent;
 }
 
-.properties-scroller > * {
-  flex-shrink: 0; 
-  height: max-content; /* THE FIX: Forces the card to its natural height */
-  min-height: min-content; /* Overrides any inherited 100% height rules */
+.properties-scroller>* {
+  flex-shrink: 0;
+  height: max-content;
+  /* THE FIX: Forces the card to its natural height */
+  min-height: min-content;
+  /* Overrides any inherited 100% height rules */
 }
 
 .properties-scroller::-webkit-scrollbar {
   width: 6px;
 }
+
 .properties-scroller::-webkit-scrollbar-track {
-  background: transparent; 
+  background: transparent;
 }
+
 .properties-scroller::-webkit-scrollbar-thumb {
-  background-color: var(--neutral-300, #d1d5db); 
+  background-color: var(--neutral-300, #d1d5db);
   border-radius: 10px;
 }
 
@@ -210,21 +225,384 @@
   }
 }
 
-@media (max-width: 1024px) {
-  .search-nav-bar { display: none; }
-  .search-container { padding: 0 24px; }
-}
-
-@media (max-width: 768px) {
-  .search-layout, .search-main-content, .search-container {
-    height: auto; /* Reverts to normal scrolling on mobile */
-    min-height: auto;
+/* --- Mockup-Specific Mobile Overrides --- */
+@media (max-width: 767px) {
+  .search-layout {
+    padding-bottom: 80px;
+    margin-top: 0;
+    padding-top: 160px;
+    /* Increased to prevent overlap with header */
+    background: #f8fafc;
+    height: auto;
     overflow: visible;
   }
-  .search-container {
-    grid-template-columns: 1fr;
+
+  /* 1. Glassmorphic App Header */
+  .glass-panel-nav {
+    height: 70px !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
   }
+
+  .nav-container {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 16px 16px 8px !important;
+    gap: 12px !important;
+    height: 52px !important;
+  }
+
+  .brand-logo {
+    display: flex !important;
+    flex-shrink: 0 !important;
+  }
+
+  .logo-image {
+    height: 32px !important;
+    width: auto !important;
+  }
+
+  /* Search Pill */
+  .mobile-header-center {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .mobile-search-pill {
+    background: white;
+    border: 1px solid #f1f5f9;
+    padding: 8px 14px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: auto;
+    min-width: 140px;
+    max-width: 240px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  .mobile-search-pill span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .text-blue {
+    color: #2563eb;
+  }
+
+  .mobile-nav-actions {
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .mobile-icon-btn {
+    background: #f1f5f9 !important;
+    border: none !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    color: #1e293b !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Filter Chips Row */
+  .mobile-filter-row {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    padding: 8px 16px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-filter-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-chip {
+    white-space: nowrap;
+    background: white;
+    border: 1px solid #f1f5f9;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-chip.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+  }
+
+  .search-nav-bar {
+    display: none !important;
+    /* Hide the big desktop bar */
+  }
+
+  /* 2. Mobile Menu Button Refinement */
+  .mobile-menu-btn {
+    display: flex !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px !important;
+    color: #1e293b !important;
+  }
+
+  /* 3. Main Content Scaling */
+  .guest-search-main-content {
+    padding-top: 24px !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin-top: -30px;
+  }
+
+  .search-container {
+    padding: 0 0 60px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 48px !important;
+    /* Increased spacing between sections */
+  }
+
+  .property-scroll-section {
+    margin-bottom: 15px !important;
+    width: 100% !important;
+  }
+
+  /* 4. Enhanced Horizontal Scroll */
   .properties-scroller {
-    overflow-y: visible;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 16px !important;
+    padding: 4px 16px 20px !important;
+    /* Side padding for scroller */
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .properties-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .properties-scroller>* {
+    flex: 0 0 290px !important;
+    scroll-snap-align: center;
+  }
+
+  /* 5. Section Header Improvement - CLEAN & ORGANIZED */
+  .section-header {
+    margin-bottom: 20px !important;
+    padding: 0 16px !important;
+    border-bottom: none !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .title-area {
+    padding-left: 0 !important;
+    flex: 1 !important;
+  }
+
+  .title-area::before {
+    display: none !important;
+    /* Removes the vertical blue bar on mobile */
+  }
+
+  .title-area h2 {
+    font-size: 22px !important;
+    /* Scaled down for better fit */
+    font-weight: 900 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.05em !important;
+    margin: 0 0 2px 0 !important;
+    line-height: 1.1 !important;
+  }
+
+  .title-area p {
+    font-size: 13px !important;
+    /* Scaled down */
+    color: #64748b !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    line-height: 1.3 !important;
+    max-width: 90% !important;
+  }
+
+  .view-all-btn {
+    flex-shrink: 0 !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    background: #eff6ff !important;
+    color: #2563eb !important;
+    padding: 8px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(37, 99, 235, 0.1) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-top: 4px !important;
+  }
+
+  /* 6. Bottom Navigation */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    display: flex !important;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    padding: 0 8px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-item.active {
+    color: #2563eb;
+  }
+
+  .nav-item span {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .nav-item svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none !important;
+  }
+
+  .desktop-only {
+    display: flex !important;
+  }
+}
+
+/* --- Footer Styles --- */
+.guest-footer {
+  background: var(--neutral-50, #f8fafc);
+  border-top: 1px solid var(--neutral-200, #e2e8f0);
+  padding: 80px 0 40px;
+  width: 100%;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 64px;
+  margin-bottom: 64px;
+}
+
+.footer-brand p {
+  color: var(--neutral-500, #64748b);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.footer-links h4 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 24px;
+  color: var(--neutral-900, #0f172a);
+}
+
+.footer-links a {
+  display: block;
+  color: var(--neutral-500, #64748b);
+  text-decoration: none;
+  margin-bottom: 12px;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+.footer-links a:hover {
+  color: var(--brand-blue, #2563eb);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--neutral-200, #e2e8f0);
+  padding-top: 32px;
+  text-align: center;
+  color: var(--neutral-500, #64748b);
+  font-size: 14px;
+}
+
+@media (max-width: 767px) {
+  .guest-footer {
+    padding: 40px 20px 100px !important;
+    /* Extra padding for bottom nav */
+    background: #f7f7f7 !important;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+    text-align: left !important;
+  }
+
+  .footer-brand {
+    margin-bottom: 20px;
+  }
+
+  .footer-links h4 {
+    margin-bottom: 16px !important;
   }
 }

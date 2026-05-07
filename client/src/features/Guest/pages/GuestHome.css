@@ -794,11 +794,382 @@
   .persona-card h2 { font-size: 30px; }
   .btn-white-massive { width: 100%; padding: 16px 24px; font-size: 16px; }
 }
-.text-gradient-opposite {
-  background: linear-gradient(-135deg, var(--brand-blue), #8b5cf6);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* --- Mockup-Specific Mobile Overrides --- */
+@media (max-width: 767px) {
+  .guest-layout {
+    padding-bottom: 80px; /* Space for bottom nav */
+    background: #fff;
+  }
+
+  .section-container {
+    width: 100% !important;
+    padding: 0 20px !important;
+  }
+
+  /* 1. Airbnb-Style Mobile Header (Fixed Search Pill) */
+  .guest-nav {
+    background: white !important;
+    border-bottom: 1px solid #ebebeb !important;
+    height: 70px !important;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08) !important;
+  }
+
+  .nav-container {
+    padding: 10px 20px !important;
+    justify-content: space-between !important;
+  }
+
+  .brand-logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    text-decoration: none !important;
+    order: 0 !important; /* Ensure it's on the left */
+  }
+
+  .logo-image {
+    height: 32px !important;
+    width: auto !important;
+    display: block !important;
+  }
+
+  .nav-links, .nav-actions {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: block !important;
+    order: 1 !important; /* Ensure it's on the right */
+  }
+
+  /* Removed fake search bar to show logo instead */
+  .nav-container::after {
+    display: none !important;
+  }
+
+  .hero-section {
+    padding: 120px 20px 60px !important;
+    text-align: left !important;
+    align-items: flex-start !important;
+    height: auto !important;
+    background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%) !important;
+  }
+
+  .hero-badge {
+    display: flex !important;
+    margin-bottom: 20px !important;
+    background: rgba(37, 99, 235, 0.05) !important;
+    border: 1px solid rgba(37, 99, 235, 0.1) !important;
+    color: var(--brand-blue) !important;
+  }
+
+  .hero-title {
+    font-size: 38px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    margin-bottom: 20px !important;
+    letter-spacing: -0.04em !important;
+    text-align: left !important;
+    color: #1e293b !important;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #2563eb, #8b5cf6) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    display: inline-block;
+  }
+
+  .text-gradient-opposite {
+    color: #1e293b !important;
+  }
+
+  .hero-subtitle {
+    font-size: 17px !important;
+    color: #4b5563 !important;
+    line-height: 1.6 !important;
+    margin-bottom: 32px !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .hero-trust-cards {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-bottom: 40px !important;
+    width: 100% !important;
+  }
+
+  .floating-card {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    animation: none !important;
+    padding: 12px 16px !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    width: fit-content !important;
+    max-width: 100% !important;
+    transform: none !important;
+  }
+
+  .hero-search-wrapper {
+    display: flex !important;
+    width: 100% !important;
+    margin-top: 10px !important;
+  }
+
+  .hero-search-pill {
+    flex-direction: column !important;
+    padding: 20px !important;
+    border-radius: 20px !important;
+    width: 100% !important;
+    gap: 12px !important;
+    background: white !important;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1) !important;
+    border: 1px solid #f1f5f9 !important;
+  }
+
+  .search-block {
+    padding: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding-bottom: 12px !important;
+  }
+
+  .search-block:last-of-type {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+
+  .search-divider {
+    display: none !important;
+  }
+
+  .search-submit-btn {
+    margin-top: 10px !important;
+    width: 100% !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    justify-content: center !important;
+  }
+
+  /* 3. Section Styling */
+  .featured-section, .how-it-works-section, .personas-section, .testimonials-section {
+    padding: 32px 0 !important;
+    border: none !important;
+  }
+
+  .section-header h2, .section-title {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #222 !important;
+    margin-bottom: 4px !important;
+    text-align: left !important;
+  }
+
+  .section-desc {
+    font-size: 14px !important;
+    color: #717171 !important;
+    margin-bottom: 20px !important;
+    text-align: left !important;
+  }
+
+  .view-all-link {
+    display: none !important; /* Airbnb app style: usually just a horizontal scroll or button at bottom */
+  }
+
+  /* 4. Airbnb-style Horizontal Scroll for Properties */
+  .property-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    padding-bottom: 20px !important;
+    gap: 16px !important;
+    scroll-snap-type: x mandatory;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .property-grid::-webkit-scrollbar { display: none; }
+
+  .property-grid > * {
+    flex: 0 0 90% !important; /* Wide enough for horizontal cards */
+    scroll-snap-align: center;
+  }
+
+  /* 5. How it Works Refinement */
+  .modern-steps-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 16px !important;
+    padding: 4px !important;
+    scrollbar-width: none;
+  }
+  .modern-steps-grid::-webkit-scrollbar { display: none; }
+
+  .m-step-card {
+    flex: 0 0 240px !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+    background: #f7f7f7 !important;
+    text-align: left !important;
+  }
+
+  .m-step-icon-box {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+    margin: 0 0 16px 0 !important;
+    transform: none !important;
+  }
+
+  .m-step-card h4 {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+  }
+
+  .m-step-card p {
+    font-size: 13px !important;
+    color: #717171 !important;
+  }
+
+  /* 6. Persona & CTA Banners (App Style) */
+  .persona-card {
+    border-radius: 12px !important;
+    padding: 20px !important;
+    margin-bottom: 16px !important;
+    border: none !important;
+    background: #f7f7f7 !important;
+  }
+
+  .landlord-card {
+    background: #222 !important;
+  }
+
+  .persona-card h2 {
+    font-size: 22px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .persona-card p {
+    font-size: 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .persona-benefits {
+    display: none !important;
+  }
+
+  .btn-outline-dark, .btn-primary-pill {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 14px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    color: #222 !important;
+    border: 1px solid #222 !important;
+  }
+
+  .landlord-card .btn-outline-dark {
+    background: #fff !important;
+    border: none !important;
+  }
+
+  /* 7. Airbnb-Style Testimonials */
+  .test-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 16px !important;
+    scrollbar-width: none;
+  }
+  .test-grid::-webkit-scrollbar { display: none; }
+
+  .test-card {
+    flex: 0 0 260px !important;
+    padding: 20px !important;
+    border: 1px solid #ebebeb !important;
+    box-shadow: none !important;
+  }
+
+  .test-card p {
+    font-size: 14px !important;
+    -webkit-line-clamp: 4;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 8. CTA & Footer Scaling */
+  .cta-banner-wrapper {
+    padding: 20px !important;
+  }
+
+  .premium-gradient-bg {
+    padding: 32px 20px !important;
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+
+  .cta-text h2 {
+    font-size: 24px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .btn-white-massive {
+    width: 100% !important;
+    font-size: 15px !important;
+    padding: 14px !important;
+  }
+
+  .guest-footer {
+    padding: 40px 20px !important;
+    background: #f7f7f7 !important;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+    text-align: left !important;
+  }
+
+  /* 9. Bottom Navigation (Airbnb App Style) */
+  .bottom-nav {
+    height: 70px !important;
+    background: #fff !important;
+    border-top: 1px solid #ebebeb !important;
+    padding: 0 !important;
+  }
+
+  .nav-item {
+    font-size: 10px !important;
+    color: #717171 !important;
+  }
+
+  .nav-item.active {
+    color: #FF385C !important; /* Airbnb Pinkish Red */
+  }
+
+  .nav-item svg {
+    width: 24px !important;
+    height: 24px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .mobile-only { display: flex !important; }
+  .desktop-only { display: none !important; }
+}
+
+@media (min-width: 768px) {
+  .mobile-only { display: none !important; }
+  .desktop-only { display: flex !important; }
 }
 .brand-logo {
     width: 150px;

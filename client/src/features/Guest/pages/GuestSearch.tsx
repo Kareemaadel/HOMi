@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, SlidersHorizontal, Search, ArrowRight } from 'lucide-react';
+import { Menu, X, SlidersHorizontal, Search, ArrowRight, Globe, Star, Zap, ShieldCheck, Heart, MessageSquare, User } from 'lucide-react';
 import PropCard, { type Property } from '../components/PropCard';
 import PropertyDetailedModal, {
     type PropertyDetailModalProperty,
 } from '../../BrowseProperties/components/PropertyDetailedModal';
+import AuthModal from '../../../components/global/AuthModal';
 import './GuestSearch.css';
 
 const mapGuestPropertyToModal = (p: Property): PropertyDetailModalProperty => ({
@@ -41,6 +42,12 @@ const GuestSearch: React.FC = () => {
     const { t, i18n } = useTranslation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+
+    const getHelpFromGuest = {
+        pathname: '/get-help',
+        state: { fromGuestHome: true },
+    };
 
     // Group 1: Popular in Sheikh Zayed
     const popularProperties: Property[] = [
@@ -73,12 +80,12 @@ const GuestSearch: React.FC = () => {
                     <Link to="/guest-home" className="brand-logo">
                         <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
                     </Link>
-                    
+
                     <div className="search-nav-bar desktop-only">
                         <input type="text" placeholder={t('guestHome.searchPlaceholder')} />
                         <div className="search-nav-divider"></div>
-                        <button className="filter-btn"><SlidersHorizontal size={18}/> {t('guestHome.filters')}</button>
-                        <button className="search-btn"><Search size={18}/></button>
+                        <button className="filter-btn"><SlidersHorizontal size={18} /> {t('guestHome.filters')}</button>
+                        <button className="search-btn"><Search size={18} /></button>
                     </div>
 
                     <div className="nav-actions desktop-only">
@@ -86,21 +93,27 @@ const GuestSearch: React.FC = () => {
                         <button className="btn-primary-pill shadow-hover" onClick={() => navigate('/auth')}>{t('guestHome.signup')}</button>
                     </div>
 
-                    <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        {mobileMenuOpen ? <X size={28}/> : <Menu size={28}/>}
-                    </button>
+                    <div className="mobile-header-center mobile-only">
+                        <div className="mobile-search-pill">
+                            <Search size={16} className="text-blue" />
+                            <span>{t('guestHome.search')}...</span>
+                        </div>
+                    </div>
+
+                    <div className="mobile-nav-actions mobile-only">
+                        <button className="mobile-icon-btn"><SlidersHorizontal size={20} /></button>
+                    </div>
                 </div>
             </nav>
 
-            <main className="search-main-content">
+            <main className="guest-search-main-content">
                 <div className="search-container">
-                    
+
                     {/* Group 1 */}
                     <section className="property-scroll-section">
                         <div className="section-header">
                             <div className="title-area">
                                 <h2>{t('guestHome.highestRated')}</h2>
-                                <p>{t('guestHome.trendingProperties')}</p>
                             </div>
                             <button className="view-all-btn">
                                 {t('guestHome.viewAll', { count: popularProperties.length })} <ArrowRight size={18} />
@@ -108,10 +121,10 @@ const GuestSearch: React.FC = () => {
                         </div>
                         <div className="properties-scroller">
                             {popularProperties.map(property => (
-                                <PropCard 
-                                    key={property.id} 
-                                    property={property} 
-                                    onOpenDetails={() => setSelectedProperty(property)} 
+                                <PropCard
+                                    key={property.id}
+                                    property={property}
+                                    onOpenDetails={() => setSelectedProperty(property)}
                                 />
                             ))}
                         </div>
@@ -122,7 +135,6 @@ const GuestSearch: React.FC = () => {
                         <div className="section-header">
                             <div className="title-area">
                                 <h2>{t('guestHome.lifestyleSuits')}</h2>
-                                <p>{t('guestHome.lifestyleCurated')}</p>
                             </div>
                             <button className="view-all-btn">
                                 {t('guestHome.viewAll', { count: recommendedProperties.length })} <ArrowRight size={18} />
@@ -130,10 +142,10 @@ const GuestSearch: React.FC = () => {
                         </div>
                         <div className="properties-scroller">
                             {recommendedProperties.map(property => (
-                                <PropCard 
-                                    key={property.id} 
-                                    property={property} 
-                                    onOpenDetails={() => setSelectedProperty(property)} 
+                                <PropCard
+                                    key={property.id}
+                                    property={property}
+                                    onOpenDetails={() => setSelectedProperty(property)}
                                 />
                             ))}
                         </div>
@@ -144,7 +156,6 @@ const GuestSearch: React.FC = () => {
                         <div className="section-header">
                             <div className="title-area">
                                 <h2>{t('guestHome.newlyListed')}</h2>
-                                <p>{t('guestHome.brandNewAdditions')}</p>
                             </div>
                             <button className="view-all-btn">
                                 {t('guestHome.viewAll', { count: newListings.length })} <ArrowRight size={18} />
@@ -152,10 +163,10 @@ const GuestSearch: React.FC = () => {
                         </div>
                         <div className="properties-scroller">
                             {newListings.map(property => (
-                                <PropCard 
-                                    key={property.id} 
-                                    property={property} 
-                                    onOpenDetails={() => setSelectedProperty(property)} 
+                                <PropCard
+                                    key={property.id}
+                                    property={property}
+                                    onOpenDetails={() => setSelectedProperty(property)}
                                 />
                             ))}
                         </div>
@@ -164,6 +175,44 @@ const GuestSearch: React.FC = () => {
                 </div>
             </main>
 
+            <footer className="guest-footer mobile-only">
+                <div className="section-container">
+                    <div className="footer-grid">
+                        <div className="footer-brand">
+                            <Link to="/guest-home" className="brand-logo">
+                                <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
+                            </Link>
+                            <p>{t('guestHome.modernPlatform')}</p>
+                        </div>
+                        <div className="footer-links">
+                            <h4>{t('guestHome.platform')}</h4>
+                            <Link to="/guest-search">{t('guestHome.browseHomes')}</Link>
+                            <a href="#" className="footer-link-override" onClick={(e) => { e.preventDefault(); setShowAuthModal(true); }}>{t('guestHome.listProperty')}</a>
+                            <Link to="/pricing">{t('guestHome.pricing')}</Link>
+                            <Link to="/maintenance-providers">Maintenance Providers</Link>
+                        </div>
+                        <div className="footer-links">
+                            <h4>{t('guestHome.resources')}</h4>
+                            <Link to="/about">{t('guestHome.aboutUs')}</Link>
+                            <Link to={getHelpFromGuest}>{t('guestHome.helpCenter')}</Link>
+                            <Link to="/blog">{t('guestHome.blog')}</Link>
+                        </div>
+                        <div className="footer-links">
+                            <h4>{t('guestHome.legal')}</h4>
+                            <Link to="/terms">{t('guestHome.terms')}</Link>
+                            <Link to="/privacy">{t('guestHome.privacy')}</Link>
+                            <Link to="/trust">{t('guestHome.trust')}</Link>
+                        </div>
+                    </div>
+                    <div className="footer-bottom">
+                        <p>© {new Date().getFullYear()} HOMI Technologies Inc. {t('guestHome.allRightsReserved')}</p>
+                    </div>
+                </div>
+            </footer>
+
+            {/* Bottom Navigation for Mobile */}
+
+
             {selectedProperty && (
                 <PropertyDetailedModal
                     property={mapGuestPropertyToModal(selectedProperty)}
@@ -171,6 +220,9 @@ const GuestSearch: React.FC = () => {
                     isGuest={true}
                 />
             )}
+
+            {/* Reusable Auth Modal for Guests */}
+            {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
         </div>
     );
 };

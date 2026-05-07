@@ -1,60 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  Search, ShieldCheck, CreditCard, FileSignature, 
+import {
+  Search, ShieldCheck, CreditCard, FileSignature,
   Star, ArrowRight, Menu, X, CheckCircle,
   MapPin, Bed, Bath, Maximize, Zap, PlayCircle, Globe
 } from 'lucide-react';
 import './GuestHome.css';
 import PropertyDetailedModal, {
-    type PropertyDetailModalProperty,
+  type PropertyDetailModalProperty,
 } from '../../BrowseProperties/components/PropertyDetailedModal';
 import AuthModal from '../../../components/global/AuthModal';
 
 type GuestHomeListing = {
-    id: number;
-    title: string;
-    price: number;
-    currency?: string;
-    location?: string;
-    type?: string;
-    beds: number;
-    baths: number;
-    sqft: number;
-    rating: number;
-    reviews?: number;
-    image: string;
-    hostImg?: string;
-    badge?: string;
+  id: number;
+  title: string;
+  price: number;
+  currency?: string;
+  location?: string;
+  type?: string;
+  beds: number;
+  baths: number;
+  sqft: number;
+  rating: number;
+  reviews?: number;
+  image: string;
+  hostImg?: string;
+  badge?: string;
 };
 
 const mapGuestHomeListingToModal = (p: GuestHomeListing): PropertyDetailModalProperty => ({
-    id: p.id,
-    title: p.title,
-    address: p.location,
-    price: p.price,
-    securityDeposit: 0,
-    image: p.image,
-    allImages: [p.image],
-    beds: p.beds,
-    baths: p.baths,
-    sqft: p.sqft,
-    ownerName: 'Host',
-    ownerImage: p.hostImg,
-    ownerVerified: false,
-    locationLat: null,
-    locationLng: null,
-    availabilityDateISO: null,
-    listedAtISO: new Date().toISOString(),
-    maintenanceResponsibilities: [],
-    petsAllowed: false,
-    targetTenant: 'Any Tenant',
-    furnishing: 'Unfurnished',
-    availableDate: 'Not specified',
-    description: '',
-    tags: p.badge ? [p.badge] : [],
-    rating: p.rating,
+  id: p.id,
+  title: p.title,
+  address: p.location,
+  price: p.price,
+  securityDeposit: 0,
+  image: p.image,
+  allImages: [p.image],
+  beds: p.beds,
+  baths: p.baths,
+  sqft: p.sqft,
+  ownerName: 'Host',
+  ownerImage: p.hostImg,
+  ownerVerified: false,
+  locationLat: null,
+  locationLng: null,
+  availabilityDateISO: null,
+  listedAtISO: new Date().toISOString(),
+  maintenanceResponsibilities: [],
+  petsAllowed: false,
+  targetTenant: 'Any Tenant',
+  furnishing: 'Unfurnished',
+  availableDate: 'Not specified',
+  description: '',
+  tags: p.badge ? [p.badge] : [],
+  rating: p.rating,
 });
 
 const GuestHome: React.FC = () => {
@@ -75,7 +75,7 @@ const GuestHome: React.FC = () => {
     pathname: '/get-help',
     state: { fromGuestHome: true },
   };
-  
+
   // Modal State
   const [selectedProperty, setSelectedProperty] = useState<PropertyDetailModalProperty | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,39 +97,39 @@ const GuestHome: React.FC = () => {
 
   // Expanded to 5 properties
   const mockProperties: GuestHomeListing[] = [
-    { 
-      id: 1, 
-      title: 'Modern Loft with Nile View', 
-      price: 15000, 
+    {
+      id: 1,
+      title: 'Modern Loft with Nile View',
+      price: 15000,
       currency: 'EGP',
-      location: 'Zamalek, Cairo', 
-      type: 'Apartment', 
+      location: 'Zamalek, Cairo',
+      type: 'Apartment',
       beds: 2, baths: 2, sqft: 120,
       rating: 4.9, reviews: 34,
       image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800',
       hostImg: 'https://i.pravatar.cc/150?u=1',
       badge: 'Superhost'
     },
-    { 
-      id: 2, 
-      title: 'Luxury Smart Villa', 
-      price: 45000, 
+    {
+      id: 2,
+      title: 'Luxury Smart Villa',
+      price: 45000,
       currency: 'EGP',
-      location: 'Sheikh Zayed, Giza', 
-      type: 'Villa', 
+      location: 'Sheikh Zayed, Giza',
+      type: 'Villa',
       beds: 4, baths: 5, sqft: 450,
       rating: 5.0, reviews: 12,
       image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800',
       hostImg: 'https://i.pravatar.cc/150?u=2',
       badge: 'Premium'
     },
-    { 
-      id: 3, 
-      title: 'Cozy Tech Hub Studio', 
-      price: 9000, 
+    {
+      id: 3,
+      title: 'Cozy Tech Hub Studio',
+      price: 9000,
       currency: 'EGP',
-      location: 'Maadi, Cairo', 
-      type: 'Studio', 
+      location: 'Maadi, Cairo',
+      type: 'Studio',
       beds: 1, baths: 1, sqft: 65,
       rating: 4.8, reviews: 89,
       image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&q=80&w=800',
@@ -163,7 +163,7 @@ const GuestHome: React.FC = () => {
           </div>
 
           <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X size={28}/> : <Menu size={28}/>}
+            {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
 
@@ -173,10 +173,10 @@ const GuestHome: React.FC = () => {
             <Link to="/how-it-works-choose" onClick={() => setMobileMenuOpen(false)}>{t('guestHome.howItWorks')}</Link>
             <Link to={getHelpFromGuest} onClick={() => setMobileMenuOpen(false)}>{t('guestHome.helpCenter')}</Link>
             <div className="mobile-lang-row">
-                <button className="lang-toggle-btn" onClick={() => { toggleLanguage(); setMobileMenuOpen(false); }}>
-                    <Globe size={18} />
-                    <span>{i18n.language === 'en' ? 'Arabic' : 'English'}</span>
-                </button>
+              <button className="lang-toggle-btn" onClick={() => { toggleLanguage(); setMobileMenuOpen(false); }}>
+                <Globe size={18} />
+                <span>{i18n.language === 'en' ? 'Arabic' : 'English'}</span>
+              </button>
             </div>
             <button className="btn-text mobile-nav-login" onClick={() => { setMobileMenuOpen(false); navigate('/auth'); }}>
               {t('guestHome.login')}
@@ -193,24 +193,24 @@ const GuestHome: React.FC = () => {
         <div className="hero-mesh-bg"></div>
         <div className="hero-content">
           <div className="hero-badge animate-fade-in">
-            <Zap size={14} className="text-amber" /> 
+            <Zap size={14} className="text-amber" />
             <span>{t('guestHome.ratedPlatformEgypt')}</span>
           </div>
-        <h1 className="hero-title animate-slide-up">
-            <span className="text-gradient-opposite">{t('guestHome.findPerfectHome')}</span> <br/> 
+          <h1 className="hero-title animate-slide-up">
+            <span className="text-gradient-opposite">{t('guestHome.findPerfectHome')}</span> <br />
             <span className="text-gradient">{t('guestHome.withoutHassle')}</span>
-        </h1>
+          </h1>
           <p className="hero-subtitle animate-slide-up-delayed">
             {t('guestHome.heroSubtitle')}
           </p>
-          
+
           {/* Advanced Search Pill */}
           <div className="hero-search-wrapper animate-slide-up-delayed-more">
             <div className="hero-search-pill glass-panel">
               <div className="search-block">
                 <label>{t('guestHome.location')}</label>
                 <div className="input-with-icon">
-                  <MapPin size={18} className="icon-muted"/>
+                  <MapPin size={18} className="icon-muted" />
                   <input type="text" placeholder={t('guestHome.locationPlaceholder')} />
                 </div>
               </div>
@@ -242,6 +242,27 @@ const GuestHome: React.FC = () => {
           </div>
 
           {/* Floating UI Elements for visual depth */}
+          <div className="hero-trust-cards mobile-only animate-slide-up-delayed-more">
+            <div className="floating-card">
+              <ShieldCheck className="float-icon green" />
+              <div className="float-text">
+                <strong>{t('guestHome.verified')}</strong>
+                <span>{t('guestHome.landlordsTenants')}</span>
+              </div>
+            </div>
+            <div className="floating-card">
+              <div className="avatars-group">
+                <img src="https://i.pravatar.cc/100?u=a" alt="user" />
+                <img src="https://i.pravatar.cc/100?u=b" alt="user" />
+                <img src="https://i.pravatar.cc/100?u=c" alt="user" />
+              </div>
+              <div className="float-text">
+                <strong>{t('guestHome.matchesMade')}</strong>
+                <span>{t('guestHome.madeThisMonth')}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="floating-card float-left desktop-only">
             <ShieldCheck className="float-icon green" />
             <div className="float-text">
@@ -283,30 +304,30 @@ const GuestHome: React.FC = () => {
               <h2>{t('guestHome.handpickedHomes')}</h2>
               <p className="section-desc">{t('guestHome.highestRatings')}</p>
             </div>
-            <Link to="/guest-search" className="view-all-link">{t('guestHome.exploreAll')} <ArrowRight size={16}/></Link>
+            <Link to="/guest-search" className="view-all-link">{t('guestHome.exploreAll')} <ArrowRight size={16} /></Link>
           </div>
-          
+
           <div className="property-grid">
             {mockProperties.map(prop => (
               <div key={prop.id} className="prop-card group" onClick={() => handlePropertyClick(prop)}>
                 <div className="prop-img-wrapper">
                   <img src={prop.image} alt={prop.title} className="group-hover-scale" />
                   <div className="prop-overlay-gradient"></div>
-                  {prop.badge && <div className="prop-badge"><Star size={12} className="fill-star"/> {prop.badge}</div>}
+                  {prop.badge && <div className="prop-badge"><Star size={12} className="fill-star" /> {prop.badge}</div>}
                   <button className="heart-btn" onClick={(e) => { e.stopPropagation(); handleProtectedAction(); }}>
-                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                   </button>
                 </div>
                 <div className="prop-details">
                   <div className="prop-meta-top">
-                    <span className="prop-loc"><MapPin size={14}/> {prop.location}</span>
-                    <span className="prop-rating"><Star size={14} className="fill-star"/> {prop.rating} ({prop.reviews})</span>
+                    <span className="prop-loc"><MapPin size={14} /> {prop.location}</span>
+                    <span className="prop-rating"><Star size={14} className="fill-star" /> {prop.rating} ({prop.reviews})</span>
                   </div>
                   <h3 className="prop-title">{prop.title}</h3>
                   <div className="prop-specs">
-                    <span><Bed size={16}/> {prop.beds} {t('guestHome.beds')}</span>
-                    <span><Bath size={16}/> {prop.baths} {t('guestHome.baths')}</span>
-                    <span><Maximize size={16}/> {prop.sqft} {t('guestHome.sqm')}</span>
+                    <span><Bed size={16} /> {prop.beds} {t('guestHome.beds')}</span>
+                    <span><Bath size={16} /> {prop.baths} {t('guestHome.baths')}</span>
+                    <span><Maximize size={16} /> {prop.sqft} {t('guestHome.sqm')}</span>
                   </div>
                   <div className="prop-footer-split">
                     <div className="prop-price-block">
@@ -329,7 +350,7 @@ const GuestHome: React.FC = () => {
             <h2 className="section-title">{t('guestHome.rentInSteps')}</h2>
             <p className="section-desc">{t('guestHome.digitizedJourney')}</p>
           </div>
-          
+
           <div className="modern-steps-grid">
             <div className="m-step-card">
               <div className="m-step-icon-box"><Search size={24} /></div>
@@ -365,9 +386,9 @@ const GuestHome: React.FC = () => {
                 <h2>{t('guestHome.findHappyPlace')}</h2>
                 <p>{t('guestHome.tenantDescription')}</p>
                 <ul className="persona-benefits">
-                  <li><CheckCircle size={18} className="text-green"/> {t('guestHome.tenantBenefit1')}</li>
-                  <li><CheckCircle size={18} className="text-green"/> {t('guestHome.tenantBenefit2')}</li>
-                  <li><CheckCircle size={18} className="text-green"/> {t('guestHome.tenantBenefit3')}</li>
+                  <li><CheckCircle size={18} className="text-green" /> {t('guestHome.tenantBenefit1')}</li>
+                  <li><CheckCircle size={18} className="text-green" /> {t('guestHome.tenantBenefit2')}</li>
+                  <li><CheckCircle size={18} className="text-green" /> {t('guestHome.tenantBenefit3')}</li>
                 </ul>
                 <button className="btn-primary-pill mt-auto" onClick={() => setShowAuthModal(true)}>{t('guestHome.startBrowsing')}</button>
               </div>
@@ -379,9 +400,9 @@ const GuestHome: React.FC = () => {
                 <h2>{t('guestHome.manageAutopilot')}</h2>
                 <p>{t('guestHome.landlordDescription')}</p>
                 <ul className="persona-benefits">
-                  <li><CheckCircle size={18} className="text-blue"/> {t('guestHome.landlordBenefit1')}</li>
-                  <li><CheckCircle size={18} className="text-blue"/> {t('guestHome.landlordBenefit2')}</li>
-                  <li><CheckCircle size={18} className="text-blue"/> {t('guestHome.landlordBenefit3')}</li>
+                  <li><CheckCircle size={18} className="text-blue" /> {t('guestHome.landlordBenefit1')}</li>
+                  <li><CheckCircle size={18} className="text-blue" /> {t('guestHome.landlordBenefit2')}</li>
+                  <li><CheckCircle size={18} className="text-blue" /> {t('guestHome.landlordBenefit3')}</li>
                 </ul>
                 <button className="btn-outline-dark mt-auto" onClick={() => setShowAuthModal(true)}>{t('guestHome.listProperty')}</button>
               </div>
@@ -407,7 +428,7 @@ const GuestHome: React.FC = () => {
                 <div className="test-quote-icon">"</div>
               </div>
               <p>"I relocated to Cairo and found my apartment on HOMI before even landing. The digital contract feature gave me immense peace of mind."</p>
-              <div className="stars mt-4"><Star/><Star/><Star/><Star/><Star/></div>
+              <div className="stars mt-4"><Star /><Star /><Star /><Star /><Star /></div>
             </div>
             <div className="test-card glass-panel">
               <div className="test-header">
@@ -419,7 +440,7 @@ const GuestHome: React.FC = () => {
                 <div className="test-quote-icon">"</div>
               </div>
               <p>"HOMI handles my rent collection seamlessly. I don't have to chase tenants for payments anymore, it goes straight to my bank account."</p>
-              <div className="stars mt-4"><Star/><Star/><Star/><Star/><Star/></div>
+              <div className="stars mt-4"><Star /><Star /><Star /><Star /><Star /></div>
             </div>
           </div>
         </div>
@@ -442,13 +463,13 @@ const GuestHome: React.FC = () => {
 
       {/* Footer */}
       <footer className="guest-footer">
-         <div className="section-container">
+        <div className="section-container">
           <div className="footer-grid">
             <div className="footer-brand">
-          <Link to="/guest-home" className="brand-logo">
-        <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
+              <Link to="/guest-home" className="brand-logo">
+                <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
 
-          </Link>
+              </Link>
               <p>{t('guestHome.modernPlatform')}</p>
             </div>
             <div className="footer-links">
@@ -477,12 +498,36 @@ const GuestHome: React.FC = () => {
         </div>
       </footer>
 
+      {/* Bottom Navigation for Mobile */}
+      {/* <div className="bottom-nav mobile-only">
+        <button className="nav-item active">
+          <Search size={24} />
+          <span>Home</span>
+        </button>
+        <button className="nav-item">
+          <Globe size={24} />
+          <span>Browse</span>
+        </button>
+        <button className="nav-item">
+          <Star size={24} />
+          <span>Saved</span>
+        </button>
+        <button className="nav-item">
+          <Zap size={24} />
+          <span>Messages</span>
+        </button>
+        <button className="nav-item">
+          <ShieldCheck size={24} />
+          <span>Profile</span>
+        </button>
+      </div> */}
+
       {/* Modal Component Mount */}
       {isModalOpen && selectedProperty && (
-        <PropertyDetailedModal 
-          property={selectedProperty} 
-          onClose={() => setIsModalOpen(false)} 
-          isGuest={true} 
+        <PropertyDetailedModal
+          property={selectedProperty}
+          onClose={() => setIsModalOpen(false)}
+          isGuest={true}
         />
       )}
 
