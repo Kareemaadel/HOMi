@@ -82,8 +82,8 @@ const GuestSearch: React.FC = () => {
                             <ArrowLeft size={18} />
                             <span className="desktop-only">{t('guestHome.backToHome')}</span>
                         </Link>
-                        <Link to="/guest-home" className="brand-logo">
-                            <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
+                        <Link to="/guest-home" className="brand-logo-guest">
+                            <img src="/logo.png" alt="HOMi Logo" className="logo-image-guest" />
                         </Link>
                     </div>
 
@@ -185,8 +185,8 @@ const GuestSearch: React.FC = () => {
                 <div className="section-container">
                     <div className="footer-grid">
                         <div className="footer-brand">
-                            <Link to="/guest-home" className="brand-logo">
-                                <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
+                            <Link to="/guest-home" className="brand-logo-guest">
+                                <img src="/logo.png" alt="HOMi Logo" className="logo-image-guest" />
                             </Link>
                             <p>{t('guestHome.modernPlatform')}</p>
                         </div>

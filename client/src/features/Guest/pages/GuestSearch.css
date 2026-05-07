@@ -52,12 +52,12 @@
   gap: 24px;
 }
 
-.brand-logo {
+.brand-logo-guest {
   display: flex;
   align-items: center;
 }
 
-.logo-image {
+.logo-image-guest {
   height: 60px;
   width: auto;
 }
@@ -306,7 +306,7 @@
     height: 70px !important;
   }
 
-  .logo-image {
+  .logo-image-guest {
     height: 32px !important;
   }
 

@@ -12,7 +12,8 @@
   top: 0;
   left: 0;
   height: 100vh;
-  width: var(--sidebar-width); /* Always open */
+  width: var(--sidebar-width);
+  /* Always open */
   background: #ffffff;
   border-right: 1px solid #eef2f6;
   display: flex;
@@ -50,7 +51,9 @@
   color: var(--text-dark);
 }
 
-.brand-name span { color: var(--primary-blue); }
+.brand-name span {
+  color: var(--primary-blue);
+}
 
 /* NAVIGATION */
 .sidebar-nav {
@@ -107,7 +110,9 @@
   box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.25);
 }
 
-.sidebar-nav ul li a.active svg { transform: scale(1.1); }
+.sidebar-nav ul li a.active svg {
+  transform: scale(1.1);
+}
 
 /* BADGES */
 .badge-wrap {

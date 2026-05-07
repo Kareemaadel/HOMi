@@ -86,13 +86,15 @@ function hydrateStep1FromProfile(profile: CachedProfile | null | undefined): Ste
     return d;
 }
 
-/** API never returns national ID; preserve in-flight draft until onboarding step 2 is saved. */
 function mergeStep1Hydration(profile: CachedProfile | null | undefined, prev: Step1Draft): Step1Draft {
     const next = hydrateStep1FromProfile(profile);
-    const roleLocked = profile?.onboardingStep2Completed === true;
-    const hadDraft = prev.nationalId.replace(/\D/g, '').length > 0;
-    if (!roleLocked && hadDraft) {
-        next.nationalId = prev.nationalId;
+    const verificationComplete = profile?.isVerificationComplete === true;
+    
+    if (!verificationComplete) {
+        if (prev.nationalId.replace(/\D/g, '').length > 0) next.nationalId = prev.nationalId;
+        if (prev.birthdate) next.birthdate = prev.birthdate;
+        if (prev.gender) next.gender = prev.gender;
+        if (prev.preferredLanguage) next.preferredLanguage = prev.preferredLanguage;
     }
     return next;
 }
@@ -629,9 +631,7 @@ const CompleteProfile: React.FC = () => {
     const goNextFromStep1 = async () => {
         const cached = authService.getCurrentUser();
         const verificationComplete = !!cached?.profile?.isVerificationComplete;
-        const nationalIdLocked =
-            cached?.profile?.onboardingStep2Completed === true ||
-            (!!settingsOnlyFlow && verificationComplete);
+        const nationalIdLocked = !!settingsOnlyFlow && verificationComplete;
         const msg = validateStep1(step1, nationalIdLocked);
         if (msg) {
             setError(msg);
@@ -1011,9 +1011,7 @@ const CompleteProfile: React.FC = () => {
     const req = <span style={{ color: '#dc2626' }}>*</span>;
 
     const cpProfile = authService.getCurrentUser()?.profile;
-    const nationalIdFieldLocked =
-        cpProfile?.onboardingStep2Completed === true ||
-        (!!settingsOnlyFlow && cpProfile?.isVerificationComplete === true);
+    const nationalIdFieldLocked = !!settingsOnlyFlow && cpProfile?.isVerificationComplete === true;
 
     const stepLabels: Array<{ num: 1 | 2 | 3; title: string; subtitle: string }> = [
         { num: 1, title: 'Identity', subtitle: 'Basics' },
