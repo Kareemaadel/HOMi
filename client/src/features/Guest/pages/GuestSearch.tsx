@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, SlidersHorizontal, Search, ArrowRight, Globe, Star, Zap, ShieldCheck, Heart, MessageSquare, User } from 'lucide-react';
+import { Menu, X, SlidersHorizontal, Search, ArrowRight, Globe, Star, Zap, ShieldCheck, Heart, MessageSquare, User, ArrowLeft } from 'lucide-react';
 import PropCard, { type Property } from '../components/PropCard';
 import PropertyDetailedModal, {
     type PropertyDetailModalProperty,
@@ -77,9 +77,15 @@ const GuestSearch: React.FC = () => {
         <div className="search-layout">
             <nav className="search-nav glass-panel-nav">
                 <div className="nav-container">
-                    <Link to="/guest-home" className="brand-logo">
-                        <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
-                    </Link>
+                    <div className="header-left-group">
+                        <Link to="/guest-home" className="back-home-link">
+                            <ArrowLeft size={18} />
+                            <span className="desktop-only">{t('guestHome.backToHome')}</span>
+                        </Link>
+                        <Link to="/guest-home" className="brand-logo">
+                            <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
+                        </Link>
+                    </div>
 
                     <div className="search-nav-bar desktop-only">
                         <input type="text" placeholder={t('guestHome.searchPlaceholder')} />
