@@ -14,7 +14,7 @@ const ProMain = () => {
     const hasSidebar = !!role;
 
     // Toggle for testing both states visually
-    const [isSubscribed, setIsSubscribed] = useState(true);
+    const [isSubscribed, setIsSubscribed] = useState(false);
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
 
     useEffect(() => {
@@ -107,7 +107,7 @@ const ProMain = () => {
                     <h1>Welcome to your <span className="pro-gradient">Pro Hub</span></h1>
                     <p>Your premium tenant privileges are active and ready.</p>
                 </div>
-                <div className="status-badge"><FaStar /> PRO ACTIVE</div>
+                <div className="pro-status-badge"><FaStar /> PRO ACTIVE</div>
             </div>
 
             <div className="pro-widgets-grid">
@@ -149,7 +149,7 @@ const ProMain = () => {
                     <h1>Welcome to your <span className="pro-gradient">Pro Hub</span></h1>
                     <p>Your premium landlord privileges are active.</p>
                 </div>
-                <div className="status-badge"><FaStar /> PRO ACTIVE</div>
+                <div className="pro-status-badge"><FaStar /> PRO ACTIVE</div>
             </div>
 
             <div className="pro-widgets-grid">
@@ -181,7 +181,7 @@ const ProMain = () => {
                     <h1>Welcome to your <span className="pro-gradient">Pro Hub</span></h1>
                     <p>Your premium maintenance privileges are active.</p>
                 </div>
-                <div className="status-badge"><FaStar /> PRO ACTIVE</div>
+                <div className="pro-status-badge"><FaStar /> PRO ACTIVE</div>
             </div>
 
             <div className="pro-widgets-grid">

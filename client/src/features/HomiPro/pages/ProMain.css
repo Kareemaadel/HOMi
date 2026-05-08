@@ -375,7 +375,7 @@
     font-size: 1.1rem;
 }
 
-.status-badge {
+.pro-status-badge {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -386,6 +386,7 @@
     font-weight: 800;
     font-size: 1rem;
     letter-spacing: 1px;
+    margin-top: 10px;
 }
 
 .pro-widgets-grid {
