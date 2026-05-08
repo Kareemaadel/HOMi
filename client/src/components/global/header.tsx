@@ -171,7 +171,7 @@ const Header = () => {
   return (
     <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
-        
+
         {/* Left spacer with Language Toggle */}
         <div className="header-spacer left-spacer">
           <button type="button" className="lang-toggle" onClick={toggleLanguage} aria-label="Toggle language">
@@ -198,7 +198,7 @@ const Header = () => {
             </Link>
           )}
           {!isMaintainer && (
-            <Link to="/homi-plus" className={`nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
+            <Link to="/homi-pro" className={`nav-link ${location.pathname === '/homi-pro' ? 'active' : ''}`}>
               HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
             </Link>
           )}
@@ -232,7 +232,7 @@ const Header = () => {
               )}
             </button>
           )}
-          <button 
+          <button
             type="button"
             ref={mobileToggleRef}
             className="mobile-menu-toggle"
@@ -266,7 +266,7 @@ const Header = () => {
             </Link>
           )}
           {!isMaintainer && (
-            <Link to="/homi-plus" className={`mobile-nav-link ${location.pathname === '/homi-plus' ? 'active' : ''}`}>
+            <Link to="/homi-pro" className={`mobile-nav-link ${location.pathname === '/homi-pro' ? 'active' : ''}`}>
               HOMI <span style={{ background: 'linear-gradient(90deg, #22c55e, #15803d)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }}>PRO</span>
             </Link>
           )}

@@ -26,7 +26,7 @@ import LandlordPayment from "./features/LandlordPayment/pages/LandlordPayment";
 import HowItWorks from "./features/HowItWorks/pages/HowItWorks";
 import HowItWorksChoose from "./features/HowItWorks/pages/HowItWorksChoose";
 import ForTenants from "./features/HowItWorks/pages/ForTenants";
-import HomiPlusComingSoon from "./features/ComingSoon/pages/HomiPlusComingSoon";
+import ProMain from "./features/HomiPro/pages/ProMain";
 import Rewards from "./features/Rewards/pages/Rewards";
 import AdminLogin from "./features/admin/pages/AdminLogin";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
@@ -119,7 +119,7 @@ function App() {
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/for-landlords" element={<HowItWorks />} />
         <Route path="/for-tenants" element={<ForTenants />} />
-        <Route path="/homi-plus" element={<AuthGuard allowedRoles={['LANDLORD', 'TENANT']}><HomiPlusComingSoon /></AuthGuard>} />
+        <Route path="/homi-pro" element={<ProMain />} />
         <Route path="/terms" element={<Terms />} />
 
         {/* Global Dashboard Routes — protected */}
