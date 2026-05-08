@@ -44,6 +44,7 @@
     padding: 40px 24px;
     flex: 1;
     width: 100%;
+    margin-top: 10px;
 }
 
 .with-sidebar .pro-content-area {
@@ -344,6 +345,7 @@
    ========================================= */
 .pro-dashboard {
     padding-top: 20px;
+    margin-top: -40px;
 }
 
 .dashboard-header {

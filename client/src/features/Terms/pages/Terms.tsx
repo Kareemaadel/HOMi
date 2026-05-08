@@ -179,14 +179,21 @@ const Terms = () => {
                                 </ul>
                             </section>
 
+                            <section id="homi-pro-ar" className="legal-section">
+                                <h2>11. اشتراكات هومي برو (HOMi Pro)</h2>
+                                <p><strong>شروط الاشتراك:</strong> من خلال الاشتراك في "هومي برو"، فإنك توافق على دفع رسوم الاشتراك المحددة بناءً على خطة الفوترة المختارة (شهرية، سنوية، أو مخصصة). تُجدد الاشتراكات تلقائياً ما لم يتم الإلغاء قبل نهاية دورة الفوترة الحالية.</p>
+                                <p><strong>سياسة الإلغاء والاسترداد:</strong> يمكنك إلغاء اشتراكك في أي وقت. يسري الإلغاء في نهاية دورة الفوترة الحالية. لا تقدم هومي أي مبالغ مستردة جزئية أو كاملة للفترات غير المستخدمة، باستثناء ما تفرضه القوانين المصرية لحماية المستهلك.</p>
+                                <p><strong>تعديلات الميزات:</strong> تحتفظ هومي بالحق في تعديل، أو إضافة، أو إزالة أي ميزات مضمنة في باقة "برو" مع إشعار مسبق معقول للمشتركين النشطين.</p>
+                            </section>
+
                             <section id="disputes-ar" className="legal-section">
-                                <h2>11. تسوية المنازعات</h2>
+                                <h2>12. تسوية المنازعات</h2>
                                 <p><strong>الوساطة:</strong> يجب أولاً إحالة أي نزاعات تنشأ بين المستخدمين، أو بين مستخدم وهومي، إلى مركز وساطة هومي الداخلي في محاولة حسنة النية للتوصل إلى حل ودي.</p>
                                 <p><strong>الاختصاص القضائي:</strong> في حال فشل الوساطة، يخضع النزاع للاختصاص الحصري للمحاكم المصرية المختصة بناءً على الموقع الجغرافي للعقار المعني، أو المقر الرئيسي المسجل لهومي في القاهرة، مصر. وتكون لغة الإجراءات هي اللغة العربية.</p>
                             </section>
 
                             <section id="termination-ar" className="legal-section">
-                                <h2>12. الإنهاء والتعليق</h2>
+                                <h2>13. الإنهاء والتعليق</h2>
                                 <p>تحتفظ هومي بالحق، وفقاً لتقديرها المطلق، في تعليق أو إنهاء حسابك، أو إزالة إعلاناتك، أو تقييد وصولك إلى المنصة دون إشعار مسبق إذا قمت بـ:</p>
                                 <ul>
                                     <li>انتهاك أي بند من هذه الشروط أو القانون المصري المعمول به.</li>
@@ -338,14 +345,21 @@ const Terms = () => {
                             </ul>
                         </section>
 
+                        <section id="homi-pro" className="legal-section">
+                            <h2>11. HOMi Pro Subscriptions</h2>
+                            <p><strong>Subscription Terms:</strong> By subscribing to HOMi Pro, you agree to pay the applicable subscription fees based on your selected billing cycle (monthly, annually, or custom). Subscriptions automatically renew unless canceled prior to the end of the current billing cycle.</p>
+                            <p><strong>Cancellation & Refund Policy:</strong> You may cancel your subscription at any time. Cancellations will take effect at the end of the current billing cycle. HOMi does not provide partial or full refunds for unused periods, except as mandated by Egyptian consumer protection laws.</p>
+                            <p><strong>Feature Modifications:</strong> HOMi reserves the right to modify, add, or remove features included in the Pro package with reasonable prior notice to active subscribers.</p>
+                        </section>
+
                         <section id="disputes" className="legal-section">
-                            <h2>11. Dispute Resolution</h2>
+                            <h2>12. Dispute Resolution</h2>
                             <p><strong>Mediation:</strong> Any disputes arising between users, or between a user and HOMi, shall first be submitted to HOMi's internal mediation center in a good-faith attempt to reach an amicable resolution.</p>
                             <p><strong>Jurisdiction:</strong> If mediation fails, the dispute shall be subject to the exclusive jurisdiction of the competent Egyptian Courts based on the geographical location of the property in question, or HOMi's registered headquarters in Cairo, Egypt. The proceedings shall be conducted in Arabic.</p>
                         </section>
 
                         <section id="termination" className="legal-section">
-                            <h2>12. Termination & Suspension</h2>
+                            <h2>13. Termination & Suspension</h2>
                             <p>HOMi reserves the right, at its sole discretion, to suspend or terminate your account, remove your listings, or restrict your access to the Platform without prior notice if you:</p>
                             <ul>
                                 <li>Violate any provision of these Terms or applicable Egyptian law.</li>
