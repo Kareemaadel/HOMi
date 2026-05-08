@@ -2,7 +2,7 @@
 
 /* --- Global & Layout --- */
 .search-layout {
-  height: 100vh;
+  height: 200vh;
   /* Locks exact screen height */
   background-color: #ffffff;
   font-family: var(--font-main, system-ui, sans-serif);

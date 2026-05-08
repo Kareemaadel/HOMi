@@ -2,60 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Search, ShieldCheck, CreditCard, FileSignature,
-  Star, ArrowRight, Menu, X, CheckCircle,
-  MapPin, Bed, Bath, Maximize, Zap, PlayCircle, Globe
+  Search, Globe, Menu, X, Zap, MapPin, Bed, Bath, Maximize, Star,
+  ShieldCheck, CheckCircle, PlayCircle, FileSignature, CreditCard, ArrowRight
 } from 'lucide-react';
 import './GuestHome.css';
-import PropertyDetailedModal, {
-  type PropertyDetailModalProperty,
-} from '../../BrowseProperties/components/PropertyDetailedModal';
+import PropertyDetailedModal from '../../BrowseProperties/components/PropertyDetailedModal';
+import { propertyService } from '../../../services/property.service';
+import type { PropertyUI as GuestHomeListing } from '../../../utils/propertyMapping';
+import { mapPropertyToUI } from '../../../utils/propertyMapping';
 import AuthModal from '../../../components/global/AuthModal';
-
-type GuestHomeListing = {
-  id: number;
-  title: string;
-  price: number;
-  currency?: string;
-  location?: string;
-  type?: string;
-  beds: number;
-  baths: number;
-  sqft: number;
-  rating: number;
-  reviews?: number;
-  image: string;
-  hostImg?: string;
-  badge?: string;
-};
-
-const mapGuestHomeListingToModal = (p: GuestHomeListing): PropertyDetailModalProperty => ({
-  id: p.id,
-  title: p.title,
-  address: p.location,
-  price: p.price,
-  securityDeposit: 0,
-  image: p.image,
-  allImages: [p.image],
-  beds: p.beds,
-  baths: p.baths,
-  sqft: p.sqft,
-  ownerName: 'Host',
-  ownerImage: p.hostImg,
-  ownerVerified: false,
-  locationLat: null,
-  locationLng: null,
-  availabilityDateISO: null,
-  listedAtISO: new Date().toISOString(),
-  maintenanceResponsibilities: [],
-  petsAllowed: false,
-  targetTenant: 'Any Tenant',
-  furnishing: 'Unfurnished',
-  availableDate: 'Not specified',
-  description: '',
-  tags: p.badge ? [p.badge] : [],
-  rating: p.rating,
-});
+import Footer from '../../../components/global/footer';
 
 const GuestHome: React.FC = () => {
   const navigate = useNavigate();
@@ -76,8 +32,12 @@ const GuestHome: React.FC = () => {
     state: { fromGuestHome: true },
   };
 
+  // State for live properties
+  const [properties, setProperties] = useState<GuestHomeListing[]>([]);
+  const [loading, setLoading] = useState(true);
+
   // Modal State
-  const [selectedProperty, setSelectedProperty] = useState<PropertyDetailModalProperty | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<GuestHomeListing | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -91,52 +51,27 @@ const GuestHome: React.FC = () => {
   };
 
   const handlePropertyClick = (property: GuestHomeListing) => {
-    setSelectedProperty(mapGuestHomeListingToModal(property));
+    setSelectedProperty(property);
     setIsModalOpen(true);
   };
 
-  // Expanded to 5 properties
-  const mockProperties: GuestHomeListing[] = [
-    {
-      id: 1,
-      title: 'Modern Loft with Nile View',
-      price: 15000,
-      currency: 'EGP',
-      location: 'Zamalek, Cairo',
-      type: 'Apartment',
-      beds: 2, baths: 2, sqft: 120,
-      rating: 4.9, reviews: 34,
-      image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800',
-      hostImg: 'https://i.pravatar.cc/150?u=1',
-      badge: 'Superhost'
-    },
-    {
-      id: 2,
-      title: 'Luxury Smart Villa',
-      price: 45000,
-      currency: 'EGP',
-      location: 'Sheikh Zayed, Giza',
-      type: 'Villa',
-      beds: 4, baths: 5, sqft: 450,
-      rating: 5.0, reviews: 12,
-      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800',
-      hostImg: 'https://i.pravatar.cc/150?u=2',
-      badge: 'Premium'
-    },
-    {
-      id: 3,
-      title: 'Cozy Tech Hub Studio',
-      price: 9000,
-      currency: 'EGP',
-      location: 'Maadi, Cairo',
-      type: 'Studio',
-      beds: 1, baths: 1, sqft: 65,
-      rating: 4.8, reviews: 89,
-      image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&q=80&w=800',
-      hostImg: 'https://i.pravatar.cc/150?u=3'
-    },
-
-  ];
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const response = await propertyService.getAllProperties({
+          status: 'AVAILABLE',
+          page: 1,
+          limit: 3
+        });
+        setProperties(response.data.map(mapPropertyToUI));
+      } catch (err) {
+        console.error('Failed to fetch properties for GuestHome:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProperties();
+  }, []);
 
   return (
     <div className="guest-layout">
@@ -308,37 +243,43 @@ const GuestHome: React.FC = () => {
           </div>
 
           <div className="property-grid">
-            {mockProperties.map(prop => (
-              <div key={prop.id} className="prop-card group" onClick={() => handlePropertyClick(prop)}>
-                <div className="prop-img-wrapper">
-                  <img src={prop.image} alt={prop.title} className="group-hover-scale" />
-                  <div className="prop-overlay-gradient"></div>
-                  {prop.badge && <div className="prop-badge"><Star size={12} className="fill-star" /> {prop.badge}</div>}
-                  <button className="heart-btn" onClick={(e) => { e.stopPropagation(); handleProtectedAction(); }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                  </button>
-                </div>
-                <div className="prop-details">
-                  <div className="prop-meta-top">
-                    <span className="prop-loc"><MapPin size={14} /> {prop.location}</span>
-                    <span className="prop-rating"><Star size={14} className="fill-star" /> {prop.rating} ({prop.reviews})</span>
+            {loading ? (
+              <p>Loading properties...</p>
+            ) : properties.length > 0 ? (
+              properties.map(prop => (
+                <div key={prop.id} className="prop-card group" onClick={() => handlePropertyClick(prop)}>
+                  <div className="prop-img-wrapper">
+                    <img src={prop.image} alt={prop.title} className="group-hover-scale" />
+                    <div className="prop-overlay-gradient"></div>
+                    {prop.tags && prop.tags[0] && <div className="prop-badge"><Star size={12} className="fill-star" /> {prop.tags[0]}</div>}
+                    <button className="heart-btn" onClick={(e) => { e.stopPropagation(); handleProtectedAction(); }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    </button>
                   </div>
-                  <h3 className="prop-title">{prop.title}</h3>
-                  <div className="prop-specs">
-                    <span><Bed size={16} /> {prop.beds} {t('guestHome.beds')}</span>
-                    <span><Bath size={16} /> {prop.baths} {t('guestHome.baths')}</span>
-                    <span><Maximize size={16} /> {prop.sqft} {t('guestHome.sqm')}</span>
-                  </div>
-                  <div className="prop-footer-split">
-                    <div className="prop-price-block">
-                      <span className="price-val">{prop.price.toLocaleString()} {prop.currency}</span>
-                      <span className="price-period">/ {t('guestHome.perMonth')}</span>
+                  <div className="prop-details">
+                    <div className="prop-meta-top">
+                      <span className="prop-loc"><MapPin size={14} /> {prop.address}</span>
+                      <span className="prop-rating"><Star size={14} className="fill-star" /> {prop.rating} (12)</span>
                     </div>
-                    <img src={prop.hostImg} alt="Host" className="host-mini-avatar" title="Verified Landlord" />
+                    <h3 className="prop-title">{prop.title}</h3>
+                    <div className="prop-specs">
+                      <span><Bed size={16} /> {prop.beds} {t('guestHome.beds')}</span>
+                      <span><Bath size={16} /> {prop.baths} {t('guestHome.baths')}</span>
+                      <span><Maximize size={16} /> {prop.sqft} {t('guestHome.sqm')}</span>
+                    </div>
+                    <div className="prop-footer-split">
+                      <div className="prop-price-block">
+                        <span className="price-val">{prop.price.toLocaleString()} EGP</span>
+                        <span className="price-period">/ {t('guestHome.perMonth')}</span>
+                      </div>
+                      <img src={prop.ownerImage} alt="Host" className="host-mini-avatar" title="Verified Landlord" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p>No properties found.</p>
+            )}
           </div>
         </div>
       </section>
@@ -462,41 +403,7 @@ const GuestHome: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="guest-footer">
-        <div className="section-container">
-          <div className="footer-grid">
-            <div className="footer-brand">
-              <Link to="/guest-home" className="brand-logo">
-                <img src="/logo.png" alt="HOMi Logo" className="logo-image" />
-
-              </Link>
-              <p>{t('guestHome.modernPlatform')}</p>
-            </div>
-            <div className="footer-links">
-              <h4>{t('guestHome.platform')}</h4>
-              <Link to="/guest-search">{t('guestHome.browseHomes')}</Link>
-              <a href="#" className="footer-link-override" onClick={(e) => { e.preventDefault(); setShowAuthModal(true); }}>{t('guestHome.listProperty')}</a>
-              <Link to="/pricing">{t('guestHome.pricing')}</Link>
-              <Link to="/maintenance-providers">Maintenance Providers</Link>
-            </div>
-            <div className="footer-links">
-              <h4>{t('guestHome.resources')}</h4>
-              <Link to="/about">{t('guestHome.aboutUs')}</Link>
-              <Link to={getHelpFromGuest}>{t('guestHome.helpCenter')}</Link>
-              <Link to="/blog">{t('guestHome.blog')}</Link>
-            </div>
-            <div className="footer-links">
-              <h4>{t('guestHome.legal')}</h4>
-              <Link to="/terms">{t('guestHome.terms')}</Link>
-              <Link to="/privacy">{t('guestHome.privacy')}</Link>
-              <Link to="/trust">{t('guestHome.trust')}</Link>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <p>© {new Date().getFullYear()} HOMI Technologies Inc. {t('guestHome.allRightsReserved')}</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Bottom Navigation for Mobile */}
       {/* <div className="bottom-nav mobile-only">

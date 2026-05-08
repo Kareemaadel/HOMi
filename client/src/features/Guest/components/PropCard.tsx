@@ -2,28 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Star, Bed, Bath, Maximize } from 'lucide-react';
+import type { PropertyUI } from '../../../utils/propertyMapping';
 import './PropCard.css';
 
-export interface Property {
-  id: number;
-  title: string;
-  address?: string; // from your new data
-  location?: string; // from GuestHome data
-  price: number;
-  currency?: string;
-  beds: number;
-  baths: number;
-  sqft: number;
-  rating: number;
-  reviews?: number;
-  image: string;
-  hostImg?: string;
-  badge?: string;
-  tags?: string[];
-}
-
 interface PropCardProps {
-  property: Property;
+  property: PropertyUI;
   onOpenDetails?: () => void;
 }
 
@@ -32,12 +15,11 @@ const PropCard: React.FC<PropCardProps> = ({ property, onOpenDetails }) => {
   const { t } = useTranslation();
   
   // Normalize data between the two mock arrays
-  const location = property.address || property.location || 'Location unavailable';
-  const currency = property.currency || 'EGP';
-  const displayBadge = property.badge || (property.tags && property.tags[0]);
-  const hostImage = property.hostImg || `https://i.pravatar.cc/150?u=${property.id}`;
-  const reviewsCount =
-    property.reviews ?? (Math.abs(Number(property.id)) * 13) % 45 + 5;
+  const location = property.address || 'Location unavailable';
+  const currency = 'EGP';
+  const displayBadge = property.tags && property.tags[0];
+  const hostImage = property.ownerImage || `https://i.pravatar.cc/150?u=${property.id}`;
+  const reviewsCount = 12; // Static or derived from ID if needed
 
   const handleClick = () => {
     if (onOpenDetails) {
