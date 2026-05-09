@@ -677,6 +677,11 @@ const PropertyDetailModal = ({
                                                 `https://ui-avatars.com/api/?name=${encodeURIComponent(property.ownerName || 'Owner')}&background=0f172a&color=ffffff&size=128`
                                             }
                                             alt={property.ownerName || 'Owner'}
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.onerror = null;
+                                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(property.ownerName || 'Owner')}&background=0f172a&color=ffffff&size=128`;
+                                            }}
                                         />
                                         <span className="online-indicator"></span>
                                     </div>

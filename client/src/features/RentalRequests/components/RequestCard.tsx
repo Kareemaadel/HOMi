@@ -90,7 +90,15 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
             >
                 <div className="rc-header">
                     <div className="rc-avatar-box">
-                        <img src={applicant.image} alt={applicant.name} />
+                        <img 
+                            src={applicant.image} 
+                            alt={applicant.name} 
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null; // Prevent infinite loop
+                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.name)}&background=random`;
+                            }}
+                        />
                         <span className="rc-match-badge">{applicant.matchScore}% {t('rentalRequests.card.match', { defaultValue: 'Match' })}</span>
                     </div>
                     <div className="rc-user-info">

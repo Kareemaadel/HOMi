@@ -29,6 +29,7 @@ export interface TenantSummary {
     lastName: string;
     avatarUrl: string | null;
     bio: string | null;
+    habits?: string[];
 }
 
 // ─── Rental Request Response ──────────────────────────────────────────────────

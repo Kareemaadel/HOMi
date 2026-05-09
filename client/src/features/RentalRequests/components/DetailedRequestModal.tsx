@@ -228,7 +228,15 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                         <div className="detailed-left-col">
                             <div className="applicant-hero">
                                 <div className="hero-avatar-wrapper">
-                                    <img src={applicant?.image || "https://via.placeholder.com/120"} alt={applicant?.name} />
+                                    <img 
+                                        src={applicant?.image || "https://via.placeholder.com/120"} 
+                                        alt={applicant?.name} 
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.onerror = null;
+                                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant?.name || 'User')}&background=random`;
+                                        }}
+                                    />
                                     <div className="match-score-radial">
                                         <span>{applicant?.matchScore || "85"}%</span>
                                         <label>{t('rentalRequests.card.match')}</label>

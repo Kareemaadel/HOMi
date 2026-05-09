@@ -5,6 +5,7 @@ import {
     User,
     Property,
     Profile,
+    Habit,
 } from '../models/index.js';
 import { PropertyStatus } from '../../properties/models/Property.js';
 import type {
@@ -171,6 +172,11 @@ class RentalRequestService {
                             model: Profile,
                             as: 'profile',
                             attributes: ['first_name', 'last_name', 'avatar_url', 'bio'],
+                        },
+                        {
+                            model: Habit,
+                            as: 'habits',
+                            attributes: ['name'],
                         },
                     ],
                 },
@@ -471,6 +477,7 @@ class RentalRequestService {
                 lastName: profile?.last_name ?? '',
                 avatarUrl: profile?.avatar_url ?? null,
                 bio: profile?.bio ?? null,
+                habits: (request.tenant as any)?.habits?.map((h: any) => h.name) ?? [],
             };
         }
 
