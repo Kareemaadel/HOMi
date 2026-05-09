@@ -122,7 +122,7 @@ class AuthService {
 
         if (!hasAppRole) return '/complete-profile';
 
-        if (authProvider === 'email' && !emailVerified) return '/verify-email';
+        if (authProvider === 'email' && !emailVerified && role !== 'MAINTENANCE_PROVIDER') return '/verify-email';
 
         if (!isVerificationComplete && (role === 'TENANT' || role === 'LANDLORD')) return '/complete-profile';
 
