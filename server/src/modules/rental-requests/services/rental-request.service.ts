@@ -171,7 +171,7 @@ class RentalRequestService {
                         {
                             model: Profile,
                             as: 'profile',
-                            attributes: ['first_name', 'last_name', 'avatar_url', 'bio'],
+                            attributes: ['first_name', 'last_name', 'avatar_url', 'bio', 'tenant_rental_preferences'],
                         },
                         {
                             model: Habit,
@@ -477,6 +477,7 @@ class RentalRequestService {
                 lastName: profile?.last_name ?? '',
                 avatarUrl: profile?.avatar_url ?? null,
                 bio: profile?.bio ?? null,
+                income: profile?.tenant_rental_preferences?.incomeRange || null,
                 habits: (request.tenant as any)?.habits?.map((h: any) => h.name) ?? [],
             };
         }

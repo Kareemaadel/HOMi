@@ -50,7 +50,9 @@ const RentalRequests: React.FC = () => {
                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(req.tenant.firstName + ' ' + req.tenant.lastName)}&background=random`,
                 occupation: t('sidebar.tenant'),
                 company: '',
-                income: t('rentalRequests.card.verified', { defaultValue: 'Verified' }),
+                income: req.tenant.income 
+                    ? req.tenant.income.toString()
+                    : t('rentalRequests.card.verified', { defaultValue: 'Verified' }),
                 creditScore: 720,
                 matchScore: 85,
             },

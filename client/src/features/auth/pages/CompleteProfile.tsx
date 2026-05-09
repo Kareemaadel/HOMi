@@ -1017,8 +1017,7 @@ const CompleteProfile: React.FC = () => {
             className={`onboarding-viewport${step > 1 && !settingsOnlyFlow ? ' onboarding-viewport--step-back' : ''}`}
             onClick={(ev) => {
                 if (ev.target !== ev.currentTarget) return;
-                if (settingsOnlyFlow) return;
-                if (step > 1) goBack();
+                // Back navigation disabled as requested
             }}
             role="presentation"
         >
@@ -1034,7 +1033,7 @@ const CompleteProfile: React.FC = () => {
                         const isPast = step > num;
                         const isFuture = step < num;
                         const isLockedInSettings = settingsOnlyFlow && isPast;
-                        const canGoBack = isPast && !settingsOnlyFlow;
+                        const canGoBack = false; // Disabled as requested
                         return (
                             <button
                                 key={num}
@@ -1373,9 +1372,11 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer">
                             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
-                                    <ArrowLeft size={18} /> {settingsOnlyFlow ? 'Back to Settings' : 'Back to identity'}
-                                </button>
+                                {settingsOnlyFlow && (
+                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
+                                        <ArrowLeft size={18} /> Back to Settings
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     className="btn-continue"
@@ -1431,22 +1432,17 @@ const CompleteProfile: React.FC = () => {
                                     }
                                 />
                             </div>
-                            <div className="form-field">
-                                <label>Income range {req}</label>
-                                <select
-                                    value={tenantStep3.incomeRange}
-                                    onChange={(e) =>
-                                        setTenantStep3((s) => ({ ...s, incomeRange: e.target.value }))
-                                    }
-                                >
-                                    <option value="" disabled>
-                                        Select…
-                                    </option>
-                                    <option value="< $500">&lt; $500</option>
-                                    <option value="$500 - $1500">$500 - $1500</option>
-                                    <option value="$1500+">$1500+</option>
-                                </select>
-                            </div>
+                             <div className="form-field">
+                                 <label>Net Monthly Income ($) {req}</label>
+                                 <input
+                                     type="number"
+                                     placeholder="Ex: 2500"
+                                     value={tenantStep3.incomeRange}
+                                     onChange={(e) =>
+                                         setTenantStep3((s) => ({ ...s, incomeRange: e.target.value }))
+                                     }
+                                 />
+                             </div>
                             <div className="form-field">
                                 <label>Move-in Date {req}</label>
                                 <input
@@ -1515,7 +1511,7 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer action-footer--step3">
                             <div className="action-footer__primary-row">
-                                {settingsOnlyFlow ? (
+                                {settingsOnlyFlow && (
                                     <button
                                         type="button"
                                         className="btn-back"
@@ -1523,10 +1519,6 @@ const CompleteProfile: React.FC = () => {
                                         disabled={loading}
                                     >
                                         <ArrowLeft size={18} /> Back to Settings
-                                    </button>
-                                ) : (
-                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
-                                        <ArrowLeft size={18} /> Back
                                     </button>
                                 )}
                                 <button
@@ -1651,7 +1643,7 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer action-footer--step3">
                             <div className="action-footer__primary-row">
-                                {settingsOnlyFlow ? (
+                                {settingsOnlyFlow && (
                                     <button
                                         type="button"
                                         className="btn-back"
@@ -1659,10 +1651,6 @@ const CompleteProfile: React.FC = () => {
                                         disabled={loading}
                                     >
                                         <ArrowLeft size={18} /> Back to Settings
-                                    </button>
-                                ) : (
-                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
-                                        <ArrowLeft size={18} /> Back
                                     </button>
                                 )}
                                 <button

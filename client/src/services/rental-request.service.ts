@@ -89,6 +89,7 @@ export interface LandlordRentalRequest {
         lastName: string;
         avatarUrl: string | null;
         bio: string | null;
+        income?: string;
         habits?: string[];
     };
     property: {

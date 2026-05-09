@@ -91,11 +91,12 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
                 <div className="rc-header">
                     <div className="rc-avatar-box">
                         <img 
-                            src={applicant.image} 
+                            src={applicant.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.name)}&background=random`} 
                             alt={applicant.name} 
+                            referrerPolicy="no-referrer"
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.onerror = null; // Prevent infinite loop
+                                target.onerror = null; 
                                 target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.name)}&background=random`;
                             }}
                         />
