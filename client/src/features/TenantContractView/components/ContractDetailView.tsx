@@ -7,6 +7,7 @@ import {
 import { type LeaseContract } from '../pages/Contract';
 import SignatureModal from './SignatureModal';
 import contractService, { type VerificationSummary } from '../../../services/contract.service';
+import authService from '../../../services/auth.service';
 import './ContractDetailView.css';
 
 interface Props {
@@ -21,7 +22,10 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
     const { t } = useTranslation();
     const [step, setStep] = useState(1);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
-    const [savedSignature, setSavedSignature] = useState<string | null>(null);
+    const [savedSignature, setSavedSignature] = useState<string | null>(() => {
+        const userState = authService.getCurrentUser();
+        return userState?.profile?.e_signature_url || null;
+    });
     const [isFinalized, setIsFinalized] = useState(false);
     const [summary, setSummary] = useState<VerificationSummary | null>(null);
     const [submitting, setSubmitting] = useState(false);

@@ -538,6 +538,11 @@ class ContractService {
             status: ContractStatus.PENDING_TENANT,
         });
 
+        await Profile.update(
+            { e_signature_url: input.signature_url },
+            { where: { user_id: landlordId } }
+        );
+
         return this.formatContractResponse(contract);
     }
 
@@ -587,6 +592,11 @@ class ContractService {
             tenant_agreed_terms: true,
             status: ContractStatus.PENDING_PAYMENT,
         });
+
+        await Profile.update(
+            { e_signature_url: input.signature_url },
+            { where: { user_id: tenantId } }
+        );
 
         return this.formatContractResponse(contract);
     }
