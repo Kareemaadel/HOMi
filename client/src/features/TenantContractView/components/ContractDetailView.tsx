@@ -8,6 +8,7 @@ import { type LeaseContract } from '../pages/Contract';
 import SignatureModal from './SignatureModal';
 import contractService, { type VerificationSummary } from '../../../services/contract.service';
 import authService from '../../../services/auth.service';
+import { normalizeSignatureUrl } from '../../../shared/utils/signatureUrl';
 import './ContractDetailView.css';
 
 interface Props {
@@ -24,7 +25,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(() => {
         const userState = authService.getCurrentUser();
-        return userState?.profile?.e_signature_url || null;
+        return normalizeSignatureUrl(userState?.profile?.e_signature_url) || null;
     });
     const [isFinalized, setIsFinalized] = useState(false);
     const [summary, setSummary] = useState<VerificationSummary | null>(null);
@@ -73,12 +74,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, onUpdated, onClose }) =
         if (!savedSignature || !tenantData.confirmed) return;
         setSubmitting(true);
         try {
-            const signatureUrl =
-                savedSignature.length <= 500
-                    ? savedSignature
-                    : `https://storage.homi.com/signatures/${contract.internalId}-tenant.png`;
             await contractService.signTenantContract(contract.internalId, {
-                signature_url: signatureUrl,
+                signature_url: savedSignature,
                 agree_to_terms: true,
             });
             setIsFinalized(true);

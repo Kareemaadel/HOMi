@@ -204,6 +204,8 @@ export interface ContractResponse {
     paymentVerifiedAt: Date | null;
     paymobOrderId: number | null;
     paymobTransactionId: number | null;
+    landlordSignatureUrl?: string | null;
+    tenantSignatureUrl?: string | null;
     tenantNationalId: string | null;
     tenantEmergencyContactName: string | null;
     tenantEmergencyPhone: string | null;
@@ -215,12 +217,14 @@ export interface ContractResponse {
         firstName: string;
         lastName: string;
         email: string;
+        signatureUrl?: string | null;
     };
     tenant?: {
         id: string;
         firstName: string;
         lastName: string;
         email: string;
+        signatureUrl?: string | null;
     };
     property?: {
         id: string;

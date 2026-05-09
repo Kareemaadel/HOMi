@@ -9,6 +9,7 @@ import {
 import ContractDetailView from '../components/ContractDetailView';
 import ActiveLeaseContract from '../components/ActiveLeaseContract';
 import contractService, { type LandlordContract as LandlordContractApi } from '../../../services/contract.service';
+import { normalizeSignatureUrl } from '../../../shared/utils/signatureUrl';
 import './Contract.css';
 
 export interface LeaseContract {
@@ -94,8 +95,8 @@ const LandlordContract: React.FC = () => {
             propertyRegistrationNumber: contract.propertyRegistrationNumber || '',
             createdAt: contract.createdAt,
             maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
-            landlordSignature: contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined,
-            tenantSignature: contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined,
+            landlordSignature: normalizeSignatureUrl(contract.landlordSignatureUrl ?? contract.landlord?.signatureUrl),
+            tenantSignature: normalizeSignatureUrl(contract.tenantSignatureUrl ?? contract.tenant?.signatureUrl),
             tenantNationalId: contract.tenantNationalId || '',
             landlordAddress: 'Verified Legal Address on File', // Placeholder for now or pull from profile if available
             tenantAddress: contract.property?.address || '—',

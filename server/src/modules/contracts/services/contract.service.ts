@@ -103,6 +103,45 @@ function addDays(date: Date, days: number): Date {
     return next;
 }
 
+function normalizeSignatureUrl(value: string | null | undefined): string | null {
+    const raw = String(value ?? '').trim();
+    if (!raw) return null;
+    if (raw.startsWith('data:image/')) return raw;
+
+    let baseOrigin: string;
+    try {
+        baseOrigin = new URL(env.CLIENT_URL).origin;
+    } catch {
+        baseOrigin = 'http://localhost:3000';
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+        try {
+            const parsed = new URL(raw);
+            const hostLooksLikeFileName = /\.(png|jpg|jpeg|webp|gif|svg)$/i.test(parsed.hostname);
+            const hasNoPath = parsed.pathname === '/' || parsed.pathname === '';
+            if (hostLooksLikeFileName && hasNoPath) {
+                return `${baseOrigin}/signatures/${parsed.hostname}`;
+            }
+            return raw;
+        } catch {
+            return `${baseOrigin}/signatures/${raw.replace(/^https?:\/\//i, '')}`;
+        }
+    }
+
+    if (raw.startsWith('//')) {
+        const protocol = baseOrigin.startsWith('https://') ? 'https:' : 'http:';
+        return `${protocol}${raw}`;
+    }
+
+    if (raw.startsWith('/')) {
+        return `${baseOrigin}${raw}`;
+    }
+
+    // Legacy filename-only signatures are served from /signatures/<file>.
+    return `${baseOrigin}/signatures/${raw}`;
+}
+
 /**
  * Custom error class for contract errors
  */
@@ -729,6 +768,10 @@ class ContractService {
         input: LandlordSignInput
     ): Promise<ContractResponse> {
         const contract = await this.findAndValidateLandlordContract(contractId, landlordId);
+        const normalizedSignatureUrl = normalizeSignatureUrl(input.signature_url);
+        if (!normalizedSignatureUrl) {
+            throw new ContractError('Invalid signature URL', 400, 'INVALID_SIGNATURE_URL');
+        }
 
         // Validate that all required landlord steps are completed
         if (!contract.rent_due_date) {
@@ -754,13 +797,13 @@ class ContractService {
         }
 
         await contract.update({
-            landlord_signature_url: input.signature_url,
+            landlord_signature_url: normalizedSignatureUrl,
             landlord_signed_at: testingClockService.getNow(),
             status: ContractStatus.PENDING_TENANT,
         });
 
         await Profile.update(
-            { e_signature_url: input.signature_url },
+            { e_signature_url: normalizedSignatureUrl },
             { where: { user_id: landlordId } }
         );
 
@@ -798,6 +841,10 @@ class ContractService {
         input: TenantSignInput
     ): Promise<ContractResponse> {
         const contract = await this.findAndValidateTenantContract(contractId, tenantId);
+        const normalizedSignatureUrl = normalizeSignatureUrl(input.signature_url);
+        if (!normalizedSignatureUrl) {
+            throw new ContractError('Invalid signature URL', 400, 'INVALID_SIGNATURE_URL');
+        }
 
         if (!contract.tenant_national_id) {
             throw new ContractError(
@@ -808,14 +855,14 @@ class ContractService {
         }
 
         await contract.update({
-            tenant_signature_url: input.signature_url,
+            tenant_signature_url: normalizedSignatureUrl,
             tenant_signed_at: testingClockService.getNow(),
             tenant_agreed_terms: true,
             status: ContractStatus.PENDING_PAYMENT,
         });
 
         await Profile.update(
-            { e_signature_url: input.signature_url },
+            { e_signature_url: normalizedSignatureUrl },
             { where: { user_id: tenantId } }
         );
 
@@ -1919,7 +1966,7 @@ class ContractService {
                     {
                         model: Profile,
                         as: 'profile',
-                        attributes: ['first_name', 'last_name'],
+                        attributes: ['first_name', 'last_name', 'e_signature_url'],
                     },
                 ],
             },
@@ -1931,7 +1978,7 @@ class ContractService {
                     {
                         model: Profile,
                         as: 'profile',
-                        attributes: ['first_name', 'last_name'],
+                        attributes: ['first_name', 'last_name', 'e_signature_url'],
                     },
                 ],
             },
@@ -1963,7 +2010,7 @@ class ContractService {
                     {
                         model: Profile,
                         as: 'profile',
-                        attributes: ['first_name', 'last_name'],
+                        attributes: ['first_name', 'last_name', 'e_signature_url'],
                     },
                 ],
             },
@@ -1975,7 +2022,7 @@ class ContractService {
                     {
                         model: Profile,
                         as: 'profile',
-                        attributes: ['first_name', 'last_name'],
+                        attributes: ['first_name', 'last_name', 'e_signature_url'],
                     },
                 ],
             },
@@ -2017,6 +2064,8 @@ class ContractService {
             paymentVerifiedAt: contract.payment_verified_at ?? null,
             paymobOrderId: contract.paymob_order_id ?? null,
             paymobTransactionId: contract.paymob_transaction_id ?? null,
+            landlordSignatureUrl: normalizeSignatureUrl(contract.landlord_signature_url),
+            tenantSignatureUrl: normalizeSignatureUrl(contract.tenant_signature_url),
             tenantNationalId: safeDecrypt(contract.tenant_national_id),
             tenantEmergencyContactName: contract.tenant_emergency_contact_name ?? null,
             tenantEmergencyPhone: contract.tenant_emergency_phone ?? null,
@@ -2032,6 +2081,9 @@ class ContractService {
                     firstName: landlordProfile?.first_name ?? '',
                     lastName: landlordProfile?.last_name ?? '',
                     email: contract.landlord.email,
+                    signatureUrl:
+                        normalizeSignatureUrl(contract.landlord_signature_url) ??
+                        normalizeSignatureUrl(landlordProfile?.e_signature_url ?? null),
                 };
             }
 
@@ -2042,6 +2094,9 @@ class ContractService {
                     firstName: tenantProfile?.first_name ?? '',
                     lastName: tenantProfile?.last_name ?? '',
                     email: contract.tenant.email,
+                    signatureUrl:
+                        normalizeSignatureUrl(contract.tenant_signature_url) ??
+                        normalizeSignatureUrl(tenantProfile?.e_signature_url ?? null),
                 };
             }
 

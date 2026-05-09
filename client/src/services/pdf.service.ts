@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { normalizeSignatureUrl } from '../shared/utils/signatureUrl';
 
 export interface PDFContractData {
     id: string;
@@ -29,6 +30,8 @@ export interface PDFContractData {
 class PDFService {
     async generateContractPDF(data: PDFContractData, lang: 'en' | 'ar') {
         const isAr = lang === 'ar';
+        const landlordSignature = normalizeSignatureUrl(data.landlordSignature);
+        const tenantSignature = normalizeSignatureUrl(data.tenantSignature);
 
         // Helper for styles
         const styles = `
@@ -381,12 +384,12 @@ class PDFService {
             <div class="section signature-area">
                 <div class="sig-box">
                     <span class="data-label">${t.landlordSig}</span>
-                    ${data.landlordSignature ? `<img src="${data.landlordSignature}" class="sig-img" />` : '<div style="height: 70px; border: 1px dashed #ccc; margin: 10px 0;"></div>'}
+                    ${landlordSignature ? `<img src="${landlordSignature}" class="sig-img" />` : '<div style="height: 70px; border: 1px dashed #ccc; margin: 10px 0;"></div>'}
                     <div style="font-size: 11px;">${t.date}: ${localizedData.executionDate}</div>
                 </div>
                 <div class="sig-box">
                     <span class="data-label">${t.tenantSig}</span>
-                    ${data.tenantSignature ? `<img src="${data.tenantSignature}" class="sig-img" />` : '<div style="height: 70px; border: 1px dashed #ccc; margin: 10px 0;"></div>'}
+                    ${tenantSignature ? `<img src="${tenantSignature}" class="sig-img" />` : '<div style="height: 70px; border: 1px dashed #ccc; margin: 10px 0;"></div>'}
                     <div style="font-size: 11px;">${t.date}: ${localizedData.executionDate}</div>
                 </div>
             </div>

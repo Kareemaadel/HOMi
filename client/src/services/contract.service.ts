@@ -172,6 +172,7 @@ export interface ContractParty {
     firstName: string;
     lastName: string;
     email: string;
+    signatureUrl?: string | null;
 }
 
 export interface ContractProperty {
@@ -222,6 +223,8 @@ export interface LandlordContract {
     propertyRegistrationNumber: string | null;
     landlordSignedAt: string | null;
     paymentVerifiedAt?: string | null;
+    landlordSignatureUrl?: string | null;
+    tenantSignatureUrl?: string | null;
     createdAt: string;
     landlord?: ContractParty;
     tenant?: ContractParty;
