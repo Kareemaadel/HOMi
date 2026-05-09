@@ -29,8 +29,9 @@ class ContractController {
 
     async advanceTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const days = Number((req.body as any)?.days ?? 15);
-            const state = contractService.advanceTestingClock(days);
+            const days = Number((req.body as any)?.days ?? 5);
+            // Capture a DB snapshot before the first advance, then move the clock.
+            const state = await contractService.advanceTestingClockWithSnapshot(days);
 
             // After clock advances, autopay-eligible contracts for the calling
             // tenant settle automatically so the simulated time-jump reflects
@@ -58,10 +59,11 @@ class ContractController {
 
     async resetTestingClock(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const state = contractService.resetTestingClock();
+            // Restore all DB state to what it was before the first clock advance.
+            const state = await contractService.resetTestingClockWithRestore();
             res.status(200).json({
                 success: true,
-                message: 'Testing clock reset.',
+                message: 'Testing clock reset. All data restored to pre-advance state.',
                 data: state,
             });
         } catch (error) {

@@ -1,5 +1,5 @@
 import apiClient from '../config/api';
-import { clearTestingClockCache, isTestDateEnabled, saveTestingClockSnapshot } from '../shared/utils/testingClock';
+import { clearTestingClockCache, saveTestingClockSnapshot } from '../shared/utils/testingClock';
 
 export interface ContractPaymentTerms {
     rentAmount: number | null;
@@ -282,22 +282,19 @@ const buildDisabledTestingClockState = (): TestingClockState => ({
 
 class ContractService {
     async getTestingClock(): Promise<TestingClockState> {
-        if (!isTestDateEnabled()) {
-            clearTestingClockCache();
-            return buildDisabledTestingClockState();
-        }
         const response = await apiClient.get<TestingClockApiResponse>('/contracts/testing/clock');
-        saveTestingClockSnapshot({
-            now: response.data.data.now,
-            offsetDays: response.data.data.offsetDays,
-        });
+        if (response.data.data.enabled) {
+            saveTestingClockSnapshot({
+                now: response.data.data.now,
+                offsetDays: response.data.data.offsetDays,
+            });
+        } else {
+            clearTestingClockCache();
+        }
         return response.data.data;
     }
 
-    async advanceTestingClock(days = 15): Promise<TestingClockState> {
-        if (!isTestDateEnabled()) {
-            return buildDisabledTestingClockState();
-        }
+    async advanceTestingClock(days = 5): Promise<TestingClockState> {
         const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/advance', { days });
         saveTestingClockSnapshot({
             now: response.data.data.now,
@@ -307,10 +304,6 @@ class ContractService {
     }
 
     async resetTestingClock(): Promise<TestingClockState> {
-        if (!isTestDateEnabled()) {
-            clearTestingClockCache();
-            return buildDisabledTestingClockState();
-        }
         const response = await apiClient.post<TestingClockApiResponse>('/contracts/testing/clock/reset');
         if (Number(response.data.data.offsetDays ?? 0) === 0) {
             clearTestingClockCache();

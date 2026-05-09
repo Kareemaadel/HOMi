@@ -42,6 +42,8 @@ import type {
 } from '../interfaces/contract.interfaces.js';
 import { activityLogService } from '../../../shared/services/activity-log.service.js';
 import { ActivityLog } from '../../admin/models/ActivityLog.js';
+import { MaintenanceRequest } from '../../maintenance/models/MaintenanceRequest.js';
+import { LandlordMaintenanceCharge, LandlordMaintenanceChargeStatus } from '../../maintenance/models/LandlordMaintenanceCharge.js';
 
 // ─── Duration map ─────────────────────────────────────────────────────────────
 
@@ -95,6 +97,12 @@ function isWithinNextDays(from: Date, target: Date, days: number): boolean {
     return deltaDays >= 0 && deltaDays <= days;
 }
 
+function addDays(date: Date, days: number): Date {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+}
+
 /**
  * Custom error class for contract errors
  */
@@ -114,16 +122,229 @@ export class ContractError extends Error {
  * Handles all contract business logic
  */
 class ContractService {
+    private static readonly LATE_FEE_GRACE_DAYS = 4;
+
     getTestingClockState(): { enabled: boolean; offsetDays: number; now: string } {
         return testingClockService.getState();
     }
 
+    /**
+     * Capture a full DB snapshot (first call only, subsequent calls are no-ops),
+     * then advance the testing clock by `days` days.
+     */
+    async advanceTestingClockWithSnapshot(days: number): Promise<{ enabled: boolean; offsetDays: number; now: string }> {
+        // Only snapshot once — before the very first advance.
+        if (!testingClockService.hasSnapshot()) {
+            await this.captureDbSnapshot();
+        }
+        return testingClockService.advanceDays(days);
+    }
+
+    // Kept for backward-compat (non-async path the controller used to call directly).
     advanceTestingClock(days: number): { enabled: boolean; offsetDays: number; now: string } {
         return testingClockService.advanceDays(days);
     }
 
+    /**
+     * Reset the testing clock back to offset=0 AND restore every DB row that
+     * was changed since the last `advanceTestingClockWithSnapshot` call.
+     */
+    async resetTestingClockWithRestore(): Promise<{ enabled: boolean; offsetDays: number; now: string }> {
+        const snap = testingClockService.getSnapshot();
+        if (snap) {
+            await this.restoreDbSnapshot(snap);
+        }
+        return testingClockService.reset();
+    }
+
     resetTestingClock(): { enabled: boolean; offsetDays: number; now: string } {
         return testingClockService.reset();
+    }
+
+    // ─── Snapshot helpers ────────────────────────────────────────────────────
+
+    private async captureDbSnapshot(): Promise<void> {
+        const takenAt = new Date().toISOString();
+
+        // Contracts
+        const contracts = await Contract.findAll({
+            attributes: [
+                'id', 'status', 'payment_status', 'payment_verified_at',
+                'paymob_order_id', 'paymob_transaction_id',
+                'landlord_signed_at', 'tenant_signed_at', 'tenant_agreed_terms',
+                'autopay_enabled',
+            ],
+        });
+
+        // Profiles (wallet balance)
+        const profiles = await Profile.findAll({
+            attributes: [
+                'user_id', 'wallet_balance', 'wallet_pending_order_id',
+                'wallet_pending_amount_cents', 'wallet_pending_save_card',
+            ],
+        });
+
+        // Properties
+        const properties = await Property.findAll({
+            attributes: ['id', 'status'],
+        });
+
+        // Rental Requests
+        const rentalRequests = await RentalRequest.findAll({
+            attributes: ['id', 'status'],
+        });
+
+        // Maintenance charges
+        const maintenanceCharges = await LandlordMaintenanceCharge.findAll({
+            attributes: ['id', 'status', 'applied_at'],
+        });
+
+        // Maintenance requests
+        const maintenanceRequests = await MaintenanceRequest.findAll({
+            attributes: [
+                'id', 'status', 'en_route_started_at', 'in_progress_started_at',
+                'provider_completed_at', 'tenant_confirmed_at', 'disputed_at', 'resolved_at',
+            ],
+        });
+
+        testingClockService.saveSnapshot({
+            takenAt,
+            contracts: contracts.map((c) => ({
+                id: c.id,
+                status: c.status,
+                payment_status: c.payment_status,
+                payment_verified_at: c.payment_verified_at ?? null,
+                paymob_order_id: c.paymob_order_id ?? null,
+                paymob_transaction_id: c.paymob_transaction_id ?? null,
+                landlord_signed_at: c.landlord_signed_at ?? null,
+                tenant_signed_at: c.tenant_signed_at ?? null,
+                tenant_agreed_terms: Boolean(c.tenant_agreed_terms),
+                autopay_enabled: Boolean((c as any).autopay_enabled),
+            })),
+            profiles: profiles.map((p: any) => ({
+                user_id: p.user_id,
+                wallet_balance: Number(p.wallet_balance ?? 0),
+                wallet_pending_order_id: p.wallet_pending_order_id ?? null,
+                wallet_pending_amount_cents: p.wallet_pending_amount_cents ?? null,
+                wallet_pending_save_card: Boolean(p.wallet_pending_save_card),
+            })),
+            properties: properties.map((p) => ({
+                id: p.id,
+                status: p.status,
+            })),
+            rentalRequests: rentalRequests.map((r) => ({
+                id: r.id,
+                status: r.status,
+            })),
+            activityLogCutoff: takenAt,
+            maintenanceCharges: maintenanceCharges.map((mc: any) => ({
+                id: mc.id,
+                status: mc.status,
+                applied_at: mc.applied_at ?? null,
+            })),
+            maintenanceRequests: maintenanceRequests.map((mr: any) => ({
+                id: mr.id,
+                status: mr.status,
+                en_route_started_at: mr.en_route_started_at ?? null,
+                in_progress_started_at: mr.in_progress_started_at ?? null,
+                provider_completed_at: mr.provider_completed_at ?? null,
+                tenant_confirmed_at: mr.tenant_confirmed_at ?? null,
+                disputed_at: mr.disputed_at ?? null,
+                resolved_at: mr.resolved_at ?? null,
+            })),
+        });
+    }
+
+    private async restoreDbSnapshot(snap: ReturnType<typeof testingClockService.getSnapshot> & object): Promise<void> {
+        const t = await sequelize.transaction();
+        try {
+            // Restore contracts
+            for (const cs of snap.contracts) {
+                await Contract.update(
+                    {
+                        status: cs.status,
+                        payment_status: cs.payment_status,
+                        payment_verified_at: cs.payment_verified_at,
+                        paymob_order_id: cs.paymob_order_id,
+                        paymob_transaction_id: cs.paymob_transaction_id,
+                        landlord_signed_at: cs.landlord_signed_at,
+                        tenant_signed_at: cs.tenant_signed_at,
+                        tenant_agreed_terms: cs.tenant_agreed_terms,
+                        autopay_enabled: cs.autopay_enabled,
+                    },
+                    { where: { id: cs.id }, transaction: t }
+                );
+            }
+
+            // Restore profiles (wallet balances)
+            for (const ps of snap.profiles) {
+                await Profile.update(
+                    {
+                        wallet_balance: ps.wallet_balance,
+                        wallet_pending_order_id: ps.wallet_pending_order_id,
+                        wallet_pending_amount_cents: ps.wallet_pending_amount_cents,
+                        wallet_pending_save_card: ps.wallet_pending_save_card,
+                    },
+                    { where: { user_id: ps.user_id }, transaction: t }
+                );
+            }
+
+            // Restore properties
+            for (const ps of snap.properties) {
+                await Property.update(
+                    { status: ps.status },
+                    { where: { id: ps.id }, transaction: t }
+                );
+            }
+
+            // Restore rental requests
+            for (const rs of snap.rentalRequests) {
+                await RentalRequest.update(
+                    { status: rs.status },
+                    { where: { id: rs.id }, transaction: t }
+                );
+            }
+
+            // Delete activity logs created after the snapshot
+            await ActivityLog.destroy({
+                where: {
+                    created_at: { [Op.gt]: new Date(snap.activityLogCutoff) },
+                },
+                transaction: t,
+            });
+
+            // Restore maintenance charges
+            for (const mc of snap.maintenanceCharges) {
+                await LandlordMaintenanceCharge.update(
+                    {
+                        status: mc.status,
+                        applied_at: mc.applied_at,
+                    },
+                    { where: { id: mc.id }, transaction: t }
+                );
+            }
+
+            // Restore maintenance requests
+            for (const mr of snap.maintenanceRequests) {
+                await MaintenanceRequest.update(
+                    {
+                        status: mr.status,
+                        en_route_started_at: mr.en_route_started_at,
+                        in_progress_started_at: mr.in_progress_started_at,
+                        provider_completed_at: mr.provider_completed_at,
+                        tenant_confirmed_at: mr.tenant_confirmed_at,
+                        disputed_at: mr.disputed_at,
+                        resolved_at: mr.resolved_at,
+                    },
+                    { where: { id: mr.id }, transaction: t }
+                );
+            }
+
+            await t.commit();
+        } catch (err) {
+            await t.rollback();
+            throw err;
+        }
     }
 
     // ─── Contract Creation ────────────────────────────────────────────────────
@@ -866,9 +1087,6 @@ class ContractService {
             // ─── Apply pending landlord-responsibility maintenance credits ──────
             // Maintenance jobs the landlord owed for in past months get deducted
             // from the next rent the tenant pays.
-            const { LandlordMaintenanceCharge, LandlordMaintenanceChargeStatus } = await import(
-                '../../maintenance/models/LandlordMaintenanceCharge.js'
-            );
             const pendingCharges = await LandlordMaintenanceCharge.findAll({
                 where: {
                     contract_id: contract.id,
@@ -884,7 +1102,9 @@ class ContractService {
             const grossRentDue = rentAmount * outstandingInstallments;
             const netRentAmount = Math.max(grossRentDue - pendingCreditTotal, 0);
             const overdueInstallmentDates = payableInstallments.slice(paidInstallments);
-            const lateInstallments = overdueInstallmentDates.filter((d) => d < now).length;
+            const lateInstallments = overdueInstallmentDates.filter((d) =>
+                this.hasLateFeeStarted(d, now)
+            ).length;
             const lateFeePerInstallment = Math.max(Number(contract.late_fee_amount ?? 0), 0);
             const lateFee = lateFeePerInstallment * lateInstallments;
             const totalToDebit = netRentAmount + lateFee;
@@ -1329,9 +1549,6 @@ class ContractService {
             }
         });
 
-        const { LandlordMaintenanceCharge, LandlordMaintenanceChargeStatus } = await import(
-            '../../maintenance/models/LandlordMaintenanceCharge.js'
-        );
         const pendingCharges = await LandlordMaintenanceCharge.findAll({
             where: {
                 contract_id: contract.id,
@@ -1349,7 +1566,7 @@ class ContractService {
         const items: RentInstallmentItem[] = dueDates.map((dueDate, idx) => {
             const isPaidIdx = idx < paidInstallments;
             const isDue = dueDate <= now || isWithinNextDays(now, dueDate, 30);
-            const isOverdue = dueDate < now && !isPaidIdx;
+            const isOverdue = this.hasLateFeeStarted(dueDate, now) && !isPaidIdx;
             let status: RentInstallmentStatus = 'UPCOMING';
             if (isPaidIdx) status = 'PAID';
             else if (isOverdue) status = 'OVERDUE';
@@ -1648,6 +1865,15 @@ class ContractService {
     private getPayableInstallmentDates(contract: Contract, now: Date): Date[] {
         const dueDates = this.getContractDueDates(contract);
         return dueDates.filter((d) => d <= now || isWithinNextDays(now, d, 30));
+    }
+
+    /**
+     * Late fee starts after a 5-day window from due date.
+     * Example: due May 1 -> no fee through May 4, fee applies on May 5.
+     */
+    private hasLateFeeStarted(dueDate: Date, now: Date): boolean {
+        const lateFeeAppliesAt = addDays(dueDate, ContractService.LATE_FEE_GRACE_DAYS);
+        return now >= lateFeeAppliesAt;
     }
 
     /**
