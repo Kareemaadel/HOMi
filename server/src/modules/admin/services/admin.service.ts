@@ -842,7 +842,7 @@ class AdminService {
                 reviewed_by_admin_id: adminId,
                 reviewed_at: new Date(),
             });
-            await User.update({ is_verified: true }, { where: { id: application.user_id } });
+            await User.update({ is_verified: true, email_verified: true }, { where: { id: application.user_id } });
             return;
         }
 

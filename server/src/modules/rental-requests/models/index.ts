@@ -2,6 +2,7 @@ import sequelize from '../../../config/database.js';
 import { User } from '../../auth/models/User.js';
 import { Property } from '../../properties/models/Property.js';
 import { Profile } from '../../auth/models/Profile.js';
+import { Habit } from '../../auth/models/Habit.js';
 import {
     RentalRequest,
     RentalRequestDuration,
@@ -53,6 +54,7 @@ export {
     User,
     Property,
     Profile,
+    Habit,
 };
 
 export type { RentalRequestDurationType, RentalRequestStatusType, LivingSituationType };

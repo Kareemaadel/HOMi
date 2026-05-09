@@ -45,7 +45,7 @@ export const LandlordSignSchema = z.object({
     signature_url: z
         .string({ error: 'Signature is required' })
         .min(1, 'Signature URL cannot be empty')
-        .max(500, 'Signature URL must be at most 500 characters'),
+        .max(2_000_000, 'Signature payload is too large'),
     certify_ownership: z
         .boolean({ error: 'Ownership certification is required' })
         .refine((val) => val === true, 'You must certify that you are the legal owner'),
@@ -76,7 +76,7 @@ export const TenantSignSchema = z.object({
     signature_url: z
         .string({ error: 'Signature is required' })
         .min(1, 'Signature URL cannot be empty')
-        .max(500, 'Signature URL must be at most 500 characters'),
+        .max(2_000_000, 'Signature payload is too large'),
     agree_to_terms: z
         .boolean({ error: 'Terms agreement is required' })
         .refine((val) => val === true, 'You must agree to the HOMI terms'),

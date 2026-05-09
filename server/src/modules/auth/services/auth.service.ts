@@ -868,6 +868,13 @@ export class AuthService {
 
         await this.enforceBanPolicy(user);
 
+        // Update profile image if missing or from Google (to keep it fresh)
+        if (user.profile && picture) {
+            if (!user.profile.avatar_url || user.profile.avatar_url.startsWith('https://lh3.googleusercontent.com')) {
+                await user.profile.update({ avatar_url: picture });
+            }
+        }
+
         // 4. Generate HOMi JWT tokens
         const tokens: TokenPair = generateTokenPair(user.id, user.email, user.role);
 

@@ -64,7 +64,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
         isAuthenticated &&
         cached?.user &&
         !cached.user.emailVerified &&
-        localStorage.getItem('authProvider') === 'email'
+        localStorage.getItem('authProvider') === 'email' &&
+        role !== 'MAINTENANCE_PROVIDER'
     ) {
         return <Navigate to="/verify-email" replace />;
     }

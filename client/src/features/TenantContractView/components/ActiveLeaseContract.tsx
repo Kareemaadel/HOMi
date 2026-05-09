@@ -16,6 +16,7 @@ interface Props {
 import { useTranslation } from 'react-i18next';
 import pdfService from '../../../services/pdf.service';
 import contractService, { type TenantPaymentHistoryItem } from '../../../services/contract.service';
+import { normalizeSignatureUrl } from '../../../shared/utils/signatureUrl';
 
 const ActiveLeaseContract: React.FC<Props> = ({ contract, onClose }) => {
     const { t } = useTranslation();
@@ -421,16 +422,24 @@ const ActiveLeaseContract: React.FC<Props> = ({ contract, onClose }) => {
                                         <div className="pdf-signature-area">
                                             <div className="pdf-sig-box">
                                                 <span className="pdf-data-label">{previewLang === 'en' ? 'Landlord Signature' : 'توقيع المؤجر'}</span>
-                                                <div className="pdf-sig-img" style={{ fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc', height: '60px' }}>
-                                                    {previewLang === 'en' ? 'Digitally Signed' : 'تم التوقيع رقمياً'}
-                                                </div>
+                                                {normalizeSignatureUrl(contract.landlordSignature) ? (
+                                                    <img src={normalizeSignatureUrl(contract.landlordSignature)} alt="Landlord signature" className="pdf-sig-img" />
+                                                ) : (
+                                                    <div className="pdf-sig-img" style={{ fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc', height: '60px' }}>
+                                                        {previewLang === 'en' ? 'Digitally Signed' : 'تم التوقيع رقمياً'}
+                                                    </div>
+                                                )}
                                                 <div style={{ fontSize: '11px' }}>{previewLang === 'en' ? 'Date' : 'التاريخ'}: {localizedPreview.executionDate}</div>
                                             </div>
                                             <div className="pdf-sig-box">
                                                 <span className="pdf-data-label">{previewLang === 'en' ? 'Tenant Signature' : 'توقيع المستأجر'}</span>
-                                                <div className="pdf-sig-img" style={{ fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc', height: '60px' }}>
-                                                    {previewLang === 'en' ? 'Digitally Signed' : 'تم التوقيع رقمياً'}
-                                                </div>
+                                                {normalizeSignatureUrl(contract.tenantSignature) ? (
+                                                    <img src={normalizeSignatureUrl(contract.tenantSignature)} alt="Tenant signature" className="pdf-sig-img" />
+                                                ) : (
+                                                    <div className="pdf-sig-img" style={{ fontSize: '10px', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc', height: '60px' }}>
+                                                        {previewLang === 'en' ? 'Digitally Signed' : 'تم التوقيع رقمياً'}
+                                                    </div>
+                                                )}
                                                 <div style={{ fontSize: '11px' }}>{previewLang === 'en' ? 'Date' : 'التاريخ'}: {localizedPreview.executionDate}</div>
                                             </div>
                                         </div>

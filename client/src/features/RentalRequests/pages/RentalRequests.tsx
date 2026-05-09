@@ -45,10 +45,14 @@ const RentalRequests: React.FC = () => {
             propertyId: req.property.id,
             applicant: {
                 name: `${req.tenant.firstName} ${req.tenant.lastName}`.trim(),
-                image: req.tenant.avatarUrl || 'https://i.pravatar.cc/150?u=fallback',
+                image: req.tenant.avatarUrl?.trim() 
+                    ? req.tenant.avatarUrl 
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(req.tenant.firstName + ' ' + req.tenant.lastName)}&background=random`,
                 occupation: t('sidebar.tenant'),
                 company: '',
-                income: t('rentalRequests.card.verified', { defaultValue: 'Verified' }),
+                income: req.tenant.income 
+                    ? req.tenant.income.toString()
+                    : t('rentalRequests.card.verified', { defaultValue: 'Verified' }),
                 creditScore: 720,
                 matchScore: 85,
             },

@@ -6,6 +6,7 @@ import {
     FaFileDownload, FaMapMarkerAlt, FaGavel, FaTimes, FaHome
 } from 'react-icons/fa';
 import pdfService from '../../../services/pdf.service';
+import { normalizeSignatureUrl } from '../../../shared/utils/signatureUrl';
 
 interface RentalProps {
     rental: {
@@ -61,8 +62,8 @@ const DetailedRentCard: React.FC<RentalProps> = ({ rental, contract }) => {
             rightToEnter: contract.rightToEnter || 'With 24h notice',
             noticePeriod: contract.noticePeriod || '24 Hours',
             maintenanceResponsibilities: contract.maintenanceResponsibilities,
-            landlordSignature: contract.landlordSignature || (contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined),
-            tenantSignature: contract.tenantSignature || (contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined),
+            landlordSignature: normalizeSignatureUrl(contract.landlordSignature),
+            tenantSignature: normalizeSignatureUrl(contract.tenantSignature),
             executionDate: new Date(contract.createdAt).toLocaleDateString(),
         };
         await pdfService.generateContractPDF(pdfData as any, lang);

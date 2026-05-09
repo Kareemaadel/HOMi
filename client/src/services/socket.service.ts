@@ -39,10 +39,14 @@ class SocketService {
             return this.socket;
         }
 
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-        const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+        const baseUrl =
+            apiBaseUrl.startsWith('http://') || apiBaseUrl.startsWith('https://')
+                ? apiBaseUrl.replace(/\/api\/?$/, '')
+                : window.location.origin;
 
         this.socket = io(baseUrl, {
+            path: '/socket.io',
             auth: { token },
             transports: ['websocket', 'polling'],
             withCredentials: true,

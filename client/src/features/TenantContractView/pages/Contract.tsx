@@ -8,6 +8,7 @@ import ActiveLeaseContract from '../components/ActiveLeaseContract';
 import { FileText, Clock, Plus, Building2, ChevronRight } from 'lucide-react';
 import ContractDetailView from '../components/ContractDetailView';
 import contractService, { type LandlordContract as ContractApi } from '../../../services/contract.service';
+import { normalizeSignatureUrl } from '../../../shared/utils/signatureUrl';
 import './Contract.css';
 
 export type ContractStatus = 'PENDING_TENANT' | 'PENDING_PAYMENT' | 'ACTIVE' | 'EXPIRED';
@@ -95,8 +96,8 @@ const Contract: React.FC = () => {
         tenantEmergencyContactName: contract.tenantEmergencyContactName || '',
         tenantEmergencyPhone: contract.tenantEmergencyPhone || '',
         maintenanceResponsibilities: contract.property?.maintenanceResponsibilities || [],
-        landlordSignature: contract.landlordSignedAt ? `https://storage.homi.com/signatures/${contract.id}-landlord.png` : undefined,
-        tenantSignature: contract.status === 'ACTIVE' ? `https://storage.homi.com/signatures/${contract.id}-tenant.png` : undefined,
+        landlordSignature: normalizeSignatureUrl(contract.landlordSignatureUrl ?? contract.landlord?.signatureUrl),
+        tenantSignature: normalizeSignatureUrl(contract.tenantSignatureUrl ?? contract.tenant?.signatureUrl),
         landlordNationalId: contract.landlordNationalId || '',
         landlordAddress: 'Verified Legal Address on File',
         tenantAddress: contract.property?.address || '—',

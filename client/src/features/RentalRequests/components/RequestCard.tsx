@@ -90,7 +90,16 @@ const RequestCard = ({ data, onStatusChange }: RequestCardProps) => {
             >
                 <div className="rc-header">
                     <div className="rc-avatar-box">
-                        <img src={applicant.image} alt={applicant.name} />
+                        <img 
+                            src={applicant.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.name)}&background=random`} 
+                            alt={applicant.name} 
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null; 
+                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.name)}&background=random`;
+                            }}
+                        />
                         <span className="rc-match-badge">{applicant.matchScore}% {t('rentalRequests.card.match', { defaultValue: 'Match' })}</span>
                     </div>
                     <div className="rc-user-info">

@@ -10,8 +10,6 @@ const formatDateLabel = (iso: string): string => {
 };
 
 const TestingClockBadge = () => {
-    const testDateEnabled = import.meta.env.DEV;
-
     // Pre-populate with the real wall-clock date so the badge renders
     // immediately (before the API round-trip completes).
     const [now, setNow] = useState<string>(() => new Date().toISOString());
@@ -21,7 +19,6 @@ const TestingClockBadge = () => {
     const [lastError, setLastError] = useState<string | null>(null);
 
     const refresh = useCallback(async () => {
-        if (!testDateEnabled) return;
         try {
             const state = await contractService.getTestingClock();
             setNow(state.now);
@@ -33,19 +30,18 @@ const TestingClockBadge = () => {
             setNow(new Date().toISOString());
             setLastError('Test Date endpoint unreachable — check that the server is running.');
         }
-    }, [testDateEnabled]);
+    }, []);
 
     useEffect(() => {
-        if (!testDateEnabled) return;
         void refresh();
-    }, [refresh, testDateEnabled]);
+    }, [refresh]);
 
     const handleAdvance = async () => {
         if (isBusy) return;
         setIsBusy(true);
         setLastError(null);
         try {
-            const state = await contractService.advanceTestingClock(15);
+            const state = await contractService.advanceTestingClock(5);
             setNow(state.now);
             setOffsetDays(Number(state.offsetDays ?? 0));
             globalThis.dispatchEvent(new CustomEvent('homi:testing-clock-changed', {
@@ -76,8 +72,8 @@ const TestingClockBadge = () => {
         }
     };
 
-    // Hide completely when client mode disables test-date OR server config disables it.
-    if (!testDateEnabled || serverEnabled !== true) return null;
+    // Hide completely when server config has test-date disabled.
+    if (serverEnabled !== true) return null;
 
     return (
         <div className="testing-clock-badge" title={lastError ?? 'Simulated date for testing — affects rentals, payments, and maintenance.'}>
@@ -94,9 +90,9 @@ const TestingClockBadge = () => {
                     className="testing-clock-btn advance"
                     onClick={handleAdvance}
                     disabled={isBusy || !serverEnabled}
-                    aria-label="Advance test clock by 15 days"
+                    aria-label="Advance test clock by 5 days"
                 >
-                    <FaForward /> +15d
+                    <FaForward /> +5d
                 </button>
                 <button
                     type="button"

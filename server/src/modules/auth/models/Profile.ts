@@ -40,6 +40,7 @@ export class Profile extends Model<
     declare bio: CreationOptional<string | null>;
     declare avatar_url: CreationOptional<string | null>;
     declare current_location: CreationOptional<string | null>;
+    declare e_signature_url: CreationOptional<string | null>;
 
     // Verification fields (nullable until user completes verification)
     declare national_id: CreationOptional<string | null>; // Encrypted at rest
@@ -147,6 +148,10 @@ Profile.init(
         },
         current_location: {
             type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        e_signature_url: {
+            type: DataTypes.TEXT,
             allowNull: true,
         },
         national_id: {

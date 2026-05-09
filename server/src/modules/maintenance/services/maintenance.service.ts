@@ -40,6 +40,7 @@ import { notificationService } from '../../notifications/services/notification.s
 import { NotificationType as NotifType } from '../../notifications/models/Notification.js';
 import { getIO } from '../../../shared/realtime/socket.js';
 import { activityLogService } from '../../../shared/services/activity-log.service.js';
+import { testingClockService } from '../../../shared/services/testing-clock.service.js';
 import type {
     PostMaintenanceIssueInput,
     ProviderApplyInput,
@@ -1237,7 +1238,7 @@ class MaintenanceService {
         }
         await req.update({
             status: MaintenanceRequestStatus.EN_ROUTE,
-            en_route_started_at: req.en_route_started_at ?? new Date(),
+            en_route_started_at: req.en_route_started_at ?? testingClockService.getNow(),
         });
         await Promise.all([
             notificationService.create({
@@ -1284,7 +1285,7 @@ class MaintenanceService {
         }
         await req.update({
             status: MaintenanceRequestStatus.IN_PROGRESS,
-            in_progress_started_at: new Date(),
+            in_progress_started_at: testingClockService.getNow(),
         });
         await Promise.all([
             notificationService.create({
@@ -1337,7 +1338,7 @@ class MaintenanceService {
             );
         }
 
-        const now = new Date();
+        const now = testingClockService.getNow();
         const [row] = await MaintenanceLocation.upsert({
             request_id: requestId,
             provider_id: providerId,
@@ -1426,7 +1427,7 @@ class MaintenanceService {
             status: MaintenanceRequestStatus.AWAITING_CONFIRMATION,
             completion_notes: input.completionNotes?.trim() || null,
             completion_images: input.completionImages,
-            provider_completed_at: new Date(),
+            provider_completed_at: testingClockService.getNow(),
         });
 
         await Promise.all([
@@ -1529,7 +1530,7 @@ class MaintenanceService {
                     {
                         status: MaintenanceRequestStatus.COMPLETED,
                         escrow_amount: 0,
-                        tenant_confirmed_at: new Date(),
+                        tenant_confirmed_at: testingClockService.getNow(),
                     },
                     { transaction: tx }
                 );
@@ -1644,7 +1645,7 @@ class MaintenanceService {
             await req.update(
                 {
                     status: MaintenanceRequestStatus.DISPUTED,
-                    disputed_at: new Date(),
+                    disputed_at: testingClockService.getNow(),
                     disputed_reason: input.disputeReason.trim(),
                 },
                 { transaction: tx }
@@ -1975,7 +1976,7 @@ class MaintenanceService {
                     {
                         status: MaintenanceRequestStatus.RESOLVED_BY_ADMIN,
                         escrow_amount: 0,
-                        resolved_at: new Date(),
+                        resolved_at: testingClockService.getNow(),
                     },
                     { transaction: tx }
                 );
@@ -2004,7 +2005,7 @@ class MaintenanceService {
                     {
                         status: MaintenanceRequestStatus.RESOLVED_BY_ADMIN,
                         escrow_amount: 0,
-                        resolved_at: new Date(),
+                        resolved_at: testingClockService.getNow(),
                     },
                     { transaction: tx }
                 );
@@ -2024,7 +2025,7 @@ class MaintenanceService {
                     resolution: input.resolution,
                     admin_notes: input.adminNotes?.trim() || null,
                     resolved_by_admin_id: adminId,
-                    resolved_at: new Date(),
+                    resolved_at: testingClockService.getNow(),
                 },
                 { transaction: tx }
             );

@@ -817,14 +817,7 @@ const CompleteProfile: React.FC = () => {
     /** Step bar: go back to a previous step (forward only via form buttons). */
     const handleStepSegmentClick = (num: 1 | 2 | 3) => {
         setError(null);
-        if (num >= step) return;
-        if (settingsOnlyFlow) {
-            if (step === 3 && num === 1) {
-                setStep(1);
-                return;
-            }
-            return;
-        }
+        if (num >= step || settingsOnlyFlow) return;
         setStep(num);
     };
 
@@ -1024,8 +1017,7 @@ const CompleteProfile: React.FC = () => {
             className={`onboarding-viewport${step > 1 && !settingsOnlyFlow ? ' onboarding-viewport--step-back' : ''}`}
             onClick={(ev) => {
                 if (ev.target !== ev.currentTarget) return;
-                if (settingsOnlyFlow) return;
-                if (step > 1) goBack();
+                // Back navigation disabled as requested
             }}
             role="presentation"
         >
@@ -1040,11 +1032,8 @@ const CompleteProfile: React.FC = () => {
                         const { completed, active } = stepIndicator(num);
                         const isPast = step > num;
                         const isFuture = step < num;
-                        const settingsDeadMiddle = settingsOnlyFlow && num === 2;
-                        const canGoBack =
-                            isPast &&
-                            !settingsDeadMiddle &&
-                            (!settingsOnlyFlow || (settingsOnlyFlow && step === 3 && num === 1));
+                        const isLockedInSettings = settingsOnlyFlow && isPast;
+                        const canGoBack = false; // Disabled as requested
                         return (
                             <button
                                 key={num}
@@ -1055,12 +1044,12 @@ const CompleteProfile: React.FC = () => {
                                     completed || isPast ? 'cp-step-segment--done' : '',
                                     canGoBack ? 'cp-step-segment--clickable' : '',
                                     isFuture ? 'cp-step-segment--future' : '',
-                                    settingsDeadMiddle ? 'cp-step-segment--muted' : '',
+                                    isLockedInSettings ? 'cp-step-segment--muted' : '',
                                 ]
                                     .filter(Boolean)
                                     .join(' ')}
                                 aria-current={active ? 'step' : undefined}
-                                disabled={settingsDeadMiddle}
+                                disabled={isLockedInSettings}
                                 onClick={() => {
                                     if (!canGoBack) return;
                                     handleStepSegmentClick(num);
@@ -1091,7 +1080,15 @@ const CompleteProfile: React.FC = () => {
                     <div className="cp-card-toolbar">
                         {headerAvatarUrl ? (
                             <div className="cp-toolbar-avatar" title="Profile photo">
-                                <img src={headerAvatarUrl} alt="" />
+                                <img 
+                                    src={headerAvatarUrl} 
+                                    alt="" 
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authService.getCurrentUser()?.profile?.firstName || 'User')}&background=random`;
+                                    }}
+                                />
                             </div>
                         ) : (
                             <span className="cp-toolbar-spacer" aria-hidden />
@@ -1331,8 +1328,13 @@ const CompleteProfile: React.FC = () => {
                         </div>
 
                         <div className="action-footer">
+                            {settingsOnlyFlow && (
+                                <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
+                                    <ArrowLeft size={18} /> Back to Settings
+                                </button>
+                            )}
                             <button className="btn-continue" onClick={() => void goNextFromStep1()}>
-                                Next Step <ArrowRight size={18} />
+                                {settingsOnlyFlow ? 'Save changes' : 'Next Step'} <ArrowRight size={18} />
                             </button>
                         </div>
                     </div>
@@ -1370,9 +1372,9 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer">
                             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                {!settingsOnlyFlow && (
+                                {settingsOnlyFlow && (
                                     <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
-                                        <ArrowLeft size={18} /> Back to identity
+                                        <ArrowLeft size={18} /> Back to Settings
                                     </button>
                                 )}
                                 <button
@@ -1430,22 +1432,17 @@ const CompleteProfile: React.FC = () => {
                                     }
                                 />
                             </div>
-                            <div className="form-field">
-                                <label>Income range {req}</label>
-                                <select
-                                    value={tenantStep3.incomeRange}
-                                    onChange={(e) =>
-                                        setTenantStep3((s) => ({ ...s, incomeRange: e.target.value }))
-                                    }
-                                >
-                                    <option value="" disabled>
-                                        Select…
-                                    </option>
-                                    <option value="< $500">&lt; $500</option>
-                                    <option value="$500 - $1500">$500 - $1500</option>
-                                    <option value="$1500+">$1500+</option>
-                                </select>
-                            </div>
+                             <div className="form-field">
+                                 <label>Net Monthly Income ($) {req}</label>
+                                 <input
+                                     type="number"
+                                     placeholder="Ex: 2500"
+                                     value={tenantStep3.incomeRange}
+                                     onChange={(e) =>
+                                         setTenantStep3((s) => ({ ...s, incomeRange: e.target.value }))
+                                     }
+                                 />
+                             </div>
                             <div className="form-field">
                                 <label>Move-in Date {req}</label>
                                 <input
@@ -1514,7 +1511,7 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer action-footer--step3">
                             <div className="action-footer__primary-row">
-                                {settingsOnlyFlow ? (
+                                {settingsOnlyFlow && (
                                     <button
                                         type="button"
                                         className="btn-back"
@@ -1522,10 +1519,6 @@ const CompleteProfile: React.FC = () => {
                                         disabled={loading}
                                     >
                                         <ArrowLeft size={18} /> Back to Settings
-                                    </button>
-                                ) : (
-                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
-                                        <ArrowLeft size={18} /> Back
                                     </button>
                                 )}
                                 <button
@@ -1650,7 +1643,7 @@ const CompleteProfile: React.FC = () => {
 
                         <div className="action-footer action-footer--step3">
                             <div className="action-footer__primary-row">
-                                {settingsOnlyFlow ? (
+                                {settingsOnlyFlow && (
                                     <button
                                         type="button"
                                         className="btn-back"
@@ -1658,10 +1651,6 @@ const CompleteProfile: React.FC = () => {
                                         disabled={loading}
                                     >
                                         <ArrowLeft size={18} /> Back to Settings
-                                    </button>
-                                ) : (
-                                    <button type="button" className="btn-back" onClick={goBack} disabled={loading}>
-                                        <ArrowLeft size={18} /> Back
                                     </button>
                                 )}
                                 <button

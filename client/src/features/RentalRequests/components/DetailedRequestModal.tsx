@@ -161,7 +161,10 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
             <div className="detailed-modal-container" onClick={e => e.stopPropagation()}>
 
                 {/* Close Button is hidden if we are on a final success/declined screen to force navigation/acknowledgment, or keep it if you prefer! */}
-                <button className="detailed-close-btn" onClick={onClose}><FaTimes /></button>
+                <button className="detailed-close-btn" onClick={onClose} aria-label={t('common.close')}><FaTimes size={18} /></button>
+
+                {/* Match Score moved to Top Left of Modal */}
+
 
                 {/* --- INNER OVERLAYS FOR CONFIRMATION & SUCCESS --- */}
                 {confirmAction === 'approve' && applicationState === 'pending' && (
@@ -199,7 +202,7 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                 {applicationState === 'approved' && (
                     <div className="action-overlay outcome-approved">
                         <div className="action-card outcome-card">
-                            <div className="success-circle"><FaCheck size={32} color="#10b981" /></div>
+                            <div className="success-circle"><FaCheck size={32} color="#16a34a" /></div>
                             <h3>{t('rentalRequests.card.approvedBanner')}</h3>
                             <p>{t('rentalRequests.modals.approvedSuccessText', { defaultValue: 'Great news! The next step is to draft and send the official lease agreement to the tenant.' })}</p>
                             <button className="btn-approve-main" style={{ width: '100%' }} onClick={handleApprovedContinue}>
@@ -228,15 +231,26 @@ const DetailedRequestModal: React.FC<DetailedRequestModalProps> = ({ data, reque
                         <div className="detailed-left-col">
                             <div className="applicant-hero">
                                 <div className="hero-avatar-wrapper">
-                                    <img src={applicant?.image || "https://via.placeholder.com/120"} alt={applicant?.name} />
+                                    <img 
+                                        src={applicant?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant?.name || 'User')}&background=random`} 
+                                        alt={applicant?.name} 
+                                        referrerPolicy="no-referrer"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.onerror = null;
+                                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant?.name || 'User')}&background=random`;
+                                        }}
+                                    />
                                     <div className="match-score-radial">
                                         <span>{applicant?.matchScore || "85"}%</span>
                                         <label>{t('rentalRequests.card.match')}</label>
                                     </div>
                                 </div>
+                                <div className="modal-top-left-verified">
+                                    <FaCheckCircle />
+                                </div>
                                 <h2 className="hero-name-row">
                                     <span>{applicant?.name || "Applicant Name"}</span>
-                                    <FaCheckCircle className="verified-badge" style={{ color: '#10b981' }} />
                                 </h2>
                                 <p className="hero-subtext">
                                     {applicant?.occupation || t('sidebar.tenant')}
