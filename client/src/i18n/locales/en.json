@@ -996,6 +996,8 @@
     "capture": "Capture",
     "chooseFromGallery": "Choose From Gallery",
     "cameraAccessFailed": "Could not access camera. You can still upload from gallery.",
+    "cameraLoading": "Opening camera...",
+    "captureFailedTryAgain": "Capture failed. Please try again.",
     "secureESign": "HOMI Secure e-Sign",
     "cancel": "Cancel",
     "confirmSignature": "Confirm Signature",

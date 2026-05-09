@@ -23,6 +23,7 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     const [showUploadGuide, setShowUploadGuide] = useState(false);
     const [showCamera, setShowCamera] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
+    const [cameraReady, setCameraReady] = useState(false);
 
     const syncCanvasSize = () => {
         if (containerRef.current && sigCanvas.current) {
@@ -57,6 +58,16 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
         };
     }, []);
 
+    useEffect(() => {
+        if (!showCamera || !cameraStreamRef.current || !videoRef.current) return;
+        const video = videoRef.current;
+        video.srcObject = cameraStreamRef.current;
+        void video.play().then(() => setCameraReady(true)).catch(() => {
+            setCameraReady(false);
+            setCameraError(t('signature.cameraAccessFailed'));
+        });
+    }, [showCamera, t]);
+
     if (!isOpen) return null;
 
     const stopCamera = () => {
@@ -64,6 +75,7 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             cameraStreamRef.current.getTracks().forEach((track) => track.stop());
             cameraStreamRef.current = null;
         }
+        setCameraReady(false);
         setShowCamera(false);
     };
 
@@ -76,10 +88,6 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             });
             cameraStreamRef.current = stream;
             setShowCamera(true);
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
-            }
         } catch {
             setCameraError(t('signature.cameraAccessFailed'));
             setShowCamera(false);
@@ -88,7 +96,10 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
     const captureFromCamera = () => {
         const video = videoRef.current;
-        if (!video || video.videoWidth <= 0 || video.videoHeight <= 0) return;
+        if (!video || video.videoWidth <= 0 || video.videoHeight <= 0) {
+            setCameraError(t('signature.captureFailedTryAgain'));
+            return;
+        }
 
         const frameWidth = video.videoWidth;
         const frameHeight = video.videoHeight;
@@ -218,6 +229,7 @@ const SignatureModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                                     {t('signature.capture')}
                                 </button>
                             </div>
+                            {!cameraReady && <p className="camera-error">{t('signature.cameraLoading')}</p>}
                         </div>
                     </div>
                 )}

@@ -989,6 +989,8 @@
     "capture": "التقاط",
     "chooseFromGallery": "اختيار من المعرض",
     "cameraAccessFailed": "تعذر الوصول للكاميرا. يمكنك الرفع من المعرض.",
+    "cameraLoading": "جاري فتح الكاميرا...",
+    "captureFailedTryAgain": "فشل الالتقاط. حاول مرة أخرى.",
     "secureESign": "توقيع HOMI الإلكتروني الآمن",
     "cancel": "إلغاء",
     "confirmSignature": "تأكيد التوقيع",

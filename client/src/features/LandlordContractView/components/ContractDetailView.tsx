@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     X, ChevronRight, ChevronLeft, ShieldCheck, Pencil,
     Landmark, Zap, Ban, User, DollarSign, Cpu, Clock, Globe,
@@ -23,6 +23,8 @@ import { useTranslation } from 'react-i18next';
 
 const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onUpdated, onClose }) => {
     const { t } = useTranslation();
+    const todayIso = new Date().toISOString().split('T')[0];
+    const draftStorageKey = `homi:landlord-contract-step1:${contract.internalId}`;
     const [step, setStep] = useState(1);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [savedSignature, setSavedSignature] = useState<string | null>(() => {
@@ -39,7 +41,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
         idFullName: contract.landlord || '',
         idNumber: contract.landlordNationalId || '',
         currentAddress: '',
-        contractDate: new Date().toISOString().split('T')[0],
+        mainPhone: '',
+        contractDate: todayIso,
         ownershipRef: contract.propertyRegistrationNumber || 'NOT_PROVIDED',
         rentDueDate: contract.rentDueDate || '1ST_OF_MONTH',
         lateFee: String(contract.lateFeeAmount || 0),
@@ -58,6 +61,86 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
         emergencyName: '',
         emergencyPhone: ''
     });
+    const [step1Errors, setStep1Errors] = useState<Partial<Record<
+        'idFullName' | 'idNumber' | 'currentAddress' | 'mainPhone' | 'contractDate' | 'emergencyName' | 'emergencyPhone' | 'lateFee' | 'occupants',
+        string
+    >>>({});
+
+    useEffect(() => {
+        if (isReadOnly) return;
+        try {
+            const raw = localStorage.getItem(draftStorageKey);
+            if (!raw) return;
+            const parsed = JSON.parse(raw) as Partial<typeof landlordData>;
+            setLandlordData((prev) => ({
+                ...prev,
+                ...parsed,
+                // Contract date is always pinned to today's date.
+                contractDate: todayIso,
+            }));
+        } catch {
+            // Ignore malformed local drafts.
+        }
+    }, [draftStorageKey, isReadOnly, todayIso]);
+
+    useEffect(() => {
+        if (isReadOnly) return;
+        localStorage.setItem(draftStorageKey, JSON.stringify(landlordData));
+    }, [draftStorageKey, isReadOnly, landlordData]);
+
+    const validateStep1 = (): boolean => {
+        const errors: Partial<Record<
+            'idFullName' | 'idNumber' | 'currentAddress' | 'mainPhone' | 'contractDate' | 'emergencyName' | 'emergencyPhone' | 'lateFee' | 'occupants',
+            string
+        >> = {};
+
+        if (!landlordData.idFullName.trim()) {
+            errors.idFullName = 'Name is required';
+        } else if (!/^[\u0600-\u06FF\s]+$/.test(landlordData.idFullName.trim())) {
+            errors.idFullName = 'Name must be Arabic letters only';
+        }
+
+        if (!/^\d{14}$/.test(landlordData.idNumber.trim())) {
+            errors.idNumber = 'National ID must be exactly 14 digits';
+        }
+
+        if (!landlordData.currentAddress.trim()) {
+            errors.currentAddress = 'Current address is required';
+        }
+
+        if (!landlordData.mainPhone.trim()) {
+            errors.mainPhone = 'Main phone is required';
+        } else if (!/^\+?\d{8,15}$/.test(landlordData.mainPhone.trim())) {
+            errors.mainPhone = 'Enter a valid phone number';
+        }
+
+        if (landlordData.contractDate !== todayIso) {
+            errors.contractDate = 'Contract date must be today';
+        }
+
+        if (!landlordData.emergencyName.trim()) {
+            errors.emergencyName = 'Emergency contact name is required';
+        }
+
+        if (!landlordData.emergencyPhone.trim()) {
+            errors.emergencyPhone = 'Emergency phone is required';
+        } else if (!/^\+?\d{8,15}$/.test(landlordData.emergencyPhone.trim())) {
+            errors.emergencyPhone = 'Enter a valid emergency phone number';
+        }
+
+        const lateFee = Number(landlordData.lateFee);
+        if (!Number.isFinite(lateFee) || lateFee < 0) {
+            errors.lateFee = 'Late fee must be 0 or greater';
+        }
+
+        const occupants = Number(landlordData.occupants);
+        if (!Number.isInteger(occupants) || occupants < 1) {
+            errors.occupants = 'Max occupants must be at least 1';
+        }
+
+        setStep1Errors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
     const toDueDateEnum = (value: string): '1ST_OF_MONTH' | '5TH_OF_MONTH' | 'LAST_DAY_OF_MONTH' => {
         if (value === '5TH_OF_MONTH') return '5TH_OF_MONTH';
@@ -83,6 +166,9 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
         }
 
         try {
+            if (step === 1 && !validateStep1()) {
+                return;
+            }
             setSubmitting(true);
             if (step === 1) {
                 await contractService.updateLeaseTerms(contract.internalId, {
@@ -110,6 +196,9 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
             }
 
             setStep((s) => s + 1);
+            if (step === 1) {
+                setStep1Errors({});
+            }
             onUpdated?.();
         } catch (error) {
             console.error('Failed to submit contract step', error);
@@ -129,6 +218,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                 signature_url: savedSignature,
                 certify_ownership: true,
             });
+            localStorage.removeItem(draftStorageKey);
             setIsFinalized(true);
             onUpdated?.();
         } catch (error) {
@@ -200,6 +290,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                             }}
                                             style={{ direction: 'rtl' }}
                                         />
+                                        {step1Errors.idFullName && <small style={{ color: '#dc2626' }}>{step1Errors.idFullName}</small>}
                                     </div>
                                     <div className="input-group">
                                         <label>{t('landlordContract.nationalIdNumber')}</label>
@@ -217,26 +308,38 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                                 }
                                             }}
                                         />
+                                        {step1Errors.idNumber && <small style={{ color: '#dc2626' }}>{step1Errors.idNumber}</small>}
                                     </div>
                                     <div className="input-group full">
                                         <label>{t('landlordContract.currentAddress')}</label>
                                         <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" placeholder={t('landlordContract.currentAddressPlaceholder')} value={landlordData.currentAddress} onChange={e => setLandlordData({ ...landlordData, currentAddress: e.target.value })} />
+                                        {step1Errors.currentAddress && <small style={{ color: '#dc2626' }}>{step1Errors.currentAddress}</small>}
                                     </div>
                                     <div className="input-group">
                                         <label>{t('landlordContract.mainPhone')}</label>
-                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" />
+                                        <input
+                                            className={isReadOnly ? 'readonly-field' : ''}
+                                            disabled={isReadOnly}
+                                            type="text"
+                                            value={landlordData.mainPhone}
+                                            onChange={(e) => setLandlordData({ ...landlordData, mainPhone: e.target.value })}
+                                        />
+                                        {step1Errors.mainPhone && <small style={{ color: '#dc2626' }}>{step1Errors.mainPhone}</small>}
                                     </div>
                                     <div className="input-group">
                                         <label>{t('landlordContract.contractDate')}</label>
-                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="date" value={landlordData.contractDate} onChange={e => setLandlordData({ ...landlordData, contractDate: e.target.value })} />
+                                        <input className={isReadOnly ? 'readonly-field' : ''} disabled type="date" value={todayIso} readOnly />
+                                        {step1Errors.contractDate && <small style={{ color: '#dc2626' }}>{step1Errors.contractDate}</small>}
                                     </div>
                                     <div className="input-group">
                                         <label>{t('landlordContract.emergencyContactName')}</label>
                                         <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="text" value={landlordData.emergencyName} onChange={(e) => setLandlordData({ ...landlordData, emergencyName: e.target.value })} />
+                                        {step1Errors.emergencyName && <small style={{ color: '#dc2626' }}>{step1Errors.emergencyName}</small>}
                                     </div>
                                     <div className="input-group">
                                         <label>{t('landlordContract.emergencyPhone')}</label>
                                         <input className={isReadOnly ? 'readonly-field' : ''} disabled={isReadOnly} type="tel" value={landlordData.emergencyPhone} onChange={(e) => setLandlordData({ ...landlordData, emergencyPhone: e.target.value })} />
+                                        {step1Errors.emergencyPhone && <small style={{ color: '#dc2626' }}>{step1Errors.emergencyPhone}</small>}
                                     </div>
                                 </div>
                             </section>
@@ -245,7 +348,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                 <div className="section-title"><User size={16} /> <h4>2. {t('landlordContract.partiesInvolved')}</h4></div>
                                 <div className="autofill-grid">
                                     <div className="field full"><label>{t('landlordContract.landlordOwner')}</label><span>{contract.landlord} • {contract.landlordEmail}</span></div>
-                                    <div className="field full"><label>{t('landlordContract.tenantRenter')}</label><span>{contract.tenant} • {contract.tenantEmail}</span></div>
+                                    <div className="field full"><label>{t('landlordContract.tenantRenter')}</label><span>{contract.tenant} • {contract.tenantEmail || '—'}</span></div>
                                 </div>
                             </section>
 
@@ -338,6 +441,7 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                         value={landlordData.lateFee}
                                         onChange={e => setLandlordData({ ...landlordData, lateFee: e.target.value })}
                                     />
+                                    {step1Errors.lateFee && <small style={{ color: '#dc2626' }}>{step1Errors.lateFee}</small>}
                                 </div>
                             </section>
                         </div>
@@ -386,8 +490,8 @@ const ContractDetailView: React.FC<Props> = ({ contract, isReadOnly = false, onU
                                         <div className="party">
                                             <strong>{t('landlordContract.lessee')}</strong>
                                             <span>{contract.tenant}</span>
-                                            <span>{t('landlordContract.idLabel')} {'—'}</span>{/* to be filled by tenant */}
-                                            <span>{t('landlordContract.addressLabel')} {'—'}</span>{/* to be filled by tenant */}
+                                            <span>{t('landlordContract.idLabel')} {contract.tenantNationalId || '—'}</span>
+                                            <span>{t('landlordContract.addressLabel')} {contract.tenantAddress || contract.propertyAddress || '—'}</span>
                                         </div>
                                     </div>
                                 </div>

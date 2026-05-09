@@ -772,6 +772,7 @@ class ContractService {
         if (!normalizedSignatureUrl) {
             throw new ContractError('Invalid signature URL', 400, 'INVALID_SIGNATURE_URL');
         }
+        const isInlineImage = normalizedSignatureUrl.startsWith('data:image/');
 
         // Validate that all required landlord steps are completed
         if (!contract.rent_due_date) {
@@ -797,7 +798,8 @@ class ContractService {
         }
 
         await contract.update({
-            landlord_signature_url: normalizedSignatureUrl,
+            // Contract columns are short URL fields; keep inline payloads in profile.
+            landlord_signature_url: isInlineImage ? null : normalizedSignatureUrl,
             landlord_signed_at: testingClockService.getNow(),
             status: ContractStatus.PENDING_TENANT,
         });
@@ -845,6 +847,7 @@ class ContractService {
         if (!normalizedSignatureUrl) {
             throw new ContractError('Invalid signature URL', 400, 'INVALID_SIGNATURE_URL');
         }
+        const isInlineImage = normalizedSignatureUrl.startsWith('data:image/');
 
         if (!contract.tenant_national_id) {
             throw new ContractError(
@@ -855,7 +858,8 @@ class ContractService {
         }
 
         await contract.update({
-            tenant_signature_url: normalizedSignatureUrl,
+            // Contract columns are short URL fields; keep inline payloads in profile.
+            tenant_signature_url: isInlineImage ? null : normalizedSignatureUrl,
             tenant_signed_at: testingClockService.getNow(),
             tenant_agreed_terms: true,
             status: ContractStatus.PENDING_PAYMENT,
@@ -1961,12 +1965,12 @@ class ContractService {
             {
                 model: User,
                 as: 'tenant',
-                attributes: ['id'],
+                attributes: ['id', 'email'],
                 include: [
                     {
                         model: Profile,
                         as: 'profile',
-                        attributes: ['first_name', 'last_name', 'e_signature_url'],
+                        attributes: ['first_name', 'last_name', 'e_signature_url', 'national_id'],
                     },
                 ],
             },
@@ -1978,7 +1982,7 @@ class ContractService {
                     {
                         model: Profile,
                         as: 'profile',
-                        attributes: ['first_name', 'last_name', 'e_signature_url'],
+                        attributes: ['first_name', 'last_name', 'e_signature_url', 'national_id'],
                     },
                 ],
             },
@@ -2066,7 +2070,9 @@ class ContractService {
             paymobTransactionId: contract.paymob_transaction_id ?? null,
             landlordSignatureUrl: normalizeSignatureUrl(contract.landlord_signature_url),
             tenantSignatureUrl: normalizeSignatureUrl(contract.tenant_signature_url),
-            tenantNationalId: safeDecrypt(contract.tenant_national_id),
+            tenantNationalId:
+                safeDecrypt(contract.tenant_national_id) ??
+                safeDecrypt((contract.tenant as any)?.profile?.national_id ?? null),
             tenantEmergencyContactName: contract.tenant_emergency_contact_name ?? null,
             tenantEmergencyPhone: contract.tenant_emergency_phone ?? null,
             createdAt: contract.created_at,
